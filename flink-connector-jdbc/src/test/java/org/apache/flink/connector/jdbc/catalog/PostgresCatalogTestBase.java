@@ -18,10 +18,10 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
+import org.apache.flink.connector.jdbc.test.DockerImageVersions;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.types.logical.DecimalType;
-import org.apache.flink.util.DockerImageVersions;
 
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
