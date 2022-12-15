@@ -39,6 +39,7 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE_2;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE_3;
+import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE_4;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.SELECT_ALL_NEWBOOKS;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.SELECT_ALL_NEWBOOKS_2;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.SELECT_ALL_NEWBOOKS_3;
@@ -302,6 +303,34 @@ public class JdbcRowOutputFormatTest extends JdbcDataTestBase {
             }
         } finally {
             jdbcOutputFormat.close();
+        }
+    }
+
+    @Test
+    public void testExceptionOnFlush() throws SQLException {
+        JdbcRowOutputFormat jdbcOutputFormat =
+                JdbcRowOutputFormat.buildJdbcOutputFormat()
+                        .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE_4))
+                        .setBatchSize(2)
+                        .finish();
+        setRuntimeContext(jdbcOutputFormat, true);
+        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
+                Statement stat = dbConn.createStatement()) {
+            jdbcOutputFormat.open(0, 1);
+
+            // To test for exceptions where the target table does not exist
+            stat.executeUpdate("DROP TABLE " + OUTPUT_TABLE_4);
+            for (int i = 0; i < 2; ++i) {
+                jdbcOutputFormat.writeRecord(toRow(TEST_DATA[i]));
+            }
+        } catch (IOException e) {
+            try {
+                jdbcOutputFormat.close();
+            } catch (Exception e1) {
+                assertThat(jdbcOutputFormat.getConnection()).isEqualTo(null);
+            }
         }
     }
 
