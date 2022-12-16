@@ -248,7 +248,12 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
         String databaseName = tablePath.getDatabaseName();
         String dbUrl = baseUrl + databaseName;
 
-        try (Connection conn = DriverManager.getConnection(dbUrl, username, pwd)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl, username, pwd);
+                PreparedStatement ps =
+                        conn.prepareStatement(
+                                String.format(
+                                        "SELECT * FROM %s;", getSchemaTableName(tablePath)))) {
+
             DatabaseMetaData metaData = conn.getMetaData();
             Optional<UniqueConstraint> primaryKey =
                     getPrimaryKey(
@@ -256,10 +261,6 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
                             databaseName,
                             getSchemaName(tablePath),
                             getTableName(tablePath));
-
-            PreparedStatement ps =
-                    conn.prepareStatement(
-                            String.format("SELECT * FROM %s;", getSchemaTableName(tablePath)));
 
             ResultSetMetaData resultSetMetaData = ps.getMetaData();
 

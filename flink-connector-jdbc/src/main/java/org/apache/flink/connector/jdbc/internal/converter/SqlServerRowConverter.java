@@ -20,7 +20,10 @@ package org.apache.flink.connector.jdbc.internal.converter;
 
 import org.apache.flink.connector.jdbc.converter.AbstractJdbcRowConverter;
 import org.apache.flink.table.types.logical.LogicalType;
+import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
+
+import java.util.Objects;
 
 /**
  * Runtime converter that responsible to convert between JDBC object and Flink internal object for
@@ -41,11 +44,9 @@ public class SqlServerRowConverter extends AbstractJdbcRowConverter {
 
     @Override
     protected JdbcDeserializationConverter createInternalConverter(LogicalType type) {
-        switch (type.getTypeRoot()) {
-            case TINYINT:
-                return val -> ((Short) val).byteValue();
-            default:
-                return super.createInternalConverter(type);
+        if (Objects.requireNonNull(type.getTypeRoot()) == LogicalTypeRoot.TINYINT) {
+            return val -> ((Short) val).byteValue();
         }
+        return super.createInternalConverter(type);
     }
 }

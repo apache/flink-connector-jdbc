@@ -232,7 +232,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
                     throw new IOException("Reestablish JDBC connection failed", exception);
                 }
                 try {
-                    Thread.sleep(1000 * i);
+                    Thread.sleep(1000L * i);
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                     throw new IOException(
@@ -288,7 +288,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
         private String[] fieldNames;
         private String[] keyFields;
         private int[] fieldTypes;
-        private JdbcExecutionOptions.Builder executionOptionsBuilder =
+        private final JdbcExecutionOptions.Builder executionOptionsBuilder =
                 JdbcExecutionOptions.builder();
 
         /** required, jdbc options. */

@@ -60,15 +60,15 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
     private static final long serialVersionUID = 2L;
     private static final Logger LOG = LoggerFactory.getLogger(JdbcRowDataInputFormat.class);
 
-    private JdbcConnectionProvider connectionProvider;
-    private int fetchSize;
-    private Boolean autoCommit;
+    private final JdbcConnectionProvider connectionProvider;
+    private final int fetchSize;
+    private final Boolean autoCommit;
     private Object[][] parameterValues;
-    private String queryTemplate;
-    private int resultSetType;
-    private int resultSetConcurrency;
-    private JdbcRowConverter rowConverter;
-    private TypeInformation<RowData> rowDataTypeInfo;
+    private final String queryTemplate;
+    private final int resultSetType;
+    private final int resultSetConcurrency;
+    private final JdbcRowConverter rowConverter;
+    private final TypeInformation<RowData> rowDataTypeInfo;
 
     private transient PreparedStatement statement;
     private transient ResultSet resultSet;
@@ -298,7 +298,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
 
     /** Builder for {@link JdbcRowDataInputFormat}. */
     public static class Builder {
-        private JdbcConnectionOptions.JdbcConnectionOptionsBuilder connOptionsBuilder;
+        private final JdbcConnectionOptions.JdbcConnectionOptionsBuilder connOptionsBuilder;
         private int fetchSize;
         private Boolean autoCommit;
         private Object[][] parameterValues;

@@ -59,8 +59,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class JdbcOutputFormatTest extends JdbcDataTestBase {
 
     private static JdbcOutputFormat<RowData, ?, ?> outputFormat;
-    private static String[] fieldNames = new String[] {"id", "title", "author", "price", "qty"};
-    private static DataType[] fieldDataTypes =
+    private static final String[] fieldNames =
+            new String[] {"id", "title", "author", "price", "qty"};
+    private static final DataType[] fieldDataTypes =
             new DataType[] {
                 DataTypes.INT(),
                 DataTypes.STRING(),
@@ -68,13 +69,13 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
                 DataTypes.DOUBLE(),
                 DataTypes.INT()
             };
-    private static RowType rowType =
+    private static final RowType rowType =
             RowType.of(
                     Arrays.stream(fieldDataTypes)
                             .map(DataType::getLogicalType)
                             .toArray(LogicalType[]::new),
                     fieldNames);
-    private static InternalTypeInfo<RowData> rowDataTypeInfo = InternalTypeInfo.of(rowType);
+    private static final InternalTypeInfo<RowData> rowDataTypeInfo = InternalTypeInfo.of(rowType);
 
     @After
     public void tearDown() throws Exception {

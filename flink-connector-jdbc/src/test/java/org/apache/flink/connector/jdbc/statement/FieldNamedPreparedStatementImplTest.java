@@ -146,7 +146,7 @@ public class FieldNamedPreparedStatementImplTest {
 
     private static class NamedStatementMatcher {
         private String parsedSql;
-        private Map<String, List<Integer>> parameterMap = new HashMap<>();
+        private final Map<String, List<Integer>> parameterMap = new HashMap<>();
 
         public static NamedStatementMatcher parsedSql(String parsedSql) {
             NamedStatementMatcher spec = new NamedStatementMatcher();

@@ -59,8 +59,9 @@ public class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
     @Rule public ExpectedException thrown = ExpectedException.none();
 
     private JdbcRowDataInputFormat inputFormat;
-    private static String[] fieldNames = new String[] {"id", "title", "author", "price", "qty"};
-    private static DataType[] fieldDataTypes =
+    private static final String[] fieldNames =
+            new String[] {"id", "title", "author", "price", "qty"};
+    private static final DataType[] fieldDataTypes =
             new DataType[] {
                 DataTypes.INT(),
                 DataTypes.STRING(),

@@ -50,7 +50,7 @@ class XaFacadePoolingImpl implements XaFacade {
 
     public interface FacadeSupplier extends Serializable, Supplier<XaFacade> {}
 
-    private static final transient Logger LOG = LoggerFactory.getLogger(XaFacadePoolingImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(XaFacadePoolingImpl.class);
     private final FacadeSupplier facadeSupplier;
     private transient XaFacade active;
     private transient Map<Xid, XaFacade> mappedToXids;

@@ -81,7 +81,7 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
             batchSize = maxElemCount;
         }
         this.batchSize = batchSize;
-        this.batchNum = new Double(Math.ceil((double) maxElemCount / batchSize)).intValue();
+        this.batchNum = (int) Math.ceil((double) maxElemCount / batchSize);
         return this;
     }
 
@@ -93,7 +93,7 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
             batchNum = (int) maxElemCount;
         }
         this.batchNum = batchNum;
-        this.batchSize = new Double(Math.ceil((double) maxElemCount / batchNum)).longValue();
+        this.batchSize = (long) Math.ceil((double) maxElemCount / batchNum);
         return this;
     }
 

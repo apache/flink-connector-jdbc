@@ -53,6 +53,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -292,6 +293,6 @@ public class JdbcFilterPushdownPreparedStatementVisitorTest {
                                 })
                         .build();
 
-        return resolver.resolve(Arrays.asList(resolvedExp));
+        return resolver.resolve(Collections.singletonList(resolvedExp));
     }
 }

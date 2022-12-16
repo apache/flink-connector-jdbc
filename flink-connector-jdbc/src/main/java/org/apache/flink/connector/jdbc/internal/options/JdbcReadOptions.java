@@ -100,6 +100,18 @@ public class JdbcReadOptions implements Serializable {
         }
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                query,
+                partitionColumnName,
+                partitionLowerBound,
+                partitionUpperBound,
+                numPartitions,
+                fetchSize,
+                autoCommit);
+    }
+
     /** Builder of {@link JdbcReadOptions}. */
     public static class Builder {
         protected String query;
