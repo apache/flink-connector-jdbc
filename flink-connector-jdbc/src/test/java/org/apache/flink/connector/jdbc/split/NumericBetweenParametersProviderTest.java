@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.split;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 
@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class NumericBetweenParametersProviderTest {
 
     @Test
-    public void testBatchSizeDivisible() {
+    void testBatchSizeDivisible() {
         JdbcNumericBetweenParametersProvider provider =
                 new JdbcNumericBetweenParametersProvider(-5, 9).ofBatchSize(3);
         Serializable[][] actual = provider.getParameterValues();
@@ -44,7 +44,7 @@ public class NumericBetweenParametersProviderTest {
     }
 
     @Test
-    public void testBatchSizeNotDivisible() {
+    void testBatchSizeNotDivisible() {
         JdbcNumericBetweenParametersProvider provider =
                 new JdbcNumericBetweenParametersProvider(-5, 11).ofBatchSize(4);
         Serializable[][] actual = provider.getParameterValues();
@@ -60,7 +60,7 @@ public class NumericBetweenParametersProviderTest {
     }
 
     @Test
-    public void testBatchSizeTooLarge() {
+    void testBatchSizeTooLarge() {
         JdbcNumericBetweenParametersProvider provider =
                 new JdbcNumericBetweenParametersProvider(0, 2).ofBatchSize(5);
         Serializable[][] actual = provider.getParameterValues();
@@ -70,7 +70,7 @@ public class NumericBetweenParametersProviderTest {
     }
 
     @Test
-    public void testBatchNumDivisible() {
+    void testBatchNumDivisible() {
         JdbcNumericBetweenParametersProvider provider =
                 new JdbcNumericBetweenParametersProvider(-5, 9).ofBatchNum(5);
         Serializable[][] actual = provider.getParameterValues();
@@ -86,7 +86,7 @@ public class NumericBetweenParametersProviderTest {
     }
 
     @Test
-    public void testBatchNumNotDivisible() {
+    void testBatchNumNotDivisible() {
         JdbcNumericBetweenParametersProvider provider =
                 new JdbcNumericBetweenParametersProvider(-5, 11).ofBatchNum(5);
         Serializable[][] actual = provider.getParameterValues();
@@ -102,7 +102,7 @@ public class NumericBetweenParametersProviderTest {
     }
 
     @Test
-    public void testBatchNumTooLarge() {
+    void testBatchNumTooLarge() {
         JdbcNumericBetweenParametersProvider provider =
                 new JdbcNumericBetweenParametersProvider(0, 2).ofBatchNum(5);
         Serializable[][] actual = provider.getParameterValues();

@@ -23,7 +23,7 @@ import org.apache.flink.table.types.logical.IntType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.TimestampType;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.sql.ResultSet;
@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class AbstractJdbcRowConverterTest {
 
     @Test
-    public void testExternalLocalDateTimeToTimestamp() throws Exception {
+    void testExternalLocalDateTimeToTimestamp() throws Exception {
         RowType rowType = RowType.of(new IntType(), new TimestampType(3));
         JdbcRowConverter rowConverter =
                 new AbstractJdbcRowConverter(rowType) {

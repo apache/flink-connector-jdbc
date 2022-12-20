@@ -52,8 +52,8 @@ import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.StateInitializationContextImpl;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import javax.sql.XADataSource;
 import javax.transaction.xa.Xid;
@@ -81,8 +81,8 @@ public abstract class JdbcXaSinkTestBase extends JdbcTestBase {
     JdbcXaSinkTestHelper sinkHelper;
     XADataSource xaDataSource;
 
-    @Before
-    public void initHelpers() throws Exception {
+    @BeforeEach
+    void initHelpers() throws Exception {
         xaDataSource = getDbMetadata().buildXaDataSource();
         xaHelper =
                 new JdbcXaFacadeTestHelper(
@@ -98,8 +98,8 @@ public abstract class JdbcXaSinkTestBase extends JdbcTestBase {
         return new TestXaSinkStateHandler();
     }
 
-    @After
-    public void closeHelpers() throws Exception {
+    @AfterEach
+    void closeHelpers() throws Exception {
         if (sinkHelper != null) {
             sinkHelper.close();
         }

@@ -23,8 +23,8 @@ import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CollectionUtil;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
@@ -37,8 +37,8 @@ public class PostgresCatalogITCase extends PostgresCatalogTestBase {
 
     private TableEnvironment tEnv;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         this.tEnv = TableEnvironment.create(EnvironmentSettings.inStreamingMode());
         tEnv.getConfig().set(TABLE_EXEC_RESOURCE_DEFAULT_PARALLELISM, 1);
 
@@ -48,7 +48,7 @@ public class PostgresCatalogITCase extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testSelectField() {
+    void testSelectField() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
                         tEnv.sqlQuery(String.format("select id from %s", TABLE1))
@@ -58,7 +58,7 @@ public class PostgresCatalogITCase extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testWithoutSchema() {
+    void testWithoutSchema() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
                         tEnv.sqlQuery(String.format("select * from %s", TABLE1))
@@ -68,7 +68,7 @@ public class PostgresCatalogITCase extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testWithSchema() {
+    void testWithSchema() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
                         tEnv.sqlQuery(
@@ -81,7 +81,7 @@ public class PostgresCatalogITCase extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testFullPath() {
+    void testFullPath() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
                         tEnv.sqlQuery(
@@ -96,7 +96,7 @@ public class PostgresCatalogITCase extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testInsert() throws Exception {
+    void testInsert() throws Exception {
         tEnv.executeSql(String.format("insert into %s select * from `%s`", TABLE4, TABLE1)).await();
 
         List<Row> results =
@@ -108,7 +108,7 @@ public class PostgresCatalogITCase extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testGroupByInsert() throws Exception {
+    void testGroupByInsert() throws Exception {
         tEnv.executeSql(
                         String.format(
                                 "insert into `%s` "
@@ -131,7 +131,7 @@ public class PostgresCatalogITCase extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testPrimitiveTypes() {
+    void testPrimitiveTypes() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
                         tEnv.sqlQuery(String.format("select * from %s", TABLE_PRIMITIVE_TYPE))
@@ -144,7 +144,7 @@ public class PostgresCatalogITCase extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testArrayTypes() {
+    void testArrayTypes() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
                         tEnv.sqlQuery(String.format("select * from %s", TABLE_ARRAY_TYPE))
@@ -176,7 +176,7 @@ public class PostgresCatalogITCase extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testSerialTypes() {
+    void testSerialTypes() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
                         tEnv.sqlQuery(String.format("select * from %s", TABLE_SERIAL_TYPE))

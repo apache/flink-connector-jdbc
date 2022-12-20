@@ -23,8 +23,8 @@ import org.apache.flink.table.api.Schema;
 
 import org.apache.flink.shaded.guava30.com.google.common.collect.Lists;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
@@ -43,7 +43,7 @@ public class MySqlCatalogTestBase {
     public static final Logger LOG = LoggerFactory.getLogger(MySqlCatalogTestBase.class);
 
     protected static final List<String> DOCKER_IMAGE_NAMES =
-            Arrays.asList("mysql:5.6.51", "mysql:5.7.34", "mysql:8.0.16");
+            Arrays.asList("mysql:5.6.51", "mysql:5.7.40", "mysql:8.0.31");
     protected static final String TEST_CATALOG_NAME = "mysql_catalog";
     protected static final String TEST_USERNAME = "mysql";
     protected static final String TEST_PWD = "mysql";
@@ -114,8 +114,8 @@ public class MySqlCatalogTestBase {
     public static final Map<String, MySQLContainer<?>> MYSQL_CONTAINERS = new HashMap<>();
     public static final Map<String, MySqlCatalog> CATALOGS = new HashMap<>();
 
-    @BeforeClass
-    public static void beforeAll() throws SQLException {
+    @BeforeAll
+    static void beforeAll() throws SQLException {
         for (String dockerImageName : DOCKER_IMAGE_NAMES) {
             MySQLContainer<?> container =
                     new MySQLContainer<>(DockerImageName.parse(dockerImageName))
@@ -140,10 +140,18 @@ public class MySqlCatalogTestBase {
         }
     }
 
-    @AfterClass
-    public static void cleanup() {
+    @AfterAll
+    static void cleanup() {
         for (MySQLContainer<?> container : MYSQL_CONTAINERS.values()) {
             container.stop();
         }
+    }
+
+    protected MySqlCatalog getCatalog(String version) {
+        return CATALOGS.get(version);
+    }
+
+    protected List<String> getDockerImages() {
+        return DOCKER_IMAGE_NAMES;
     }
 }

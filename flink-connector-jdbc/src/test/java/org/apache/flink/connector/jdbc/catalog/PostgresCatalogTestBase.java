@@ -23,14 +23,13 @@ import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.types.logical.DecimalType;
 
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
@@ -39,11 +38,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /** Test base for {@link PostgresCatalog}. */
+@Testcontainers
 public class PostgresCatalogTestBase {
 
     public static final Logger LOG = LoggerFactory.getLogger(PostgresCatalogTestBase.class);
-
-    @Rule public ExpectedException exception = ExpectedException.none();
 
     protected static final DockerImageName POSTGRES_IMAGE =
             DockerImageName.parse(DockerImageVersions.POSTGRES);
@@ -66,15 +64,15 @@ public class PostgresCatalogTestBase {
     protected static String baseUrl;
     protected static PostgresCatalog catalog;
 
-    @ClassRule
-    public static final PostgreSQLContainer<?> POSTGRES_CONTAINER =
+    @Container
+    static final PostgreSQLContainer<?> POSTGRES_CONTAINER =
             new PostgreSQLContainer<>(POSTGRES_IMAGE)
                     .withUsername(TEST_USERNAME)
                     .withPassword(TEST_PWD)
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
-    @BeforeClass
-    public static void init() throws SQLException {
+    @BeforeAll
+    static void init() throws SQLException {
         // jdbc:postgresql://localhost:50807/postgres?user=postgres
         String jdbcUrl = POSTGRES_CONTAINER.getJdbcUrl();
         // jdbc:postgresql://localhost:50807/

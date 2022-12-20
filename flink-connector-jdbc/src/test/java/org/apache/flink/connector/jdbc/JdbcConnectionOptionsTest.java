@@ -19,35 +19,43 @@ package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.connector.jdbc.fakedb.FakeDBUtils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Tests for {@link JdbcConnectionOptions}. */
 public class JdbcConnectionOptionsTest {
-    @Test(expected = NullPointerException.class)
-    public void testNullUrl() {
+    @Test
+    void testNullUrl() {
+        assertThatThrownBy(
+                        () ->
+                                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                                        .withUrl(null)
+                                        .withUsername("user")
+                                        .withPassword("password")
+                                        .withDriverName(FakeDBUtils.DRIVER1_CLASS_NAME)
+                                        .build())
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void testNoOptionalOptions() {
         new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-                .withUrl(null)
-                .withUsername("user")
-                .withPassword("password")
-                .withDriverName(FakeDBUtils.DRIVER1_CLASS_NAME)
+                .withUrl(FakeDBUtils.TEST_DB_URL)
                 .build();
     }
 
     @Test
-    public void testNoOptionalOptions() {
-        new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-                .withUrl(FakeDBUtils.TEST_DB_URL)
-                .build();
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testInvalidCheckTimeoutSeconds() {
-        new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-                .withUrl(FakeDBUtils.TEST_DB_URL)
-                .withUsername("user")
-                .withPassword("password")
-                .withDriverName(FakeDBUtils.DRIVER1_CLASS_NAME)
-                .withConnectionCheckTimeoutSeconds(0)
-                .build();
+    void testInvalidCheckTimeoutSeconds() {
+        assertThatThrownBy(
+                        () ->
+                                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                                        .withUsername("user")
+                                        .withPassword("password")
+                                        .withDriverName(FakeDBUtils.DRIVER1_CLASS_NAME)
+                                        .withConnectionCheckTimeoutSeconds(0)
+                                        .build())
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

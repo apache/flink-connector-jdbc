@@ -25,10 +25,10 @@ import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CollectionUtil;
 
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MSSQLServerContainer;
 
 import java.sql.Connection;
@@ -54,8 +54,8 @@ public class SqlServerTableSourceITCase extends AbstractTestBase {
     private static StreamExecutionEnvironment env;
     private static TableEnvironment tEnv;
 
-    @BeforeClass
-    public static void beforeAll() throws ClassNotFoundException, SQLException {
+    @BeforeAll
+    static void beforeAll() throws ClassNotFoundException, SQLException {
         container.start();
         containerUrl = container.getJdbcUrl();
         Class.forName(container.getDriverClassName());
@@ -106,8 +106,8 @@ public class SqlServerTableSourceITCase extends AbstractTestBase {
         }
     }
 
-    @AfterClass
-    public static void afterAll() throws Exception {
+    @AfterAll
+    static void afterAll() throws Exception {
         Class.forName(container.getDriverClassName());
         try (Connection conn =
                         DriverManager.getConnection(
@@ -118,14 +118,14 @@ public class SqlServerTableSourceITCase extends AbstractTestBase {
         container.stop();
     }
 
-    @Before
-    public void before() throws Exception {
+    @BeforeEach
+    void before() throws Exception {
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         tEnv = StreamTableEnvironment.create(env);
     }
 
     @Test
-    public void testJdbcSource() throws Exception {
+    void testJdbcSource() throws Exception {
         createFlinkTable();
         Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE).collect();
         List<String> result =
@@ -149,7 +149,7 @@ public class SqlServerTableSourceITCase extends AbstractTestBase {
     }
 
     @Test
-    public void testProject() throws Exception {
+    void testProject() throws Exception {
         createFlinkTable();
         Iterator<Row> collected =
                 tEnv.executeSql("SELECT id,datetime_col,decimal_col FROM " + INPUT_TABLE).collect();
@@ -168,7 +168,7 @@ public class SqlServerTableSourceITCase extends AbstractTestBase {
     }
 
     @Test
-    public void testFilter() throws Exception {
+    void testFilter() throws Exception {
         createFlinkTable();
         Iterator<Row> collected =
                 tEnv.executeSql(

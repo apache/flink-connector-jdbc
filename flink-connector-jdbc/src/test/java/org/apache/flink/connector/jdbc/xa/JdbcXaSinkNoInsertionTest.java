@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.xa;
 import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class JdbcXaSinkNoInsertionTest extends JdbcXaSinkTestBase {
 
     @Test
-    public void testNoInsertAfterInvoke() throws Exception {
+    void testNoInsertAfterInvoke() throws Exception {
         sinkHelper.emit(TEST_DATA[0]);
         assertThat(xaHelper.countInDb())
                 .as("no records should be inserted for incomplete checkpoints.")
@@ -37,7 +37,7 @@ public class JdbcXaSinkNoInsertionTest extends JdbcXaSinkTestBase {
     }
 
     @Test
-    public void testNoInsertAfterSnapshot() throws Exception {
+    void testNoInsertAfterSnapshot() throws Exception {
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP0);
         assertThat(xaHelper.countInDb())
                 .as("no records should be inserted for incomplete checkpoints.")
@@ -52,7 +52,7 @@ public class JdbcXaSinkNoInsertionTest extends JdbcXaSinkTestBase {
     }
 
     @Test
-    public void testNoInsertAfterFacadeClose() throws Exception {
+    void testNoInsertAfterFacadeClose() throws Exception {
         try (XaFacadeImpl xaFacade = XaFacadeImpl.fromXaDataSource(xaDataSource)) {
             sinkHelper =
                     new JdbcXaSinkTestHelper(

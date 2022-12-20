@@ -24,12 +24,13 @@ import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test for {@link PostgresCatalog}. */
 public class PostgresCatalogTest extends PostgresCatalogTestBase {
@@ -37,21 +38,21 @@ public class PostgresCatalogTest extends PostgresCatalogTestBase {
     // ------ databases ------
 
     @Test
-    public void testGetDb_DatabaseNotExistException() throws Exception {
-        exception.expect(DatabaseNotExistException.class);
-        exception.expectMessage("Database nonexistent does not exist in Catalog");
-        catalog.getDatabase("nonexistent");
+    void testGetDb_DatabaseNotExistException() {
+        assertThatThrownBy(() -> catalog.getDatabase("nonexistent"))
+                .isInstanceOf(DatabaseNotExistException.class)
+                .hasMessageContaining("Database nonexistent does not exist in Catalog");
     }
 
     @Test
-    public void testListDatabases() {
+    void testListDatabases() {
         List<String> actual = catalog.listDatabases();
 
         assertThat(actual).isEqualTo(Arrays.asList("postgres", "test"));
     }
 
     @Test
-    public void testDbExists() throws Exception {
+    void testDbExists() {
         assertThat(catalog.databaseExists("nonexistent")).isFalse();
 
         assertThat(catalog.databaseExists(PostgresCatalog.DEFAULT_DATABASE)).isTrue();
@@ -60,7 +61,7 @@ public class PostgresCatalogTest extends PostgresCatalogTestBase {
     // ------ tables ------
 
     @Test
-    public void testListTables() throws DatabaseNotExistException {
+    void testListTables() throws DatabaseNotExistException {
         List<String> actual = catalog.listTables(PostgresCatalog.DEFAULT_DATABASE);
 
         assertThat(actual)
@@ -80,13 +81,13 @@ public class PostgresCatalogTest extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testListTables_DatabaseNotExistException() throws DatabaseNotExistException {
-        exception.expect(DatabaseNotExistException.class);
-        catalog.listTables("postgres/nonexistschema");
+    void testListTables_DatabaseNotExistException() {
+        assertThatThrownBy(() -> catalog.listTables("postgres/nonexistschema"))
+                .isInstanceOf(DatabaseNotExistException.class);
     }
 
     @Test
-    public void testTableExists() {
+    void testTableExists() {
         assertThat(catalog.tableExists(new ObjectPath(TEST_DB, "nonexist"))).isFalse();
 
         assertThat(catalog.tableExists(new ObjectPath(PostgresCatalog.DEFAULT_DATABASE, TABLE1)))
@@ -96,32 +97,43 @@ public class PostgresCatalogTest extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testGetTables_TableNotExistException() throws TableNotExistException {
-        exception.expect(TableNotExistException.class);
-        catalog.getTable(
-                new ObjectPath(
-                        TEST_DB, PostgresTablePath.toFlinkTableName(TEST_SCHEMA, "anytable")));
+    void testGetTables_TableNotExistException() {
+        assertThatThrownBy(
+                        () ->
+                                catalog.getTable(
+                                        new ObjectPath(
+                                                TEST_DB,
+                                                PostgresTablePath.toFlinkTableName(
+                                                        TEST_SCHEMA, "anytable"))))
+                .isInstanceOf(TableNotExistException.class);
     }
 
     @Test
-    public void testGetTables_TableNotExistException_NoSchema() throws TableNotExistException {
-        exception.expect(TableNotExistException.class);
-        catalog.getTable(
-                new ObjectPath(
-                        TEST_DB, PostgresTablePath.toFlinkTableName("nonexistschema", "anytable")));
+    void testGetTables_TableNotExistException_NoSchema() {
+        assertThatThrownBy(
+                        () ->
+                                catalog.getTable(
+                                        new ObjectPath(
+                                                TEST_DB,
+                                                PostgresTablePath.toFlinkTableName(
+                                                        "nonexistschema", "anytable"))))
+                .isInstanceOf(TableNotExistException.class);
     }
 
     @Test
-    public void testGetTables_TableNotExistException_NoDb() throws TableNotExistException {
-        exception.expect(TableNotExistException.class);
-        catalog.getTable(
-                new ObjectPath(
-                        "nonexistdb", PostgresTablePath.toFlinkTableName(TEST_SCHEMA, "anytable")));
+    void testGetTables_TableNotExistException_NoDb() {
+        assertThatThrownBy(
+                        () ->
+                                catalog.getTable(
+                                        new ObjectPath(
+                                                "nonexistdb",
+                                                PostgresTablePath.toFlinkTableName(
+                                                        TEST_SCHEMA, "anytable"))))
+                .isInstanceOf(TableNotExistException.class);
     }
 
     @Test
-    public void testGetTable()
-            throws org.apache.flink.table.catalog.exceptions.TableNotExistException {
+    void testGetTable() throws org.apache.flink.table.catalog.exceptions.TableNotExistException {
         // test postgres.public.user1
         Schema schema = getSimpleTable().schema;
 
@@ -149,7 +161,7 @@ public class PostgresCatalogTest extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testPrimitiveDataTypes() throws TableNotExistException {
+    void testPrimitiveDataTypes() throws TableNotExistException {
         CatalogBaseTable table =
                 catalog.getTable(
                         new ObjectPath(PostgresCatalog.DEFAULT_DATABASE, TABLE_PRIMITIVE_TYPE));
@@ -158,7 +170,7 @@ public class PostgresCatalogTest extends PostgresCatalogTestBase {
     }
 
     @Test
-    public void testArrayDataTypes() throws TableNotExistException {
+    void testArrayDataTypes() throws TableNotExistException {
         CatalogBaseTable table =
                 catalog.getTable(
                         new ObjectPath(PostgresCatalog.DEFAULT_DATABASE, TABLE_ARRAY_TYPE));

@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.jdbc.xa;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 
@@ -30,7 +30,7 @@ public class XidImplTest {
     static final XidImpl XID = new XidImpl(1, randomBytes(MAXGTRIDSIZE), randomBytes(MAXBQUALSIZE));
 
     @Test
-    public void testXidsEqual() {
+    void testXidsEqual() {
         XidImpl other =
                 new XidImpl(
                         XID.getFormatId(), XID.getGlobalTransactionId(), XID.getBranchQualifier());
@@ -38,7 +38,7 @@ public class XidImplTest {
     }
 
     @Test
-    public void testXidsNotEqual() {
+    void testXidsNotEqual() {
         assertThat(new XidImpl(0, XID.getGlobalTransactionId(), XID.getBranchQualifier()))
                 .isNotEqualTo(XID);
         assertThat(

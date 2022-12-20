@@ -27,12 +27,14 @@ import org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
 import org.apache.flink.streaming.api.operators.StreamSink;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
+import org.apache.flink.testutils.junit.extensions.parameterized.ParameterizedTestExtension;
+import org.apache.flink.testutils.junit.extensions.parameterized.Parameters;
 import org.apache.flink.util.Preconditions;
 
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.transaction.xa.Xid;
 
@@ -54,7 +56,7 @@ import static org.apache.flink.streaming.util.OperatorSnapshotUtil.readStateHand
 import static org.apache.flink.streaming.util.OperatorSnapshotUtil.writeStateHandle;
 
 /** Tests state migration for {@link JdbcXaSinkFunction}. */
-@RunWith(Parameterized.class)
+@ExtendWith(ParameterizedTestExtension.class)
 public class JdbcXaSinkMigrationTest extends JdbcTestBase {
 
     // write a snapshot:
@@ -66,7 +68,7 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
         writeSnapshot(parseVersionArg(args));
     }
 
-    @Parameterized.Parameters
+    @Parameters
     public static Collection<FlinkVersion> getReadVersions() {
         return Collections.emptyList();
     }
@@ -77,8 +79,9 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
 
     private final FlinkVersion readVersion;
 
-    @Test
-    public void testCommitFromSnapshot() throws Exception {
+    @TestTemplate
+    @Disabled
+    void testCommitFromSnapshot() throws Exception {
         preparePendingTransaction();
         try (OneInputStreamOperatorTestHarness<TestEntry, Object> harness =
                 createHarness(buildSink())) {
@@ -96,8 +99,8 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
         }
     }
 
-    @After
-    public void cleanUp() throws Exception {
+    @AfterEach
+    void cleanUp() throws Exception {
         cancelAllTx();
     }
 

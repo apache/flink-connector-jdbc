@@ -32,7 +32,7 @@ import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.lookup.LookupOptions;
 import org.apache.flink.table.connector.source.lookup.cache.DefaultLookupCache;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -63,7 +63,7 @@ public class JdbcDynamicTableFactoryTest {
                     UniqueConstraint.primaryKey("name", Arrays.asList("bbb", "aaa")));
 
     @Test
-    public void testJdbcCommonProperties() {
+    void testJdbcCommonProperties() {
         Map<String, String> properties = getAllOptions();
         properties.put("driver", "org.apache.derby.jdbc.EmbeddedDriver");
         properties.put("username", "user");
@@ -113,7 +113,7 @@ public class JdbcDynamicTableFactoryTest {
     }
 
     @Test
-    public void testJdbcReadProperties() {
+    void testJdbcReadProperties() {
         Map<String, String> properties = getAllOptions();
         properties.put("scan.partition.column", "aaa");
         properties.put("scan.partition.lower-bound", "-10");
@@ -150,7 +150,7 @@ public class JdbcDynamicTableFactoryTest {
     }
 
     @Test
-    public void testJdbcLookupProperties() {
+    void testJdbcLookupProperties() {
         Map<String, String> properties = getAllOptions();
         properties.put("lookup.cache", "PARTIAL");
         properties.put("lookup.partial-cache.expire-after-write", "10s");
@@ -178,7 +178,7 @@ public class JdbcDynamicTableFactoryTest {
     }
 
     @Test
-    public void testJdbcLookupPropertiesWithLegacyOptions() {
+    void testJdbcLookupPropertiesWithLegacyOptions() {
         Map<String, String> properties = getAllOptions();
         properties.put("lookup.cache.max-rows", "1000");
         properties.put("lookup.cache.ttl", "10s");
@@ -206,7 +206,7 @@ public class JdbcDynamicTableFactoryTest {
     }
 
     @Test
-    public void testJdbcSinkProperties() {
+    void testJdbcSinkProperties() {
         Map<String, String> properties = getAllOptions();
         properties.put("sink.buffer-flush.max-rows", "1000");
         properties.put("sink.buffer-flush.interval", "2min");
@@ -241,7 +241,7 @@ public class JdbcDynamicTableFactoryTest {
     }
 
     @Test
-    public void testJDBCSinkWithParallelism() {
+    void testJDBCSinkWithParallelism() {
         Map<String, String> properties = getAllOptions();
         properties.put("sink.parallelism", "2");
 
@@ -275,7 +275,7 @@ public class JdbcDynamicTableFactoryTest {
     }
 
     @Test
-    public void testJdbcValidation() {
+    void testJdbcValidation() {
         // only password, no username
         Map<String, String> properties = getAllOptions();
         properties.put("password", "pass");
@@ -362,7 +362,7 @@ public class JdbcDynamicTableFactoryTest {
     }
 
     @Test
-    public void testJdbcLookupPropertiesWithExcludeEmptyResult() {
+    void testJdbcLookupPropertiesWithExcludeEmptyResult() {
         Map<String, String> properties = getAllOptions();
         properties.put("lookup.cache.max-rows", "1000");
         properties.put("lookup.cache.ttl", "10s");

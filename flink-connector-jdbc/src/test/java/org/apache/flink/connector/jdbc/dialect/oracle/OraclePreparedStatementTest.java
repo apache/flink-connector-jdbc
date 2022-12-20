@@ -22,7 +22,7 @@ import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatementImpl;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +44,7 @@ public class OraclePreparedStatementTest {
     private final String tableName = "tbl";
 
     @Test
-    public void testInsertStatement() {
+    void testInsertStatement() {
         String insertStmt = dialect.getInsertIntoStatement(tableName, fieldNames);
         assertThat(insertStmt)
                 .isEqualTo(
@@ -64,7 +64,7 @@ public class OraclePreparedStatementTest {
     }
 
     @Test
-    public void testDeleteStatement() {
+    void testDeleteStatement() {
         String deleteStmt = dialect.getDeleteStatement(tableName, keyFields);
         assertThat(deleteStmt)
                 .isEqualTo("DELETE FROM tbl WHERE id = :id AND __field_3__ = :__field_3__");
@@ -75,7 +75,7 @@ public class OraclePreparedStatementTest {
     }
 
     @Test
-    public void testRowExistsStatement() {
+    void testRowExistsStatement() {
         String rowExistStmt = dialect.getRowExistsStatement(tableName, keyFields);
         assertThat(rowExistStmt)
                 .isEqualTo("SELECT 1 FROM tbl WHERE id = :id AND __field_3__ = :__field_3__");
@@ -86,7 +86,7 @@ public class OraclePreparedStatementTest {
     }
 
     @Test
-    public void testUpdateStatement() {
+    void testUpdateStatement() {
         String updateStmt = dialect.getUpdateStatement(tableName, fieldNames, keyFields);
         assertThat(updateStmt)
                 .isEqualTo(
@@ -107,7 +107,7 @@ public class OraclePreparedStatementTest {
     }
 
     @Test
-    public void testUpsertStatement() {
+    void testUpsertStatement() {
         String upsertStmt = dialect.getUpsertStatement(tableName, fieldNames, keyFields).get();
         assertThat(upsertStmt)
                 .isEqualTo(
@@ -135,7 +135,7 @@ public class OraclePreparedStatementTest {
     }
 
     @Test
-    public void testSelectStatement() {
+    void testSelectStatement() {
         String selectStmt = dialect.getSelectFromStatement(tableName, fieldNames, keyFields);
         assertThat(selectStmt)
                 .isEqualTo(

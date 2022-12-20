@@ -30,8 +30,8 @@ import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -76,8 +76,8 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
                     fieldNames);
     private static InternalTypeInfo<RowData> rowDataTypeInfo = InternalTypeInfo.of(rowType);
 
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (outputFormat != null) {
             outputFormat.close();
         }
@@ -85,7 +85,7 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
-    public void testInvalidDriver() {
+    void testInvalidDriver() {
         String expectedMsg = "unable to open JDBC writer";
         assertThatThrownBy(
                         () -> {
@@ -117,7 +117,7 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
-    public void testInvalidURL() {
+    void testInvalidURL() {
         assertThatThrownBy(
                         () -> {
                             JdbcConnectorOptions jdbcOptions =
@@ -147,7 +147,7 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
-    public void testIncompatibleTypes() {
+    void testIncompatibleTypes() {
         assertThatThrownBy(
                         () -> {
                             JdbcConnectorOptions jdbcOptions =
@@ -186,7 +186,7 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
-    public void testExceptionOnInvalidType() {
+    void testExceptionOnInvalidType() {
         assertThatThrownBy(
                         () -> {
                             JdbcConnectorOptions jdbcOptions =
@@ -226,7 +226,7 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
-    public void testExceptionOnClose() {
+    void testExceptionOnClose() {
         String expectedMsg = "Writing records to JDBC failed.";
         assertThatThrownBy(
                         () -> {
@@ -275,7 +275,7 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
-    public void testJdbcOutputFormat() throws IOException, SQLException {
+    void testJdbcOutputFormat() throws IOException, SQLException {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
                         .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
@@ -328,7 +328,7 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
-    public void testFlush() throws SQLException, IOException {
+    void testFlush() throws SQLException, IOException {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
                         .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
@@ -398,7 +398,7 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
-    public void testFlushWithBatchSizeEqualsZero() throws SQLException, IOException {
+    void testFlushWithBatchSizeEqualsZero() throws SQLException, IOException {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
                         .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
@@ -445,7 +445,7 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
-    public void testInvalidConnectionInJdbcOutputFormat() throws IOException, SQLException {
+    void testInvalidConnectionInJdbcOutputFormat() throws IOException, SQLException {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
                         .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
@@ -506,8 +506,8 @@ public class JdbcOutputFormatTest extends JdbcDataTestBase {
         }
     }
 
-    @After
-    public void clearOutputTable() throws Exception {
+    @AfterEach
+    void clearOutputTable() throws Exception {
         Class.forName(DERBY_EBOOKSHOP_DB.getDriverClass());
         try (Connection conn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
                 Statement stat = conn.createStatement()) {

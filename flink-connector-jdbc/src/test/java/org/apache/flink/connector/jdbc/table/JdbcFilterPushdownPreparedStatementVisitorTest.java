@@ -41,9 +41,9 @@ import org.apache.flink.table.planner.runtime.utils.StreamTestSink;
 import org.apache.flink.table.types.logical.RowType;
 
 import org.apache.calcite.rex.RexBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -57,8 +57,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link JdbcFilterPushdownPreparedStatementVisitor}. */
 public class JdbcFilterPushdownPreparedStatementVisitorTest {
@@ -71,8 +70,8 @@ public class JdbcFilterPushdownPreparedStatementVisitorTest {
     public static StreamExecutionEnvironment env;
     public static TableEnvironment tEnv;
 
-    @Before
-    public void before() throws ClassNotFoundException, SQLException {
+    @BeforeEach
+    void before() throws ClassNotFoundException, SQLException {
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         tEnv = StreamTableEnvironment.create(env);
 
@@ -122,8 +121,8 @@ public class JdbcFilterPushdownPreparedStatementVisitorTest {
                         + ")");
     }
 
-    @After
-    public void clearOutputTable() throws Exception {
+    @AfterEach
+    void clearOutputTable() throws Exception {
         Class.forName(DRIVER_CLASS);
         try (Connection conn = DriverManager.getConnection(DB_URL);
                 Statement stat = conn.createStatement()) {
@@ -133,7 +132,7 @@ public class JdbcFilterPushdownPreparedStatementVisitorTest {
     }
 
     @Test
-    public void testSimpleExpressionPrimitiveType() {
+    void testSimpleExpressionPrimitiveType() {
         ResolvedSchema schema = tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE).getResolvedSchema();
         Arrays.asList(
                         new Object[] {"id = 6", "id = ?", 6L},
@@ -156,7 +155,7 @@ public class JdbcFilterPushdownPreparedStatementVisitorTest {
     }
 
     @Test
-    public void testComplexExpressionDatetime() {
+    void testComplexExpressionDatetime() {
         ResolvedSchema schema = tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE).getResolvedSchema();
         String andExpr = "id = 6 AND timestamp6_col = TIMESTAMP '2022-01-01 07:00:01.333'";
         Serializable[] expectedParams1 = {6L, Timestamp.valueOf("2022-01-01 07:00:01.333000")};
@@ -171,7 +170,7 @@ public class JdbcFilterPushdownPreparedStatementVisitorTest {
     }
 
     @Test
-    public void testExpressionWithNull() {
+    void testExpressionWithNull() {
         ResolvedSchema schema = tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE).getResolvedSchema();
         String andExpr = "id = NULL AND real_col <= 0.6";
 
@@ -186,7 +185,7 @@ public class JdbcFilterPushdownPreparedStatementVisitorTest {
     }
 
     @Test
-    public void testExpressionIsNull() {
+    void testExpressionIsNull() {
         ResolvedSchema schema = tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE).getResolvedSchema();
         String andExpr = "id IS NULL AND real_col <= 0.6";
 
@@ -201,7 +200,7 @@ public class JdbcFilterPushdownPreparedStatementVisitorTest {
     }
 
     @Test
-    public void testComplexExpressionPrimitiveType() {
+    void testComplexExpressionPrimitiveType() {
         ResolvedSchema schema = tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE).getResolvedSchema();
         String andExpr = "id = NULL AND real_col <= 0.6";
         Serializable[] expectedParams1 = {null, new BigDecimal("0.6")};
@@ -220,15 +219,15 @@ public class JdbcFilterPushdownPreparedStatementVisitorTest {
             String expectedOutputExpr,
             Serializable[] expectedParams) {
         List<ResolvedExpression> resolved = resolveSQLFilterToExpression(inputExpr, schema);
-        assertEquals(1, resolved.size());
+        assertThat(resolved.size()).isEqualTo(1);
         JdbcDialect dialect = new DerbyDialectFactory().create();
         JdbcFilterPushdownPreparedStatementVisitor visitor =
                 new JdbcFilterPushdownPreparedStatementVisitor(dialect::quoteIdentifier);
         ParameterizedPredicate pred = resolved.get(0).accept(visitor).get();
 
         // our visitor always wrap expression
-        assertEquals(expectedOutputExpr, pred.getPredicate());
-        assertArrayEquals(expectedParams, pred.getParameters());
+        assertThat(pred.getPredicate()).isEqualTo(expectedOutputExpr);
+        assertThat(pred.getParameters()).isEqualTo(expectedParams);
     }
 
     private void assertSimpleInputExprEqualsOutExpr(

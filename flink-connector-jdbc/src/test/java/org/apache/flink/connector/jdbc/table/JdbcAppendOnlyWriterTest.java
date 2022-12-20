@@ -27,9 +27,9 @@ import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -42,6 +42,7 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 
 /** Test for the Append only mode. */
@@ -50,42 +51,48 @@ public class JdbcAppendOnlyWriterTest extends JdbcTestBase {
     private JdbcOutputFormat format;
     private String[] fieldNames;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         fieldNames = new String[] {"id", "title", "author", "price", "qty"};
     }
 
-    @Test(expected = IOException.class)
-    public void testMaxRetry() throws Exception {
-        format =
-                JdbcOutputFormat.builder()
-                        .setOptions(
-                                JdbcConnectorOptions.builder()
-                                        .setDBUrl(getDbMetadata().getUrl())
-                                        .setDialect(
-                                                JdbcDialectLoader.load(
-                                                        getDbMetadata().getUrl(),
-                                                        getClass().getClassLoader()))
-                                        .setTableName(OUTPUT_TABLE)
-                                        .build())
-                        .setFieldNames(fieldNames)
-                        .setKeyFields(null)
-                        .build();
-        RuntimeContext context = Mockito.mock(RuntimeContext.class);
-        ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
-        doReturn(config).when(context).getExecutionConfig();
-        doReturn(true).when(config).isObjectReuseEnabled();
-        format.setRuntimeContext(context);
-        format.open(0, 1);
+    @Test
+    void testMaxRetry() throws Exception {
+        assertThatThrownBy(
+                        () -> {
+                            format =
+                                    JdbcOutputFormat.builder()
+                                            .setOptions(
+                                                    JdbcConnectorOptions.builder()
+                                                            .setDBUrl(getDbMetadata().getUrl())
+                                                            .setDialect(
+                                                                    JdbcDialectLoader.load(
+                                                                            getDbMetadata()
+                                                                                    .getUrl(),
+                                                                            getClass()
+                                                                                    .getClassLoader()))
+                                                            .setTableName(OUTPUT_TABLE)
+                                                            .build())
+                                            .setFieldNames(fieldNames)
+                                            .setKeyFields(null)
+                                            .build();
+                            RuntimeContext context = Mockito.mock(RuntimeContext.class);
+                            ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
+                            doReturn(config).when(context).getExecutionConfig();
+                            doReturn(true).when(config).isObjectReuseEnabled();
+                            format.setRuntimeContext(context);
+                            format.open(0, 1);
 
-        // alter table schema to trigger retry logic after failure.
-        alterTable();
-        for (TestEntry entry : TEST_DATA) {
-            format.writeRecord(Tuple2.of(true, toRow(entry)));
-        }
+                            // alter table schema to trigger retry logic after failure.
+                            alterTable();
+                            for (TestEntry entry : TEST_DATA) {
+                                format.writeRecord(Tuple2.of(true, toRow(entry)));
+                            }
 
-        // after retry default times, throws a BatchUpdateException.
-        format.flush();
+                            // after retry default times, throws a BatchUpdateException.
+                            format.flush();
+                        })
+                .isInstanceOf(IOException.class);
     }
 
     private void alterTable() throws Exception {
@@ -96,8 +103,8 @@ public class JdbcAppendOnlyWriterTest extends JdbcTestBase {
         }
     }
 
-    @After
-    public void clear() throws Exception {
+    @AfterEach
+    void clear() throws Exception {
         if (format != null) {
             try {
                 format.close();

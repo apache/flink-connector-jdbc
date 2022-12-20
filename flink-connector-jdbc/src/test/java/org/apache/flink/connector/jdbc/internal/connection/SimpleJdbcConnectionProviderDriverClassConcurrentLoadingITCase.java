@@ -22,11 +22,13 @@ import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.fakedb.FakeDBUtils;
 import org.apache.flink.core.testutils.CheckedThread;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,8 +52,9 @@ public class SimpleJdbcConnectionProviderDriverClassConcurrentLoadingITCase {
         return false;
     }
 
-    @Test(timeout = 5000)
-    public void testDriverClassConcurrentLoading() throws Exception {
+    @Test
+    @Timeout(value = 5000, unit = TimeUnit.MILLISECONDS)
+    void testDriverClassConcurrentLoading() throws Exception {
         ClassLoader classLoader = getClass().getClassLoader();
 
         assertThat(isClassLoaded(classLoader, FakeDBUtils.DRIVER1_CLASS_NAME)).isFalse();

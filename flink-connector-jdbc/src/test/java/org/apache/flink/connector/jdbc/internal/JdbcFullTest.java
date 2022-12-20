@@ -34,8 +34,8 @@ import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.flink.connector.jdbc.split.JdbcNumericBetweenParametersProvider;
 import org.apache.flink.types.Row;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.sql.Connection;
@@ -63,17 +63,17 @@ import static org.mockito.Mockito.doReturn;
 public class JdbcFullTest extends JdbcDataTestBase {
 
     @Test
-    public void testWithoutParallelism() throws Exception {
+    void testWithoutParallelism() throws Exception {
         runTest(false);
     }
 
     @Test
-    public void testWithParallelism() throws Exception {
+    void testWithParallelism() throws Exception {
         runTest(true);
     }
 
     @Test
-    public void testEnrichedClassCastException() {
+    void testEnrichedClassCastException() {
         String expectedMsg = "field index: 3, field value: 11.11.";
         try {
             JdbcOutputFormat jdbcOutputFormat =
@@ -173,8 +173,8 @@ public class JdbcFullTest extends JdbcDataTestBase {
         }
     }
 
-    @After
-    public void clearOutputTable() throws Exception {
+    @AfterEach
+    void clearOutputTable() throws Exception {
         Class.forName(getDbMetadata().getDriverClass());
         try (Connection conn = DriverManager.getConnection(getDbMetadata().getUrl());
                 Statement stat = conn.createStatement()) {

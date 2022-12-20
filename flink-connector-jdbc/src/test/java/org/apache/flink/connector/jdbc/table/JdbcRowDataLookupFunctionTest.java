@@ -53,7 +53,7 @@ public class JdbcRowDataLookupFunctionTest extends JdbcLookupTestBase {
 
     @ParameterizedTest(name = "withFailure = {0}")
     @ValueSource(booleans = {false, true})
-    public void testLookup(boolean withFailure) throws Exception {
+    void testLookup(boolean withFailure) throws Exception {
         JdbcRowDataLookupFunction lookupFunction = buildRowDataLookupFunction(withFailure);
 
         ListOutputCollector collector = new ListOutputCollector();

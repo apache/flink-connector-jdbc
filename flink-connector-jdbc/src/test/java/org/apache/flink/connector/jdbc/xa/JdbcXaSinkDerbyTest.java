@@ -21,7 +21,7 @@ import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
 
 import org.apache.derby.jdbc.EmbeddedXADataSource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,7 +38,7 @@ public class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
      * checkpoint.
      */
     @Test
-    public void noDuplication() throws Exception {
+    void noDuplication() throws Exception {
         sinkHelper.notifyCheckpointComplete(0);
         TestXaSinkStateHandler newState = new TestXaSinkStateHandler();
         newState.store(sinkHelper.getState().load(null));
@@ -50,7 +50,7 @@ public class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     }
 
     @Test
-    public void testTxEndedOnClose() throws Exception {
+    void testTxEndedOnClose() throws Exception {
         sinkHelper.emit(
                 TEST_DATA[0]); // don't snapshotState to prevent transaction from being prepared
         sinkHelper.close();
@@ -58,7 +58,7 @@ public class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     }
 
     @Test
-    public void testTxRollbackOnStartup() throws Exception {
+    void testTxRollbackOnStartup() throws Exception {
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP0);
         xaHelper.assertPreparedTxCountEquals(1);
         sinkHelper.close();
@@ -73,7 +73,7 @@ public class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     }
 
     @Test
-    public void testRestoreWithNotificationMissing() throws Exception {
+    void testRestoreWithNotificationMissing() throws Exception {
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP0);
         sinkHelper.close();
         sinkHelper = buildSinkHelper(sinkHelper.getState());
@@ -82,7 +82,7 @@ public class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     }
 
     @Test
-    public void testCommitUponStart() throws Exception {
+    void testCommitUponStart() throws Exception {
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP0);
         sinkHelper.close();
         buildAndInit(0, XaFacadeImpl.fromXaDataSource(xaDataSource), sinkHelper.getState());
@@ -91,12 +91,12 @@ public class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
 
     /** RM may return {@link javax.transaction.xa.XAResource#XA_RDONLY XA_RDONLY} error. */
     @Test
-    public void testEmptyCheckpoint() throws Exception {
+    void testEmptyCheckpoint() throws Exception {
         sinkHelper.snapshotState(0);
     }
 
     @Test
-    public void testTwoCheckpointsComplete1st() throws Exception {
+    void testTwoCheckpointsComplete1st() throws Exception {
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP0);
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP1);
         JdbcXaSinkTestHelper sinkHelper = this.sinkHelper;
@@ -107,7 +107,7 @@ public class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     }
 
     @Test
-    public void testTwoCheckpointsComplete2nd() throws Exception {
+    void testTwoCheckpointsComplete2nd() throws Exception {
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP0);
         sinkHelper.emitAndCheckpoint(JdbcTestFixture.CP1);
         xaHelper.assertDbContentsEquals(
@@ -117,7 +117,7 @@ public class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     }
 
     @Test
-    public void testTwoCheckpointsCompleteBoth() throws Exception {
+    void testTwoCheckpointsCompleteBoth() throws Exception {
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP0);
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP1);
         sinkHelper.notifyCheckpointComplete(JdbcTestFixture.CP0.id);
@@ -129,7 +129,7 @@ public class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     }
 
     @Test
-    public void testTwoCheckpointsCompleteBothOutOfOrder() throws Exception {
+    void testTwoCheckpointsCompleteBothOutOfOrder() throws Exception {
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP0);
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP1);
         sinkHelper.notifyCheckpointComplete(JdbcTestFixture.CP1.id);
@@ -141,7 +141,7 @@ public class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     }
 
     @Test
-    public void testRestore() throws Exception {
+    void testRestore() throws Exception {
         sinkHelper.emitAndCheckpoint(JdbcTestFixture.CP0);
         sinkHelper.close();
         sinkHelper = new JdbcXaSinkTestHelper(buildAndInit(), new TestXaSinkStateHandler());
@@ -150,7 +150,7 @@ public class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     }
 
     @Test
-    public void testFailurePropagation() throws Exception {
+    void testFailurePropagation() throws Exception {
         /* big enough flush interval to cause error in snapshotState rather than in invoke*/
         sinkHelper =
                 new JdbcXaSinkTestHelper(
