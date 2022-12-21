@@ -21,6 +21,9 @@ package org.apache.flink.connector.jdbc.table;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
+import org.apache.flink.connector.jdbc.internal.connection.JdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.internal.connection.SimpleJdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.table.api.DataTypes;
@@ -41,6 +44,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.INPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
@@ -222,6 +226,74 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         })
                 .rootCause()
                 .isInstanceOf(ClassCastException.class);
+    }
+
+    @Test
+    void testReestablishWhenConnectionClosed() throws IOException {
+        InternalJdbcConnectionOptions jdbcOptions =
+                InternalJdbcConnectionOptions.builder()
+                        .setDriverName(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setTableName(OUTPUT_TABLE)
+                        .build();
+
+        AtomicBoolean connected = new AtomicBoolean(false);
+
+        JdbcConnectionProvider connectionProvider =
+                new SimpleJdbcConnectionProvider(jdbcOptions) {
+                    @Override
+                    public boolean isConnectionValid() {
+                        return connected.get();
+                    }
+
+                    @Override
+                    public Connection getOrEstablishConnection()
+                            throws SQLException, ClassNotFoundException {
+                        // set connection valid flag to true when connection reconnected.
+                        connected.set(true);
+                        return super.getOrEstablishConnection();
+                    }
+                };
+
+        outputFormat =
+                new JdbcOutputFormat<>(
+                        connectionProvider,
+                        JdbcExecutionOptions.builder().build(),
+                        ctx ->
+                                new JdbcBatchStatementExecutor<RowData>() {
+                                    @Override
+                                    public void prepareStatements(Connection connection) {}
+
+                                    @Override
+                                    public void addToBatch(RowData record) {}
+
+                                    @Override
+                                    public void executeBatch() throws SQLException {
+                                        if (!connected.get()) {
+                                            // trigger output format to check connection is valid.
+                                            throw new SQLException("Connection is closed.");
+                                        }
+                                    }
+
+                                    @Override
+                                    public void closeStatements() throws SQLException {
+                                        throw new SQLException("Connection is closed.");
+                                    }
+                                },
+                        JdbcOutputFormat.RecordExtractor.identity());
+
+        setRuntimeContext(outputFormat, false);
+        outputFormat.open(0, 1);
+
+        // set the connection to invalid
+        connected.set(false);
+
+        TestEntry entry = TEST_DATA[0];
+        RowData row = buildGenericData(entry.id, entry.title, entry.author, 0L, entry.qty);
+        outputFormat.writeRecord(row);
+        outputFormat.flush();
+
+        assertThat(connected).isTrue();
     }
 
     @Test
