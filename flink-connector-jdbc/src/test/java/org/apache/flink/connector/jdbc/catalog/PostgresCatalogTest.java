@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test for {@link PostgresCatalog}. */
-public class PostgresCatalogTest extends PostgresCatalogTestBase {
+class PostgresCatalogTest extends PostgresCatalogTestBase {
 
     // ------ databases ------
 

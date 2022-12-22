@@ -32,7 +32,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Tests for {@link FieldNamedPreparedStatementImpl}. */
-public class FieldNamedPreparedStatementImplTest {
+class FieldNamedPreparedStatementImplTest {
 
     private final JdbcDialect dialect =
             JdbcDialectLoader.load("jdbc:mysql://localhost:3306/test", getClass().getClassLoader());

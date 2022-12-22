@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 /** Test base for {@link MySqlCatalog}. */
-public class MySqlCatalogTestBase {
+class MySqlCatalogTestBase {
 
     public static final Logger LOG = LoggerFactory.getLogger(MySqlCatalogTestBase.class);
 
@@ -145,13 +145,5 @@ public class MySqlCatalogTestBase {
         for (MySQLContainer<?> container : MYSQL_CONTAINERS.values()) {
             container.stop();
         }
-    }
-
-    protected MySqlCatalog getCatalog(String version) {
-        return CATALOGS.get(version);
-    }
-
-    protected List<String> getDockerImages() {
-        return DOCKER_IMAGE_NAMES;
     }
 }

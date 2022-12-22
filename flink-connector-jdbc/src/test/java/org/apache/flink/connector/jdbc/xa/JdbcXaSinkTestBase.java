@@ -75,7 +75,7 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
  * // todo: javadoc case Base class for {@link JdbcXaSinkFunction} tests. In addition to {@link
  * JdbcTestBase} init it initializes/closes helpers.
  */
-public abstract class JdbcXaSinkTestBase extends JdbcTestBase {
+abstract class JdbcXaSinkTestBase extends JdbcTestBase {
 
     JdbcXaFacadeTestHelper xaHelper;
     JdbcXaSinkTestHelper sinkHelper;

@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The Table Source ITCase for {@link SqlServerDialect}. */
-public class SqlServerTableSourceITCase extends AbstractTestBase {
+class SqlServerTableSourceITCase extends AbstractTestBase {
 
     private static final MSSQLServerContainer container =
             new MSSQLServerContainer("mcr.microsoft.com/mssql/server:2019-GA-ubuntu-16.04")

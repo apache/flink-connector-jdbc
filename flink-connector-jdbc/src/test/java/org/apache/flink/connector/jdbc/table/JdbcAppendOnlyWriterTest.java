@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 
 /** Test for the Append only mode. */
-public class JdbcAppendOnlyWriterTest extends JdbcTestBase {
+class JdbcAppendOnlyWriterTest extends JdbcTestBase {
 
     private JdbcOutputFormat format;
     private String[] fieldNames;

@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * This test deals with sql driver class loading issues; run as an ITCase so it won't be interfered
  * with by other tests.
  */
-public class SimpleJdbcConnectionProviderDriverClassConcurrentLoadingITCase {
+class SimpleJdbcConnectionProviderDriverClassConcurrentLoadingITCase {
     private static boolean isClassLoaded(ClassLoader classLoader, String className)
             throws Exception {
         do {

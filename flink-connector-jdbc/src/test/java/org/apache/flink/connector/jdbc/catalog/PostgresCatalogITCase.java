@@ -33,7 +33,7 @@ import static org.apache.flink.table.api.config.ExecutionConfigOptions.TABLE_EXE
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** E2E test for {@link PostgresCatalog}. */
-public class PostgresCatalogITCase extends PostgresCatalogTestBase {
+class PostgresCatalogITCase extends PostgresCatalogTestBase {
 
     private TableEnvironment tEnv;
 

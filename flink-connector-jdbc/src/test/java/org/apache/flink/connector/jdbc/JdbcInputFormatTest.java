@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Tests for the {@link JdbcInputFormat}. */
-public class JdbcInputFormatTest extends JdbcDataTestBase {
+class JdbcInputFormatTest extends JdbcDataTestBase {
 
     private JdbcInputFormat jdbcInputFormat;
 

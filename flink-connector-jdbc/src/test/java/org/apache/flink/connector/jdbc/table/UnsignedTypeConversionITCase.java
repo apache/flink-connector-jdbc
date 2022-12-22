@@ -58,7 +58,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * to mock a DB.
  */
 @Testcontainers
-public class UnsignedTypeConversionITCase extends AbstractTestBase {
+class UnsignedTypeConversionITCase extends AbstractTestBase {
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(UnsignedTypeConversionITCase.class);

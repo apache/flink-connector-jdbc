@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test for {@link JdbcCatalogUtils}. */
-public class JdbcCatalogUtilsTest {
+class JdbcCatalogUtilsTest {
 
     @Test
     void testJdbcUrl() {

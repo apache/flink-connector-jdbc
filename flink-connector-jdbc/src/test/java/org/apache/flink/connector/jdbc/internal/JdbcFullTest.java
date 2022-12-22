@@ -60,7 +60,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 
 /** Tests using both {@link JdbcInputFormat} and {@link JdbcOutputFormat}. */
-public class JdbcFullTest extends JdbcDataTestBase {
+class JdbcFullTest extends JdbcDataTestBase {
 
     @Test
     void testWithoutParallelism() throws Exception {

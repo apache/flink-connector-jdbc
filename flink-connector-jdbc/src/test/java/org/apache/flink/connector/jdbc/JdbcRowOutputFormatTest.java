@@ -51,7 +51,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Tests for the {@link JdbcRowOutputFormat}. */
-public class JdbcRowOutputFormatTest extends JdbcDataTestBase {
+class JdbcRowOutputFormatTest extends JdbcDataTestBase {
 
     private JdbcRowOutputFormat jdbcOutputFormat;
 

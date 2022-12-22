@@ -66,7 +66,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** ITCase for {@link JdbcDynamicTableSource}. */
-public class JdbcDynamicTableSourceITCase {
+class JdbcDynamicTableSourceITCase {
 
     @RegisterExtension
     static final MiniClusterExtension MINI_CLUSTER_RESOURCE =

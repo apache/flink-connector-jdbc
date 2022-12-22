@@ -25,7 +25,7 @@ import java.io.Serializable;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Tests for {@link JdbcNumericBetweenParametersProvider}. */
-public class NumericBetweenParametersProviderTest {
+class NumericBetweenParametersProviderTest {
 
     @Test
     void testBatchSizeDivisible() {

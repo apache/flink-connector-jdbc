@@ -31,7 +31,7 @@ import static org.apache.flink.connector.jdbc.xa.JdbcXaSinkTestBase.TEST_RUNTIME
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Simple uniqueness tests for the {@link SemanticXidGenerator}. */
-public class SemanticXidGeneratorTest {
+class SemanticXidGeneratorTest {
     private static final int COUNT = 100_000;
 
     @Test

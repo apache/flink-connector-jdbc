@@ -70,7 +70,7 @@ import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSin
 
 /** The Table Sink ITCase for {@link SqlServerDialect}. */
 @Testcontainers
-public class SqlServerTableSinkITCase extends AbstractTestBase {
+class SqlServerTableSinkITCase extends AbstractTestBase {
 
     @Container
     private static final MSSQLServerContainer<?> container =

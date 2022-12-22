@@ -39,7 +39,7 @@ import java.sql.Statement;
 
 /** Test base for {@link PostgresCatalog}. */
 @Testcontainers
-public class PostgresCatalogTestBase {
+class PostgresCatalogTestBase {
 
     public static final Logger LOG = LoggerFactory.getLogger(PostgresCatalogTestBase.class);
 

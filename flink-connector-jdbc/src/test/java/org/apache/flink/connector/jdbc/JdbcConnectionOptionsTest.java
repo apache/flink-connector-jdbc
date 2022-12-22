@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Tests for {@link JdbcConnectionOptions}. */
-public class JdbcConnectionOptionsTest {
+class JdbcConnectionOptionsTest {
     @Test
     void testNullUrl() {
         assertThatThrownBy(

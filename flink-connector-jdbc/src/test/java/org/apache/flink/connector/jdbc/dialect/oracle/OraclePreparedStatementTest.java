@@ -33,7 +33,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Tests for {@link OraclePreparedStatementTest}. */
-public class OraclePreparedStatementTest {
+class OraclePreparedStatementTest {
 
     private final JdbcDialect dialect =
             JdbcDialectLoader.load(

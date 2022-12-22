@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link PostgresTablePath}. */
-public class PostgresTablePathTest {
+class PostgresTablePathTest {
     @Test
     void testFromFlinkTableName() {
         assertThat(PostgresTablePath.fromFlinkTableName("public.topic"))

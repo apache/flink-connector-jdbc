@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Testing the type conversions from Flink to SQL types. */
-public class JdbcTypeUtilTest {
+class JdbcTypeUtilTest {
 
     @Test
     void testTypeConversions() {

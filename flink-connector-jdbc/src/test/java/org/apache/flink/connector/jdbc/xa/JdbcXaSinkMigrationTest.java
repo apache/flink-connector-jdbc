@@ -80,7 +80,7 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
     private final FlinkVersion readVersion;
 
     @TestTemplate
-    @Disabled
+    @Disabled // as getReadVersions is empty and fails
     void testCommitFromSnapshot() throws Exception {
         preparePendingTransaction();
         try (OneInputStreamOperatorTestHarness<TestEntry, Object> harness =

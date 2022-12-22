@@ -49,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Test for {@link JdbcDynamicTableSource} and {@link JdbcDynamicTableSink} created by {@link
  * JdbcDynamicTableFactory}.
  */
-public class JdbcDynamicTableFactoryTest {
+class JdbcDynamicTableFactoryTest {
 
     private static final ResolvedSchema SCHEMA =
             new ResolvedSchema(

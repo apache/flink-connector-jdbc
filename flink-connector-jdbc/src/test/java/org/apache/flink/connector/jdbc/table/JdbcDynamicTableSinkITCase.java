@@ -68,7 +68,7 @@ import static org.apache.flink.table.api.Expressions.$;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSink;
 
 /** The ITCase for {@link JdbcDynamicTableSink}. */
-public class JdbcDynamicTableSinkITCase extends AbstractTestBase {
+class JdbcDynamicTableSinkITCase extends AbstractTestBase {
 
     public static final String DB_URL = "jdbc:derby:memory:upsert";
     public static final String OUTPUT_TABLE1 = "dynamicSinkForUpsert";

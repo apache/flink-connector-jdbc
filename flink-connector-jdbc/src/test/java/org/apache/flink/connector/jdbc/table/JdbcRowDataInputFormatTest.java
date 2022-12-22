@@ -53,7 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test suite for {@link JdbcRowDataInputFormat}. */
-public class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
+class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
 
     private JdbcRowDataInputFormat inputFormat;
     private static String[] fieldNames = new String[] {"id", "title", "author", "price", "qty"};

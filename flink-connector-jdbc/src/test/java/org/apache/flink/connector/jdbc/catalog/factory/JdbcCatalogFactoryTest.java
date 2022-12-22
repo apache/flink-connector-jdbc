@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link JdbcCatalogFactory}. */
 @Testcontainers
-public class JdbcCatalogFactoryTest {
+class JdbcCatalogFactoryTest {
 
     public static final Logger LOG = LoggerFactory.getLogger(JdbcCatalogFactoryTest.class);
 

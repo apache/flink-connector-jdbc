@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test for {@link SimpleJdbcConnectionProvider}. */
-public class SimpleJdbcConnectionProviderTest {
+class SimpleJdbcConnectionProviderTest {
 
     private static JdbcConnectionProvider newFakeConnectionProviderWithDriverName(
             String driverName) {

@@ -32,7 +32,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link AbstractJdbcRowConverter}. */
-public class AbstractJdbcRowConverterTest {
+class AbstractJdbcRowConverterTest {
 
     @Test
     void testExternalLocalDateTimeToTimestamp() throws Exception {

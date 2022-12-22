@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The Table Source ITCase for {@link OracleDialect}. */
-public class OracleTableSourceITCase extends AbstractTestBase {
+class OracleTableSourceITCase extends AbstractTestBase {
 
     private static final OracleContainer container = new OracleContainer();
     private static String containerUrl;

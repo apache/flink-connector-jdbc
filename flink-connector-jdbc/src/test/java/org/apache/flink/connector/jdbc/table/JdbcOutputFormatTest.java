@@ -56,7 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test suite for {@link JdbcOutputFormatBuilder}. */
-public class JdbcOutputFormatTest extends JdbcDataTestBase {
+class JdbcOutputFormatTest extends JdbcDataTestBase {
 
     private static JdbcOutputFormat<RowData, ?, ?> outputFormat;
     private static String[] fieldNames = new String[] {"id", "title", "author", "price", "qty"};

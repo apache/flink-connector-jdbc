@@ -60,7 +60,7 @@ import java.util.TimeZone;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link JdbcFilterPushdownPreparedStatementVisitor}. */
-public class JdbcFilterPushdownPreparedStatementVisitorTest {
+class JdbcFilterPushdownPreparedStatementVisitorTest {
 
     private final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     public static final String DRIVER_CLASS = "org.apache.derby.jdbc.EmbeddedDriver";

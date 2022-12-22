@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * transaction is not yet committed). But XA support isn't full, so for some scenarios {@link
  * org.apache.flink.connector.jdbc.xa.h2.H2XaDsWrapper wrapper} is used, and for some - Derby.
  */
-public class JdbcXaSinkH2Test extends JdbcXaSinkTestBase {
+class JdbcXaSinkH2Test extends JdbcXaSinkTestBase {
 
     @Test
     void testIgnoreDuplicatedNotification() throws Exception {

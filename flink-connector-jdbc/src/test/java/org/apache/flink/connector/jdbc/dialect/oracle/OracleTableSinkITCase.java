@@ -66,7 +66,7 @@ import static org.apache.flink.table.api.Expressions.$;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSink;
 
 /** The Table Sink ITCase for {@link OracleDialect}. */
-public class OracleTableSinkITCase extends AbstractTestBase {
+class OracleTableSinkITCase extends AbstractTestBase {
 
     private static final OracleContainer container = new OracleContainer();
     private static String containerUrl;

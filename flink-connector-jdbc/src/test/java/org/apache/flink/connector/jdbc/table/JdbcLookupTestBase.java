@@ -31,7 +31,7 @@ import java.sql.Statement;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
 
 /** Base class for JDBC lookup test. */
-public class JdbcLookupTestBase {
+class JdbcLookupTestBase {
 
     public static final String DB_URL = "jdbc:derby:memory:lookup";
     public static final String LOOKUP_TABLE = "lookup_table";
