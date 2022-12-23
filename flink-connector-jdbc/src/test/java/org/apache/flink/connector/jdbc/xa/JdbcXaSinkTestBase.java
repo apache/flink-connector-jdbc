@@ -52,8 +52,8 @@ import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.StateInitializationContextImpl;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import javax.sql.XADataSource;
 import javax.transaction.xa.Xid;
@@ -75,14 +75,14 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
  * // todo: javadoc case Base class for {@link JdbcXaSinkFunction} tests. In addition to {@link
  * JdbcTestBase} init it initializes/closes helpers.
  */
-public abstract class JdbcXaSinkTestBase extends JdbcTestBase {
+abstract class JdbcXaSinkTestBase extends JdbcTestBase {
 
     JdbcXaFacadeTestHelper xaHelper;
     JdbcXaSinkTestHelper sinkHelper;
     XADataSource xaDataSource;
 
-    @Before
-    public void initHelpers() throws Exception {
+    @BeforeEach
+    void initHelpers() throws Exception {
         xaDataSource = getDbMetadata().buildXaDataSource();
         xaHelper =
                 new JdbcXaFacadeTestHelper(
@@ -98,8 +98,8 @@ public abstract class JdbcXaSinkTestBase extends JdbcTestBase {
         return new TestXaSinkStateHandler();
     }
 
-    @After
-    public void closeHelpers() throws Exception {
+    @AfterEach
+    void closeHelpers() throws Exception {
         if (sinkHelper != null) {
             sinkHelper.close();
         }

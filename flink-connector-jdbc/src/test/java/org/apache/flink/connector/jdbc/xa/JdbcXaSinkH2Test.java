@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.xa;
 import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,22 +30,22 @@ import static org.assertj.core.api.Assertions.assertThat;
  * transaction is not yet committed). But XA support isn't full, so for some scenarios {@link
  * org.apache.flink.connector.jdbc.xa.h2.H2XaDsWrapper wrapper} is used, and for some - Derby.
  */
-public class JdbcXaSinkH2Test extends JdbcXaSinkTestBase {
+class JdbcXaSinkH2Test extends JdbcXaSinkTestBase {
 
     @Test
-    public void testIgnoreDuplicatedNotification() throws Exception {
+    void testIgnoreDuplicatedNotification() throws Exception {
         sinkHelper.emitAndCheckpoint(JdbcTestFixture.CP0);
         sinkHelper.notifyCheckpointComplete(JdbcTestFixture.CP0.id);
     }
 
     /** RM may return {@link javax.transaction.xa.XAResource#XA_RDONLY XA_RDONLY} error. */
     @Test
-    public void testEmptyCheckpoint() throws Exception {
+    void testEmptyCheckpoint() throws Exception {
         sinkHelper.snapshotState(0);
     }
 
     @Test
-    public void testHappyFlow() throws Exception {
+    void testHappyFlow() throws Exception {
         sinkHelper.emit(TEST_DATA[0]);
         assertThat(xaHelper.countInDb())
                 .as("record should not be inserted before the checkpoint started.")
@@ -63,7 +63,7 @@ public class JdbcXaSinkH2Test extends JdbcXaSinkTestBase {
     }
 
     @Test
-    public void testTwoCheckpointsWithoutData() throws Exception {
+    void testTwoCheckpointsWithoutData() throws Exception {
         JdbcXaSinkTestHelper sinkHelper = this.sinkHelper;
         sinkHelper.snapshotState(1);
         sinkHelper.snapshotState(2);

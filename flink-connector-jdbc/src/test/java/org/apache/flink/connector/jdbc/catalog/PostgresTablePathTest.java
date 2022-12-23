@@ -18,14 +18,14 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link PostgresTablePath}. */
-public class PostgresTablePathTest {
+class PostgresTablePathTest {
     @Test
-    public void testFromFlinkTableName() {
+    void testFromFlinkTableName() {
         assertThat(PostgresTablePath.fromFlinkTableName("public.topic"))
                 .isEqualTo(new PostgresTablePath("public", "topic"));
     }

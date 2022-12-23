@@ -27,7 +27,7 @@ import org.junit.Test;
 
 /** Plan tests for JDBC connector, for example, testing projection push down. */
 public class JdbcTablePlanTest extends TableTestBase {
-
+    // TODO: Update to junit5 after TableTestBase migrated (maybe copy the class?)
     private final StreamTableTestUtil util = streamTestUtil(TableConfig.getDefault());
 
     @Before

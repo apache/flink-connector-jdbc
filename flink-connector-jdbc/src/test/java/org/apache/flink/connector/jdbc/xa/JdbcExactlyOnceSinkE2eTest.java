@@ -42,18 +42,18 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.test.util.MiniClusterWithClientResource;
+import org.apache.flink.testutils.junit.extensions.parameterized.Parameter;
+import org.apache.flink.testutils.junit.extensions.parameterized.ParameterizedTestExtension;
+import org.apache.flink.testutils.junit.extensions.parameterized.Parameters;
 import org.apache.flink.util.ExceptionUtils;
-import org.apache.flink.util.LogLevelRule;
 import org.apache.flink.util.function.SerializableSupplier;
 
 import com.mysql.cj.jdbc.MysqlXADataSource;
 import oracle.jdbc.xa.client.OracleXADataSource;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.postgresql.xa.PGXADataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,10 +92,9 @@ import static org.apache.flink.streaming.api.environment.ExecutionCheckpointingO
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.slf4j.event.Level.TRACE;
 
 /** A simple end-to-end test for {@link JdbcXaSinkFunction}. */
-@RunWith(Parameterized.class)
+@ExtendWith(ParameterizedTestExtension.class)
 public class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
     private static final Random RANDOM = new Random(System.currentTimeMillis());
 
@@ -103,14 +102,6 @@ public class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
 
     private static final long CHECKPOINT_TIMEOUT_MS = 20_000L;
     private static final long TASK_CANCELLATION_TIMEOUT_MS = 20_000L;
-
-    // todo: remove after fixing FLINK-22889
-    @ClassRule
-    public static final LogLevelRule TEST_LOG_LEVEL_RULE =
-            new LogLevelRule()
-                    .set(JdbcExactlyOnceSinkE2eTest.class, TRACE)
-                    .set(XaFacadeImpl.class, TRACE)
-                    .set(MySqlJdbcExactlyOnceSinkTestEnv.InnoDbStatusLogger.class, TRACE);
 
     private interface JdbcExactlyOnceSinkTestEnv {
         void start();
@@ -124,7 +115,7 @@ public class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         int getParallelism();
     }
 
-    @Parameterized.Parameter public JdbcExactlyOnceSinkTestEnv dbEnv;
+    @Parameter public JdbcExactlyOnceSinkTestEnv dbEnv;
 
     private MiniClusterWithClientResource cluster;
 
@@ -138,7 +129,7 @@ public class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
     // not using SharedObjects because we want to explicitly control which tag (attempt) to use
     private static final Map<Integer, CountDownLatch> inactiveMappers = new ConcurrentHashMap<>();
 
-    @Parameterized.Parameters(name = "{0}")
+    @Parameters(name = "{0}")
     public static Collection<JdbcExactlyOnceSinkTestEnv> parameters() {
         return Arrays.asList(
                 // PGSQL: check for issues with suspending connections (requires pooling) and
@@ -154,7 +145,7 @@ public class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
                 );
     }
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         Configuration configuration = new Configuration();
         // single failover region to allow checkpointing even after some sources have finished and
@@ -177,7 +168,7 @@ public class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         super.before();
     }
 
-    @After
+    @AfterEach
     @Override
     public void after() {
         // no need for cleanup - done by test container tear down
@@ -190,8 +181,8 @@ public class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         inactiveMappers.clear();
     }
 
-    @Test
-    public void testInsert() throws Exception {
+    @TestTemplate
+    void testInsert() throws Exception {
         long started = System.currentTimeMillis();
         LOG.info("Test insert for {}", dbEnv);
         int elementsPerSource = 50;

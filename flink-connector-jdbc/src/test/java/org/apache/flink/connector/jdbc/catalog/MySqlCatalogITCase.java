@@ -26,22 +26,24 @@ import org.apache.flink.table.catalog.CatalogBaseTable;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
+import org.apache.flink.testutils.junit.extensions.parameterized.ParameterizedTestExtension;
+import org.apache.flink.testutils.junit.extensions.parameterized.Parameters;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CollectionUtil;
 
 import org.apache.flink.shaded.guava30.com.google.common.collect.Lists;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -51,7 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** E2E test for {@link MySqlCatalog}. */
-@RunWith(Parameterized.class)
+@ExtendWith(ParameterizedTestExtension.class)
 public class MySqlCatalogITCase extends MySqlCatalogTestBase {
 
     private static final List<Row> ALL_TYPES_ROWS =
@@ -154,8 +156,8 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
     private final MySqlCatalog catalog;
     private TableEnvironment tEnv;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         this.tEnv = TableEnvironment.create(EnvironmentSettings.inStreamingMode());
         tEnv.getConfig().set(TABLE_EXEC_RESOURCE_DEFAULT_PARALLELISM, 1);
 
@@ -168,15 +170,15 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
         catalog = CATALOGS.get(version);
     }
 
-    @Parameterized.Parameters(name = "version = {0}")
-    public static String[] params() {
-        return DOCKER_IMAGE_NAMES.toArray(new String[0]);
+    @Parameters(name = "version = {0}")
+    public static Collection<String> params() {
+        return DOCKER_IMAGE_NAMES;
     }
 
     // ------ databases ------
 
-    @Test
-    public void testGetDb_DatabaseNotExistException() throws Exception {
+    @TestTemplate
+    void testGetDb_DatabaseNotExistException() throws Exception {
         String databaseNotExist = "nonexistent";
         assertThatThrownBy(() -> catalog.getDatabase(databaseNotExist))
                 .satisfies(
@@ -187,14 +189,14 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
                                         databaseNotExist)));
     }
 
-    @Test
-    public void testListDatabases() {
+    @TestTemplate
+    void testListDatabases() {
         List<String> actual = catalog.listDatabases();
         assertThat(actual).containsExactly(TEST_DB, TEST_DB2);
     }
 
-    @Test
-    public void testDbExists() throws Exception {
+    @TestTemplate
+    void testDbExists() throws Exception {
         String databaseNotExist = "nonexistent";
         assertThat(catalog.databaseExists(databaseNotExist)).isFalse();
         assertThat(catalog.databaseExists(TEST_DB)).isTrue();
@@ -202,8 +204,8 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
 
     // ------ tables ------
 
-    @Test
-    public void testListTables() throws DatabaseNotExistException {
+    @TestTemplate
+    void testListTables() throws DatabaseNotExistException {
         List<String> actual = catalog.listTables(TEST_DB);
         assertThat(actual)
                 .isEqualTo(
@@ -214,8 +216,8 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
                                 TEST_TABLE_PK));
     }
 
-    @Test
-    public void testListTables_DatabaseNotExistException() throws DatabaseNotExistException {
+    @TestTemplate
+    void testListTables_DatabaseNotExistException() throws DatabaseNotExistException {
         String anyDatabase = "anyDatabase";
         assertThatThrownBy(() -> catalog.listTables(anyDatabase))
                 .satisfies(
@@ -225,15 +227,15 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
                                         "Database %s does not exist in Catalog", anyDatabase)));
     }
 
-    @Test
-    public void testTableExists() {
+    @TestTemplate
+    void testTableExists() {
         String tableNotExist = "nonexist";
         assertThat(catalog.tableExists(new ObjectPath(TEST_DB, tableNotExist))).isFalse();
         assertThat(catalog.tableExists(new ObjectPath(TEST_DB, TEST_TABLE_ALL_TYPES))).isTrue();
     }
 
-    @Test
-    public void testGetTables_TableNotExistException() throws TableNotExistException {
+    @TestTemplate
+    void testGetTables_TableNotExistException() throws TableNotExistException {
         String anyTableNotExist = "anyTable";
         assertThatThrownBy(() -> catalog.getTable(new ObjectPath(TEST_DB, anyTableNotExist)))
                 .satisfies(
@@ -244,8 +246,8 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
                                         TEST_DB, anyTableNotExist)));
     }
 
-    @Test
-    public void testGetTables_TableNotExistException_NoDb() throws TableNotExistException {
+    @TestTemplate
+    void testGetTables_TableNotExistException_NoDb() throws TableNotExistException {
         String databaseNotExist = "nonexistdb";
         String tableNotExist = "anyTable";
         assertThatThrownBy(() -> catalog.getTable(new ObjectPath(databaseNotExist, tableNotExist)))
@@ -257,14 +259,14 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
                                         databaseNotExist, tableNotExist)));
     }
 
-    @Test
-    public void testGetTable() throws TableNotExistException {
+    @TestTemplate
+    void testGetTable() throws TableNotExistException {
         CatalogBaseTable table = catalog.getTable(new ObjectPath(TEST_DB, TEST_TABLE_ALL_TYPES));
         assertThat(table.getUnresolvedSchema()).isEqualTo(TABLE_SCHEMA);
     }
 
-    @Test
-    public void testGetTablePrimaryKey() throws TableNotExistException {
+    @TestTemplate
+    void testGetTablePrimaryKey() throws TableNotExistException {
         // test the PK of test.t_user
         Schema tableSchemaTestPK1 =
                 Schema.newBuilder()
@@ -290,8 +292,8 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
 
     // ------ test select query. ------
 
-    @Test
-    public void testSelectField() {
+    @TestTemplate
+    void testSelectField() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
                         tEnv.sqlQuery(String.format("select pid from %s", TEST_TABLE_ALL_TYPES))
@@ -303,8 +305,8 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
                                 Row.ofKind(RowKind.INSERT, 1L), Row.ofKind(RowKind.INSERT, 2L)));
     }
 
-    @Test
-    public void testWithoutCatalogDB() {
+    @TestTemplate
+    void testWithoutCatalogDB() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
                         tEnv.sqlQuery(String.format("select * from %s", TEST_TABLE_ALL_TYPES))
@@ -314,8 +316,8 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
         assertThat(results).isEqualTo(ALL_TYPES_ROWS);
     }
 
-    @Test
-    public void testWithoutCatalog() {
+    @TestTemplate
+    void testWithoutCatalog() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
                         tEnv.sqlQuery(
@@ -327,8 +329,8 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
         assertThat(results).isEqualTo(ALL_TYPES_ROWS);
     }
 
-    @Test
-    public void testFullPath() {
+    @TestTemplate
+    void testFullPath() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
                         tEnv.sqlQuery(
@@ -342,8 +344,8 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
         assertThat(results).isEqualTo(ALL_TYPES_ROWS);
     }
 
-    @Test
-    public void testSelectToInsert() throws Exception {
+    @TestTemplate
+    void testSelectToInsert() throws Exception {
 
         String sql =
                 String.format(
@@ -359,8 +361,8 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
         assertThat(results).isEqualTo(ALL_TYPES_ROWS);
     }
 
-    @Test
-    public void testGroupByInsert() throws Exception {
+    @TestTemplate
+    void testGroupByInsert() throws Exception {
         // Changes primary key for the next record.
         tEnv.executeSql(
                         String.format(

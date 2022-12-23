@@ -41,7 +41,7 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test suite for {@link JdbcRowDataLookupFunction}. */
-public class JdbcRowDataLookupFunctionTest extends JdbcLookupTestBase {
+class JdbcRowDataLookupFunctionTest extends JdbcLookupTestBase {
 
     private static final String[] fieldNames = new String[] {"id1", "id2", "comment1", "comment2"};
     private static final DataType[] fieldDataTypes =
@@ -53,7 +53,7 @@ public class JdbcRowDataLookupFunctionTest extends JdbcLookupTestBase {
 
     @ParameterizedTest(name = "withFailure = {0}")
     @ValueSource(booleans = {false, true})
-    public void testLookup(boolean withFailure) throws Exception {
+    void testLookup(boolean withFailure) throws Exception {
         JdbcRowDataLookupFunction lookupFunction = buildRowDataLookupFunction(withFailure);
 
         ListOutputCollector collector = new ListOutputCollector();

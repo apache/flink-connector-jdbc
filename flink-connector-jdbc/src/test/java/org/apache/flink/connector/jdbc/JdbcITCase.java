@@ -22,7 +22,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.function.FunctionWithException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -63,7 +63,7 @@ public class JdbcITCase extends JdbcTestBase {
             };
 
     @Test
-    public void testInsert() throws Exception {
+    void testInsert() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(1);
@@ -82,7 +82,7 @@ public class JdbcITCase extends JdbcTestBase {
     }
 
     @Test
-    public void testObjectReuse() throws Exception {
+    void testObjectReuse() throws Exception {
         Configuration configuration = new Configuration();
         configuration.set(OBJECT_REUSE, true);
         StreamExecutionEnvironment env =
