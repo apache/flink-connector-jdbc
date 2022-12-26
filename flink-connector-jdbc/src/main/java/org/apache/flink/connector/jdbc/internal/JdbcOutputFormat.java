@@ -399,7 +399,14 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
     }
 
     public void updateExecutor(boolean reconnect) throws SQLException, ClassNotFoundException {
-        jdbcStatementExecutor.closeStatements();
+        try {
+            jdbcStatementExecutor.closeStatements();
+        } catch (SQLException e) {
+            // FLINK-30431 We encountered this exception may be due to the connection is closed, it
+            // depends on the behavior of different databases. To ensure that the connection can be
+            // re-established, we need to catch this exception here.
+            LOG.warn("JDBC statements were not closed gracefully.", e);
+        }
         jdbcStatementExecutor.prepareStatements(
                 reconnect
                         ? connectionProvider.reestablishConnection()
