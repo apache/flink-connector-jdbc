@@ -44,9 +44,9 @@ import org.apache.flink.table.planner.runtime.utils.TestData;
 import org.apache.flink.table.runtime.connector.sink.SinkRuntimeProviderContext;
 import org.apache.flink.types.Row;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -77,7 +77,7 @@ public class Db2TableSinkITCase extends Db2TestBaseITCase {
     public static final String OUTPUT_TABLE5 = "checkpointTable";
     public static final String USER_TABLE = "USER_TABLE";
 
-    @Before
+    @BeforeEach
     public void before() throws ClassNotFoundException, SQLException {
 
         containerUrl =
@@ -132,7 +132,7 @@ public class Db2TableSinkITCase extends Db2TestBaseITCase {
         }
     }
 
-    @After
+    @AfterEach
     public void after() throws SQLException {
         try (Connection conn = getJdbcConnection();
                 Statement stat = conn.createStatement()) {

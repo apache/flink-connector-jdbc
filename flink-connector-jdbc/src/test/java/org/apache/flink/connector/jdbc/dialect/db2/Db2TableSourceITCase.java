@@ -24,9 +24,9 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CollectionUtil;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -45,7 +45,7 @@ public class Db2TableSourceITCase extends Db2TestBaseITCase {
     private static StreamExecutionEnvironment env;
     private static TableEnvironment tEnv;
 
-    @Before
+    @BeforeEach
     public void before() throws ClassNotFoundException, SQLException {
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         tEnv = StreamTableEnvironment.create(env);
@@ -91,7 +91,7 @@ public class Db2TableSourceITCase extends Db2TestBaseITCase {
         }
     }
 
-    @After
+    @AfterEach
     public void after() throws ClassNotFoundException, SQLException {
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         tEnv = StreamTableEnvironment.create(env);

@@ -20,8 +20,8 @@ package org.apache.flink.connector.jdbc.dialect.db2;
 
 import org.apache.flink.test.util.AbstractTestBase;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Db2Container;
@@ -46,14 +46,14 @@ public class Db2TestBaseITCase extends AbstractTestBase {
                     .acceptLicense()
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
-    @BeforeClass
+    @BeforeAll
     public static void startContainers() {
         LOG.info("Starting containers...");
         Startables.deepStart(DB2_CONTAINER).join();
         LOG.info("Containers are started.");
     }
 
-    @AfterClass
+    @AfterAll
     public static void stopContainers() {
         LOG.info("Stopping containers...");
         if (DB2_CONTAINER != null) {
