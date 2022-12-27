@@ -24,7 +24,7 @@ import org.apache.flink.connector.jdbc.fakedb.driver.FakeConnection1;
 import org.apache.flink.connector.jdbc.fakedb.driver.FakeConnection2;
 import org.apache.flink.connector.jdbc.fakedb.driver.FakeConnection3;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.Driver;
@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test for {@link SimpleJdbcConnectionProvider}. */
-public class SimpleJdbcConnectionProviderTest {
+class SimpleJdbcConnectionProviderTest {
 
     private static JdbcConnectionProvider newFakeConnectionProviderWithDriverName(
             String driverName) {
@@ -59,7 +59,7 @@ public class SimpleJdbcConnectionProviderTest {
     }
 
     @Test
-    public void testEstablishConnection() throws Exception {
+    void testEstablishConnection() throws Exception {
         JdbcConnectionProvider provider = newFakeConnectionProvider();
         assertThat(provider.getConnection()).isNull();
         assertThat(provider.isConnectionValid()).isFalse();
@@ -75,7 +75,7 @@ public class SimpleJdbcConnectionProviderTest {
     }
 
     @Test
-    public void testEstablishConnectionWithoutDriverName() throws Exception {
+    void testEstablishConnectionWithoutDriverName() throws Exception {
         JdbcConnectionProvider provider = newProvider(FakeDBUtils.TEST_DB_URL, null);
         assertThat(provider.getConnection()).isNull();
         assertThat(provider.isConnectionValid()).isFalse();
@@ -93,7 +93,7 @@ public class SimpleJdbcConnectionProviderTest {
     }
 
     @Test
-    public void testEstablishDriverConnection() throws Exception {
+    void testEstablishDriverConnection() throws Exception {
         JdbcConnectionProvider provider1 =
                 newFakeConnectionProviderWithDriverName(FakeDBUtils.DRIVER1_CLASS_NAME);
         Connection connection1 = provider1.getOrEstablishConnection();
@@ -106,7 +106,7 @@ public class SimpleJdbcConnectionProviderTest {
     }
 
     @Test
-    public void testEstablishUnregisteredDriverConnection() throws Exception {
+    void testEstablishUnregisteredDriverConnection() throws Exception {
         String unregisteredDriverName = FakeDBUtils.DRIVER3_CLASS_NAME;
         Set<String> registeredDriverNames =
                 Collections.list(DriverManager.getDrivers()).stream()
@@ -122,7 +122,7 @@ public class SimpleJdbcConnectionProviderTest {
     }
 
     @Test
-    public void testInvalidDriverUrl() {
+    void testInvalidDriverUrl() {
         JdbcConnectionProvider provider =
                 newProvider(FakeDBUtils.TEST_DB_INVALID_URL, FakeDBUtils.DRIVER1_CLASS_NAME);
 
@@ -133,7 +133,7 @@ public class SimpleJdbcConnectionProviderTest {
     }
 
     @Test
-    public void testCloseNullConnection() throws Exception {
+    void testCloseNullConnection() throws Exception {
         JdbcConnectionProvider provider = newFakeConnectionProvider();
         provider.closeConnection();
         assertThat(provider.getConnection()).isNull();
@@ -141,7 +141,7 @@ public class SimpleJdbcConnectionProviderTest {
     }
 
     @Test
-    public void testCloseConnection() throws Exception {
+    void testCloseConnection() throws Exception {
         JdbcConnectionProvider provider = newFakeConnectionProvider();
 
         Connection connection1 = provider.getOrEstablishConnection();
@@ -160,7 +160,7 @@ public class SimpleJdbcConnectionProviderTest {
     }
 
     @Test
-    public void testReestablishCachedConnection() throws Exception {
+    void testReestablishCachedConnection() throws Exception {
         JdbcConnectionProvider provider = newFakeConnectionProvider();
 
         Connection connection1 = provider.reestablishConnection();

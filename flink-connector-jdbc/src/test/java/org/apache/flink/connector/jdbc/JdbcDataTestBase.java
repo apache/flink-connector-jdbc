@@ -25,7 +25,7 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.types.Row;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mockito;
 
 import java.sql.SQLException;
@@ -38,8 +38,8 @@ import static org.mockito.Mockito.doReturn;
  * and inserts data before each test.
  */
 public abstract class JdbcDataTestBase extends JdbcTestBase {
-    @Before
-    public void initData() throws SQLException {
+    @BeforeEach
+    void initData() throws SQLException {
         JdbcTestFixture.initData(getDbMetadata());
     }
 

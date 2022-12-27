@@ -19,7 +19,7 @@ package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.api.common.JobID;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.transaction.xa.Xid;
 
@@ -31,18 +31,18 @@ import static org.apache.flink.connector.jdbc.xa.JdbcXaSinkTestBase.TEST_RUNTIME
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Simple uniqueness tests for the {@link SemanticXidGenerator}. */
-public class SemanticXidGeneratorTest {
+class SemanticXidGeneratorTest {
     private static final int COUNT = 100_000;
 
     @Test
-    public void testXidsUniqueAmongCheckpoints() {
+    void testXidsUniqueAmongCheckpoints() {
         SemanticXidGenerator xidGenerator = new SemanticXidGenerator();
         xidGenerator.open();
         checkUniqueness(checkpoint -> xidGenerator.generateXid(TEST_RUNTIME_CONTEXT, checkpoint));
     }
 
     @Test
-    public void testXidsUniqueAmongJobs() {
+    void testXidsUniqueAmongJobs() {
         long checkpointId = 1L;
         SemanticXidGenerator generator = new SemanticXidGenerator();
         checkUniqueness(

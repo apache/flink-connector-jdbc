@@ -29,12 +29,13 @@ import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.flink.util.CollectionUtil;
 
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
@@ -56,7 +57,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Test unsigned type conversion between Flink and JDBC driver mysql, the test underlying use MySQL
  * to mock a DB.
  */
-public class UnsignedTypeConversionITCase extends AbstractTestBase {
+@Testcontainers
+class UnsignedTypeConversionITCase extends AbstractTestBase {
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(UnsignedTypeConversionITCase.class);
@@ -96,8 +98,8 @@ public class UnsignedTypeConversionITCase extends AbstractTestBase {
                 new BigDecimal("18446744073709551615")
             };
 
-    @ClassRule
-    public static final MySQLContainer<?> MYSQL_CONTAINER =
+    @Container
+    static final MySQLContainer<?> MYSQL_CONTAINER =
             new MySQLContainer<>(MYSQL_57_IMAGE)
                     .withEnv(DEFAULT_CONTAINER_ENV_MAP)
                     .withUsername(USER)
@@ -106,7 +108,7 @@ public class UnsignedTypeConversionITCase extends AbstractTestBase {
                     .withLogConsumer(new Slf4jLogConsumer(LOGGER));
 
     @Test
-    public void testUnsignedType() throws Exception {
+    void testUnsignedType() throws Exception {
         try (Connection con =
                 DriverManager.getConnection(MYSQL_CONTAINER.getJdbcUrl(), USER, PASSWORD)) {
             StreamExecutionEnvironment sEnv = StreamExecutionEnvironment.getExecutionEnvironment();

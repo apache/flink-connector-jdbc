@@ -25,13 +25,14 @@ import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CommonCatalogOptions;
 import org.apache.flink.table.factories.FactoryUtil;
 
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.sql.SQLException;
@@ -41,7 +42,8 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link JdbcCatalogFactory}. */
-public class JdbcCatalogFactoryTest {
+@Testcontainers
+class JdbcCatalogFactoryTest {
 
     public static final Logger LOG = LoggerFactory.getLogger(JdbcCatalogFactoryTest.class);
 
@@ -55,15 +57,15 @@ public class JdbcCatalogFactoryTest {
     protected static final DockerImageName POSTGRES_IMAGE =
             DockerImageName.parse(DockerImageVersions.POSTGRES);
 
-    @ClassRule
-    public static final PostgreSQLContainer<?> POSTGRES_CONTAINER =
+    @Container
+    static final PostgreSQLContainer<?> POSTGRES_CONTAINER =
             new PostgreSQLContainer<>(POSTGRES_IMAGE)
                     .withUsername(TEST_USERNAME)
                     .withPassword(TEST_PWD)
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
-    @BeforeClass
-    public static void setup() throws SQLException {
+    @BeforeAll
+    static void setup() throws SQLException {
         // jdbc:postgresql://localhost:50807/postgres?user=postgres
         String jdbcUrl = POSTGRES_CONTAINER.getJdbcUrl();
         // jdbc:postgresql://localhost:50807/
@@ -80,7 +82,7 @@ public class JdbcCatalogFactoryTest {
     }
 
     @Test
-    public void test() {
+    void test() {
         final Map<String, String> options = new HashMap<>();
         options.put(CommonCatalogOptions.CATALOG_TYPE.key(), JdbcCatalogFactoryOptions.IDENTIFIER);
         options.put(

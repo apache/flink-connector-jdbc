@@ -21,7 +21,7 @@ import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /** {@link XaFacadeImpl} tests. */
-public class JdbcXaFacadeImplTest extends JdbcTestBase {
+class JdbcXaFacadeImplTest extends JdbcTestBase {
 
     private static final Xid XID =
             new Xid() {
@@ -58,7 +58,7 @@ public class JdbcXaFacadeImplTest extends JdbcTestBase {
             };
 
     @Test
-    public void testRecover() throws Exception {
+    void testRecover() throws Exception {
         try (XaFacade f = XaFacadeImpl.fromXaDataSource(getDbMetadata().buildXaDataSource())) {
             f.open();
             assertThat(f.recover()).isEmpty();
@@ -80,7 +80,7 @@ public class JdbcXaFacadeImplTest extends JdbcTestBase {
     }
 
     @Test
-    public void testClose() throws Exception {
+    void testClose() throws Exception {
         // some drivers (derby, H2) close both connection on either
         // connection.close/xaConnection.close() call, so use mocks here to:
         // a) prevent closing XA connection from connection.close()

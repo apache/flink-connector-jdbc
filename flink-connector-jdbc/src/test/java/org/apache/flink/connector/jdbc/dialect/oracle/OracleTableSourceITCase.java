@@ -25,10 +25,10 @@ import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CollectionUtil;
 
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The Table Source ITCase for {@link OracleDialect}. */
-public class OracleTableSourceITCase extends AbstractTestBase {
+class OracleTableSourceITCase extends AbstractTestBase {
 
     private static final OracleContainer container = new OracleContainer();
     private static String containerUrl;
@@ -53,8 +53,8 @@ public class OracleTableSourceITCase extends AbstractTestBase {
     private static StreamExecutionEnvironment env;
     private static TableEnvironment tEnv;
 
-    @BeforeClass
-    public static void beforeAll() throws ClassNotFoundException, SQLException {
+    @BeforeAll
+    static void beforeAll() throws ClassNotFoundException, SQLException {
         container.start();
         containerUrl = container.getJdbcUrl();
         Class.forName(container.getDriverClassName());
@@ -96,8 +96,8 @@ public class OracleTableSourceITCase extends AbstractTestBase {
         }
     }
 
-    @AfterClass
-    public static void afterAll() throws Exception {
+    @AfterAll
+    static void afterAll() throws Exception {
         Class.forName(container.getDriverClassName());
         try (Connection conn = DriverManager.getConnection(containerUrl);
                 Statement statement = conn.createStatement()) {
@@ -106,14 +106,14 @@ public class OracleTableSourceITCase extends AbstractTestBase {
         container.stop();
     }
 
-    @Before
-    public void before() throws Exception {
+    @BeforeEach
+    void before() throws Exception {
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         tEnv = StreamTableEnvironment.create(env);
     }
 
     @Test
-    public void testJdbcSource() throws Exception {
+    void testJdbcSource() throws Exception {
         tEnv.executeSql(
                 "CREATE TABLE "
                         + INPUT_TABLE
@@ -158,7 +158,7 @@ public class OracleTableSourceITCase extends AbstractTestBase {
     }
 
     @Test
-    public void testProject() throws Exception {
+    void testProject() throws Exception {
         tEnv.executeSql(
                 "CREATE TABLE "
                         + INPUT_TABLE
@@ -201,7 +201,7 @@ public class OracleTableSourceITCase extends AbstractTestBase {
     }
 
     @Test
-    public void testLimit() throws Exception {
+    void testLimit() throws Exception {
         tEnv.executeSql(
                 "CREATE TABLE "
                         + INPUT_TABLE

@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.utils;
 
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Types;
 
@@ -29,10 +29,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Testing the type conversions from Flink to SQL types. */
-public class JdbcTypeUtilTest {
+class JdbcTypeUtilTest {
 
     @Test
-    public void testTypeConversions() {
+    void testTypeConversions() {
         assertThat(logicalTypeToSqlType(LogicalTypeRoot.INTEGER)).isEqualTo(Types.INTEGER);
         testUnsupportedType(LogicalTypeRoot.RAW);
         testUnsupportedType(LogicalTypeRoot.MAP);

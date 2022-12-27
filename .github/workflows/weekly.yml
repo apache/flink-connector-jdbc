@@ -16,16 +16,17 @@
 # limitations under the License.
 ################################################################################
 
-name: Build flink-connector-jdbc
+name: Nightly
 on:
   schedule:
     - cron: "0 0 * * 0"
 jobs:
   compile_and_test:
+    if: github.repository_owner == 'apache'
     strategy:
       matrix:
         flink: [1.16-SNAPSHOT, 1.17-SNAPSHOT]
-    uses: ./.github/workflows/ci.yml
+    uses: apache/flink-connector-shared-utils/.github/workflows/ci.yml@ci_utils
     with:
       flink_version: ${{ matrix.flink }}
       flink_url: https://s3.amazonaws.com/flink-nightly/flink-${{ matrix.flink }}-bin-scala_2.12.tgz

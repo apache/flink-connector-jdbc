@@ -46,9 +46,9 @@ import org.apache.flink.table.runtime.connector.sink.SinkRuntimeProviderContext;
 import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -68,7 +68,7 @@ import static org.apache.flink.table.api.Expressions.$;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSink;
 
 /** The ITCase for {@link JdbcDynamicTableSink}. */
-public class JdbcDynamicTableSinkITCase extends AbstractTestBase {
+class JdbcDynamicTableSinkITCase extends AbstractTestBase {
 
     public static final String DB_URL = "jdbc:derby:memory:upsert";
     public static final String OUTPUT_TABLE1 = "dynamicSinkForUpsert";
@@ -78,8 +78,8 @@ public class JdbcDynamicTableSinkITCase extends AbstractTestBase {
     public static final String OUTPUT_TABLE5 = "checkpointTable";
     public static final String USER_TABLE = "USER_TABLE";
 
-    @BeforeClass
-    public static void beforeAll() throws ClassNotFoundException, SQLException {
+    @BeforeAll
+    static void beforeAll() throws ClassNotFoundException, SQLException {
         System.setProperty(
                 "derby.stream.error.field", JdbcTestFixture.class.getCanonicalName() + ".DEV_NULL");
 
@@ -129,8 +129,8 @@ public class JdbcDynamicTableSinkITCase extends AbstractTestBase {
         }
     }
 
-    @AfterClass
-    public static void afterAll() throws Exception {
+    @AfterAll
+    static void afterAll() throws Exception {
         TestValuesTableFactory.clearAllData();
         Class.forName(DERBY_EBOOKSHOP_DB.getDriverClass());
         try (Connection conn = DriverManager.getConnection(DB_URL);
@@ -181,7 +181,7 @@ public class JdbcDynamicTableSinkITCase extends AbstractTestBase {
     }
 
     @Test
-    public void testReal() throws Exception {
+    void testReal() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.getConfig().enableObjectReuse();
         StreamTableEnvironment tEnv =
@@ -205,7 +205,7 @@ public class JdbcDynamicTableSinkITCase extends AbstractTestBase {
     }
 
     @Test
-    public void testUpsert() throws Exception {
+    void testUpsert() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.getConfig().enableObjectReuse();
         StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
@@ -271,7 +271,7 @@ public class JdbcDynamicTableSinkITCase extends AbstractTestBase {
     }
 
     @Test
-    public void testAppend() throws Exception {
+    void testAppend() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.getConfig().enableObjectReuse();
         env.getConfig().setParallelism(1);
@@ -312,7 +312,7 @@ public class JdbcDynamicTableSinkITCase extends AbstractTestBase {
     }
 
     @Test
-    public void testBatchSink() throws Exception {
+    void testBatchSink() throws Exception {
         TableEnvironment tEnv = TableEnvironment.create(EnvironmentSettings.inBatchMode());
 
         tEnv.executeSql(
@@ -355,7 +355,7 @@ public class JdbcDynamicTableSinkITCase extends AbstractTestBase {
     }
 
     @Test
-    public void testReadingFromChangelogSource() throws Exception {
+    void testReadingFromChangelogSource() throws Exception {
         TableEnvironment tEnv = TableEnvironment.create(EnvironmentSettings.newInstance().build());
         String dataId = TestValuesTableFactory.registerData(TestData.userChangelog());
         tEnv.executeSql(
@@ -420,7 +420,7 @@ public class JdbcDynamicTableSinkITCase extends AbstractTestBase {
     }
 
     @Test
-    public void testFlushBufferWhenCheckpoint() throws Exception {
+    void testFlushBufferWhenCheckpoint() throws Exception {
         Map<String, String> options = new HashMap<>();
         options.put("connector", "jdbc");
         options.put("url", DB_URL);

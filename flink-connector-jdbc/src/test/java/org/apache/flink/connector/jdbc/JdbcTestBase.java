@@ -17,8 +17,8 @@
 
 package org.apache.flink.connector.jdbc;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Base class for JDBC test using DDL from {@link JdbcTestFixture}. It uses create tables before
@@ -26,12 +26,12 @@ import org.junit.Before;
  */
 public abstract class JdbcTestBase {
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         JdbcTestFixture.initSchema(getDbMetadata());
     }
 
-    @After
+    @AfterEach
     public void after() throws Exception {
         JdbcTestFixture.cleanupData(getDbMetadata().getUrl());
         JdbcTestFixture.cleanUpDatabasesStatic(getDbMetadata());

@@ -20,10 +20,12 @@ package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.testutils.junit.extensions.parameterized.Parameter;
+import org.apache.flink.testutils.junit.extensions.parameterized.ParameterizedTestExtension;
+import org.apache.flink.testutils.junit.extensions.parameterized.Parameters;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.annotation.Nullable;
 
@@ -35,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Tests for all DataTypes and Dialects of JDBC connector. */
-@RunWith(Parameterized.class)
+@ExtendWith(ParameterizedTestExtension.class)
 public class JdbcDataTypeTest {
 
     private static final String DDL_FORMAT =
@@ -49,7 +51,7 @@ public class JdbcDataTypeTest {
                     + "  'table-name'='myTable'\n"
                     + ")";
 
-    @Parameterized.Parameters(name = "{index}: {0}")
+    @Parameters(name = "{0}")
     public static List<TestItem> testData() {
         return Arrays.asList(
                 createTestItem("derby", "CHAR"),
@@ -178,10 +180,10 @@ public class JdbcDataTypeTest {
         return item;
     }
 
-    @Parameterized.Parameter public TestItem testItem;
+    @Parameter public TestItem testItem;
 
-    @Test
-    public void testDataTypeValidate() {
+    @TestTemplate
+    void testDataTypeValidate() {
         String sqlDDL = String.format(DDL_FORMAT, testItem.dataTypeExpr, testItem.dialect);
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();

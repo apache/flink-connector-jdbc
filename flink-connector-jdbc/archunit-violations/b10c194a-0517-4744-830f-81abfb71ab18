@@ -1,0 +1,2 @@
+Class <org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions> does not reside in a package 'org.apache.flink..table' in (JdbcConnectorOptions.java:0)
+org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions does not satisfy: annotated with @PublicEvolving or annotated with @Public

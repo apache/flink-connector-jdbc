@@ -29,9 +29,9 @@ import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.types.Row;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.sql.Connection;
@@ -57,14 +57,14 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
     private String[] fieldNames;
     private String[] keyFields;
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         fieldNames = new String[] {"id", "title", "author", "price", "qty"};
         keyFields = new String[] {"id"};
     }
 
     @Test
-    public void testUpsertFormatCloseBeforeOpen() throws Exception {
+    void testUpsertFormatCloseBeforeOpen() throws Exception {
         JdbcConnectorOptions options =
                 JdbcConnectorOptions.builder()
                         .setDBUrl(getDbMetadata().getUrl())
@@ -91,7 +91,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
      * JdbcOutputFormat#attemptFlush()} fails.
      */
     @Test
-    public void testDeleteExecutorUpdatedOnReconnect() throws Exception {
+    void testDeleteExecutorUpdatedOnReconnect() throws Exception {
         // first fail flush from the main executor
         boolean[] exceptionThrown = {false};
         // then record whether the delete executor was updated
@@ -171,7 +171,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
-    public void testJdbcOutputFormat() throws Exception {
+    void testJdbcOutputFormat() throws Exception {
         JdbcConnectorOptions options =
                 JdbcConnectorOptions.builder()
                         .setDBUrl(getDbMetadata().getUrl())
@@ -246,8 +246,8 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
         }
     }
 
-    @After
-    public void clearOutputTable() throws Exception {
+    @AfterEach
+    void clearOutputTable() throws Exception {
         if (format != null) {
             format.close();
         }
