@@ -20,23 +20,24 @@ package org.apache.flink.connector.jdbc.dialect.db2;
 
 import org.apache.flink.test.util.AbstractTestBase;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Db2Container;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.lifecycle.Startables;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /** Basic class for testing DB2 jdbc. */
+@Testcontainers
 public class Db2TestBaseITCase extends AbstractTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(Db2TestBaseITCase.class);
 
+    @Container
     protected static final Db2Container DB2_CONTAINER =
             new Db2Container()
                     .withUsername("db2inst1")
@@ -45,22 +46,6 @@ public class Db2TestBaseITCase extends AbstractTestBase {
                     .withEnv("ARCHIVE_LOGS", "true")
                     .acceptLicense()
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
-
-    @BeforeAll
-    public static void startContainers() {
-        LOG.info("Starting containers...");
-        Startables.deepStart(DB2_CONTAINER).join();
-        LOG.info("Containers are started.");
-    }
-
-    @AfterAll
-    public static void stopContainers() {
-        LOG.info("Stopping containers...");
-        if (DB2_CONTAINER != null) {
-            DB2_CONTAINER.stop();
-        }
-        LOG.info("Containers are stopped.");
-    }
 
     protected Connection getJdbcConnection() throws SQLException {
         return DriverManager.getConnection(
