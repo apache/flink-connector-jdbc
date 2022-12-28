@@ -119,6 +119,21 @@ public class JdbcDataTypeTest {
                 createTestItem("oracle", "TIMESTAMP(3)"),
                 createTestItem("oracle", "TIMESTAMP WITHOUT TIME ZONE"),
                 createTestItem("oracle", "VARBINARY"),
+                createTestItem("db2", "CHAR"),
+                createTestItem("db2", "VARCHAR"),
+                createTestItem("db2", "BOOLEAN"),
+                createTestItem("db2", "TINYINT"),
+                createTestItem("db2", "SMALLINT"),
+                createTestItem("db2", "INTEGER"),
+                createTestItem("db2", "BIGINT"),
+                createTestItem("db2", "FLOAT"),
+                createTestItem("db2", "DOUBLE"),
+                createTestItem("db2", "DECIMAL(10, 4)"),
+                createTestItem("db2", "DECIMAL(31, 18)"),
+                createTestItem("db2", "DATE"),
+                createTestItem("db2", "TIME"),
+                createTestItem("db2", "TIMESTAMP(3)"),
+                createTestItem("db2", "TIMESTAMP WITHOUT TIME ZONE"),
 
                 // Unsupported types throws errors.
                 createTestItem(
@@ -168,7 +183,12 @@ public class JdbcDataTypeTest {
                 createTestItem(
                         "oracle",
                         "VARBINARY(10)",
-                        "The Oracle dialect doesn't support type: VARBINARY(10)."));
+                        "The Oracle dialect doesn't support type: VARBINARY(10)."),
+                createTestItem("db2", "BINARY", "The Db2 dialect doesn't support type: BINARY(1)."),
+                createTestItem(
+                        "db2",
+                        "VARBINARY(10)",
+                        "The Db2 dialect doesn't support type: VARBINARY(10)."));
     }
 
     private static TestItem createTestItem(Object... args) {
