@@ -19,7 +19,7 @@
 package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.annotation.Experimental;
-import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.connection.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.connection.SimpleJdbcConnectionProvider;
@@ -53,18 +53,18 @@ public class JdbcRowOutputFormat
         super(
                 connectionProvider,
                 new JdbcExecutionOptions.Builder().withBatchSize(batchSize).build(),
-                ctx -> createRowExecutor(sql, typesArray, ctx),
+                config -> createRowExecutor(sql, typesArray, config),
                 JdbcOutputFormat.RecordExtractor.identity());
     }
 
     private static JdbcBatchStatementExecutor<Row> createRowExecutor(
-            String sql, int[] typesArray, RuntimeContext ctx) {
+            String sql, int[] typesArray, ExecutionConfig config) {
         JdbcStatementBuilder<Row> statementBuilder =
                 (st, record) -> setRecordToStatement(st, typesArray, record);
         return JdbcBatchStatementExecutor.simple(
                 sql,
                 statementBuilder,
-                ctx.getExecutionConfig().isObjectReuseEnabled() ? Row::copy : Function.identity());
+                config.isObjectReuseEnabled() ? Row::copy : Function.identity());
     }
 
     public static JdbcOutputFormatBuilder buildJdbcOutputFormat() {

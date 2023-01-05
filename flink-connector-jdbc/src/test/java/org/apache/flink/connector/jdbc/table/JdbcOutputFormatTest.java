@@ -110,7 +110,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                                             .setJdbcExecutionOptions(
                                                     JdbcExecutionOptions.builder().build())
                                             .build();
-                            outputFormat.open(0, 1);
+                            outputFormat.open(getExecutionConfig(false));
                         })
                 .isInstanceOf(IOException.class)
                 .hasMessage(expectedMsg);
@@ -141,7 +141,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                                             .setJdbcExecutionOptions(
                                                     JdbcExecutionOptions.builder().build())
                                             .build();
-                            outputFormat.open(0, 1);
+                            outputFormat.open(getExecutionConfig(false));
                         })
                 .isInstanceOf(IllegalStateException.class);
     }
@@ -173,8 +173,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                                             .setRowDataTypeInfo(rowDataTypeInfo)
                                             .build();
 
-                            setRuntimeContext(outputFormat, false);
-                            outputFormat.open(0, 1);
+                            outputFormat.open(getExecutionConfig(false));
 
                             RowData row =
                                     buildGenericData(4, "hello", "world", 0.99, "imthewrongtype");
@@ -211,8 +210,8 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                                                     JdbcExecutionOptions.builder().build())
                                             .setRowDataTypeInfo(rowDataTypeInfo)
                                             .build();
-                            setRuntimeContext(outputFormat, false);
-                            outputFormat.open(0, 1);
+
+                            outputFormat.open(getExecutionConfig(false));
 
                             TestEntry entry = TEST_DATA[0];
                             RowData row =
@@ -252,8 +251,8 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                                                     JdbcExecutionOptions.builder().build())
                                             .setRowDataTypeInfo(rowDataTypeInfo)
                                             .build();
-                            setRuntimeContext(outputFormat, true);
-                            outputFormat.open(0, 1);
+
+                            outputFormat.open(getExecutionConfig(true));
 
                             TestEntry entry = TEST_DATA[0];
                             RowData row =
@@ -297,11 +296,9 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         .setJdbcExecutionOptions(JdbcExecutionOptions.builder().build())
                         .setRowDataTypeInfo(rowDataTypeInfo)
                         .build();
-        setRuntimeContext(outputFormat, true);
-        outputFormat.open(0, 1);
 
-        setRuntimeContext(outputFormat, true);
-        outputFormat.open(0, 1);
+        outputFormat.open(getExecutionConfig(true));
+        outputFormat.open(getExecutionConfig(true));
 
         for (TestEntry entry : TEST_DATA) {
             outputFormat.writeRecord(
@@ -352,12 +349,12 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         .setJdbcExecutionOptions(executionOptions)
                         .setRowDataTypeInfo(rowDataTypeInfo)
                         .build();
-        setRuntimeContext(outputFormat, true);
-        outputFormat.open(0, 1);
+
+        outputFormat.open(getExecutionConfig(true));
 
         try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS_2)) {
-            outputFormat.open(0, 1);
+            outputFormat.open(getExecutionConfig(false));
             for (int i = 0; i < 2; ++i) {
                 outputFormat.writeRecord(
                         buildGenericData(
@@ -422,11 +419,10 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         .setJdbcExecutionOptions(executionOptions)
                         .setRowDataTypeInfo(rowDataTypeInfo)
                         .build();
-        setRuntimeContext(outputFormat, true);
 
         try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS_2)) {
-            outputFormat.open(0, 1);
+            outputFormat.open(getExecutionConfig(true));
             for (int i = 0; i < 2; ++i) {
                 outputFormat.writeRecord(
                         buildGenericData(
@@ -467,8 +463,8 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         .setJdbcExecutionOptions(JdbcExecutionOptions.builder().build())
                         .setRowDataTypeInfo(rowDataTypeInfo)
                         .build();
-        setRuntimeContext(outputFormat, true);
-        outputFormat.open(0, 1);
+
+        outputFormat.open(getExecutionConfig(true));
 
         // write records
         for (int i = 0; i < 3; i++) {

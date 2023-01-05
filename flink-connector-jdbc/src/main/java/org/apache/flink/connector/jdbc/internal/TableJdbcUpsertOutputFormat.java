@@ -18,7 +18,7 @@
 package org.apache.flink.connector.jdbc.internal;
 
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.internal.connection.JdbcConnectionProvider;
@@ -56,8 +56,8 @@ class TableJdbcUpsertOutputFormat
         this(
                 connectionProvider,
                 batchOptions,
-                ctx -> createUpsertRowExecutor(dmlOptions, ctx),
-                ctx -> createDeleteExecutor(dmlOptions, ctx));
+                config -> createUpsertRowExecutor(dmlOptions, config),
+                config -> createDeleteExecutor(dmlOptions, config));
     }
 
     @VisibleForTesting
@@ -72,9 +72,9 @@ class TableJdbcUpsertOutputFormat
     }
 
     @Override
-    public void open(int taskNumber, int numTasks) throws IOException {
-        super.open(taskNumber, numTasks);
-        deleteExecutor = deleteStatementExecutorFactory.apply(getRuntimeContext());
+    public void open(ExecutionConfig executionConfig) throws IOException {
+        super.open(executionConfig);
+        deleteExecutor = deleteStatementExecutorFactory.apply(executionConfig);
         try {
             deleteExecutor.prepareStatements(connectionProvider.getConnection());
         } catch (SQLException e) {
@@ -83,7 +83,7 @@ class TableJdbcUpsertOutputFormat
     }
 
     private static JdbcBatchStatementExecutor<Row> createDeleteExecutor(
-            JdbcDmlOptions dmlOptions, RuntimeContext ctx) {
+            JdbcDmlOptions dmlOptions, ExecutionConfig config) {
         int[] pkFields =
                 Arrays.stream(dmlOptions.getFieldNames())
                         .mapToInt(Arrays.asList(dmlOptions.getFieldNames())::indexOf)
@@ -150,7 +150,7 @@ class TableJdbcUpsertOutputFormat
     }
 
     private static JdbcBatchStatementExecutor<Row> createUpsertRowExecutor(
-            JdbcDmlOptions opt, RuntimeContext ctx) {
+            JdbcDmlOptions opt, ExecutionConfig config) {
         checkArgument(opt.getKeyFields().isPresent());
 
         int[] pkFields =
@@ -170,7 +170,7 @@ class TableJdbcUpsertOutputFormat
                                 createSimpleRowExecutor(
                                         parseNamedStatement(sql),
                                         opt.getFieldTypes(),
-                                        ctx.getExecutionConfig().isObjectReuseEnabled()))
+                                        config.isObjectReuseEnabled()))
                 .orElseGet(
                         () ->
                                 new InsertOrUpdateJdbcExecutor<>(
@@ -194,7 +194,7 @@ class TableJdbcUpsertOutputFormat
                                         createRowJdbcStatementBuilder(opt.getFieldTypes()),
                                         createRowJdbcStatementBuilder(opt.getFieldTypes()),
                                         createRowKeyExtractor(pkFields),
-                                        ctx.getExecutionConfig().isObjectReuseEnabled()
+                                        config.isObjectReuseEnabled()
                                                 ? Row::copy
                                                 : Function.identity()));
     }

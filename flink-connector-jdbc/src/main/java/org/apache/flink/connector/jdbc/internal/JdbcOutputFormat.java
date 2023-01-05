@@ -21,13 +21,10 @@ package org.apache.flink.connector.jdbc.internal;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.common.io.RichOutputFormat;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.typeutils.InputTypeConfigurable;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
 import org.apache.flink.connector.jdbc.internal.connection.JdbcConnectionProvider;
@@ -66,18 +63,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 /** A JDBC outputFormat that supports batching records before writing records to database. */
 @Internal
 public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExecutor<JdbcIn>>
-        extends RichOutputFormat<In> implements Flushable, InputTypeConfigurable {
-
-    protected final JdbcConnectionProvider connectionProvider;
-    @Nullable private TypeSerializer<In> serializer;
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public void setInputType(TypeInformation<?> type, ExecutionConfig executionConfig) {
-        if (executionConfig.isObjectReuseEnabled()) {
-            this.serializer = (TypeSerializer<In>) type.createSerializer(executionConfig);
-        }
-    }
+        implements Flushable, InputTypeConfigurable, AutoCloseable, Serializable {
 
     /**
      * An interface to extract a value from given argument.
@@ -97,12 +83,13 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
      * @param <T> The type of instance.
      */
     public interface StatementExecutorFactory<T extends JdbcBatchStatementExecutor<?>>
-            extends SerializableFunction<RuntimeContext, T> {}
+            extends SerializableFunction<ExecutionConfig, T> {}
 
     private static final long serialVersionUID = 1L;
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcOutputFormat.class);
 
+    protected final JdbcConnectionProvider connectionProvider;
     private final JdbcExecutionOptions executionOptions;
     private final StatementExecutorFactory<JdbcExec> statementExecutorFactory;
     private final RecordExtractor<In, JdbcIn> jdbcRecordExtractor;
@@ -115,6 +102,16 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
     private transient ScheduledFuture<?> scheduledFuture;
     private transient volatile Exception flushException;
 
+    @Nullable private TypeSerializer<In> serializer;
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void setInputType(TypeInformation<?> type, ExecutionConfig executionConfig) {
+        if (executionConfig.isObjectReuseEnabled()) {
+            this.serializer = (TypeSerializer<In>) type.createSerializer(executionConfig);
+        }
+    }
+
     public JdbcOutputFormat(
             @Nonnull JdbcConnectionProvider connectionProvider,
             @Nonnull JdbcExecutionOptions executionOptions,
@@ -126,22 +123,19 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
         this.jdbcRecordExtractor = checkNotNull(recordExtractor);
     }
 
-    @Override
-    public void configure(Configuration parameters) {}
-
     /**
      * Connects to the target database and initializes the prepared statement.
      *
-     * @param taskNumber The number of the parallel instance.
+     * @param executionConfig The execution configuration.
      */
-    @Override
-    public void open(int taskNumber, int numTasks) throws IOException {
+    public void open(ExecutionConfig executionConfig) throws IOException {
         try {
             connectionProvider.getOrEstablishConnection();
         } catch (Exception e) {
             throw new IOException("unable to open JDBC writer", e);
         }
-        jdbcStatementExecutor = createAndOpenStatementExecutor(statementExecutorFactory);
+        jdbcStatementExecutor =
+                createAndOpenStatementExecutor(statementExecutorFactory, executionConfig);
         if (executionOptions.getBatchIntervalMs() != 0 && executionOptions.getBatchSize() != 1) {
             this.scheduler =
                     Executors.newScheduledThreadPool(
@@ -166,8 +160,10 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
     }
 
     private JdbcExec createAndOpenStatementExecutor(
-            StatementExecutorFactory<JdbcExec> statementExecutorFactory) throws IOException {
-        JdbcExec exec = statementExecutorFactory.apply(getRuntimeContext());
+            StatementExecutorFactory<JdbcExec> statementExecutorFactory,
+            ExecutionConfig executionConfig)
+            throws IOException {
+        JdbcExec exec = statementExecutorFactory.apply(executionConfig);
         try {
             exec.prepareStatements(connectionProvider.getConnection());
         } catch (SQLException e) {
@@ -182,7 +178,6 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
         }
     }
 
-    @Override
     public final synchronized void writeRecord(In record) throws IOException {
         checkFlushException();
 
@@ -247,7 +242,6 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
     }
 
     /** Executes prepared statement and closes all resources of this instance. */
-    @Override
     public synchronized void close() {
         if (!closed) {
             closed = true;
@@ -369,11 +363,9 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
                 return new JdbcOutputFormat<>(
                         new SimpleJdbcConnectionProvider(options),
                         executionOptionsBuilder.build(),
-                        ctx ->
+                        config ->
                                 createSimpleRowExecutor(
-                                        sql,
-                                        dml.getFieldTypes(),
-                                        ctx.getExecutionConfig().isObjectReuseEnabled()),
+                                        sql, dml.getFieldTypes(), config.isObjectReuseEnabled()),
                         tuple2 -> {
                             Preconditions.checkArgument(tuple2.f0);
                             return tuple2.f1;

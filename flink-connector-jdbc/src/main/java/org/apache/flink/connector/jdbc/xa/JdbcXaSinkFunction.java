@@ -239,11 +239,9 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
             xaGroupOps.recoverAndRollback(getRuntimeContext(), xidGenerator);
         }
         beginTx(0L);
-        outputFormat.setRuntimeContext(getRuntimeContext());
+
         // open format only after starting the transaction so it gets a ready to  use connection
-        outputFormat.open(
-                getRuntimeContext().getIndexOfThisSubtask(),
-                getRuntimeContext().getNumberOfParallelSubtasks());
+        outputFormat.open(getRuntimeContext().getExecutionConfig());
     }
 
     @Override

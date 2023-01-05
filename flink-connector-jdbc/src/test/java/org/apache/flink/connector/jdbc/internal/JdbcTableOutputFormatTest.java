@@ -18,8 +18,6 @@
 
 package org.apache.flink.connector.jdbc.internal;
 
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -32,7 +30,6 @@ import org.apache.flink.types.Row;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -48,7 +45,6 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
 
 /** Tests for the {@link JdbcOutputFormat}. */
 public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
@@ -154,12 +150,8 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
                                     @Override
                                     public void closeStatements() {}
                                 });
-        RuntimeContext context = Mockito.mock(RuntimeContext.class);
-        ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
-        doReturn(config).when(context).getExecutionConfig();
-        doReturn(true).when(config).isObjectReuseEnabled();
-        format.setRuntimeContext(context);
-        format.open(0, 1);
+
+        format.open(getExecutionConfig(true));
 
         format.writeRecord(Tuple2.of(false /* false = delete*/, toRow(TEST_DATA[0])));
         format.flush();
@@ -189,12 +181,8 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
                         new SimpleJdbcConnectionProvider(options),
                         dmlOptions,
                         JdbcExecutionOptions.defaults());
-        RuntimeContext context = Mockito.mock(RuntimeContext.class);
-        ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
-        doReturn(config).when(context).getExecutionConfig();
-        doReturn(true).when(config).isObjectReuseEnabled();
-        format.setRuntimeContext(context);
-        format.open(0, 1);
+
+        format.open(getExecutionConfig(true));
 
         for (TestEntry entry : TEST_DATA) {
             format.writeRecord(Tuple2.of(true, toRow(entry)));

@@ -17,21 +17,16 @@
 
 package org.apache.flink.connector.jdbc;
 
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.types.Row;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.mockito.Mockito;
 
 import java.sql.SQLException;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
-import static org.mockito.Mockito.doReturn;
 
 /**
  * Base class for JDBC test using data from {@link JdbcTestFixture}. It uses {@link DerbyDbMetadata}
@@ -69,13 +64,5 @@ public abstract class JdbcDataTestBase extends JdbcTestBase {
             }
         }
         return row;
-    }
-
-    public static void setRuntimeContext(JdbcOutputFormat format, Boolean reused) {
-        RuntimeContext context = Mockito.mock(RuntimeContext.class);
-        ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
-        doReturn(config).when(context).getExecutionConfig();
-        doReturn(reused).when(config).isObjectReuseEnabled();
-        format.setRuntimeContext(context);
     }
 }

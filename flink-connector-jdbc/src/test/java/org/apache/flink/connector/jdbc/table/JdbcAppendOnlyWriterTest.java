@@ -18,8 +18,6 @@
 
 package org.apache.flink.connector.jdbc.table;
 
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
@@ -30,7 +28,6 @@ import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -43,7 +40,6 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doReturn;
 
 /** Test for the Append only mode. */
 class JdbcAppendOnlyWriterTest extends JdbcTestBase {
@@ -76,12 +72,8 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
                                             .setFieldNames(fieldNames)
                                             .setKeyFields(null)
                                             .build();
-                            RuntimeContext context = Mockito.mock(RuntimeContext.class);
-                            ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
-                            doReturn(config).when(context).getExecutionConfig();
-                            doReturn(true).when(config).isObjectReuseEnabled();
-                            format.setRuntimeContext(context);
-                            format.open(0, 1);
+
+                            format.open(getExecutionConfig(true));
 
                             // alter table schema to trigger retry logic after failure.
                             alterTable();
