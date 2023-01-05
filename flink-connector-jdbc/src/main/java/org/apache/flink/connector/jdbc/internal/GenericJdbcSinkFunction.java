@@ -20,7 +20,6 @@ package org.apache.flink.connector.jdbc.internal;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.InputTypeConfigurable;
 import org.apache.flink.configuration.Configuration;
@@ -47,9 +46,7 @@ public class GenericJdbcSinkFunction<T> extends RichSinkFunction<T>
     @Override
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);
-        RuntimeContext ctx = getRuntimeContext();
-        outputFormat.setRuntimeContext(ctx);
-        outputFormat.open(ctx.getIndexOfThisSubtask(), ctx.getNumberOfParallelSubtasks());
+        outputFormat.open(getRuntimeContext().getExecutionConfig());
     }
 
     @Override
