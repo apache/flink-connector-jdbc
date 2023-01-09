@@ -39,6 +39,7 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE_2;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE_3;
+import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE_4;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.SELECT_ALL_NEWBOOKS;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.SELECT_ALL_NEWBOOKS_2;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.SELECT_ALL_NEWBOOKS_3;
@@ -308,6 +309,30 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
             }
         } finally {
             jdbcOutputFormat.close();
+        }
+    }
+
+    @Test
+    public void testExceptionOnFlush() {
+        JdbcRowOutputFormat jdbcOutputFormat =
+                JdbcRowOutputFormat.buildJdbcOutputFormat()
+                        .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE_4))
+                        .setBatchSize(2)
+                        .finish();
+        setRuntimeContext(jdbcOutputFormat, true);
+        try {
+            jdbcOutputFormat.open(0, 1);
+
+            jdbcOutputFormat.writeRecord(toRow(TEST_DATA[1]));
+            jdbcOutputFormat.writeRecord(toRow(TEST_DATA[1]));
+        } catch (IOException e) {
+            try {
+                jdbcOutputFormat.close();
+            } catch (Exception e1) {
+                assertThat(jdbcOutputFormat.getConnection()).isEqualTo(null);
+            }
         }
     }
 
