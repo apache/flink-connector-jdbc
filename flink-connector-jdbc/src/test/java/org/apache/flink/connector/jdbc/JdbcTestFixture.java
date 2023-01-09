@@ -245,6 +245,7 @@ public class JdbcTestFixture {
             stat.executeUpdate("DROP TABLE " + OUTPUT_TABLE);
             stat.executeUpdate("DROP TABLE " + OUTPUT_TABLE_2);
             stat.executeUpdate("DROP TABLE " + OUTPUT_TABLE_3);
+            stat.executeUpdate("DROP TABLE " + OUTPUT_TABLE_4);
             stat.executeUpdate("DROP TABLE " + WORDS_TABLE);
         }
     }

@@ -313,7 +313,7 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
-    public void testExceptionOnFlush() throws SQLException {
+    public void testExceptionOnFlush() {
         JdbcRowOutputFormat jdbcOutputFormat =
                 JdbcRowOutputFormat.buildJdbcOutputFormat()
                         .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
@@ -322,15 +322,11 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
                         .setBatchSize(2)
                         .finish();
         setRuntimeContext(jdbcOutputFormat, true);
-        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
-                Statement stat = dbConn.createStatement()) {
+        try {
             jdbcOutputFormat.open(0, 1);
 
-            // To test for exceptions where the target table does not exist
-            stat.executeUpdate("DROP TABLE " + OUTPUT_TABLE_4);
-            for (int i = 0; i < 2; ++i) {
-                jdbcOutputFormat.writeRecord(toRow(TEST_DATA[i]));
-            }
+            jdbcOutputFormat.writeRecord(toRow(TEST_DATA[1]));
+            jdbcOutputFormat.writeRecord(toRow(TEST_DATA[1]));
         } catch (IOException e) {
             try {
                 jdbcOutputFormat.close();
