@@ -1,0 +1,28 @@
+{
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "properties": {
+      "float_col": { "type": "float" },
+      "double_col": { "type": "double" },
+      "byte_col": { "type": "byte" },
+      "short_col": { "type": "short" },
+      "integer_col": { "type": "integer" },
+      "long_col": { "type": "long" },
+      "unsigned_long_col": { "type": "long" },
+      "half_float_col": { "type": "half_float" },
+      "scaled_float_col": { "type": "scaled_float", "scaling_factor": 1000 },
+      "keyword_col": { "type": "keyword" },
+      "constant_keyword_col": { "type": "constant_keyword" },
+      "wildcard_col": { "type": "wildcard" },
+      "binary_col":  { "type": "text" },
+      "date_col": { "type": "date" },
+      "ip_col": { "type": "ip" },
+      "version_col": { "type": "version" },
+      "text_col": { "type": "text" },
+      "boolean_col": {"type": "boolean"},
+      "text_multifield_col": {"type": "text", "fields": {"raw": {"type":  "keyword"}}}
+    }
+  }
+}

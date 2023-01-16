@@ -195,6 +195,26 @@ under the License.
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Elastic tests -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>elasticsearch</artifactId>
+			<version>1.16.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.elasticsearch.plugin</groupId>
+			<artifactId>x-pack-sql-jdbc</artifactId>
+			<version>8.6.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>okhttp</artifactId>
+			<version>4.10.0</version>
+			<scope>test</scope>
+		</dependency>
+
 		<!-- ArchUit test dependencies -->
 
 		<dependency>
