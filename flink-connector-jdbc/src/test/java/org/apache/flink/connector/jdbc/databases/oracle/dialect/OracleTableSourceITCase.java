@@ -18,8 +18,9 @@
 
 package org.apache.flink.connector.jdbc.databases.oracle.dialect;
 
-import org.apache.flink.connector.jdbc.databases.oracle.OracleDatabase;
-import org.apache.flink.connector.jdbc.databases.oracle.OracleMetadata;
+import org.apache.flink.connector.jdbc.databases.oracle.OracleTestBase;
+import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.connector.jdbc.templates.TableManual;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -27,17 +28,15 @@ import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CollectionUtil;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -49,24 +48,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /** The Table Source ITCase for {@link OracleDialect}. */
 @DisabledOnOs(OS.MAC)
-@ExtendWith(OracleDatabase.class)
-class OracleTableSourceITCase extends AbstractTestBase {
-
-    private static final OracleMetadata metadata = OracleDatabase.getMetadata();
-    private static String containerUrl;
-    private static final String INPUT_TABLE = "oracle_test_table";
+class OracleTableSourceITCase extends AbstractTestBase implements OracleTestBase {
 
     private static StreamExecutionEnvironment env;
     private static TableEnvironment tEnv;
 
-    @BeforeAll
-    static void beforeAll() throws SQLException {
-        containerUrl = metadata.getUrl();
-        try (Connection conn = metadata.getConnection();
-                Statement statement = conn.createStatement()) {
-            statement.executeUpdate(
+    private static final String INPUT_TABLE_NAME = "oracle_test_table";
+    private static final TableManual INPUT_TABLE =
+            TableManual.of(
+                    INPUT_TABLE_NAME,
                     "CREATE TABLE "
-                            + INPUT_TABLE
+                            + INPUT_TABLE_NAME
                             + " ("
                             + "id INTEGER NOT NULL,"
                             + "float_col FLOAT,"
@@ -83,28 +75,31 @@ class OracleTableSourceITCase extends AbstractTestBase {
                             + "clob_col CLOB,"
                             + "blob_col BLOB"
                             + ")");
+
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Collections.singletonList(INPUT_TABLE);
+    }
+
+    @BeforeEach
+    void beforeEach() throws SQLException {
+        try (Connection conn = getDbMetadata().getConnection();
+                Statement statement = conn.createStatement()) {
+
             statement.executeUpdate(
                     "INSERT INTO "
-                            + INPUT_TABLE
+                            + INPUT_TABLE_NAME
                             + " VALUES ("
                             + "1, 1.12345, 2.12345678790, 100.1234, 1.175E-10, 1.79769E+40, 'a', 'abc', 'abcdef', "
                             + "TO_DATE('1997-01-01','yyyy-mm-dd'),TIMESTAMP '2020-01-01 15:35:00.123456',"
                             + " TIMESTAMP '2020-01-01 15:35:00.123456789', 'Hello World', hextoraw('453d7a34'))");
             statement.executeUpdate(
                     "INSERT INTO "
-                            + INPUT_TABLE
+                            + INPUT_TABLE_NAME
                             + " VALUES ("
                             + "2, 1.12345, 2.12345678790, 101.1234, -1.175E-10, -1.79769E+40, 'a', 'abc', 'abcdef', "
                             + "TO_DATE('1997-01-02','yyyy-mm-dd'),  TIMESTAMP '2020-01-01 15:36:01.123456', "
                             + "TIMESTAMP '2020-01-01 15:36:01.123456789', 'Hey Leonard', hextoraw('453d7a34'))");
-        }
-    }
-
-    @AfterAll
-    static void afterAll() throws Exception {
-        try (Connection conn = metadata.getConnection();
-                Statement statement = conn.createStatement()) {
-            statement.executeUpdate("DROP TABLE " + INPUT_TABLE);
         }
     }
 
@@ -118,7 +113,7 @@ class OracleTableSourceITCase extends AbstractTestBase {
     void testJdbcSource() throws Exception {
         tEnv.executeSql(
                 "CREATE TABLE "
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "("
                         + "id BIGINT,"
                         + "float_col DECIMAL(6, 5),"
@@ -137,14 +132,14 @@ class OracleTableSourceITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getDbMetadata().getUrl()
                         + "',"
                         + "  'table-name'='"
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "'"
                         + ")");
 
-        Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE).collect();
+        Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_NAME).collect();
         List<String> result =
                 CollectionUtil.iteratorToList(collected).stream()
                         .map(Row::toString)
@@ -163,7 +158,7 @@ class OracleTableSourceITCase extends AbstractTestBase {
     void testProject() throws Exception {
         tEnv.executeSql(
                 "CREATE TABLE "
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "("
                         + "id BIGINT,"
                         + "timestamp6_col TIMESTAMP(6),"
@@ -174,10 +169,10 @@ class OracleTableSourceITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getDbMetadata().getUrl()
                         + "',"
                         + "  'table-name'='"
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "',"
                         + "  'scan.partition.column'='id',"
                         + "  'scan.partition.num'='2',"
@@ -186,7 +181,7 @@ class OracleTableSourceITCase extends AbstractTestBase {
                         + ")");
 
         Iterator<Row> collected =
-                tEnv.executeSql("SELECT id,timestamp6_col,decimal_col FROM " + INPUT_TABLE)
+                tEnv.executeSql("SELECT id,timestamp6_col,decimal_col FROM " + INPUT_TABLE_NAME)
                         .collect();
         List<String> result =
                 CollectionUtil.iteratorToList(collected).stream()
@@ -206,7 +201,7 @@ class OracleTableSourceITCase extends AbstractTestBase {
     void testLimit() throws Exception {
         tEnv.executeSql(
                 "CREATE TABLE "
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "(\n"
                         + "id BIGINT,\n"
                         + "timestamp6_col TIMESTAMP(6),\n"
@@ -217,10 +212,10 @@ class OracleTableSourceITCase extends AbstractTestBase {
                         + ") WITH (\n"
                         + "  'connector'='jdbc',\n"
                         + "  'url'='"
-                        + containerUrl
+                        + getDbMetadata().getUrl()
                         + "',\n"
                         + "  'table-name'='"
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "',\n"
                         + "  'scan.partition.column'='id',\n"
                         + "  'scan.partition.num'='2',\n"
@@ -229,7 +224,7 @@ class OracleTableSourceITCase extends AbstractTestBase {
                         + ")");
 
         Iterator<Row> collected =
-                tEnv.executeSql("SELECT * FROM " + INPUT_TABLE + " LIMIT 1").collect();
+                tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_NAME + " LIMIT 1").collect();
         List<String> result =
                 CollectionUtil.iteratorToList(collected).stream()
                         .map(Row::toString)

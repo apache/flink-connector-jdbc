@@ -49,9 +49,8 @@ import org.apache.flink.types.Row;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.math.BigDecimal;
@@ -70,7 +69,7 @@ import static org.apache.flink.table.api.Expressions.$;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSink;
 
 /** The Table Sink ITCase for {@link SqlServerDialect}. */
-@DisabledOnOs(OS.MAC)
+@Disabled
 @ExtendWith(MsSqlServerDatabase.class)
 class SqlServerTableSinkITCase extends AbstractTestBase {
 

@@ -10,10 +10,6 @@ import java.sql.SQLException;
 /** Derby database for testing. * */
 public class DerbyDatabase extends DatabaseExtension {
 
-    protected Lifecycle getLifecycle() {
-        return Lifecycle.PER_CLASS;
-    }
-
     @SuppressWarnings("unused") // used in string constant in prepareDatabase
     public static final OutputStream DEV_NULL =
             new OutputStream() {

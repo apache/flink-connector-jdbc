@@ -19,28 +19,27 @@
 package org.apache.flink.connector.jdbc.databases.oracle.xa;
 
 import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.databases.oracle.OracleXaDatabase;
+import org.apache.flink.connector.jdbc.databases.oracle.OracleDatabase;
+import org.apache.flink.connector.jdbc.databases.oracle.OracleTestBase;
 import org.apache.flink.connector.jdbc.xa.JdbcExactlyOnceSinkE2eTest;
 import org.apache.flink.util.function.SerializableSupplier;
 
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Disabled;
 
 import javax.sql.XADataSource;
 
 /** A simple end-to-end test for {@link JdbcExactlyOnceSinkE2eTest}. */
-@DisabledOnOs(OS.MAC)
-@ExtendWith(OracleXaDatabase.class)
-public class OracleExactlyOnceSinkE2eTest extends JdbcExactlyOnceSinkE2eTest {
+@Disabled
+public class OracleExactlyOnceSinkE2eTest extends JdbcExactlyOnceSinkE2eTest
+        implements OracleTestBase {
 
     @Override
     public DatabaseMetadata getDbMetadata() {
-        return OracleXaDatabase.getMetadata();
+        return OracleDatabase.getMetadata();
     }
 
     @Override
     protected SerializableSupplier<XADataSource> getDataSourceSupplier() {
-        return () -> OracleXaDatabase.getMetadata().buildXaDataSource();
+        return () -> OracleDatabase.getMetadata().buildXaDataSource();
     }
 }

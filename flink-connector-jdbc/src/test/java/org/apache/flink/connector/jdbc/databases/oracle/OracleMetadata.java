@@ -51,7 +51,7 @@ public class OracleMetadata implements DatabaseMetadata {
 
     @Override
     public String getUrl() {
-        return this.url;
+        return String.format("%s?user=%s&password=%s", this.url, this.username, this.password);
     }
 
     @Override

@@ -49,7 +49,7 @@ public class OracleXaDatabase extends DatabaseExtension {
     @Override
     protected DatabaseMetadata startDatabase() throws Exception {
         container.start();
-        metadata = new OracleMetadata(container);
+        metadata = new OracleMetadata(container, true);
         return metadata;
     }
 
@@ -59,7 +59,7 @@ public class OracleXaDatabase extends DatabaseExtension {
     }
 
     /** {@link OracleContainer} with XA enabled. */
-    class OracleXaContainer extends OracleContainer {
+    static class OracleXaContainer extends OracleContainer {
         public OracleXaContainer(String dockerImageName) {
             super(DockerImageName.parse(dockerImageName));
         }

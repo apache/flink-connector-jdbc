@@ -1,17 +1,26 @@
 package org.apache.flink.connector.jdbc.databases;
 
 import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.util.function.BiConsumerWithException;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 
 import java.lang.reflect.Constructor;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+
+import static org.junit.platform.commons.support.AnnotationSupport.findRepeatableAnnotations;
 
 /** Database extension for testing. * */
 public abstract class DatabaseExtension
@@ -32,10 +41,10 @@ public abstract class DatabaseExtension
 
     protected abstract void stopDatabase() throws Exception;
 
-    private final String uniqueKey = this.getClass().getName();
+    private final String uniqueKey = this.getClass().getSimpleName();
 
     protected Lifecycle getLifecycle() {
-        return Lifecycle.PER_CLASS;
+        return Lifecycle.PER_EXECUTION;
     }
 
     private ExtensionContext.Store getStore(ExtensionContext context) {
@@ -52,35 +61,45 @@ public abstract class DatabaseExtension
     }
 
     private void getManagedTables(
-            ExtensionContext context, ConsumerWithException<TableManaged, SQLException> execute) {
+            ExtensionContext context,
+            BiConsumerWithException<TableManaged, Connection, SQLException> execute) {
         context.getTestClass()
                 .filter(DatabaseBaseTest.class::isAssignableFrom)
-                .map(
+                .ifPresent(
                         clazz -> {
-                            try {
+                            DatabaseMetadata metadata =
+                                    getStore(context).get(uniqueKey, DatabaseMetadata.class);
+                            try (Connection conn = metadata.getConnection()) {
                                 for (TableManaged table :
                                         getDatabaseBaseTest(clazz).getManagedTables()) {
-                                    execute.apply(table);
+                                    execute.accept(table, conn);
                                 }
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
-                            return clazz;
                         });
+    }
+
+    private boolean ignoreTestDatabase(ExtensionContext context) {
+        Set<String> dbExtensions = retrieveDatabaseExtensions(context);
+
+        if (dbExtensions.size() > 1) {
+            return uniqueKey.equals("DerbyDatabase") && dbExtensions.contains(uniqueKey);
+        }
+        return false;
     }
 
     @Override
     public final void beforeAll(ExtensionContext context) throws Exception {
-
-        if (Lifecycle.PER_EXECUTION == getLifecycle() && getStore(context).get(uniqueKey) != null) {
+        if (ignoreTestDatabase(context)) {
             return;
         }
 
-        DatabaseMetadata metadata = startDatabase();
-        try (Connection conn = metadata.getConnection()) {
-            getManagedTables(context, (table) -> table.createTable(conn));
+        if (getStore(context).get(uniqueKey) == null) {
+            getStore(context).put(uniqueKey, startDatabase());
         }
-        getStore(context).put(uniqueKey, metadata);
+
+        getManagedTables(context, TableManaged::createTable);
     }
 
     @Override
@@ -88,22 +107,21 @@ public abstract class DatabaseExtension
 
     @Override
     public final void afterEach(ExtensionContext context) throws Exception {
-        DatabaseMetadata metadata = getStore(context).get(uniqueKey, DatabaseMetadata.class);
-        try (Connection conn = metadata.getConnection()) {
-            getManagedTables(context, (table) -> table.deleteTable(conn));
+        if (ignoreTestDatabase(context)) {
+            return;
         }
+        getManagedTables(context, TableManaged::deleteTable);
     }
 
     @Override
     public final void afterAll(ExtensionContext context) throws Exception {
-
-        DatabaseMetadata metadata = getStore(context).get(uniqueKey, DatabaseMetadata.class);
-
-        try (Connection conn = metadata.getConnection()) {
-            if (Lifecycle.PER_CLASS == getLifecycle()) {
-                getManagedTables(context, (table) -> table.dropTable(conn));
-                stopDatabase();
-            }
+        if (ignoreTestDatabase(context)) {
+            return;
+        }
+        getManagedTables(context, TableManaged::dropTable);
+        if (Lifecycle.PER_CLASS == getLifecycle()) {
+            stopDatabase();
+            getStore(context).remove(uniqueKey, DatabaseMetadata.class);
         }
     }
 
@@ -114,8 +132,28 @@ public abstract class DatabaseExtension
         }
     }
 
-    @FunctionalInterface
-    private interface ConsumerWithException<T, E extends Throwable> {
-        void apply(T var1) throws E;
+    private Set<String> retrieveDatabaseExtensions(final ExtensionContext context) {
+
+        BiFunction<ExtensionContext, Set<String>, Set<String>> retrieveExtensions =
+                new BiFunction<ExtensionContext, Set<String>, Set<String>>() {
+
+                    @Override
+                    public Set<String> apply(ExtensionContext context, Set<String> acc) {
+                        Set<String> current = new HashSet<>(acc);
+                        current.addAll(
+                                findRepeatableAnnotations(context.getElement(), ExtendWith.class)
+                                        .stream()
+                                        .flatMap(extendWith -> Arrays.stream(extendWith.value()))
+                                        .filter(DatabaseExtension.class::isAssignableFrom)
+                                        .map(Class::getSimpleName)
+                                        .collect(Collectors.toSet()));
+
+                        return context.getParent()
+                                .map(extensionContext -> apply(extensionContext, current))
+                                .orElse(current);
+                    }
+                };
+
+        return retrieveExtensions.apply(context, new HashSet<>());
     }
 }

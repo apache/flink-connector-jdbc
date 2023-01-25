@@ -34,7 +34,7 @@ public class DockerImageVersions {
     public static final String MYSQL_8_0 = "mysql:8.0.32";
     public static final String MYSQL = MYSQL_8_0;
 
-    public static final String ORACLE_18 = "gvenzl/oracle-xe/18.4.0-slim-faststart";
+    public static final String ORACLE_18 = "gvenzl/oracle-xe:18.4.0-slim-faststart";
     public static final String ORACLE_21 = "gvenzl/oracle-xe:21.3.0-slim-faststart";
     public static final String ORACLE = ORACLE_21;
 

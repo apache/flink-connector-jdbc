@@ -31,6 +31,8 @@ public class OracleDatabase extends DatabaseExtension {
 
     private static final OracleContainer container =
             new OracleContainer(DockerImageVersions.ORACLE)
+                    .withStartupTimeoutSeconds(240)
+                    .withConnectTimeoutSeconds(120)
                     .withLogConsumer(
                             new Slf4jLogConsumer(LoggerFactory.getLogger(OracleDatabase.class)));
 
@@ -43,12 +45,16 @@ public class OracleDatabase extends DatabaseExtension {
     @Override
     protected DatabaseMetadata startDatabase() throws Exception {
         container.start();
-        metadata = new OracleMetadata(container);
+        metadata = new OracleMetadata(container, true);
         return metadata;
     }
 
     @Override
     protected void stopDatabase() throws Exception {
-        container.stop();
+        try {
+            container.stop();
+        } catch (Exception ignore) {
+            ignore.printStackTrace();
+        }
     }
 }

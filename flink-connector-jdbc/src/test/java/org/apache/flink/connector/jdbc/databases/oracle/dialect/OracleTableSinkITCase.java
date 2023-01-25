@@ -20,9 +20,10 @@ package org.apache.flink.connector.jdbc.databases.oracle.dialect;
 
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connector.jdbc.databases.oracle.OracleDatabase;
-import org.apache.flink.connector.jdbc.databases.oracle.OracleMetadata;
+import org.apache.flink.connector.jdbc.databases.oracle.OracleTestBase;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
+import org.apache.flink.connector.jdbc.templates.TableBuilder;
+import org.apache.flink.connector.jdbc.templates.TableManaged;
 import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -48,18 +49,14 @@ import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -71,79 +68,61 @@ import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSin
 
 /** The Table Sink ITCase for {@link OracleDialect}. */
 @DisabledOnOs(OS.MAC)
-@ExtendWith(OracleDatabase.class)
-class OracleTableSinkITCase extends AbstractTestBase {
+class OracleTableSinkITCase extends AbstractTestBase implements OracleTestBase {
+    private static final TableBuilder OUTPUT_TABLE1 =
+            TableBuilder.of(
+                    "dynamicSinkForUpsert",
+                    TableBuilder.field(
+                            "cnt", DataTypes.DECIMAL(38, 2).notNull(), true), // DEFAULT 0
+                    TableBuilder.field("lencnt", DataTypes.DECIMAL(38, 2).notNull()), // DEFAULT 0
+                    TableBuilder.field("cTag", DataTypes.INT().notNull(), true), // DEFAULT 0
+                    TableBuilder.field("ts", DataTypes.TIMESTAMP(0)));
 
-    private static final OracleMetadata metadata = OracleDatabase.getMetadata();
+    private static final TableBuilder OUTPUT_TABLE2 =
+            TableBuilder.of(
+                    "dynamicSinkForAppend",
+                    TableBuilder.field("id", DataTypes.INT().notNull()), // DEFAULT 0
+                    TableBuilder.field("num", DataTypes.DECIMAL(38, 2).notNull()), // DEFAULT 0
+                    TableBuilder.field("ts", DataTypes.TIMESTAMP(0)));
 
-    private static String containerUrl;
-    public static final String OUTPUT_TABLE1 = "dynamicSinkForUpsert";
-    public static final String OUTPUT_TABLE2 = "dynamicSinkForAppend";
-    public static final String OUTPUT_TABLE3 = "dynamicSinkForBatch";
-    public static final String OUTPUT_TABLE4 = "REAL_TABLE";
-    public static final String OUTPUT_TABLE5 = "checkpointTable";
-    public static final String USER_TABLE = "USER_TABLE";
+    private static final TableBuilder OUTPUT_TABLE3 =
+            TableBuilder.of(
+                    "dynamicSinkForBatch",
+                    TableBuilder.field("NAME", DataTypes.VARCHAR(20).notNull()),
+                    TableBuilder.field("SCORE", DataTypes.DECIMAL(38, 2).notNull()) // DEFAULT 0
+                    );
 
-    @BeforeAll
-    static void beforeAll() throws SQLException {
-        containerUrl = metadata.getUrl();
-        try (Connection conn = metadata.getConnection();
-                Statement stat = conn.createStatement()) {
-            stat.executeUpdate(
-                    "CREATE TABLE "
-                            + OUTPUT_TABLE1
-                            + " ("
-                            + "cnt NUMBER(38,2) DEFAULT 0 NOT NULL,"
-                            + "lencnt NUMBER(38,2) DEFAULT 0 NOT NULL,"
-                            + "cTag INT DEFAULT 0 NOT NULL,"
-                            + "ts TIMESTAMP,"
-                            + "PRIMARY KEY (cnt, cTag))");
+    private static final TableBuilder OUTPUT_TABLE4 =
+            TableBuilder.of("REAL_TABLE", TableBuilder.field("real_data", DataTypes.FLOAT()));
 
-            stat.executeUpdate(
-                    "CREATE TABLE "
-                            + OUTPUT_TABLE2
-                            + " ("
-                            + "id INT DEFAULT 0 NOT NULL,"
-                            + "num NUMBER DEFAULT 0 NOT NULL,"
-                            + "ts TIMESTAMP)");
+    private static final TableBuilder OUTPUT_TABLE5 =
+            TableBuilder.of(
+                    "checkpointTable",
+                    TableBuilder.field("id", DataTypes.DECIMAL(38, 2).notNull()));
 
-            stat.executeUpdate(
-                    "CREATE TABLE "
-                            + OUTPUT_TABLE3
-                            + " ("
-                            + "NAME VARCHAR(20) NOT NULL,"
-                            + "SCORE NUMBER DEFAULT 0 NOT NULL)");
+    private static final TableBuilder USER_TABLE =
+            TableBuilder.of(
+                    "USER_TABLE",
+                    TableBuilder.field("user_id", DataTypes.VARCHAR(20).notNull(), true),
+                    TableBuilder.field("user_name", DataTypes.VARCHAR(20).notNull()),
+                    TableBuilder.field("email", DataTypes.VARCHAR(255)),
+                    TableBuilder.field("balance", DataTypes.DECIMAL(18, 2)),
+                    TableBuilder.field("balance2", DataTypes.DECIMAL(18, 2)));
 
-            stat.executeUpdate("CREATE TABLE " + OUTPUT_TABLE4 + " (real_data REAL)");
-
-            stat.executeUpdate(
-                    "CREATE TABLE " + OUTPUT_TABLE5 + " (" + "id NUMBER DEFAULT 0 NOT NULL)");
-
-            stat.executeUpdate(
-                    "CREATE TABLE "
-                            + USER_TABLE
-                            + " ("
-                            + "user_id VARCHAR(20) NOT NULL,"
-                            + "user_name VARCHAR(20) NOT NULL,"
-                            + "email VARCHAR(255),"
-                            + "balance DECIMAL(18,2),"
-                            + "balance2 DECIMAL(18,2),"
-                            + "PRIMARY KEY (user_id))");
-        }
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Arrays.asList(
+                OUTPUT_TABLE1,
+                OUTPUT_TABLE2,
+                OUTPUT_TABLE3,
+                OUTPUT_TABLE4,
+                OUTPUT_TABLE5,
+                USER_TABLE);
     }
 
     @AfterAll
     static void afterAll() throws Exception {
         TestValuesTableFactory.clearAllData();
-        try (Connection conn = metadata.getConnection();
-                Statement stat = conn.createStatement()) {
-            stat.execute("DROP TABLE " + OUTPUT_TABLE1);
-            stat.execute("DROP TABLE " + OUTPUT_TABLE2);
-            stat.execute("DROP TABLE " + OUTPUT_TABLE3);
-            stat.execute("DROP TABLE " + OUTPUT_TABLE4);
-            stat.execute("DROP TABLE " + OUTPUT_TABLE5);
-            stat.execute("DROP TABLE " + USER_TABLE);
-        }
     }
 
     public static DataStream<Tuple4<Integer, Long, String, Timestamp>> get4TupleDataStream(
@@ -195,15 +174,19 @@ class OracleTableSinkITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getDbMetadata().getUrl()
                         + "',"
                         + "  'table-name'='"
-                        + OUTPUT_TABLE4
+                        + OUTPUT_TABLE4.getTableName()
                         + "'"
                         + ")");
 
         tEnv.executeSql("INSERT INTO upsertSink SELECT CAST(1.1 as FLOAT)").await();
-        check(new Row[] {Row.of(1.1f)}, containerUrl, "REAL_TABLE", new String[] {"real_data"});
+        check(
+                new Row[] {Row.of(1.1f)},
+                getDbMetadata().getUrl(),
+                "REAL_TABLE",
+                new String[] {"real_data"});
     }
 
     @Test
@@ -241,10 +224,10 @@ class OracleTableSinkITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getDbMetadata().getUrl()
                         + "',"
                         + "  'table-name'='"
-                        + OUTPUT_TABLE1
+                        + OUTPUT_TABLE1.getTableName()
                         + "',"
                         + "  'sink.buffer-flush.max-rows' = '2',"
                         + "  'sink.buffer-flush.interval' = '0',"
@@ -267,9 +250,9 @@ class OracleTableSinkITCase extends AbstractTestBase {
                     Row.of(7, 1, 1, Timestamp.valueOf("1970-01-01 00:00:00.021")),
                     Row.of(9, 1, 1, Timestamp.valueOf("1970-01-01 00:00:00.015"))
                 },
-                containerUrl,
-                OUTPUT_TABLE1,
-                new String[] {"cnt", "lencnt", "cTag", "ts"});
+                getDbMetadata().getUrl(),
+                OUTPUT_TABLE1.getTableName(),
+                OUTPUT_TABLE1.getTableFields());
     }
 
     @Test
@@ -293,10 +276,10 @@ class OracleTableSinkITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getDbMetadata().getUrl()
                         + "',"
                         + "  'table-name'='"
-                        + OUTPUT_TABLE2
+                        + OUTPUT_TABLE2.getTableName()
                         + "'"
                         + ")");
 
@@ -308,9 +291,9 @@ class OracleTableSinkITCase extends AbstractTestBase {
                     Row.of(10, 4, Timestamp.valueOf("1970-01-01 00:00:00.01")),
                     Row.of(20, 6, Timestamp.valueOf("1970-01-01 00:00:00.02"))
                 },
-                containerUrl,
-                OUTPUT_TABLE2,
-                new String[] {"id", "num", "ts"});
+                getDbMetadata().getUrl(),
+                OUTPUT_TABLE2.getTableName(),
+                OUTPUT_TABLE2.getTableFields());
     }
 
     @Test
@@ -324,10 +307,10 @@ class OracleTableSinkITCase extends AbstractTestBase {
                         + ") WITH ( "
                         + "'connector' = 'jdbc',"
                         + "'url'='"
-                        + containerUrl
+                        + getDbMetadata().getUrl()
                         + "',"
                         + "'table-name' = '"
-                        + OUTPUT_TABLE3
+                        + OUTPUT_TABLE3.getTableName()
                         + "',"
                         + "'sink.buffer-flush.max-rows' = '2',"
                         + "'sink.buffer-flush.interval' = '300ms',"
@@ -351,9 +334,9 @@ class OracleTableSinkITCase extends AbstractTestBase {
                     Row.of("Kim", 42),
                     Row.of("Bob", 1)
                 },
-                containerUrl,
-                OUTPUT_TABLE3,
-                new String[] {"NAME", "SCORE"});
+                getDbMetadata().getUrl(),
+                OUTPUT_TABLE3.getTableName(),
+                OUTPUT_TABLE3.getTableFields());
     }
 
     @Test
@@ -384,10 +367,10 @@ class OracleTableSinkITCase extends AbstractTestBase {
                         + ") WITH (\n"
                         + "  'connector' = 'jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getDbMetadata().getUrl()
                         + "',"
                         + "  'table-name' = '"
-                        + USER_TABLE
+                        + USER_TABLE.getTableName()
                         + "',"
                         + "  'sink.buffer-flush.max-rows' = '2',"
                         + "  'sink.buffer-flush.interval' = '0'"
@@ -416,17 +399,17 @@ class OracleTableSinkITCase extends AbstractTestBase {
                             new BigDecimal("11.3"),
                             new BigDecimal("22.6"))
                 },
-                containerUrl,
-                USER_TABLE,
-                new String[] {"user_id", "user_name", "email", "balance", "balance2"});
+                getDbMetadata().getUrl(),
+                USER_TABLE.getTableName(),
+                USER_TABLE.getTableFields());
     }
 
     @Test
     void testFlushBufferWhenCheckpoint() throws Exception {
         Map<String, String> options = new HashMap<>();
         options.put("connector", "jdbc");
-        options.put("url", containerUrl);
-        options.put("table-name", OUTPUT_TABLE5);
+        options.put("url", getDbMetadata().getUrl());
+        options.put("table-name", OUTPUT_TABLE5.getTableName());
         options.put("sink.buffer-flush.interval", "0");
 
         ResolvedSchema schema =
@@ -444,9 +427,17 @@ class OracleTableSinkITCase extends AbstractTestBase {
         sinkFunction.invoke(GenericRowData.of(1L), SinkContextUtil.forTimestamp(1));
         sinkFunction.invoke(GenericRowData.of(2L), SinkContextUtil.forTimestamp(1));
 
-        check(new Row[] {}, containerUrl, OUTPUT_TABLE5, new String[] {"id"});
+        check(
+                new Row[] {},
+                getDbMetadata().getUrl(),
+                OUTPUT_TABLE5.getTableName(),
+                OUTPUT_TABLE5.getTableFields());
         sinkFunction.snapshotState(new StateSnapshotContextSynchronousImpl(1, 1));
-        check(new Row[] {Row.of(1L), Row.of(2L)}, containerUrl, OUTPUT_TABLE5, new String[] {"id"});
+        check(
+                new Row[] {Row.of(1L), Row.of(2L)},
+                getDbMetadata().getUrl(),
+                OUTPUT_TABLE5.getTableName(),
+                OUTPUT_TABLE5.getTableFields());
         sinkFunction.close();
     }
 }
