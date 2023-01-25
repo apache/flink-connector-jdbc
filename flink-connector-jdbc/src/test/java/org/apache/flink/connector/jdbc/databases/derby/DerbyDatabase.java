@@ -33,9 +33,7 @@ public class DerbyDatabase extends DatabaseExtension {
                 "derby.stream.error.field", DerbyDatabase.class.getCanonicalName() + ".DEV_NULL");
         Class.forName(metadata.getDriverClass());
 
-        DriverManager.getConnection(
-                        metadata.getInitUrl(), metadata.getUser(), metadata.getPassword())
-                .close();
+        DriverManager.getConnection(String.format("%s;create=true", metadata.getUrl())).close();
 
         return metadata;
     }

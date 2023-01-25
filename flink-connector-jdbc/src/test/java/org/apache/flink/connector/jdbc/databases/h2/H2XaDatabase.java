@@ -34,7 +34,9 @@ public class H2XaDatabase extends DatabaseExtension {
     @Override
     protected DatabaseMetadata startDatabase() throws Exception {
         DriverManager.getConnection(
-                        metadata.getInitUrl(), metadata.getUser(), metadata.getPassword())
+                        String.format(
+                                "%s;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS %s\\;SET SCHEMA %s",
+                                metadata.getUrl(), "test", "test"))
                 .close();
         return metadata;
     }

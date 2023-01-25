@@ -48,11 +48,6 @@ public class PostgresMetadata implements DatabaseMetadata {
     }
 
     @Override
-    public String getInitUrl() {
-        return this.url;
-    }
-
-    @Override
     public String getUrl() {
         return this.url;
     }

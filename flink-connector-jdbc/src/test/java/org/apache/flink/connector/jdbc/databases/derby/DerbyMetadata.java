@@ -26,22 +26,11 @@ import javax.sql.XADataSource;
 /** DerbyDbMetadata. */
 public class DerbyMetadata implements DatabaseMetadata {
     private final String dbName;
-    private final String dbInitUrl;
     private final String url;
 
     public DerbyMetadata(String schemaName) {
         dbName = "memory:" + schemaName;
         url = "jdbc:derby:" + dbName;
-        dbInitUrl = url + ";create=true";
-    }
-
-    public String getDbName() {
-        return dbName;
-    }
-
-    @Override
-    public String getInitUrl() {
-        return dbInitUrl;
     }
 
     @Override

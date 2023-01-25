@@ -45,13 +45,6 @@ public class H2Metadata implements DatabaseMetadata {
 
     @Override
     public String getUrl() {
-        return String.format("jdbc:h2:mem:%s;INIT=SET SCHEMA %s", schema, schema);
-    }
-
-    @Override
-    public String getInitUrl() {
-        return String.format(
-                "jdbc:h2:mem:%s;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS %s\\;SET SCHEMA %s",
-                schema, schema, schema);
+        return String.format("jdbc:h2:mem:%s", schema);
     }
 }

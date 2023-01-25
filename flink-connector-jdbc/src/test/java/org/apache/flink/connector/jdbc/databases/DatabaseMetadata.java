@@ -29,8 +29,6 @@ import java.sql.DriverManager;
 /** Describes a database: driver, schema and urls. */
 public interface DatabaseMetadata extends Serializable {
 
-    String getInitUrl();
-
     String getUrl();
 
     default String getSchema() {

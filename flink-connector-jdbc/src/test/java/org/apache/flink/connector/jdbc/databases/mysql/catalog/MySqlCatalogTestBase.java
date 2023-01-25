@@ -18,7 +18,8 @@
 
 package org.apache.flink.connector.jdbc.databases.mysql.catalog;
 
-import org.apache.flink.connector.jdbc.databases.mysql.MySqlDatabaseAll;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.databases.mysql.MySqlDatabase;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
 
@@ -26,14 +27,19 @@ import org.apache.flink.shaded.guava30.com.google.common.collect.Lists;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.testcontainers.containers.MySQLContainer;
+import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /** Test base for {@link MySqlCatalog}. */
-class MySqlCatalogTestBase implements MySqlDatabaseAll {
+@ExtendWith(MySqlDatabase.class)
+class MySqlCatalogTestBase {
 
+    public static final List<DatabaseMetadata> CONTAINERS =
+            Arrays.asList(MySqlDatabase.getMetadata());
     protected static final String TEST_CATALOG_NAME = "mysql_catalog";
     protected static final String TEST_DB = "test";
     protected static final String TEST_DB2 = "test2";
@@ -92,24 +98,22 @@ class MySqlCatalogTestBase implements MySqlDatabaseAll {
                     .primaryKeyNamed("PRIMARY", Lists.newArrayList("pid"))
                     .build();
 
-    public static final Map<String, MySQLContainer<?>> MYSQL_CONTAINERS_MAP = new HashMap<>();
+    public static final Map<String, DatabaseMetadata> MYSQL_CONTAINERS_MAP = new HashMap<>();
     public static final Map<String, MySqlCatalog> CATALOGS = new HashMap<>();
 
     @BeforeAll
     static void beforeAll() {
-        for (MySQLContainer<?> container : MYSQL_CONTAINERS) {
-            MYSQL_CONTAINERS_MAP.put(container.getDockerImageName(), container);
+        for (DatabaseMetadata container : CONTAINERS) {
+            MYSQL_CONTAINERS_MAP.put(container.getVersion(), container);
             CATALOGS.put(
-                    container.getDockerImageName(),
+                    container.getVersion(),
                     new MySqlCatalog(
                             Thread.currentThread().getContextClassLoader(),
                             TEST_CATALOG_NAME,
                             TEST_DB,
-                            TEST_USERNAME,
-                            TEST_PASSWORD,
-                            container
-                                    .getJdbcUrl()
-                                    .substring(0, container.getJdbcUrl().lastIndexOf("/"))));
+                            container.getUser(),
+                            container.getPassword(),
+                            container.getUrl().substring(0, container.getUrl().lastIndexOf("/"))));
         }
     }
 

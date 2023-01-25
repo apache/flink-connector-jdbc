@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.databases.mysql.catalog;
 
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Schema;
@@ -37,7 +38,6 @@ import org.apache.flink.shaded.guava30.com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.testcontainers.containers.GenericContainer;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -174,9 +174,7 @@ public class MySqlCatalogITCase extends MySqlCatalogTestBase {
 
     @Parameters(name = "version = {0}")
     public static Collection<String> params() {
-        return MYSQL_CONTAINERS.stream()
-                .map(GenericContainer::getDockerImageName)
-                .collect(Collectors.toList());
+        return CONTAINERS.stream().map(DatabaseMetadata::getVersion).collect(Collectors.toList());
     }
 
     // ------ databases ------
