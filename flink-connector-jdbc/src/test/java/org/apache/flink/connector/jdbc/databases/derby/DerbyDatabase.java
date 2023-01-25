@@ -5,6 +5,7 @@ import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 
 import java.io.OutputStream;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 
 /** Derby database for testing. * */
 public class DerbyDatabase extends DatabaseExtension {
@@ -14,7 +15,7 @@ public class DerbyDatabase extends DatabaseExtension {
     }
 
     @SuppressWarnings("unused") // used in string constant in prepareDatabase
-    protected static final OutputStream DEV_NULL =
+    public static final OutputStream DEV_NULL =
             new OutputStream() {
                 @Override
                 public void write(int b) {}
@@ -33,11 +34,18 @@ public class DerbyDatabase extends DatabaseExtension {
         Class.forName(metadata.getDriverClass());
 
         DriverManager.getConnection(
-                metadata.getInitUrl(), metadata.getUser(), metadata.getPassword());
+                        metadata.getInitUrl(), metadata.getUser(), metadata.getPassword())
+                .close();
 
         return metadata;
     }
 
     @Override
-    protected void stopDatabase() throws Exception {}
+    protected void stopDatabase() throws Exception {
+        try {
+            DriverManager.getConnection(String.format("%s;shutdown=true", metadata.getUrl()))
+                    .close();
+        } catch (SQLException ignored) {
+        }
+    }
 }
