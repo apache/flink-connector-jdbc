@@ -17,20 +17,28 @@
 
 package org.apache.flink.connector.jdbc.xa;
 
-import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.databases.h2.H2XaDatabase;
+import org.apache.flink.connector.jdbc.databases.h2.xa.H2XaDsWrapper;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * {@link JdbcXaSinkFunction} tests using H2 DB. H2 uses MVCC (so we can e.g. count records while
  * transaction is not yet committed). But XA support isn't full, so for some scenarios {@link
- * org.apache.flink.connector.jdbc.xa.h2.H2XaDsWrapper wrapper} is used, and for some - Derby.
+ * H2XaDsWrapper wrapper} is used, and for some - Derby.
  */
+@ExtendWith(H2XaDatabase.class)
 class JdbcXaSinkH2Test extends JdbcXaSinkTestBase {
+
+    @Override
+    public DatabaseMetadata getDbMetadata() {
+        return H2XaDatabase.getMetadata();
+    }
 
     @Test
     void testIgnoreDuplicatedNotification() throws Exception {
@@ -68,10 +76,5 @@ class JdbcXaSinkH2Test extends JdbcXaSinkTestBase {
         sinkHelper.snapshotState(1);
         sinkHelper.snapshotState(2);
         assertThat(xaHelper.countInDb()).isEqualTo(0);
-    }
-
-    @Override
-    protected DbMetadata getDbMetadata() {
-        return JdbcTestFixture.H2_EBOOKSHOP_DB;
     }
 }

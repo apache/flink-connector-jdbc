@@ -18,6 +18,7 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.connector.jdbc.JdbcTestCheckpoint;
+import org.apache.flink.connector.jdbc.templates.BooksTable;
 
 import javax.sql.XADataSource;
 
@@ -32,7 +33,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class JdbcXaFacadeTestHelper implements AutoCloseable {
@@ -42,8 +42,15 @@ class JdbcXaFacadeTestHelper implements AutoCloseable {
     private final String pass;
     private final XaFacade xaFacade;
 
+    private final BooksTable.BookEntry[] testData;
+
     JdbcXaFacadeTestHelper(
-            XADataSource xaDataSource, String dbUrl, String table, String user, String pass)
+            XADataSource xaDataSource,
+            String dbUrl,
+            String table,
+            String user,
+            String pass,
+            BooksTable.BookEntry[] testData)
             throws Exception {
         this.dbUrl = dbUrl;
         this.table = table;
@@ -51,6 +58,7 @@ class JdbcXaFacadeTestHelper implements AutoCloseable {
         this.xaFacade.open();
         this.user = user;
         this.pass = pass;
+        this.testData = testData;
     }
 
     void assertPreparedTxCountEquals(int expected) {
@@ -64,7 +72,7 @@ class JdbcXaFacadeTestHelper implements AutoCloseable {
 
     void assertDbContentsEquals(IntStream dataIdxStream) throws SQLException {
         assertDbContentsEquals(
-                dataIdxStream.map(idx -> TEST_DATA[idx].id).boxed().collect(Collectors.toList()));
+                dataIdxStream.map(idx -> testData[idx].id).boxed().collect(Collectors.toList()));
     }
 
     void assertDbContentsEquals(List<Integer> expected) throws SQLException {

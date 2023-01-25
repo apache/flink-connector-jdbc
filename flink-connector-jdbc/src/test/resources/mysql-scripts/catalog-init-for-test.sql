@@ -21,11 +21,6 @@
 * The init script contains some types that are incompatible with lower versions.
 */
 
--- Creates test user info and grants privileges.
-CREATE USER 'mysql'@'%' IDENTIFIED BY 'mysql';
-GRANT ALL ON *.* TO 'mysql'@'%';
-FLUSH PRIVILEGES;
-
 -- Create the `test` database.
 DROP DATABASE IF EXISTS `test`;
 CREATE DATABASE `test` CHARSET=utf8;

@@ -18,16 +18,15 @@
 
 package org.apache.flink.connector.jdbc.table;
 
-import org.apache.flink.connector.jdbc.JdbcDataTestBase;
+import org.apache.flink.connector.jdbc.JdbcBookStoreTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
-import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.connector.jdbc.templates.BooksTable.BookEntry;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.table.types.DataType;
-import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 
 import org.junit.jupiter.api.AfterEach;
@@ -35,49 +34,25 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Arrays;
+import java.util.List;
 
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.INPUT_TABLE;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE_2;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE_3;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.SELECT_ALL_NEWBOOKS;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.SELECT_ALL_NEWBOOKS_2;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.SELECT_ALL_NEWBOOKS_3;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test suite for {@link JdbcOutputFormatBuilder}. */
-class JdbcOutputFormatTest extends JdbcDataTestBase {
+class JdbcOutputFormatTest extends JdbcBookStoreTestBase {
 
     private static JdbcOutputFormat<RowData, ?, ?> outputFormat;
-    private static String[] fieldNames = new String[] {"id", "title", "author", "price", "qty"};
-    private static DataType[] fieldDataTypes =
-            new DataType[] {
-                DataTypes.INT(),
-                DataTypes.STRING(),
-                DataTypes.STRING(),
-                DataTypes.DOUBLE(),
-                DataTypes.INT()
-            };
-    private static RowType rowType =
-            RowType.of(
-                    Arrays.stream(fieldDataTypes)
-                            .map(DataType::getLogicalType)
-                            .toArray(LogicalType[]::new),
-                    fieldNames);
-    private static InternalTypeInfo<RowData> rowDataTypeInfo = InternalTypeInfo.of(rowType);
+    private static final String[] fieldNames = BOOKS_TABLE.getTableFields();
+    private static final DataType[] fieldDataTypes = BOOKS_TABLE.getTableDataTypes();
+    private static final RowType rowType = BOOKS_TABLE.getTableRowType();
+    private static final InternalTypeInfo<RowData> rowDataTypeInfo = InternalTypeInfo.of(rowType);
 
     @AfterEach
-    void tearDown() throws Exception {
+    void tearDown() {
         if (outputFormat != null) {
             outputFormat.close();
         }
@@ -92,8 +67,8 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                             JdbcConnectorOptions jdbcOptions =
                                     JdbcConnectorOptions.builder()
                                             .setDriverName("org.apache.derby.jdbc.idontexist")
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
-                                            .setTableName(INPUT_TABLE)
+                                            .setDBUrl(getDbMetadata().getUrl())
+                                            .setTableName(BOOKS_TABLE.getTableName())
                                             .build();
                             JdbcDmlOptions dmlOptions =
                                     JdbcDmlOptions.builder()
@@ -122,9 +97,9 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         () -> {
                             JdbcConnectorOptions jdbcOptions =
                                     JdbcConnectorOptions.builder()
-                                            .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
+                                            .setDriverName(getDbMetadata().getDriverClass())
                                             .setDBUrl("jdbc:der:iamanerror:mory:ebookshop")
-                                            .setTableName(INPUT_TABLE)
+                                            .setTableName(BOOKS_TABLE.getTableName())
                                             .build();
                             JdbcDmlOptions dmlOptions =
                                     JdbcDmlOptions.builder()
@@ -152,9 +127,9 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         () -> {
                             JdbcConnectorOptions jdbcOptions =
                                     JdbcConnectorOptions.builder()
-                                            .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
-                                            .setTableName(INPUT_TABLE)
+                                            .setDriverName(getDbMetadata().getDriverClass())
+                                            .setDBUrl(getDbMetadata().getUrl())
+                                            .setTableName(BOOKS_TABLE.getTableName())
                                             .build();
                             JdbcDmlOptions dmlOptions =
                                     JdbcDmlOptions.builder()
@@ -191,9 +166,9 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         () -> {
                             JdbcConnectorOptions jdbcOptions =
                                     JdbcConnectorOptions.builder()
-                                            .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
-                                            .setTableName(OUTPUT_TABLE)
+                                            .setDriverName(getDbMetadata().getDriverClass())
+                                            .setDBUrl(getDbMetadata().getUrl())
+                                            .setTableName(NEWBOOKS_TABLE.getTableName())
                                             .build();
                             JdbcDmlOptions dmlOptions =
                                     JdbcDmlOptions.builder()
@@ -214,7 +189,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                             setRuntimeContext(outputFormat, false);
                             outputFormat.open(0, 1);
 
-                            TestEntry entry = TEST_DATA[0];
+                            BookEntry entry = TEST_DATA[0];
                             RowData row =
                                     buildGenericData(
                                             entry.id, entry.title, entry.author, 0L, entry.qty);
@@ -232,9 +207,9 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         () -> {
                             JdbcConnectorOptions jdbcOptions =
                                     JdbcConnectorOptions.builder()
-                                            .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
-                                            .setTableName(OUTPUT_TABLE)
+                                            .setDriverName(getDbMetadata().getDriverClass())
+                                            .setDBUrl(getDbMetadata().getUrl())
+                                            .setTableName(NEWBOOKS_TABLE.getTableName())
                                             .build();
                             JdbcDmlOptions dmlOptions =
                                     JdbcDmlOptions.builder()
@@ -255,7 +230,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                             setRuntimeContext(outputFormat, true);
                             outputFormat.open(0, 1);
 
-                            TestEntry entry = TEST_DATA[0];
+                            BookEntry entry = TEST_DATA[0];
                             RowData row =
                                     buildGenericData(
                                             entry.id,
@@ -278,9 +253,9 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
     void testJdbcOutputFormat() throws IOException, SQLException {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
-                        .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
-                        .setTableName(OUTPUT_TABLE)
+                        .setDriverName(getDbMetadata().getDriverClass())
+                        .setDBUrl(getDbMetadata().getUrl())
+                        .setTableName(NEWBOOKS_TABLE.getTableName())
                         .build();
         JdbcDmlOptions dmlOptions =
                 JdbcDmlOptions.builder()
@@ -303,27 +278,17 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
         setRuntimeContext(outputFormat, true);
         outputFormat.open(0, 1);
 
-        for (TestEntry entry : TEST_DATA) {
+        for (BookEntry entry : TEST_DATA) {
             outputFormat.writeRecord(
                     buildGenericData(entry.id, entry.title, entry.author, entry.price, entry.qty));
         }
 
         outputFormat.close();
 
-        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
-                PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS);
-                ResultSet resultSet = statement.executeQuery()) {
-            int recordCount = 0;
-            while (resultSet.next()) {
-                assertThat(resultSet.getObject("id")).isEqualTo(TEST_DATA[recordCount].id);
-                assertThat(resultSet.getObject("title")).isEqualTo(TEST_DATA[recordCount].title);
-                assertThat(resultSet.getObject("author")).isEqualTo(TEST_DATA[recordCount].author);
-                assertThat(resultSet.getObject("price")).isEqualTo(TEST_DATA[recordCount].price);
-                assertThat(resultSet.getObject("qty")).isEqualTo(TEST_DATA[recordCount].qty);
-
-                recordCount++;
-            }
-            assertThat(recordCount).isEqualTo(TEST_DATA.length);
+        try (Connection dbConn = getDbMetadata().getConnection()) {
+            List<BookEntry> books = NEWBOOKS_TABLE.selectAllTable(dbConn);
+            assertThat(books.size()).isEqualTo(TEST_DATA.length);
+            assertThat(books.toArray()).isEqualTo(TEST_DATA);
         }
     }
 
@@ -331,9 +296,9 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
     void testFlush() throws SQLException, IOException {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
-                        .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
-                        .setTableName(OUTPUT_TABLE_2)
+                        .setDriverName(getDbMetadata().getDriverClass())
+                        .setDBUrl(getDbMetadata().getUrl())
+                        .setTableName(NEWBOOKS_TABLE.getTableName())
                         .build();
         JdbcDmlOptions dmlOptions =
                 JdbcDmlOptions.builder()
@@ -355,8 +320,9 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
         setRuntimeContext(outputFormat, true);
         outputFormat.open(0, 1);
 
-        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
-                PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS_2)) {
+        try (Connection dbConn = getDbMetadata().getConnection();
+                PreparedStatement statement =
+                        dbConn.prepareStatement(NEWBOOKS_TABLE.getSelectAllQuery())) {
             outputFormat.open(0, 1);
             for (int i = 0; i < 2; ++i) {
                 outputFormat.writeRecord(
@@ -401,9 +367,9 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
     void testFlushWithBatchSizeEqualsZero() throws SQLException, IOException {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
-                        .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
-                        .setTableName(OUTPUT_TABLE_2)
+                        .setDriverName(getDbMetadata().getDriverClass())
+                        .setDBUrl(getDbMetadata().getUrl())
+                        .setTableName(NEWBOOKS_TABLE.getTableName())
                         .build();
         JdbcDmlOptions dmlOptions =
                 JdbcDmlOptions.builder()
@@ -424,8 +390,9 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         .build();
         setRuntimeContext(outputFormat, true);
 
-        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
-                PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS_2)) {
+        try (Connection dbConn = getDbMetadata().getConnection();
+                PreparedStatement statement =
+                        dbConn.prepareStatement(NEWBOOKS_TABLE.getSelectAllQuery())) {
             outputFormat.open(0, 1);
             for (int i = 0; i < 2; ++i) {
                 outputFormat.writeRecord(
@@ -448,9 +415,9 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
     void testInvalidConnectionInJdbcOutputFormat() throws IOException, SQLException {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
-                        .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
-                        .setTableName(OUTPUT_TABLE_3)
+                        .setDriverName(getDbMetadata().getDriverClass())
+                        .setDBUrl(getDbMetadata().getUrl())
+                        .setTableName(NEWBOOKS_TABLE.getTableName())
                         .build();
         JdbcDmlOptions dmlOptions =
                 JdbcDmlOptions.builder()
@@ -472,7 +439,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
 
         // write records
         for (int i = 0; i < 3; i++) {
-            TestEntry entry = TEST_DATA[i];
+            BookEntry entry = TEST_DATA[i];
             outputFormat.writeRecord(
                     buildGenericData(entry.id, entry.title, entry.author, entry.price, entry.qty));
         }
@@ -482,36 +449,17 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
 
         // continue to write rest records
         for (int i = 3; i < TEST_DATA.length; i++) {
-            TestEntry entry = TEST_DATA[i];
+            BookEntry entry = TEST_DATA[i];
             outputFormat.writeRecord(
                     buildGenericData(entry.id, entry.title, entry.author, entry.price, entry.qty));
         }
 
         outputFormat.close();
 
-        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
-                PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS_3);
-                ResultSet resultSet = statement.executeQuery()) {
-            int recordCount = 0;
-            while (resultSet.next()) {
-                assertThat(resultSet.getObject("id")).isEqualTo(TEST_DATA[recordCount].id);
-                assertThat(resultSet.getObject("title")).isEqualTo(TEST_DATA[recordCount].title);
-                assertThat(resultSet.getObject("author")).isEqualTo(TEST_DATA[recordCount].author);
-                assertThat(resultSet.getObject("price")).isEqualTo(TEST_DATA[recordCount].price);
-                assertThat(resultSet.getObject("qty")).isEqualTo(TEST_DATA[recordCount].qty);
-
-                recordCount++;
-            }
-            assertThat(recordCount).isEqualTo(TEST_DATA.length);
-        }
-    }
-
-    @AfterEach
-    void clearOutputTable() throws Exception {
-        Class.forName(DERBY_EBOOKSHOP_DB.getDriverClass());
-        try (Connection conn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
-                Statement stat = conn.createStatement()) {
-            stat.execute("DELETE FROM " + OUTPUT_TABLE);
+        try (Connection dbConn = getDbMetadata().getConnection()) {
+            List<BookEntry> books = NEWBOOKS_TABLE.selectAllTable(dbConn);
+            assertThat(books.size()).isEqualTo(TEST_DATA.length);
+            assertThat(books.toArray()).isEqualTo(TEST_DATA);
         }
     }
 }

@@ -17,16 +17,23 @@
 
 package org.apache.flink.connector.jdbc.xa;
 
-import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.databases.h2.H2XaDatabase;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Tests that data is not inserted ahead of time. */
+@ExtendWith(H2XaDatabase.class)
 class JdbcXaSinkNoInsertionTest extends JdbcXaSinkTestBase {
+
+    @Override
+    public DatabaseMetadata getDbMetadata() {
+        return H2XaDatabase.getMetadata();
+    }
 
     @Test
     void testNoInsertAfterInvoke() throws Exception {
@@ -56,14 +63,9 @@ class JdbcXaSinkNoInsertionTest extends JdbcXaSinkTestBase {
         try (XaFacadeImpl xaFacade = XaFacadeImpl.fromXaDataSource(xaDataSource)) {
             sinkHelper =
                     new JdbcXaSinkTestHelper(
-                            buildAndInit(0, xaFacade), new TestXaSinkStateHandler());
+                            buildAndInit(0, xaFacade), new TestXaSinkStateHandler(), TEST_DATA);
             sinkHelper.emitAndSnapshot(JdbcTestFixture.CP0);
         }
         assertThat(xaHelper.countInDb()).isEqualTo(0);
-    }
-
-    @Override
-    protected DbMetadata getDbMetadata() {
-        return JdbcTestFixture.H2_EBOOKSHOP_DB;
     }
 }

@@ -75,7 +75,7 @@ public class JdbcTypeUtil {
         m.put(SHORT_TYPE_INFO, Types.SMALLINT);
         m.put(INT_TYPE_INFO, Types.INTEGER);
         m.put(LONG_TYPE_INFO, Types.BIGINT);
-        m.put(FLOAT_TYPE_INFO, Types.REAL);
+        m.put(FLOAT_TYPE_INFO, Types.FLOAT);
         m.put(DOUBLE_TYPE_INFO, Types.DOUBLE);
         m.put(SqlTimeTypeInfo.DATE, Types.DATE);
         m.put(SqlTimeTypeInfo.TIME, Types.TIME);
@@ -99,7 +99,7 @@ public class JdbcTypeUtil {
                     .put(SMALLINT, Types.SMALLINT)
                     .put(INTEGER, Types.INTEGER)
                     .put(BIGINT, Types.BIGINT)
-                    .put(FLOAT, Types.REAL)
+                    .put(FLOAT, Types.FLOAT)
                     .put(DOUBLE, Types.DOUBLE)
                     .put(DATE, Types.DATE)
                     .put(TIMESTAMP_WITHOUT_TIME_ZONE, Types.TIMESTAMP)

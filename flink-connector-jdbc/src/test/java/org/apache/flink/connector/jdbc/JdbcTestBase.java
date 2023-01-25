@@ -17,25 +17,18 @@
 
 package org.apache.flink.connector.jdbc;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.apache.flink.connector.jdbc.databases.DatabaseBaseTest;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.databases.derby.DerbyDatabase;
 
-/**
- * Base class for JDBC test using DDL from {@link JdbcTestFixture}. It uses create tables before
- * each test and drops afterwards.
- */
-public abstract class JdbcTestBase {
+import org.junit.jupiter.api.extension.ExtendWith;
 
-    @BeforeEach
-    public void before() throws Exception {
-        JdbcTestFixture.initSchema(getDbMetadata());
+/** Base class for JDBC test using DDL. */
+@ExtendWith(DerbyDatabase.class)
+public interface JdbcTestBase extends DatabaseBaseTest {
+
+    @Override
+    default DatabaseMetadata getDbMetadata() {
+        return DerbyDatabase.getMetadata();
     }
-
-    @AfterEach
-    public void after() throws Exception {
-        JdbcTestFixture.cleanupData(getDbMetadata().getUrl());
-        JdbcTestFixture.cleanUpDatabasesStatic(getDbMetadata());
-    }
-
-    protected abstract DbMetadata getDbMetadata();
 }

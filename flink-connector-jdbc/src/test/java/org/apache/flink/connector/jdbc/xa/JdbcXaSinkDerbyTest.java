@@ -17,13 +17,10 @@
 
 package org.apache.flink.connector.jdbc.xa;
 
-import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
 
-import org.apache.derby.jdbc.EmbeddedXADataSource;
 import org.junit.jupiter.api.Test;
 
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -144,7 +141,8 @@ class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     void testRestore() throws Exception {
         sinkHelper.emitAndCheckpoint(JdbcTestFixture.CP0);
         sinkHelper.close();
-        sinkHelper = new JdbcXaSinkTestHelper(buildAndInit(), new TestXaSinkStateHandler());
+        sinkHelper =
+                new JdbcXaSinkTestHelper(buildAndInit(), new TestXaSinkStateHandler(), TEST_DATA);
         sinkHelper.emitAndCheckpoint(JdbcTestFixture.CP1);
         xaHelper.assertDbContentsEquals(JdbcTestFixture.CP0, JdbcTestFixture.CP1);
     }
@@ -156,20 +154,10 @@ class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
                 new JdbcXaSinkTestHelper(
                         buildAndInit(
                                 Integer.MAX_VALUE, XaFacadeImpl.fromXaDataSource(xaDataSource)),
-                        new TestXaSinkStateHandler());
+                        new TestXaSinkStateHandler(),
+                        TEST_DATA);
         sinkHelper.emit(TEST_DATA[0]);
         sinkHelper.emit(TEST_DATA[0]); // duplicate
         assertThatThrownBy(() -> sinkHelper.snapshotState(0)).isInstanceOf(Exception.class);
-    }
-
-    static EmbeddedXADataSource derbyXaDs() {
-        EmbeddedXADataSource ds = new EmbeddedXADataSource();
-        ds.setDatabaseName(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getDbName());
-        return ds;
-    }
-
-    @Override
-    protected DbMetadata getDbMetadata() {
-        return JdbcTestFixture.DERBY_EBOOKSHOP_DB;
     }
 }

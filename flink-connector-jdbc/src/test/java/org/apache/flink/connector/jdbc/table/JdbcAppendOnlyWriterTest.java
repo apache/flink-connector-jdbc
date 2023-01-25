@@ -21,39 +21,39 @@ package org.apache.flink.connector.jdbc.table;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
+import org.apache.flink.connector.jdbc.templates.BooksTable;
+import org.apache.flink.connector.jdbc.templates.BooksTable.BookEntry;
+import org.apache.flink.connector.jdbc.templates.TableManaged;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.Statement;
+import java.util.Collections;
+import java.util.List;
 
-import static org.apache.flink.connector.jdbc.JdbcDataTestBase.toRow;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
+import static org.apache.flink.connector.jdbc.JdbcBookStoreTestBase.toRow;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 
 /** Test for the Append only mode. */
-class JdbcAppendOnlyWriterTest extends JdbcTestBase {
+class JdbcAppendOnlyWriterTest implements JdbcTestBase {
 
+    private static final BooksTable RETRY_TABLE = new BooksTable("retrytable");
+    private static final BooksTable.BookEntry[] TEST_DATA =
+            RETRY_TABLE.getTestData().toArray(new BooksTable.BookEntry[0]);
     private JdbcOutputFormat format;
-    private String[] fieldNames;
 
-    @BeforeEach
-    void setup() {
-        fieldNames = new String[] {"id", "title", "author", "price", "qty"};
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Collections.singletonList(RETRY_TABLE);
     }
 
     @Test
@@ -71,9 +71,10 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
                                                                                     .getUrl(),
                                                                             getClass()
                                                                                     .getClassLoader()))
-                                                            .setTableName(OUTPUT_TABLE)
+                                                            .setTableName(
+                                                                    RETRY_TABLE.getTableName())
                                                             .build())
-                                            .setFieldNames(fieldNames)
+                                            .setFieldNames(RETRY_TABLE.getTableFields())
                                             .setKeyFields(null)
                                             .build();
                             RuntimeContext context = Mockito.mock(RuntimeContext.class);
@@ -85,7 +86,7 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
 
                             // alter table schema to trigger retry logic after failure.
                             alterTable();
-                            for (TestEntry entry : TEST_DATA) {
+                            for (BookEntry entry : TEST_DATA) {
                                 format.writeRecord(Tuple2.of(true, toRow(entry)));
                             }
 
@@ -96,15 +97,18 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
     }
 
     private void alterTable() throws Exception {
-        Class.forName(getDbMetadata().getDriverClass());
-        try (Connection conn = DriverManager.getConnection(getDbMetadata().getUrl());
-                Statement stat = conn.createStatement()) {
-            stat.execute("ALTER  TABLE " + OUTPUT_TABLE + " DROP COLUMN " + fieldNames[1]);
+        try (Connection conn = DriverManager.getConnection(getDbMetadata().getUrl())) {
+            RETRY_TABLE.executeUpdate(
+                    conn,
+                    "ALTER  TABLE "
+                            + RETRY_TABLE.getTableName()
+                            + " DROP COLUMN "
+                            + RETRY_TABLE.getTableFields()[1]);
         }
     }
 
     @AfterEach
-    void clear() throws Exception {
+    void clear() {
         if (format != null) {
             try {
                 format.close();
@@ -113,15 +117,5 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
             }
         }
         format = null;
-        Class.forName(getDbMetadata().getDriverClass());
-        try (Connection conn = DriverManager.getConnection(getDbMetadata().getUrl());
-                Statement stat = conn.createStatement()) {
-            stat.execute("DELETE FROM " + OUTPUT_TABLE);
-        }
-    }
-
-    @Override
-    protected DbMetadata getDbMetadata() {
-        return DERBY_EBOOKSHOP_DB;
     }
 }

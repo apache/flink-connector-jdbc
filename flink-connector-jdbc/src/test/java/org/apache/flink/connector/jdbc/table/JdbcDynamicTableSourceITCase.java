@@ -20,6 +20,8 @@ package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
+import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.connector.jdbc.templates.TableManual;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
@@ -38,7 +40,6 @@ import org.apache.flink.util.CloseableIterator;
 import org.apache.flink.util.CollectionUtil;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -46,9 +47,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,7 +65,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** ITCase for {@link JdbcDynamicTableSource}. */
-class JdbcDynamicTableSourceITCase {
+class JdbcDynamicTableSourceITCase implements JdbcTestBase {
 
     @RegisterExtension
     static final MiniClusterExtension MINI_CLUSTER_RESOURCE =
@@ -76,24 +75,12 @@ class JdbcDynamicTableSourceITCase {
                             .setConfiguration(new Configuration())
                             .build());
 
-    public static final String DRIVER_CLASS = "org.apache.derby.jdbc.EmbeddedDriver";
-    public static final String DB_URL = "jdbc:derby:memory:test";
-    public static final String INPUT_TABLE = "jdbDynamicTableSource";
-
-    public static StreamExecutionEnvironment env;
-    public static TableEnvironment tEnv;
-
-    @BeforeAll
-    static void beforeAll() throws ClassNotFoundException, SQLException {
-        System.setProperty(
-                "derby.stream.error.field", JdbcTestBase.class.getCanonicalName() + ".DEV_NULL");
-        Class.forName(DRIVER_CLASS);
-
-        try (Connection conn = DriverManager.getConnection(DB_URL + ";create=true");
-                Statement statement = conn.createStatement()) {
-            statement.executeUpdate(
+    private static final String INPUT_TABLE_NAME = "jdbcDynamicTableSource";
+    private static final TableManual INPUT_TABLE =
+            TableManual.of(
+                    INPUT_TABLE_NAME,
                     "CREATE TABLE "
-                            + INPUT_TABLE
+                            + INPUT_TABLE_NAME
                             + " ("
                             + "id BIGINT NOT NULL,"
                             + "timestamp6_col TIMESTAMP, "
@@ -105,42 +92,47 @@ class JdbcDynamicTableSourceITCase {
                             + // A precision of 24 or greater makes FLOAT equivalent to DOUBLE
                             // PRECISION.
                             "decimal_col DECIMAL(10, 4))");
-            statement.executeUpdate(
+
+    public static StreamExecutionEnvironment env;
+    public static TableEnvironment tEnv;
+
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Collections.singletonList(INPUT_TABLE);
+    }
+
+    @BeforeEach
+    void beforeEach() throws SQLException {
+        try (Connection conn = getDbMetadata().getConnection()) {
+            INPUT_TABLE.executeUpdate(
+                    conn,
                     "INSERT INTO "
-                            + INPUT_TABLE
+                            + INPUT_TABLE_NAME
                             + " VALUES ("
                             + "1, TIMESTAMP('2020-01-01 15:35:00.123456'), TIMESTAMP('2020-01-01 15:35:00.123456789'), "
                             + "TIME('15:35:00'), 1.175E-37, 1.79769E+308, 100.1234)");
-            statement.executeUpdate(
+            INPUT_TABLE.executeUpdate(
+                    conn,
                     "INSERT INTO "
-                            + INPUT_TABLE
+                            + INPUT_TABLE_NAME
                             + " VALUES ("
                             + "2, TIMESTAMP('2020-01-01 15:36:01.123456'), TIMESTAMP('2020-01-01 15:36:01.123456789'), "
                             + "TIME('15:36:01'), -1.175E-37, -1.79769E+308, 101.1234)");
         }
+        env = StreamExecutionEnvironment.getExecutionEnvironment();
+        tEnv = StreamTableEnvironment.create(env);
     }
 
     @AfterAll
-    static void afterAll() throws Exception {
-        Class.forName(DRIVER_CLASS);
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-                Statement stat = conn.createStatement()) {
-            stat.executeUpdate("DROP TABLE " + INPUT_TABLE);
-        }
+    static void afterAll() {
         StreamTestSink.clear();
-    }
-
-    @BeforeEach
-    void before() throws Exception {
-        env = StreamExecutionEnvironment.getExecutionEnvironment();
-        tEnv = StreamTableEnvironment.create(env);
     }
 
     @Test
     void testJdbcSource() throws Exception {
         tEnv.executeSql(
                 "CREATE TABLE "
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "("
                         + "id BIGINT,"
                         + "timestamp6_col TIMESTAMP(6),"
@@ -152,14 +144,14 @@ class JdbcDynamicTableSourceITCase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + DB_URL
+                        + getDbMetadata().getUrl()
                         + "',"
                         + "  'table-name'='"
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "'"
                         + ")");
 
-        Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE).collect();
+        Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_NAME).collect();
         List<String> result =
                 CollectionUtil.iteratorToList(collected).stream()
                         .map(Row::toString)
@@ -178,7 +170,7 @@ class JdbcDynamicTableSourceITCase {
     void testProject() throws Exception {
         tEnv.executeSql(
                 "CREATE TABLE "
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "("
                         + "id BIGINT,"
                         + "timestamp6_col TIMESTAMP(6),"
@@ -190,10 +182,10 @@ class JdbcDynamicTableSourceITCase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + DB_URL
+                        + getDbMetadata().getUrl()
                         + "',"
                         + "  'table-name'='"
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "',"
                         + "  'scan.partition.column'='id',"
                         + "  'scan.partition.num'='2',"
@@ -202,7 +194,7 @@ class JdbcDynamicTableSourceITCase {
                         + ")");
 
         Iterator<Row> collected =
-                tEnv.executeSql("SELECT id,timestamp6_col,decimal_col FROM " + INPUT_TABLE)
+                tEnv.executeSql("SELECT id,timestamp6_col,decimal_col FROM " + INPUT_TABLE_NAME)
                         .collect();
         List<String> result =
                 CollectionUtil.iteratorToList(collected).stream()
@@ -222,7 +214,7 @@ class JdbcDynamicTableSourceITCase {
     void testLimit() throws Exception {
         tEnv.executeSql(
                 "CREATE TABLE "
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "(\n"
                         + "id BIGINT,\n"
                         + "timestamp6_col TIMESTAMP(6),\n"
@@ -234,10 +226,10 @@ class JdbcDynamicTableSourceITCase {
                         + ") WITH (\n"
                         + "  'connector'='jdbc',\n"
                         + "  'url'='"
-                        + DB_URL
+                        + getDbMetadata().getUrl()
                         + "',\n"
                         + "  'table-name'='"
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "',\n"
                         + "  'scan.partition.column'='id',\n"
                         + "  'scan.partition.num'='2',\n"
@@ -246,7 +238,7 @@ class JdbcDynamicTableSourceITCase {
                         + ")");
 
         Iterator<Row> collected =
-                tEnv.executeSql("SELECT * FROM " + INPUT_TABLE + " LIMIT 1").collect();
+                tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_NAME + " LIMIT 1").collect();
         List<String> result =
                 CollectionUtil.iteratorToList(collected).stream()
                         .map(Row::toString)
@@ -269,7 +261,7 @@ class JdbcDynamicTableSourceITCase {
         String partitionedTable = "PARTITIONED_TABLE";
         tEnv.executeSql(
                 "CREATE TABLE "
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "("
                         + "id BIGINT,"
                         + "timestamp6_col TIMESTAMP(6),"
@@ -281,10 +273,10 @@ class JdbcDynamicTableSourceITCase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + DB_URL
+                        + getDbMetadata().getUrl()
                         + "',"
                         + "  'table-name'='"
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "'"
                         + ")");
 
@@ -303,10 +295,10 @@ class JdbcDynamicTableSourceITCase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + DB_URL
+                        + getDbMetadata().getUrl()
                         + "',"
                         + "  'table-name'='"
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "',"
                         + "  'scan.partition.column'='id',\n"
                         + "  'scan.partition.num'='1',\n"
@@ -321,7 +313,7 @@ class JdbcDynamicTableSourceITCase {
                         "CREATE VIEW FAKE_TABLE ("
                                 + "idx, timestamp6_col, timestamp9_col, time_col, real_col, double_col, decimal_col"
                                 + ") as (SELECT * from %s )",
-                        INPUT_TABLE));
+                        INPUT_TABLE_NAME));
 
         List<String> onlyRow1 =
                 Stream.of(
@@ -429,7 +421,7 @@ class JdbcDynamicTableSourceITCase {
                                 + "  'url' = '%s',"
                                 + "  'table-name' = '%s'"
                                 + ")",
-                        cachingOptions, DB_URL, INPUT_TABLE));
+                        cachingOptions, getDbMetadata().getUrl(), INPUT_TABLE_NAME));
 
         // Create and prepare a value source
         String dataId =

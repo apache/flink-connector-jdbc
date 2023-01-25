@@ -19,21 +19,18 @@
 package org.apache.flink.connector.jdbc.catalog.factory;
 
 import org.apache.flink.connector.jdbc.catalog.JdbcCatalog;
-import org.apache.flink.connector.jdbc.catalog.PostgresCatalog;
-import org.apache.flink.connector.jdbc.test.DockerImageVersions;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.databases.postgres.PostgresDatabase;
+import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CommonCatalogOptions;
 import org.apache.flink.table.factories.FactoryUtil;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -42,32 +39,24 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link JdbcCatalogFactory}. */
-@Testcontainers
+@ExtendWith(PostgresDatabase.class)
 class JdbcCatalogFactoryTest {
 
     public static final Logger LOG = LoggerFactory.getLogger(JdbcCatalogFactoryTest.class);
+
+    private static final DatabaseMetadata database = PostgresDatabase.getMetadata();
 
     protected static String baseUrl;
     protected static JdbcCatalog catalog;
 
     protected static final String TEST_CATALOG_NAME = "mypg";
-    protected static final String TEST_USERNAME = "postgres";
-    protected static final String TEST_PWD = "postgres";
-
-    protected static final DockerImageName POSTGRES_IMAGE =
-            DockerImageName.parse(DockerImageVersions.POSTGRES);
-
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES_CONTAINER =
-            new PostgreSQLContainer<>(POSTGRES_IMAGE)
-                    .withUsername(TEST_USERNAME)
-                    .withPassword(TEST_PWD)
-                    .withLogConsumer(new Slf4jLogConsumer(LOG));
+    protected static final String TEST_USERNAME = database.getUser();
+    protected static final String TEST_PWD = database.getPassword();
 
     @BeforeAll
     static void setup() throws SQLException {
         // jdbc:postgresql://localhost:50807/postgres?user=postgres
-        String jdbcUrl = POSTGRES_CONTAINER.getJdbcUrl();
+        String jdbcUrl = database.getUrl();
         // jdbc:postgresql://localhost:50807/
         baseUrl = jdbcUrl.substring(0, jdbcUrl.lastIndexOf("/"));
 

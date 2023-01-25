@@ -42,9 +42,11 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
-import org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
+import org.apache.flink.connector.jdbc.templates.BooksStore;
+import org.apache.flink.connector.jdbc.templates.BooksTable.BookEntry;
+import org.apache.flink.connector.jdbc.templates.TableManaged;
 import org.apache.flink.core.fs.CloseableRegistry;
 import org.apache.flink.metrics.groups.OperatorMetricGroup;
 import org.apache.flink.runtime.state.DefaultOperatorStateBackend;
@@ -67,19 +69,20 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.apache.flink.connector.jdbc.JdbcITCase.TEST_ENTRY_JDBC_STATEMENT_BUILDER;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.INPUT_TABLE;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
-
 /**
  * // todo: javadoc case Base class for {@link JdbcXaSinkFunction} tests. In addition to {@link
  * JdbcTestBase} init it initializes/closes helpers.
  */
-abstract class JdbcXaSinkTestBase extends JdbcTestBase {
+abstract class JdbcXaSinkTestBase implements JdbcTestBase, BooksStore {
 
     JdbcXaFacadeTestHelper xaHelper;
     JdbcXaSinkTestHelper sinkHelper;
     XADataSource xaDataSource;
+
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Collections.singletonList(BOOKS_TABLE);
+    }
 
     @BeforeEach
     void initHelpers() throws Exception {
@@ -88,9 +91,10 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
                 new JdbcXaFacadeTestHelper(
                         getDbMetadata().buildXaDataSource(),
                         getDbMetadata().getUrl(),
-                        INPUT_TABLE,
+                        BOOKS_TABLE.getTableName(),
                         getDbMetadata().getUser(),
-                        getDbMetadata().getPassword());
+                        getDbMetadata().getPassword(),
+                        BOOKS_TABLE.getTestData().toArray(new BookEntry[0]));
         sinkHelper = buildSinkHelper(createStateHandler());
     }
 
@@ -110,45 +114,49 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
                 new JdbcXaFacadeTestHelper(
                         xaDataSource,
                         getDbMetadata().getUrl(),
-                        INPUT_TABLE,
+                        BOOKS_TABLE.getTableName(),
                         getDbMetadata().getUser(),
-                        getDbMetadata().getPassword())) {
+                        getDbMetadata().getPassword(),
+                        BOOKS_TABLE.getTestData().toArray(new BookEntry[0]))) {
             xa.cancelAllTx();
         }
     }
 
     JdbcXaSinkTestHelper buildSinkHelper(XaSinkStateHandler stateHandler) throws Exception {
-        return new JdbcXaSinkTestHelper(buildAndInit(0, getXaFacade(), stateHandler), stateHandler);
+        return new JdbcXaSinkTestHelper(
+                buildAndInit(0, getXaFacade(), stateHandler),
+                stateHandler,
+                BOOKS_TABLE.getTestData().toArray(new BookEntry[0]));
     }
 
     private XaFacadeImpl getXaFacade() {
         return XaFacadeImpl.fromXaDataSource(xaDataSource);
     }
 
-    JdbcXaSinkFunction<TestEntry> buildAndInit() throws Exception {
+    JdbcXaSinkFunction<BookEntry> buildAndInit() throws Exception {
         return buildAndInit(Integer.MAX_VALUE, getXaFacade());
     }
 
-    JdbcXaSinkFunction<TestEntry> buildAndInit(int batchInterval, XaFacade xaFacade)
+    JdbcXaSinkFunction<BookEntry> buildAndInit(int batchInterval, XaFacade xaFacade)
             throws Exception {
         return buildAndInit(batchInterval, xaFacade, createStateHandler());
     }
 
-    static JdbcXaSinkFunction<TestEntry> buildAndInit(
+    static JdbcXaSinkFunction<BookEntry> buildAndInit(
             int batchInterval, XaFacade xaFacade, XaSinkStateHandler state) throws Exception {
-        JdbcXaSinkFunction<TestEntry> sink =
+        JdbcXaSinkFunction<BookEntry> sink =
                 buildSink(new SemanticXidGenerator(), xaFacade, state, batchInterval);
         sink.initializeState(buildInitCtx(false));
         sink.open(new Configuration());
         return sink;
     }
 
-    static JdbcXaSinkFunction<TestEntry> buildSink(
+    static JdbcXaSinkFunction<BookEntry> buildSink(
             XidGenerator xidGenerator,
             XaFacade xaFacade,
             XaSinkStateHandler state,
             int batchInterval) {
-        JdbcOutputFormat<TestEntry, TestEntry, JdbcBatchStatementExecutor<TestEntry>> format =
+        JdbcOutputFormat<BookEntry, BookEntry, JdbcBatchStatementExecutor<BookEntry>> format =
                 new JdbcOutputFormat<>(
                         xaFacade,
                         JdbcExecutionOptions.builder()
@@ -157,11 +165,11 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
                                 .build(),
                         ctx ->
                                 JdbcBatchStatementExecutor.simple(
-                                        String.format(INSERT_TEMPLATE, INPUT_TABLE),
-                                        TEST_ENTRY_JDBC_STATEMENT_BUILDER,
+                                        BOOKS_TABLE.getInsertIntoQuery(),
+                                        BOOKS_TABLE.getStatementBuilder(),
                                         Function.identity()),
                         JdbcOutputFormat.RecordExtractor.identity());
-        JdbcXaSinkFunction<TestEntry> sink =
+        JdbcXaSinkFunction<BookEntry> sink =
                 new JdbcXaSinkFunction<>(
                         format,
                         xaFacade,

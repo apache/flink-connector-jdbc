@@ -19,8 +19,10 @@
 package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.connector.jdbc.JdbcTestBase;
+import org.apache.flink.connector.jdbc.databases.derby.dialect.DerbyDialectFactory;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.dialect.derby.DerbyDialectFactory;
+import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.connector.jdbc.templates.TableManual;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableException;
@@ -47,12 +49,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -60,47 +59,44 @@ import java.util.TimeZone;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link JdbcFilterPushdownPreparedStatementVisitor}. */
-class JdbcFilterPushdownPreparedStatementVisitorTest {
+class JdbcFilterPushdownPreparedStatementVisitorTest implements JdbcTestBase {
 
     private final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-    public static final String DRIVER_CLASS = "org.apache.derby.jdbc.EmbeddedDriver";
-    public static final String DB_URL = "jdbc:derby:memory:test";
-    public static final String INPUT_TABLE = "jdbDynamicTableSource";
+    public static final String INPUT_TABLE_NAME = "jdbcDynamicTableSource";
 
     public static StreamExecutionEnvironment env;
     public static TableEnvironment tEnv;
 
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Collections.singletonList(
+                TableManual.of(
+                        INPUT_TABLE_NAME,
+                        "CREATE TABLE "
+                                + INPUT_TABLE_NAME
+                                + " ("
+                                + "id BIGINT NOT NULL,"
+                                + "description VARCHAR(200) NOT NULL,"
+                                + "timestamp6_col TIMESTAMP, "
+                                + "timestamp9_col TIMESTAMP, "
+                                + "time_col TIME, "
+                                + "real_col FLOAT(23), "
+                                + // A precision of 23 or less makes FLOAT equivalent to REAL.
+                                "double_col FLOAT(24),"
+                                + // A precision of 24 or greater makes FLOAT equivalent to DOUBLE
+                                // PRECISION.
+                                "decimal_col DECIMAL(10, 4))"));
+    }
+
     @BeforeEach
-    void before() throws ClassNotFoundException, SQLException {
+    void before() {
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         tEnv = StreamTableEnvironment.create(env);
 
-        System.setProperty(
-                "derby.stream.error.field", JdbcTestBase.class.getCanonicalName() + ".DEV_NULL");
-        Class.forName(DRIVER_CLASS);
-
-        try (Connection conn = DriverManager.getConnection(DB_URL + ";create=true");
-                Statement statement = conn.createStatement()) {
-            statement.executeUpdate(
-                    "CREATE TABLE "
-                            + INPUT_TABLE
-                            + " ("
-                            + "id BIGINT NOT NULL,"
-                            + "description VARCHAR(200) NOT NULL,"
-                            + "timestamp6_col TIMESTAMP, "
-                            + "timestamp9_col TIMESTAMP, "
-                            + "time_col TIME, "
-                            + "real_col FLOAT(23), "
-                            + // A precision of 23 or less makes FLOAT equivalent to REAL.
-                            "double_col FLOAT(24),"
-                            + // A precision of 24 or greater makes FLOAT equivalent to DOUBLE
-                            // PRECISION.
-                            "decimal_col DECIMAL(10, 4))");
-        }
         // Create table in Flink, this can be reused across test cases
         tEnv.executeSql(
                 "CREATE TABLE "
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "("
                         + "id BIGINT,"
                         + "description VARCHAR(200),"
@@ -113,27 +109,23 @@ class JdbcFilterPushdownPreparedStatementVisitorTest {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + DB_URL
+                        + getDbMetadata().getUrl()
                         + "',"
                         + "  'table-name'='"
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "'"
                         + ")");
     }
 
     @AfterEach
-    void clearOutputTable() throws Exception {
-        Class.forName(DRIVER_CLASS);
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-                Statement stat = conn.createStatement()) {
-            stat.executeUpdate("DROP TABLE " + INPUT_TABLE);
-        }
+    void clearOutputTable() {
         StreamTestSink.clear();
     }
 
     @Test
     void testSimpleExpressionPrimitiveType() {
-        ResolvedSchema schema = tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE).getResolvedSchema();
+        ResolvedSchema schema =
+                tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE_NAME).getResolvedSchema();
         Arrays.asList(
                         new Object[] {"id = 6", "id = ?", 6L},
                         new Object[] {"id >= 6", "id >= ?", 6},
@@ -156,7 +148,8 @@ class JdbcFilterPushdownPreparedStatementVisitorTest {
 
     @Test
     void testComplexExpressionDatetime() {
-        ResolvedSchema schema = tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE).getResolvedSchema();
+        ResolvedSchema schema =
+                tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE_NAME).getResolvedSchema();
         String andExpr = "id = 6 AND timestamp6_col = TIMESTAMP '2022-01-01 07:00:01.333'";
         Serializable[] expectedParams1 = {6L, Timestamp.valueOf("2022-01-01 07:00:01.333000")};
         assertGeneratedSQLString(
@@ -171,7 +164,8 @@ class JdbcFilterPushdownPreparedStatementVisitorTest {
 
     @Test
     void testExpressionWithNull() {
-        ResolvedSchema schema = tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE).getResolvedSchema();
+        ResolvedSchema schema =
+                tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE_NAME).getResolvedSchema();
         String andExpr = "id = NULL AND real_col <= 0.6";
 
         Serializable[] expectedParams1 = {null, new BigDecimal("0.6")};
@@ -186,7 +180,8 @@ class JdbcFilterPushdownPreparedStatementVisitorTest {
 
     @Test
     void testExpressionIsNull() {
-        ResolvedSchema schema = tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE).getResolvedSchema();
+        ResolvedSchema schema =
+                tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE_NAME).getResolvedSchema();
         String andExpr = "id IS NULL AND real_col <= 0.6";
 
         Serializable[] expectedParams1 = {new BigDecimal("0.6")};
@@ -201,7 +196,8 @@ class JdbcFilterPushdownPreparedStatementVisitorTest {
 
     @Test
     void testComplexExpressionPrimitiveType() {
-        ResolvedSchema schema = tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE).getResolvedSchema();
+        ResolvedSchema schema =
+                tEnv.sqlQuery("SELECT * FROM " + INPUT_TABLE_NAME).getResolvedSchema();
         String andExpr = "id = NULL AND real_col <= 0.6";
         Serializable[] expectedParams1 = {null, new BigDecimal("0.6")};
         assertGeneratedSQLString(

@@ -17,9 +17,9 @@
 
 package org.apache.flink.connector.jdbc.xa;
 
-import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
-import org.apache.flink.connector.jdbc.JdbcTestFixture;
+import org.apache.flink.connector.jdbc.templates.BooksTable;
+import org.apache.flink.connector.jdbc.templates.TableManaged;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,8 +28,9 @@ import javax.sql.XADataSource;
 import javax.transaction.xa.Xid;
 
 import java.sql.Connection;
-import java.sql.Statement;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -37,7 +38,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /** {@link XaFacadeImpl} tests. */
-class JdbcXaFacadeImplTest extends JdbcTestBase {
+class JdbcXaFacadeImplTest implements JdbcTestBase {
+
+    private static final BooksTable HELPER_TABLE = new BooksTable("helper");
+
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Collections.singletonList(HELPER_TABLE);
+    }
 
     private static final Xid XID =
             new Xid() {
@@ -65,9 +73,7 @@ class JdbcXaFacadeImplTest extends JdbcTestBase {
             f.start(XID);
             // insert some data to prevent database from ignoring the transaction
             try (Connection c = f.getConnection()) {
-                try (Statement s = c.createStatement()) {
-                    s.executeUpdate(JdbcTestFixture.getInsertQuery());
-                }
+                HELPER_TABLE.insertTableTestData(c);
             }
             f.endAndPrepare(XID);
         }
@@ -96,10 +102,5 @@ class JdbcXaFacadeImplTest extends JdbcTestBase {
         }
         verify(connection).close();
         verify(xaConnection).close();
-    }
-
-    @Override
-    protected DbMetadata getDbMetadata() {
-        return JdbcTestFixture.DERBY_EBOOKSHOP_DB;
     }
 }

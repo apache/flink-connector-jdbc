@@ -23,8 +23,8 @@ import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.connector.jdbc.JdbcBookStoreTestBase;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
-import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.JdbcInputFormat;
 import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
@@ -42,17 +42,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.Types;
 import java.util.function.Function;
 
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.ROW_TYPE_INFO;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.SELECT_ALL_BOOKS;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.SELECT_ALL_BOOKS_SPLIT_BY_ID;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.SELECT_ALL_NEWBOOKS;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.utils.JdbcUtils.setRecordToStatement;
 import static org.apache.flink.util.ExceptionUtils.findThrowable;
 import static org.apache.flink.util.ExceptionUtils.findThrowableWithMessage;
@@ -60,7 +51,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 
 /** Tests using both {@link JdbcInputFormat} and {@link JdbcOutputFormat}. */
-class JdbcFullTest extends JdbcDataTestBase {
+class JdbcFullTest extends JdbcBookStoreTestBase {
 
     @Test
     void testWithoutParallelism() throws Exception {
@@ -81,17 +72,10 @@ class JdbcFullTest extends JdbcDataTestBase {
                             .setOptions(
                                     JdbcConnectorOptions.builder()
                                             .setDBUrl(getDbMetadata().getUrl())
-                                            .setTableName(OUTPUT_TABLE)
+                                            .setTableName(NEWBOOKS_TABLE.getTableName())
                                             .build())
-                            .setFieldNames(new String[] {"id", "title", "author", "price", "qty"})
-                            .setFieldTypes(
-                                    new int[] {
-                                        Types.INTEGER,
-                                        Types.VARCHAR,
-                                        Types.VARCHAR,
-                                        Types.DOUBLE,
-                                        Types.INTEGER
-                                    })
+                            .setFieldNames(NEWBOOKS_TABLE.getTableFields())
+                            .setFieldTypes(NEWBOOKS_TABLE.getTableTypes())
                             .setKeyFields(null)
                             .build();
             RuntimeContext context = Mockito.mock(RuntimeContext.class);
@@ -116,8 +100,8 @@ class JdbcFullTest extends JdbcDataTestBase {
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(getDbMetadata().getDriverClass())
                         .setDBUrl(getDbMetadata().getUrl())
-                        .setQuery(SELECT_ALL_BOOKS)
-                        .setRowTypeInfo(ROW_TYPE_INFO);
+                        .setQuery(BOOKS_TABLE.getSelectAllQuery())
+                        .setRowTypeInfo(BOOKS_TABLE.getTableRowTypeInfo());
 
         if (exploitParallelism) {
             final int fetchSize = 1;
@@ -126,7 +110,7 @@ class JdbcFullTest extends JdbcDataTestBase {
             // use a "splittable" query to exploit parallelism
             inputBuilder =
                     inputBuilder
-                            .setQuery(SELECT_ALL_BOOKS_SPLIT_BY_ID)
+                            .setQuery(BOOKS_TABLE.getSelectByIdBetweenQuery())
                             .setParametersProvider(
                                     new JdbcNumericBetweenParametersProvider(min, max)
                                             .ofBatchSize(fetchSize));
@@ -142,28 +126,23 @@ class JdbcFullTest extends JdbcDataTestBase {
                         .withDriverName(getDbMetadata().getDriverClass())
                         .build();
 
-        JdbcOutputFormat jdbcOutputFormat =
+        JdbcOutputFormat<Row, Row, ?> jdbcOutputFormat =
                 new JdbcOutputFormat<>(
                         new SimpleJdbcConnectionProvider(connectionOptions),
                         JdbcExecutionOptions.defaults(),
                         ctx ->
                                 createSimpleRowExecutor(
-                                        String.format(INSERT_TEMPLATE, OUTPUT_TABLE),
-                                        new int[] {
-                                            Types.INTEGER,
-                                            Types.VARCHAR,
-                                            Types.VARCHAR,
-                                            Types.DOUBLE,
-                                            Types.INTEGER
-                                        },
+                                        NEWBOOKS_TABLE.getInsertIntoQuery(),
+                                        NEWBOOKS_TABLE.getTableTypes(),
                                         ctx.getExecutionConfig().isObjectReuseEnabled()),
                         JdbcOutputFormat.RecordExtractor.identity());
 
-        source.output(jdbcOutputFormat);
+        source.map(x -> x).output(jdbcOutputFormat);
         environment.execute();
 
         try (Connection dbConn = DriverManager.getConnection(getDbMetadata().getUrl());
-                PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS);
+                PreparedStatement statement =
+                        dbConn.prepareStatement(NEWBOOKS_TABLE.getSelectAllQuery());
                 ResultSet resultSet = statement.executeQuery()) {
             int count = 0;
             while (resultSet.next()) {
@@ -175,13 +154,8 @@ class JdbcFullTest extends JdbcDataTestBase {
 
     @AfterEach
     void clearOutputTable() throws Exception {
-        Class.forName(getDbMetadata().getDriverClass());
-        try (Connection conn = DriverManager.getConnection(getDbMetadata().getUrl());
-                Statement stat = conn.createStatement()) {
-            stat.execute("DELETE FROM " + OUTPUT_TABLE);
-
-            stat.close();
-            conn.close();
+        try (Connection conn = DriverManager.getConnection(getDbMetadata().getUrl())) {
+            NEWBOOKS_TABLE.deleteTable(conn);
         }
     }
 

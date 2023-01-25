@@ -18,21 +18,26 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.connector.jdbc.JdbcTestCheckpoint;
-import org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
+import org.apache.flink.connector.jdbc.templates.BooksTable;
+import org.apache.flink.connector.jdbc.templates.BooksTable.BookEntry;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
 import org.apache.flink.util.Preconditions;
 
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.xa.JdbcXaSinkTestBase.TEST_SINK_CONTEXT;
 
 class JdbcXaSinkTestHelper implements AutoCloseable {
 
-    private final JdbcXaSinkFunction<TestEntry> sink;
+    private final JdbcXaSinkFunction<BookEntry> sink;
     private final XaSinkStateHandler state;
+    private final BooksTable.BookEntry[] testData;
 
-    JdbcXaSinkTestHelper(JdbcXaSinkFunction<TestEntry> sink, XaSinkStateHandler stateHandler) {
+    JdbcXaSinkTestHelper(
+            JdbcXaSinkFunction<BookEntry> sink,
+            XaSinkStateHandler stateHandler,
+            BooksTable.BookEntry[] testData) {
         this.sink = Preconditions.checkNotNull(sink);
         this.state = Preconditions.checkNotNull(stateHandler);
+        this.testData = testData;
     }
 
     void emitAndCheckpoint(JdbcTestCheckpoint cp) throws Exception {
@@ -47,11 +52,11 @@ class JdbcXaSinkTestHelper implements AutoCloseable {
 
     void emit(JdbcTestCheckpoint checkpoint) throws java.io.IOException {
         for (int i = 0; i < checkpoint.dataItemsIdx.length; i++) {
-            emit(TEST_DATA[checkpoint.dataItemsIdx[i]]);
+            emit(testData[checkpoint.dataItemsIdx[i]]);
         }
     }
 
-    void emit(TestEntry entry) throws java.io.IOException {
+    void emit(BookEntry entry) throws java.io.IOException {
         sink.invoke(entry, TEST_SINK_CONTEXT);
     }
 
@@ -82,7 +87,7 @@ class JdbcXaSinkTestHelper implements AutoCloseable {
         };
     }
 
-    JdbcXaSinkFunction<TestEntry> getSinkFunction() {
+    JdbcXaSinkFunction<BookEntry> getSinkFunction() {
         return sink;
     }
 

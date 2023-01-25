@@ -21,12 +21,13 @@ package org.apache.flink.connector.jdbc.internal;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.connector.jdbc.JdbcDataTestBase;
+import org.apache.flink.connector.jdbc.JdbcBookStoreTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
+import org.apache.flink.connector.jdbc.templates.BooksTable.BookEntry;
 import org.apache.flink.types.Row;
 
 import org.junit.jupiter.api.AfterEach;
@@ -39,19 +40,15 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 
 /** Tests for the {@link JdbcOutputFormat}. */
-public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
+public class JdbcTableOutputFormatTest extends JdbcBookStoreTestBase {
 
     private TableJdbcUpsertOutputFormat format;
     private String[] fieldNames;
@@ -68,7 +65,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
         JdbcConnectorOptions options =
                 JdbcConnectorOptions.builder()
                         .setDBUrl(getDbMetadata().getUrl())
-                        .setTableName(OUTPUT_TABLE)
+                        .setTableName(NEWBOOKS_TABLE.getTableName())
                         .build();
         JdbcDmlOptions dmlOptions =
                 JdbcDmlOptions.builder()
@@ -103,7 +100,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
                         new SimpleJdbcConnectionProvider(
                                 JdbcConnectorOptions.builder()
                                         .setDBUrl(getDbMetadata().getUrl())
-                                        .setTableName(OUTPUT_TABLE)
+                                        .setTableName(NEWBOOKS_TABLE.getTableName())
                                         .build()) {
                             @Override
                             public boolean isConnectionValid() throws SQLException {
@@ -175,7 +172,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
         JdbcConnectorOptions options =
                 JdbcConnectorOptions.builder()
                         .setDBUrl(getDbMetadata().getUrl())
-                        .setTableName(OUTPUT_TABLE)
+                        .setTableName(NEWBOOKS_TABLE.getTableName())
                         .build();
         JdbcDmlOptions dmlOptions =
                 JdbcDmlOptions.builder()
@@ -196,18 +193,18 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
         format.setRuntimeContext(context);
         format.open(0, 1);
 
-        for (TestEntry entry : TEST_DATA) {
+        for (BookEntry entry : TEST_DATA) {
             format.writeRecord(Tuple2.of(true, toRow(entry)));
         }
         format.flush();
-        check(Arrays.stream(TEST_DATA).map(JdbcDataTestBase::toRow).toArray(Row[]::new));
+        check(Arrays.stream(TEST_DATA).map(JdbcBookStoreTestBase::toRow).toArray(Row[]::new));
 
         // override
-        for (TestEntry entry : TEST_DATA) {
+        for (BookEntry entry : TEST_DATA) {
             format.writeRecord(Tuple2.of(true, toRow(entry)));
         }
         format.flush();
-        check(Arrays.stream(TEST_DATA).map(JdbcDataTestBase::toRow).toArray(Row[]::new));
+        check(Arrays.stream(TEST_DATA).map(JdbcBookStoreTestBase::toRow).toArray(Row[]::new));
 
         // delete
         for (int i = 0; i < TEST_DATA.length / 2; i++) {
@@ -222,7 +219,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
     }
 
     private void check(Row[] rows) throws SQLException {
-        check(rows, getDbMetadata().getUrl(), OUTPUT_TABLE, fieldNames);
+        check(rows, getDbMetadata().getUrl(), NEWBOOKS_TABLE.getTableName(), fieldNames);
     }
 
     public static void check(Row[] rows, String url, String table, String[] fields)
@@ -252,13 +249,9 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
             format.close();
         }
         format = null;
-        Class.forName(getDbMetadata().getDriverClass());
-        try (Connection conn = DriverManager.getConnection(getDbMetadata().getUrl());
-                Statement stat = conn.createStatement()) {
-            stat.execute("DELETE FROM " + OUTPUT_TABLE);
 
-            stat.close();
-            conn.close();
+        try (Connection conn = DriverManager.getConnection(getDbMetadata().getUrl())) {
+            NEWBOOKS_TABLE.deleteTable(conn);
         }
     }
 }

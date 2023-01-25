@@ -19,7 +19,6 @@
 package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
-import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.connector.source.lookup.LookupOptions;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
@@ -37,17 +36,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test suite for {@link JdbcRowDataLookupFunction}. */
 class JdbcRowDataLookupFunctionTest extends JdbcLookupTestBase {
 
-    private static final String[] fieldNames = new String[] {"id1", "id2", "comment1", "comment2"};
-    private static final DataType[] fieldDataTypes =
-            new DataType[] {
-                DataTypes.INT(), DataTypes.STRING(), DataTypes.STRING(), DataTypes.STRING()
-            };
+    private static final String[] fieldNames = LOOKUP_TABLE.getTableFields();
+    private static final DataType[] fieldDataTypes = LOOKUP_TABLE.getTableDataTypes();
 
     private static final String[] lookupKeys = new String[] {"id1", "id2"};
 
@@ -86,9 +81,9 @@ class JdbcRowDataLookupFunctionTest extends JdbcLookupTestBase {
     private JdbcRowDataLookupFunction buildRowDataLookupFunction(boolean withFailure) {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
-                        .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DB_URL)
-                        .setTableName(LOOKUP_TABLE)
+                        .setDriverName(getDbMetadata().getDriverClass())
+                        .setDBUrl(getDbMetadata().getUrl())
+                        .setTableName(LOOKUP_TABLE_NAME)
                         .build();
 
         RowType rowType =

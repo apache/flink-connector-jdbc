@@ -18,40 +18,44 @@
 
 package org.apache.flink.connector.jdbc.table;
 
-import org.apache.flink.connector.jdbc.JdbcTestFixture;
+import org.apache.flink.connector.jdbc.JdbcTestBase;
+import org.apache.flink.connector.jdbc.templates.TableBuilder;
+import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.table.api.DataTypes;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /** Base class for JDBC lookup test. */
-class JdbcLookupTestBase {
+class JdbcLookupTestBase implements JdbcTestBase {
 
-    public static final String DB_URL = "jdbc:derby:memory:lookup";
-    public static final String LOOKUP_TABLE = "lookup_table";
+    public static final String LOOKUP_TABLE_NAME = "lookup_table";
+
+    protected static final TableBuilder LOOKUP_TABLE =
+            TableBuilder.of(
+                    "lookup_table",
+                    TableBuilder.field("id1", DataTypes.INT().notNull()),
+                    TableBuilder.field("id2", DataTypes.VARCHAR(20).notNull()),
+                    TableBuilder.field("comment1", DataTypes.VARCHAR(1000)),
+                    TableBuilder.field("comment2", DataTypes.VARCHAR(1000)));
+
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Collections.singletonList(LOOKUP_TABLE);
+    }
 
     @BeforeEach
-    void before() throws ClassNotFoundException, SQLException {
-        System.setProperty(
-                "derby.stream.error.field", JdbcTestFixture.class.getCanonicalName() + ".DEV_NULL");
-
-        Class.forName(DERBY_EBOOKSHOP_DB.getDriverClass());
-        try (Connection conn = DriverManager.getConnection(DB_URL + ";create=true");
+    void before() throws SQLException {
+        try (Connection conn = getDbMetadata().getConnection();
                 Statement stat = conn.createStatement()) {
-            stat.executeUpdate(
-                    "CREATE TABLE "
-                            + LOOKUP_TABLE
-                            + " ("
-                            + "id1 INT NOT NULL DEFAULT 0,"
-                            + "id2 VARCHAR(20) NOT NULL,"
-                            + "comment1 VARCHAR(1000),"
-                            + "comment2 VARCHAR(1000))");
 
             Object[][] data =
                     new Object[][] {
@@ -61,53 +65,39 @@ class JdbcLookupTestBase {
                         new Object[] {2, "5", "25-c1", "25-c2"},
                         new Object[] {3, "8", "38-c1", "38-c2"}
                     };
-            boolean[] surroundedByQuotes = new boolean[] {false, true, true, true};
 
-            StringBuilder sqlQueryBuilder =
-                    new StringBuilder(
-                            "INSERT INTO "
-                                    + LOOKUP_TABLE
-                                    + " (id1, id2, comment1, comment2) VALUES ");
-            for (int i = 0; i < data.length; i++) {
-                sqlQueryBuilder.append("(");
-                for (int j = 0; j < data[i].length; j++) {
-                    if (data[i][j] == null) {
-                        sqlQueryBuilder.append("null");
-                    } else {
-                        if (surroundedByQuotes[j]) {
-                            sqlQueryBuilder.append("'");
+            Function<Object, Object> valueChecker =
+                    value -> {
+                        if (value == null || value instanceof Number) {
+                            return value;
                         }
-                        sqlQueryBuilder.append(data[i][j]);
-                        if (surroundedByQuotes[j]) {
-                            sqlQueryBuilder.append("'");
-                        }
-                    }
-                    if (j < data[i].length - 1) {
-                        sqlQueryBuilder.append(", ");
-                    }
-                }
-                sqlQueryBuilder.append(")");
-                if (i < data.length - 1) {
-                    sqlQueryBuilder.append(", ");
-                }
-            }
-            stat.execute(sqlQueryBuilder.toString());
+                        return String.format("'%s'", value);
+                    };
+
+            String query =
+                    String.format(
+                            "INSERT INTO %s (%s) VALUES %s",
+                            LOOKUP_TABLE.getTableName(),
+                            String.join(", ", LOOKUP_TABLE.getTableFields()),
+                            Arrays.stream(data)
+                                    .map(
+                                            row ->
+                                                    String.format(
+                                                            "(%s, %s, %s, %s)",
+                                                            valueChecker.apply(row[0]),
+                                                            valueChecker.apply(row[1]),
+                                                            valueChecker.apply(row[2]),
+                                                            valueChecker.apply(row[3])))
+                                    .collect(Collectors.joining(", ")));
+
+            stat.execute(query);
         }
     }
 
     public void insert(String insertQuery) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(DB_URL + ";create=true");
+        try (Connection conn = getDbMetadata().getConnection();
                 Statement stat = conn.createStatement()) {
             stat.execute(insertQuery);
-        }
-    }
-
-    @AfterEach
-    void clearOutputTable() throws Exception {
-        Class.forName(DERBY_EBOOKSHOP_DB.getDriverClass());
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-                Statement stat = conn.createStatement()) {
-            stat.execute("DROP TABLE " + LOOKUP_TABLE);
         }
     }
 }
