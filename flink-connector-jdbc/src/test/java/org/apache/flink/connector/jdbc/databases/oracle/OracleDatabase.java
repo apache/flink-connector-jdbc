@@ -51,10 +51,6 @@ public class OracleDatabase extends DatabaseExtension {
 
     @Override
     protected void stopDatabase() throws Exception {
-        try {
-            container.stop();
-        } catch (Exception ignore) {
-            ignore.printStackTrace();
-        }
+        container.stop();
     }
 }

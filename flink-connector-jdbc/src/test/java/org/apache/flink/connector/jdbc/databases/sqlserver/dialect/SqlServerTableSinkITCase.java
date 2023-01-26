@@ -20,9 +20,12 @@ package org.apache.flink.connector.jdbc.databases.sqlserver.dialect;
 
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.databases.sqlserver.MsSqlServerDatabase;
+import org.apache.flink.connector.jdbc.databases.sqlserver.MsSqlServerTestBase;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
+import org.apache.flink.connector.jdbc.templates.TableBuilder;
+import org.apache.flink.connector.jdbc.templates.TableChecker;
+import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.connector.jdbc.templates.TableManual;
 import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -47,18 +50,14 @@ import org.apache.flink.table.runtime.connector.sink.SinkRuntimeProviderContext;
 import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -69,77 +68,65 @@ import static org.apache.flink.table.api.Expressions.$;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSink;
 
 /** The Table Sink ITCase for {@link SqlServerDialect}. */
-@Disabled
-@ExtendWith(MsSqlServerDatabase.class)
-class SqlServerTableSinkITCase extends AbstractTestBase {
+@DisabledOnOs(OS.MAC)
+class SqlServerTableSinkITCase extends AbstractTestBase implements MsSqlServerTestBase {
 
-    private static final DatabaseMetadata metadata = MsSqlServerDatabase.getMetadata();
-
-    public static final String OUTPUT_TABLE1 = "dynamicSinkForUpsert";
-    public static final String OUTPUT_TABLE2 = "dynamicSinkForAppend";
-    public static final String OUTPUT_TABLE3 = "dynamicSinkForBatch";
-    public static final String OUTPUT_TABLE4 = "REAL_TABLE";
-    public static final String OUTPUT_TABLE5 = "checkpointTable";
-    public static final String USER_TABLE = "USER_TABLE";
-
-    @BeforeAll
-    static void beforeAll() throws ClassNotFoundException, SQLException {
-        try (Connection conn = metadata.getConnection();
-                Statement stat = conn.createStatement()) {
-            stat.executeUpdate(
-                    "CREATE TABLE "
-                            + OUTPUT_TABLE1
-                            + " ("
+    private static final TableManual OUTPUT_TABLE1 =
+            TableManual.of(
+                    "dynamicSinkForUpsert",
+                    "CREATE TABLE dynamicSinkForUpsert ("
                             + "cnt FLOAT DEFAULT 0 NOT NULL,"
                             + "lencnt FLOAT DEFAULT 0 NOT NULL,"
                             + "cTag INT DEFAULT 0 NOT NULL,"
                             + "ts DATETIME2,"
                             + "CONSTRAINT PK1 PRIMARY KEY CLUSTERED (cnt, cTag))");
 
-            stat.executeUpdate(
-                    "CREATE TABLE "
-                            + OUTPUT_TABLE2
-                            + " ("
+    private static final TableManual OUTPUT_TABLE2 =
+            TableManual.of(
+                    "dynamicSinkForAppend",
+                    "CREATE TABLE dynamicSinkForAppend ("
                             + "id INT DEFAULT 0 NOT NULL,"
                             + "num INT DEFAULT 0 NOT NULL,"
                             + "ts DATETIME2)");
 
-            stat.executeUpdate(
-                    "CREATE TABLE "
-                            + OUTPUT_TABLE3
-                            + " ("
-                            + "NAME VARCHAR(20) NOT NULL,"
-                            + "SCORE INT DEFAULT 0 NOT NULL)");
+    private static final TableBuilder OUTPUT_TABLE3 =
+            TableBuilder.of(
+                    "dynamicSinkForBatch",
+                    TableBuilder.field("NAME", DataTypes.VARCHAR(20).notNull()),
+                    TableBuilder.field("SCORE", DataTypes.INT().notNull()) // DEFAULT 0
+                    );
 
-            stat.executeUpdate("CREATE TABLE " + OUTPUT_TABLE4 + " (real_data REAL)");
+    private static final TableManual OUTPUT_TABLE4 =
+            TableManual.of("REAL_TABLE", "CREATE TABLE REAL_TABLE (real_data REAL)");
 
-            stat.executeUpdate(
-                    "CREATE TABLE " + OUTPUT_TABLE5 + " (" + "id BIGINT DEFAULT 0 NOT NULL)");
+    private static final TableBuilder OUTPUT_TABLE5 =
+            TableBuilder.of(
+                    "checkpointTable", TableBuilder.field("id", DataTypes.BIGINT().notNull()));
 
-            stat.executeUpdate(
-                    "CREATE TABLE "
-                            + USER_TABLE
-                            + " ("
-                            + "user_id VARCHAR(20) NOT NULL,"
-                            + "user_name VARCHAR(20) NOT NULL,"
-                            + "email VARCHAR(255),"
-                            + "balance DECIMAL(18,2),"
-                            + "balance2 DECIMAL(18,2),"
-                            + "CONSTRAINT PK2 PRIMARY KEY CLUSTERED (user_id))");
-        }
-    }
+    private static final TableBuilder USER_TABLE =
+            TableBuilder.of(
+                    "USER_TABLE",
+                    TableBuilder.field("user_id", DataTypes.VARCHAR(20).notNull(), true),
+                    TableBuilder.field("user_name", DataTypes.VARCHAR(20).notNull()),
+                    TableBuilder.field("email", DataTypes.VARCHAR(255)),
+                    TableBuilder.field("balance", DataTypes.DECIMAL(18, 2)),
+                    TableBuilder.field("balance2", DataTypes.DECIMAL(18, 2)));
+    private final String dbUrlWithCredentials =
+            String.format(
+                    "%s;username=%s;password=%s",
+                    getDbMetadata().getUrl(),
+                    getDbMetadata().getUser(),
+                    getDbMetadata().getPassword());
 
-    @AfterAll
-    static void afterAll() throws Exception {
-        try (Connection conn = metadata.getConnection();
-                Statement stat = conn.createStatement()) {
-            stat.execute("DROP TABLE " + OUTPUT_TABLE1);
-            stat.execute("DROP TABLE " + OUTPUT_TABLE2);
-            stat.execute("DROP TABLE " + OUTPUT_TABLE3);
-            stat.execute("DROP TABLE " + OUTPUT_TABLE4);
-            stat.execute("DROP TABLE " + OUTPUT_TABLE5);
-            stat.execute("DROP TABLE " + USER_TABLE);
-        }
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Arrays.asList(
+                OUTPUT_TABLE1,
+                OUTPUT_TABLE2,
+                OUTPUT_TABLE3,
+                OUTPUT_TABLE4,
+                OUTPUT_TABLE5,
+                USER_TABLE);
     }
 
     public static DataStream<Tuple4<Integer, Long, String, Timestamp>> get4TupleDataStream(
@@ -184,32 +171,27 @@ class SqlServerTableSinkITCase extends AbstractTestBase {
         env.getConfig().enableObjectReuse();
         StreamTableEnvironment tEnv =
                 StreamTableEnvironment.create(env, EnvironmentSettings.inStreamingMode());
-
         tEnv.executeSql(
                 "CREATE TABLE upsertSink ("
                         + "  real_data float"
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + metadata.getUrl()
+                        + dbUrlWithCredentials
                         + "',"
                         + "  'table-name'='"
-                        + OUTPUT_TABLE4
+                        + OUTPUT_TABLE4.getTableName()
                         + "',"
                         + "  'username'='"
-                        + metadata.getUser()
+                        + getDbMetadata().getUser()
                         + "',"
                         + "  'password'='"
-                        + metadata.getPassword()
+                        + getDbMetadata().getPassword()
                         + "'"
                         + ")");
 
         tEnv.executeSql("INSERT INTO upsertSink SELECT CAST(1.1 as FLOAT)").await();
-        check(
-                new Row[] {Row.of(1.1f)},
-                metadata.getUrl(),
-                "REAL_TABLE",
-                new String[] {"real_data"});
+        TableChecker.check(getDbMetadata(), OUTPUT_TABLE4, new Row[] {Row.of(1.1f)});
     }
 
     @Test
@@ -247,16 +229,16 @@ class SqlServerTableSinkITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + metadata.getUrl()
+                        + dbUrlWithCredentials
                         + "',"
                         + "  'table-name'='"
-                        + OUTPUT_TABLE1
+                        + OUTPUT_TABLE1.getTableName()
                         + "',"
                         + "  'username'='"
-                        + metadata.getUser()
+                        + getDbMetadata().getUser()
                         + "',"
                         + "  'password'='"
-                        + metadata.getPassword()
+                        + getDbMetadata().getPassword()
                         + "',"
                         + "  'sink.buffer-flush.max-rows' = '2',"
                         + "  'sink.buffer-flush.interval' = '0',"
@@ -273,15 +255,14 @@ class SqlServerTableSinkITCase extends AbstractTestBase {
                                 + ")\n"
                                 + "GROUP BY cnt, cTag")
                 .await();
-        check(
+        TableChecker.check(
+                getDbMetadata(),
+                OUTPUT_TABLE1,
                 new Row[] {
                     Row.of(1.0, 5.0, 1, Timestamp.valueOf("1970-01-01 00:00:00.006")),
                     Row.of(7.0, 1.0, 1, Timestamp.valueOf("1970-01-01 00:00:00.021")),
                     Row.of(9.0, 1.0, 1, Timestamp.valueOf("1970-01-01 00:00:00.015"))
-                },
-                metadata.getUrl(),
-                OUTPUT_TABLE1,
-                new String[] {"cnt", "lencnt", "cTag", "ts"});
+                });
     }
 
     @Test
@@ -305,30 +286,29 @@ class SqlServerTableSinkITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + metadata.getUrl()
+                        + dbUrlWithCredentials
                         + "',"
                         + "  'table-name'='"
-                        + OUTPUT_TABLE2
+                        + OUTPUT_TABLE2.getTableName()
                         + "',"
                         + "  'username'='"
-                        + metadata.getUser()
+                        + getDbMetadata().getUser()
                         + "',"
                         + "  'password'='"
-                        + metadata.getPassword()
+                        + getDbMetadata().getPassword()
                         + "'"
                         + ")");
 
         tEnv.executeSql("INSERT INTO upsertSink SELECT id, num, ts FROM T WHERE id IN (2, 10, 20)")
                 .await();
-        check(
+        TableChecker.check(
+                getDbMetadata(),
+                OUTPUT_TABLE2,
                 new Row[] {
                     Row.of(2, 2, Timestamp.valueOf("1970-01-01 00:00:00.002")),
                     Row.of(10, 4, Timestamp.valueOf("1970-01-01 00:00:00.01")),
                     Row.of(20, 6, Timestamp.valueOf("1970-01-01 00:00:00.02"))
-                },
-                metadata.getUrl(),
-                OUTPUT_TABLE2,
-                new String[] {"id", "num", "ts"});
+                });
     }
 
     @Test
@@ -342,16 +322,16 @@ class SqlServerTableSinkITCase extends AbstractTestBase {
                         + ") WITH ( "
                         + "'connector' = 'jdbc',"
                         + "'url'='"
-                        + metadata.getUrl()
+                        + dbUrlWithCredentials
                         + "',"
                         + "'table-name' = '"
-                        + OUTPUT_TABLE3
+                        + OUTPUT_TABLE3.getTableName()
                         + "',"
                         + "  'username'='"
-                        + metadata.getUser()
+                        + getDbMetadata().getUser()
                         + "',"
                         + "  'password'='"
-                        + metadata.getPassword()
+                        + getDbMetadata().getPassword()
                         + "',"
                         + "'sink.buffer-flush.max-rows' = '2',"
                         + "'sink.buffer-flush.interval' = '300ms',"
@@ -375,9 +355,9 @@ class SqlServerTableSinkITCase extends AbstractTestBase {
                     Row.of("Kim", 42),
                     Row.of("Bob", 1)
                 },
-                metadata.getUrl(),
-                OUTPUT_TABLE3,
-                new String[] {"NAME", "SCORE"});
+                dbUrlWithCredentials,
+                OUTPUT_TABLE3.getTableName(),
+                OUTPUT_TABLE3.getTableFields());
     }
 
     @Test
@@ -408,16 +388,16 @@ class SqlServerTableSinkITCase extends AbstractTestBase {
                         + ") WITH (\n"
                         + "  'connector' = 'jdbc',"
                         + "  'url'='"
-                        + metadata.getUrl()
+                        + dbUrlWithCredentials
                         + "',"
                         + "  'table-name' = '"
-                        + USER_TABLE
+                        + USER_TABLE.getTableName()
                         + "',"
                         + "  'username'='"
-                        + metadata.getUser()
+                        + getDbMetadata().getUser()
                         + "',"
                         + "  'password'='"
-                        + metadata.getPassword()
+                        + getDbMetadata().getPassword()
                         + "',"
                         + "  'sink.buffer-flush.max-rows' = '2',"
                         + "  'sink.buffer-flush.interval' = '0'"
@@ -446,20 +426,20 @@ class SqlServerTableSinkITCase extends AbstractTestBase {
                             new BigDecimal("11.30"),
                             new BigDecimal("22.60"))
                 },
-                metadata.getUrl(),
-                USER_TABLE,
-                new String[] {"user_id", "user_name", "email", "balance", "balance2"});
+                dbUrlWithCredentials,
+                USER_TABLE.getTableName(),
+                USER_TABLE.getTableFields());
     }
 
     @Test
     void testFlushBufferWhenCheckpoint() throws Exception {
         Map<String, String> options = new HashMap<>();
         options.put("connector", "jdbc");
-        options.put("url", metadata.getUrl());
-        options.put("table-name", OUTPUT_TABLE5);
+        options.put("url", dbUrlWithCredentials);
+        options.put("table-name", OUTPUT_TABLE5.getTableName());
         options.put("sink.buffer-flush.interval", "0");
-        options.put("username", metadata.getUser());
-        options.put("password", metadata.getPassword());
+        options.put("username", getDbMetadata().getUser());
+        options.put("password", getDbMetadata().getPassword());
 
         ResolvedSchema schema =
                 ResolvedSchema.of(Column.physical("id", DataTypes.BIGINT().notNull()));
@@ -476,13 +456,17 @@ class SqlServerTableSinkITCase extends AbstractTestBase {
         sinkFunction.invoke(GenericRowData.of(1L), SinkContextUtil.forTimestamp(1));
         sinkFunction.invoke(GenericRowData.of(2L), SinkContextUtil.forTimestamp(1));
 
-        check(new Row[] {}, metadata.getUrl(), OUTPUT_TABLE5, new String[] {"id"});
+        check(
+                new Row[] {},
+                dbUrlWithCredentials,
+                OUTPUT_TABLE5.getTableName(),
+                OUTPUT_TABLE5.getTableFields());
         sinkFunction.snapshotState(new StateSnapshotContextSynchronousImpl(1, 1));
         check(
                 new Row[] {Row.of(1L), Row.of(2L)},
-                metadata.getUrl(),
-                OUTPUT_TABLE5,
-                new String[] {"id"});
+                dbUrlWithCredentials,
+                OUTPUT_TABLE5.getTableName(),
+                OUTPUT_TABLE5.getTableFields());
         sinkFunction.close();
     }
 }

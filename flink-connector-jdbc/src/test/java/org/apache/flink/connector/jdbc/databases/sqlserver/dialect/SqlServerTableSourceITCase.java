@@ -18,8 +18,9 @@
 
 package org.apache.flink.connector.jdbc.databases.sqlserver.dialect;
 
-import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.databases.sqlserver.MsSqlServerDatabase;
+import org.apache.flink.connector.jdbc.databases.sqlserver.MsSqlServerTestBase;
+import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.connector.jdbc.templates.TableManual;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -27,16 +28,15 @@ import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CollectionUtil;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,23 +45,18 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The Table Source ITCase for {@link SqlServerDialect}. */
-@Disabled
-@ExtendWith(MsSqlServerDatabase.class)
-class SqlServerTableSourceITCase extends AbstractTestBase {
-
-    private static final DatabaseMetadata metadata = MsSqlServerDatabase.getMetadata();
-    private static final String INPUT_TABLE = "sql_test_table";
+@DisabledOnOs(OS.MAC)
+class SqlServerTableSourceITCase extends AbstractTestBase implements MsSqlServerTestBase {
 
     private static StreamExecutionEnvironment env;
     private static TableEnvironment tEnv;
 
-    @BeforeAll
-    static void beforeAll() throws SQLException {
-        try (Connection conn = metadata.getConnection();
-                Statement statement = conn.createStatement()) {
-            statement.executeUpdate(
+    private static final String INPUT_TABLE_NAME = "sql_test_table";
+    private static final TableManual INPUT_TABLE =
+            TableManual.of(
+                    INPUT_TABLE_NAME,
                     "CREATE TABLE "
-                            + INPUT_TABLE
+                            + INPUT_TABLE_NAME
                             + " ("
                             + "id INT NOT NULL,"
                             + "tiny_int TINYINT,"
@@ -83,9 +78,27 @@ class SqlServerTableSourceITCase extends AbstractTestBase {
                             + "ntext_col NTEXT,"
                             + "binary_col BINARY(10)"
                             + ")");
+
+    private final String dbUrlWithCredentials =
+            String.format(
+                    "%s;username=%s;password=%s",
+                    getDbMetadata().getUrl(),
+                    getDbMetadata().getUser(),
+                    getDbMetadata().getPassword());
+
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Collections.singletonList(INPUT_TABLE);
+    }
+
+    @BeforeEach
+    void beforeEach() throws SQLException {
+        try (Connection conn = getDbMetadata().getConnection();
+                Statement statement = conn.createStatement()) {
+
             statement.executeUpdate(
                     "INSERT INTO "
-                            + INPUT_TABLE
+                            + INPUT_TABLE_NAME
                             + " VALUES ("
                             + "1, 2, 4, 10000000000, 1.12345, 2.12345678791, 100.1234, 0, "
                             + "'1997-01-01', '05:20:20.222','2020-01-01 15:35:00.123',"
@@ -93,25 +106,14 @@ class SqlServerTableSourceITCase extends AbstractTestBase {
                             + "'Hello World', 'World Hello', 1024)");
             statement.executeUpdate(
                     "INSERT INTO "
-                            + INPUT_TABLE
+                            + INPUT_TABLE_NAME
                             + " VALUES ("
                             + "2, 2, 4, 10000000000, 1.12345, 2.12345678791, 101.1234, 1, "
                             + "'1997-01-02', '05:20:20.222','2020-01-01 15:36:01.123',"
                             + "'2020-01-01 15:36:01.1234567', 'a', 'abc', 'abcdef', 'xyz',"
                             + "'Hey Leonard', 'World Hello', 1024)");
         }
-    }
 
-    @AfterAll
-    static void afterAll() throws Exception {
-        try (Connection conn = metadata.getConnection();
-                Statement statement = conn.createStatement()) {
-            statement.executeUpdate("DROP TABLE " + INPUT_TABLE);
-        }
-    }
-
-    @BeforeEach
-    void before() throws Exception {
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         tEnv = StreamTableEnvironment.create(env);
     }
@@ -119,7 +121,7 @@ class SqlServerTableSourceITCase extends AbstractTestBase {
     @Test
     void testJdbcSource() throws Exception {
         createFlinkTable();
-        Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE).collect();
+        Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_NAME).collect();
         List<String> result =
                 CollectionUtil.iteratorToList(collected).stream()
                         .map(Row::toString)
@@ -144,7 +146,8 @@ class SqlServerTableSourceITCase extends AbstractTestBase {
     void testProject() throws Exception {
         createFlinkTable();
         Iterator<Row> collected =
-                tEnv.executeSql("SELECT id,datetime_col,decimal_col FROM " + INPUT_TABLE).collect();
+                tEnv.executeSql("SELECT id,datetime_col,decimal_col FROM " + INPUT_TABLE_NAME)
+                        .collect();
         List<String> result =
                 CollectionUtil.iteratorToList(collected).stream()
                         .map(Row::toString)
@@ -165,7 +168,7 @@ class SqlServerTableSourceITCase extends AbstractTestBase {
         Iterator<Row> collected =
                 tEnv.executeSql(
                                 "SELECT id,datetime_col,decimal_col FROM "
-                                        + INPUT_TABLE
+                                        + INPUT_TABLE_NAME
                                         + " WHERE id = 1")
                         .collect();
         List<String> result =
@@ -181,7 +184,7 @@ class SqlServerTableSourceITCase extends AbstractTestBase {
     private void createFlinkTable() {
         tEnv.executeSql(
                 "CREATE TABLE "
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + " ("
                         + "id INT NOT NULL,"
                         + "tiny_int TINYINT,"
@@ -205,16 +208,16 @@ class SqlServerTableSourceITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + metadata.getUrl()
+                        + dbUrlWithCredentials
                         + "',"
                         + "  'table-name'='"
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "',"
                         + "  'username'='"
-                        + metadata.getUser()
+                        + getDbMetadata().getUser()
                         + "',"
                         + "  'password'='"
-                        + metadata.getPassword()
+                        + getDbMetadata().getPassword()
                         + "'"
                         + ")");
     }

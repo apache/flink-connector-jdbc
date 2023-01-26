@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.internal.converter;
+package org.apache.flink.connector.jdbc.databases.derby.dialect;
 
 import org.apache.flink.connector.jdbc.converter.AbstractJdbcRowConverter;
 import org.apache.flink.table.types.logical.RowType;

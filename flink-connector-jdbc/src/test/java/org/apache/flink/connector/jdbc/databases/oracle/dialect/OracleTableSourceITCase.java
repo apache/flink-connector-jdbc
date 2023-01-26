@@ -101,10 +101,7 @@ class OracleTableSourceITCase extends AbstractTestBase implements OracleTestBase
                             + "TO_DATE('1997-01-02','yyyy-mm-dd'),  TIMESTAMP '2020-01-01 15:36:01.123456', "
                             + "TIMESTAMP '2020-01-01 15:36:01.123456789', 'Hey Leonard', hextoraw('453d7a34'))");
         }
-    }
 
-    @BeforeEach
-    void before() throws Exception {
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         tEnv = StreamTableEnvironment.create(env);
     }

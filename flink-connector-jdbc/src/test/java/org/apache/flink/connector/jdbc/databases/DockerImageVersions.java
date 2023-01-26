@@ -24,6 +24,7 @@ package org.apache.flink.connector.jdbc.databases;
  */
 public class DockerImageVersions {
 
+    public static final String MSSQL_SERVER_2017 = "mcr.microsoft.com/mssql/server:2017-CU12";
     public static final String MSSQL_SERVER_2019 =
             "mcr.microsoft.com/mssql/server:2019-GA-ubuntu-16.04";
 

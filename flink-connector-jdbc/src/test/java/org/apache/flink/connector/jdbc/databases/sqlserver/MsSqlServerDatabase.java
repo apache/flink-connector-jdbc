@@ -46,7 +46,7 @@ public class MsSqlServerDatabase extends DatabaseExtension {
     protected DatabaseMetadata startDatabase() throws Exception {
         container.start();
         metadata = new MsSqlServerMetadata(container);
-        return null;
+        return metadata;
     }
 
     @Override
