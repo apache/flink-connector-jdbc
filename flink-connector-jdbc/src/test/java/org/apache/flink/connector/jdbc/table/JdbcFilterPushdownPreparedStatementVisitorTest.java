@@ -21,9 +21,10 @@ package org.apache.flink.connector.jdbc.table;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.databases.derby.dialect.DerbyDialectFactory;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.templates.TableManual;
 import org.apache.flink.connector.jdbc.templates.round2.TableManaged;
+import org.apache.flink.connector.jdbc.templates.round2.TableRow;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -56,6 +57,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
 
+import static org.apache.flink.connector.jdbc.templates.round2.TableBuilder2.field;
+import static org.apache.flink.connector.jdbc.templates.round2.TableBuilder2.tableRow;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link JdbcFilterPushdownPreparedStatementVisitor}. */
@@ -64,28 +67,23 @@ class JdbcFilterPushdownPreparedStatementVisitorTest implements JdbcTestBase {
     private final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     public static final String INPUT_TABLE_NAME = "jdbcDynamicTableSource";
 
+    public final TableRow inputTable = tableRow(
+            "jdbcDynamicTableSource",
+            field("id", DataTypes.BIGINT().notNull()),
+            field("description", DataTypes.VARCHAR(200).notNull()),
+            field("timestamp6_col", "TIMESTAMP", DataTypes.TIMESTAMP(6)),
+            field("timestamp9_col", "TIMESTAMP", DataTypes.TIMESTAMP(9)),
+            field("time_col", "TIME", DataTypes.TIME()),
+            field("real_col", "REAL", DataTypes.FLOAT()),
+            field("double_col", DataTypes.DOUBLE()),
+            field("decimal_col", DataTypes.DECIMAL(10, 4)));
+
     public static StreamExecutionEnvironment env;
     public static TableEnvironment tEnv;
 
     @Override
     public List<TableManaged> getManagedTables() {
-        return Collections.singletonList(
-                TableManual.of(
-                        INPUT_TABLE_NAME,
-                        "CREATE TABLE "
-                                + INPUT_TABLE_NAME
-                                + " ("
-                                + "id BIGINT NOT NULL,"
-                                + "description VARCHAR(200) NOT NULL,"
-                                + "timestamp6_col TIMESTAMP, "
-                                + "timestamp9_col TIMESTAMP, "
-                                + "time_col TIME, "
-                                + "real_col FLOAT(23), "
-                                + // A precision of 23 or less makes FLOAT equivalent to REAL.
-                                "double_col FLOAT(24),"
-                                + // A precision of 24 or greater makes FLOAT equivalent to DOUBLE
-                                // PRECISION.
-                                "decimal_col DECIMAL(10, 4))"));
+        return Collections.singletonList(inputTable);
     }
 
     @BeforeEach
@@ -94,27 +92,7 @@ class JdbcFilterPushdownPreparedStatementVisitorTest implements JdbcTestBase {
         tEnv = StreamTableEnvironment.create(env);
 
         // Create table in Flink, this can be reused across test cases
-        tEnv.executeSql(
-                "CREATE TABLE "
-                        + INPUT_TABLE_NAME
-                        + "("
-                        + "id BIGINT,"
-                        + "description VARCHAR(200),"
-                        + "timestamp6_col TIMESTAMP(6),"
-                        + "timestamp9_col TIMESTAMP(9),"
-                        + "time_col TIME,"
-                        + "real_col FLOAT,"
-                        + "double_col DOUBLE,"
-                        + "decimal_col DECIMAL(10, 4)"
-                        + ") WITH ("
-                        + "  'connector'='jdbc',"
-                        + "  'url'='"
-                        + getDbMetadata().getUrl()
-                        + "',"
-                        + "  'table-name'='"
-                        + INPUT_TABLE_NAME
-                        + "'"
-                        + ")");
+        tEnv.executeSql(inputTable.getCreateQueryForFlink(getDbMetadata(), INPUT_TABLE_NAME));
     }
 
     @AfterEach
