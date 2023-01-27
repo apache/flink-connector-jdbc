@@ -28,8 +28,18 @@ public interface BooksStore {
     BooksTable BOOKS_TABLE = new BooksTable("books");
     BooksTable NEWBOOKS_TABLE = new BooksTable("newbooks");
 
-    BooksTable.BookEntry[] TEST_DATA =
-            BOOKS_TABLE.getTestData().toArray(new BooksTable.BookEntry[0]);
+    BooksTable.BookEntry[] TEST_DATA = {
+        new BooksTable.BookEntry(1001, ("Java public for dummies"), ("Tan Ah Teck"), 11.11, 11),
+        new BooksTable.BookEntry(1002, ("More Java for dummies"), ("Tan Ah Teck"), 22.22, 22),
+        new BooksTable.BookEntry(1003, ("More Java for more dummies"), ("Mohammad Ali"), 33.33, 33),
+        new BooksTable.BookEntry(1004, ("A Cup of Java"), ("Kumar"), 44.44, 44),
+        new BooksTable.BookEntry(1005, ("A Teaspoon of Java"), ("Kevin Jones"), 55.55, 55),
+        new BooksTable.BookEntry(1006, ("A Teaspoon of Java 1.4"), ("Kevin Jones"), 66.66, 66),
+        new BooksTable.BookEntry(1007, ("A Teaspoon of Java 1.5"), ("Kevin Jones"), 77.77, 77),
+        new BooksTable.BookEntry(1008, ("A Teaspoon of Java 1.6"), ("Kevin Jones"), 88.88, 88),
+        new BooksTable.BookEntry(1009, ("A Teaspoon of Java 1.7"), ("Kevin Jones"), 99.99, 99),
+        new BooksTable.BookEntry(1010, ("A Teaspoon of Java 1.8"), ("Kevin Jones"), null, 1010)
+    };
 
     default void fillBooksWithTestData(DatabaseMetadata dbMetadata) throws SQLException {
         try (Connection conn = dbMetadata.getConnection()) {

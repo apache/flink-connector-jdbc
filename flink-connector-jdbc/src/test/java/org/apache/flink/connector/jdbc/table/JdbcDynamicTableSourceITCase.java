@@ -20,10 +20,11 @@ package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
-import org.apache.flink.connector.jdbc.templates.TableManaged;
-import org.apache.flink.connector.jdbc.templates.TableManual;
+import org.apache.flink.connector.jdbc.templates.round2.TableManaged;
+import org.apache.flink.connector.jdbc.templates.round2.TableRow;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.table.connector.source.lookup.cache.LookupCache;
@@ -54,18 +55,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import static org.apache.flink.connector.jdbc.templates.round2.TableBuilder2.field;
+import static org.apache.flink.connector.jdbc.templates.round2.TableBuilder2.tableRow;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** ITCase for {@link JdbcDynamicTableSource}. */
-class JdbcDynamicTableSourceITCase implements JdbcTestBase {
+public class JdbcDynamicTableSourceITCase implements JdbcTestBase {
 
     @RegisterExtension
     static final MiniClusterExtension MINI_CLUSTER_RESOURCE =
@@ -75,49 +75,60 @@ class JdbcDynamicTableSourceITCase implements JdbcTestBase {
                             .setConfiguration(new Configuration())
                             .build());
 
-    private static final String INPUT_TABLE_NAME = "jdbcDynamicTableSource";
-    private static final TableManual INPUT_TABLE =
-            TableManual.of(
-                    INPUT_TABLE_NAME,
-                    "CREATE TABLE "
-                            + INPUT_TABLE_NAME
-                            + " ("
-                            + "id BIGINT NOT NULL,"
-                            + "timestamp6_col TIMESTAMP, "
-                            + "timestamp9_col TIMESTAMP, "
-                            + "time_col TIME, "
-                            + "real_col FLOAT(23), "
-                            + // A precision of 23 or less makes FLOAT equivalent to REAL.
-                            "double_col FLOAT(24),"
-                            + // A precision of 24 or greater makes FLOAT equivalent to DOUBLE
-                            // PRECISION.
-                            "decimal_col DECIMAL(10, 4))");
+    protected final TableRow inputTable = inputTable();
 
     public static StreamExecutionEnvironment env;
     public static TableEnvironment tEnv;
 
+    protected TableRow inputTable() {
+        return tableRow(
+                "jdbcDynamicTableSource",
+                field("id", DataTypes.BIGINT().notNull()),
+                field("timestamp6_col", "TIMESTAMP", DataTypes.TIMESTAMP(6)),
+                field("timestamp9_col", "TIMESTAMP", DataTypes.TIMESTAMP(9)),
+                field("time_col", "TIME", DataTypes.TIME()),
+                field("real_col", "REAL", DataTypes.FLOAT()),
+                field("double_col", DataTypes.DOUBLE()),
+                field("decimal_col", DataTypes.DECIMAL(10, 4)));
+    }
+
+    protected String[] inputTableValues() {
+        return new String[] {
+            "1, TIMESTAMP('2020-01-01 15:35:00.123456'), TIMESTAMP('2020-01-01 15:35:00.123456789'), TIME('15:35:00'), 1.175E-37, 1.79769E+308, 100.1234",
+            "2, TIMESTAMP('2020-01-01 15:36:01.123456'), TIMESTAMP('2020-01-01 15:36:01.123456789'), TIME('15:36:01'), -1.175E-37, -1.79769E+308, 101.1234"
+        };
+    }
+
+    protected Row[] rowTableValues() {
+        return new Row[] {
+            Row.of(
+                    1,
+                    "2020-01-01T15:35:00.123456",
+                    "2020-01-01T15:35:00.123456789",
+                    "15:35",
+                    1.175E-37,
+                    1.79769E+308,
+                    100.1234),
+            Row.of(
+                    2,
+                    "2020-01-01T15:36:01.123456",
+                    "2020-01-01T15:36:01.123456789",
+                    "15:36:01",
+                    -1.175E-37,
+                    -1.79769E+308,
+                    101.1234)
+        };
+    }
+
     @Override
     public List<TableManaged> getManagedTables() {
-        return Collections.singletonList(INPUT_TABLE);
+        return Collections.singletonList(inputTable);
     }
 
     @BeforeEach
     void beforeEach() throws SQLException {
         try (Connection conn = getDbMetadata().getConnection()) {
-            INPUT_TABLE.executeUpdate(
-                    conn,
-                    "INSERT INTO "
-                            + INPUT_TABLE_NAME
-                            + " VALUES ("
-                            + "1, TIMESTAMP('2020-01-01 15:35:00.123456'), TIMESTAMP('2020-01-01 15:35:00.123456789'), "
-                            + "TIME('15:35:00'), 1.175E-37, 1.79769E+308, 100.1234)");
-            INPUT_TABLE.executeUpdate(
-                    conn,
-                    "INSERT INTO "
-                            + INPUT_TABLE_NAME
-                            + " VALUES ("
-                            + "2, TIMESTAMP('2020-01-01 15:36:01.123456'), TIMESTAMP('2020-01-01 15:36:01.123456789'), "
-                            + "TIME('15:36:01'), -1.175E-37, -1.79769E+308, 101.1234)");
+            inputTable.insertIntoTableValues(conn, inputTableValues());
         }
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         tEnv = StreamTableEnvironment.create(env);
@@ -129,182 +140,62 @@ class JdbcDynamicTableSourceITCase implements JdbcTestBase {
     }
 
     @Test
-    void testJdbcSource() throws Exception {
+    public void testJdbcSource() {
         tEnv.executeSql(
-                "CREATE TABLE "
-                        + INPUT_TABLE_NAME
-                        + "("
-                        + "id BIGINT,"
-                        + "timestamp6_col TIMESTAMP(6),"
-                        + "timestamp9_col TIMESTAMP(9),"
-                        + "time_col TIME,"
-                        + "real_col FLOAT,"
-                        + "double_col DOUBLE,"
-                        + "decimal_col DECIMAL(10, 4)"
-                        + ") WITH ("
-                        + "  'connector'='jdbc',"
-                        + "  'url'='"
-                        + getDbMetadata().getUrl()
-                        + "',"
-                        + "  'table-name'='"
-                        + INPUT_TABLE_NAME
-                        + "'"
-                        + ")");
+                inputTable.getCreateQueryForFlink(getDbMetadata(), inputTable.getTableName()));
 
-        Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_NAME).collect();
-        List<String> result =
-                CollectionUtil.iteratorToList(collected).stream()
-                        .map(Row::toString)
-                        .sorted()
-                        .collect(Collectors.toList());
-        List<String> expected =
-                Stream.of(
-                                "+I[1, 2020-01-01T15:35:00.123456, 2020-01-01T15:35:00.123456789, 15:35, 1.175E-37, 1.79769E308, 100.1234]",
-                                "+I[2, 2020-01-01T15:36:01.123456, 2020-01-01T15:36:01.123456789, 15:36:01, -1.175E-37, -1.79769E308, 101.1234]")
-                        .sorted()
-                        .collect(Collectors.toList());
-        assertThat(result).isEqualTo(expected);
+        assertQueryEquals("select * from " + inputTable.getTableName());
     }
 
     @Test
-    void testProject() throws Exception {
+    void testProject() {
         tEnv.executeSql(
-                "CREATE TABLE "
-                        + INPUT_TABLE_NAME
-                        + "("
-                        + "id BIGINT,"
-                        + "timestamp6_col TIMESTAMP(6),"
-                        + "timestamp9_col TIMESTAMP(9),"
-                        + "time_col TIME,"
-                        + "real_col FLOAT,"
-                        + "double_col DOUBLE,"
-                        + "decimal_col DECIMAL(10, 4)"
-                        + ") WITH ("
-                        + "  'connector'='jdbc',"
-                        + "  'url'='"
-                        + getDbMetadata().getUrl()
-                        + "',"
-                        + "  'table-name'='"
-                        + INPUT_TABLE_NAME
-                        + "',"
-                        + "  'scan.partition.column'='id',"
-                        + "  'scan.partition.num'='2',"
-                        + "  'scan.partition.lower-bound'='0',"
-                        + "  'scan.partition.upper-bound'='100'"
-                        + ")");
+                inputTable.getCreateQueryForFlink(
+                        getDbMetadata(),
+                        inputTable.getTableName(),
+                        "'scan.partition.column'='id'",
+                        "'scan.partition.num'='2'",
+                        "'scan.partition.lower-bound'='0'",
+                        "'scan.partition.upper-bound'='100'"));
 
-        Iterator<Row> collected =
-                tEnv.executeSql("SELECT id,timestamp6_col,decimal_col FROM " + INPUT_TABLE_NAME)
-                        .collect();
-        List<String> result =
-                CollectionUtil.iteratorToList(collected).stream()
-                        .map(Row::toString)
-                        .sorted()
+        String query = "SELECT id,timestamp6_col,decimal_col FROM " + inputTable.getTableName();
+        List<Row> expected =
+                Arrays.stream(rowTableValues())
+                        .map(row -> Row.of(row.getField(0), row.getField(1), row.getField(6)))
                         .collect(Collectors.toList());
-        List<String> expected =
-                Stream.of(
-                                "+I[1, 2020-01-01T15:35:00.123456, 100.1234]",
-                                "+I[2, 2020-01-01T15:36:01.123456, 101.1234]")
-                        .sorted()
-                        .collect(Collectors.toList());
-        assertThat(result).isEqualTo(expected);
+        assertQueryEquals(query, expected);
     }
 
     @Test
-    void testLimit() throws Exception {
+    void testLimit() {
         tEnv.executeSql(
-                "CREATE TABLE "
-                        + INPUT_TABLE_NAME
-                        + "(\n"
-                        + "id BIGINT,\n"
-                        + "timestamp6_col TIMESTAMP(6),\n"
-                        + "timestamp9_col TIMESTAMP(9),\n"
-                        + "time_col TIME,\n"
-                        + "real_col FLOAT,\n"
-                        + "double_col DOUBLE,\n"
-                        + "decimal_col DECIMAL(10, 4)\n"
-                        + ") WITH (\n"
-                        + "  'connector'='jdbc',\n"
-                        + "  'url'='"
-                        + getDbMetadata().getUrl()
-                        + "',\n"
-                        + "  'table-name'='"
-                        + INPUT_TABLE_NAME
-                        + "',\n"
-                        + "  'scan.partition.column'='id',\n"
-                        + "  'scan.partition.num'='2',\n"
-                        + "  'scan.partition.lower-bound'='1',\n"
-                        + "  'scan.partition.upper-bound'='2'\n"
-                        + ")");
+                inputTable.getCreateQueryForFlink(
+                        getDbMetadata(),
+                        inputTable.getTableName(),
+                        "'scan.partition.column'='id'",
+                        "'scan.partition.num'='2'",
+                        "'scan.partition.lower-bound'='1'",
+                        "'scan.partition.upper-bound'='2'"));
 
-        Iterator<Row> collected =
-                tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_NAME + " LIMIT 1").collect();
-        List<String> result =
-                CollectionUtil.iteratorToList(collected).stream()
-                        .map(Row::toString)
-                        .sorted()
-                        .collect(Collectors.toList());
-
-        Set<String> expected = new HashSet<>();
-        expected.add(
-                "+I[1, 2020-01-01T15:35:00.123456, 2020-01-01T15:35:00.123456789, 15:35, 1.175E-37, 1.79769E308, 100.1234]");
-        expected.add(
-                "+I[2, 2020-01-01T15:36:01.123456, 2020-01-01T15:36:01.123456789, 15:36:01, -1.175E-37, -1.79769E308, 101.1234]");
-        assertThat(result).hasSize(1);
-        assertThat(expected)
-                .as("The actual output is not a subset of the expected set.")
-                .containsAll(result);
+        String query = "SELECT * FROM " + inputTable.getTableName() + " LIMIT 1";
+        assertQueryContains(query);
     }
 
     @Test
     public void testFilter() throws Exception {
-        String partitionedTable = "PARTITIONED_TABLE";
         tEnv.executeSql(
-                "CREATE TABLE "
-                        + INPUT_TABLE_NAME
-                        + "("
-                        + "id BIGINT,"
-                        + "timestamp6_col TIMESTAMP(6),"
-                        + "timestamp9_col TIMESTAMP(9),"
-                        + "time_col TIME,"
-                        + "real_col FLOAT,"
-                        + "double_col DOUBLE,"
-                        + "decimal_col DECIMAL(10, 4)"
-                        + ") WITH ("
-                        + "  'connector'='jdbc',"
-                        + "  'url'='"
-                        + getDbMetadata().getUrl()
-                        + "',"
-                        + "  'table-name'='"
-                        + INPUT_TABLE_NAME
-                        + "'"
-                        + ")");
+                inputTable.getCreateQueryForFlink(getDbMetadata(), inputTable.getTableName()));
 
         // create a partitioned table to ensure no regression
+        String partitionedTable = "PARTITIONED_TABLE";
         tEnv.executeSql(
-                "CREATE TABLE "
-                        + partitionedTable
-                        + "("
-                        + "id BIGINT,"
-                        + "timestamp6_col TIMESTAMP(6),"
-                        + "timestamp9_col TIMESTAMP(9),"
-                        + "time_col TIME,"
-                        + "real_col FLOAT,"
-                        + "double_col DOUBLE,"
-                        + "decimal_col DECIMAL(10, 4)"
-                        + ") WITH ("
-                        + "  'connector'='jdbc',"
-                        + "  'url'='"
-                        + getDbMetadata().getUrl()
-                        + "',"
-                        + "  'table-name'='"
-                        + INPUT_TABLE_NAME
-                        + "',"
-                        + "  'scan.partition.column'='id',\n"
-                        + "  'scan.partition.num'='1',\n"
-                        + "  'scan.partition.lower-bound'='1',\n"
-                        + "  'scan.partition.upper-bound'='1'\n"
-                        + ")");
+                inputTable.getCreateQueryForFlink(
+                        getDbMetadata(),
+                        partitionedTable,
+                        "'scan.partition.column'='id'",
+                        "'scan.partition.num'='1'",
+                        "'scan.partition.lower-bound'='1'",
+                        "'scan.partition.upper-bound'='1'"));
 
         // we create a VIEW here to test column remapping, ie. would filter push down work if we
         // create a view that depends on our source table
@@ -313,115 +204,75 @@ class JdbcDynamicTableSourceITCase implements JdbcTestBase {
                         "CREATE VIEW FAKE_TABLE ("
                                 + "idx, timestamp6_col, timestamp9_col, time_col, real_col, double_col, decimal_col"
                                 + ") as (SELECT * from %s )",
-                        INPUT_TABLE_NAME));
+                        inputTable.getTableName()));
 
-        List<String> onlyRow1 =
-                Stream.of(
-                                "+I[1, 2020-01-01T15:35:00.123456, 2020-01-01T15:35:00.123456789, 15:35, 1.175E-37, 1.79769E308, 100.1234]")
-                        .collect(Collectors.toList());
+        List<Row> twoRows = Arrays.asList(rowTableValues());
 
-        List<String> twoRows =
-                Stream.of(
-                                "+I[1, 2020-01-01T15:35:00.123456, 2020-01-01T15:35:00.123456789, 15:35, 1.175E-37, 1.79769E308, 100.1234]",
-                                "+I[2, 2020-01-01T15:36:01.123456, 2020-01-01T15:36:01.123456789, 15:36:01, -1.175E-37, -1.79769E308, 101.1234]")
-                        .collect(Collectors.toList());
+        List<Row> onlyRow1 = Collections.singletonList(rowTableValues()[0]);
 
-        List<String> onlyRow2 =
-                Stream.of(
-                                "+I[2, 2020-01-01T15:36:01.123456, 2020-01-01T15:36:01.123456789, 15:36:01, -1.175E-37, -1.79769E308, 101.1234]")
-                        .collect(Collectors.toList());
-        List<String> noRows = new ArrayList<>();
+        List<Row> onlyRow2 = Collections.singletonList(rowTableValues()[1]);
+
+        List<Row> noRows = new ArrayList<>();
 
         // test simple filter
-        assertQueryReturns("SELECT * FROM FAKE_TABLE WHERE idx = 1", onlyRow1);
+        assertQueryEquals("SELECT * FROM FAKE_TABLE WHERE idx = 1", onlyRow1);
         // test TIMESTAMP filter
-        assertQueryReturns(
+        assertQueryEquals(
                 "SELECT * FROM FAKE_TABLE WHERE timestamp6_col = TIMESTAMP '2020-01-01 15:35:00.123456'",
                 onlyRow1);
         // test the IN operator
-        assertQueryReturns(
-                "SELECT * FROM "
-                        + "FAKE_TABLE"
+        assertQueryEquals(
+                "SELECT * FROM FAKE_TABLE"
                         + " WHERE 1 = idx AND decimal_col IN (100.1234, 101.1234)",
                 onlyRow1);
         // test mixing AND and OR operator
-        assertQueryReturns(
-                "SELECT * FROM "
-                        + "FAKE_TABLE"
+        assertQueryEquals(
+                "SELECT * FROM FAKE_TABLE"
                         + " WHERE idx = 1 AND decimal_col = 100.1234 OR decimal_col = 101.1234",
                 twoRows);
         // test mixing AND/OR with parenthesis, and the swapping the operand of equal expression
-        assertQueryReturns(
-                "SELECT * FROM "
-                        + "FAKE_TABLE"
+        assertQueryEquals(
+                "SELECT * FROM FAKE_TABLE"
                         + " WHERE (2 = idx AND decimal_col = 100.1234) OR decimal_col = 101.1234",
                 onlyRow2);
 
         // test Greater than, just to make sure we didnt break anything that we cannot pushdown
-        assertQueryReturns(
-                "SELECT * FROM "
-                        + "FAKE_TABLE"
+        assertQueryEquals(
+                "SELECT * FROM FAKE_TABLE"
                         + " WHERE idx = 2 AND decimal_col > 100 OR decimal_col = 101.123",
                 onlyRow2);
 
         // One more test of parenthesis
-        assertQueryReturns(
-                "SELECT * FROM "
-                        + "FAKE_TABLE"
+        assertQueryEquals(
+                "SELECT * FROM FAKE_TABLE"
                         + " WHERE 2 = idx AND (decimal_col = 100.1234 OR real_col = 101.1234)",
                 noRows);
 
-        assertQueryReturns(
+        assertQueryEquals(
                 "SELECT * FROM "
                         + partitionedTable
                         + " WHERE id = 2 AND decimal_col > 100 OR decimal_col = 101.123",
                 noRows);
 
-        assertQueryReturns(
+        assertQueryEquals(
                 "SELECT * FROM "
                         + partitionedTable
                         + " WHERE 1 = id AND decimal_col IN (100.1234, 101.1234)",
                 onlyRow1);
     }
 
-    private List<String> rowIterToList(Iterator<Row> rows) {
-        return CollectionUtil.iteratorToList(rows).stream()
-                .map(Row::toString)
-                .sorted()
-                .collect(Collectors.toList());
-    }
-
-    private void assertQueryReturns(String query, List<String> expected) {
-        List<String> actual = rowIterToList(tEnv.executeSql(query).collect());
-        assertThat(actual).isEqualTo(expected);
-    }
-
     @ParameterizedTest
     @EnumSource(Caching.class)
     void testLookupJoin(Caching caching) throws Exception {
         // Create JDBC lookup table
-        String cachingOptions = "";
+        List<String> cachingOptions = new ArrayList<>();
         if (caching.equals(Caching.ENABLE_CACHE)) {
-            cachingOptions =
-                    "'lookup.cache.max-rows' = '100', \n" + "'lookup.cache.ttl' = '10min',";
+            cachingOptions.add("'lookup.cache.max-rows'='100'");
+            cachingOptions.add("'lookup.cache.ttl'='10min'");
         }
         tEnv.executeSql(
-                String.format(
-                        "CREATE TABLE jdbc_lookup ("
-                                + "id BIGINT,"
-                                + "timestamp6_col TIMESTAMP(6),"
-                                + "timestamp9_col TIMESTAMP(9),"
-                                + "time_col TIME,"
-                                + "real_col FLOAT,"
-                                + "double_col DOUBLE,"
-                                + "decimal_col DECIMAL(10, 4)"
-                                + ") WITH ("
-                                + "  %s"
-                                + "  'connector' = 'jdbc',"
-                                + "  'url' = '%s',"
-                                + "  'table-name' = '%s'"
-                                + ")",
-                        cachingOptions, getDbMetadata().getUrl(), INPUT_TABLE_NAME));
+                inputTable.getCreateQueryForFlink(
+                        getDbMetadata(), "jdbc_lookup", cachingOptions.toArray(new String[0])));
 
         // Create and prepare a value source
         String dataId =
@@ -433,12 +284,12 @@ class JdbcDynamicTableSourceITCase implements JdbcTestBase {
                                 Row.of(3L, "Charlie")));
         tEnv.executeSql(
                 String.format(
-                        "CREATE TABLE value_source (\n"
-                                + "`id` BIGINT,\n"
-                                + "`name` STRING,\n"
-                                + "`proctime` AS PROCTIME()\n"
-                                + ") WITH (\n"
-                                + "'connector' = 'values', \n"
+                        "CREATE TABLE value_source ("
+                                + "`id` BIGINT,"
+                                + "`name` STRING,"
+                                + "`proctime` AS PROCTIME()"
+                                + ") WITH ("
+                                + "'connector' = 'values', "
                                 + "'data-id' = '%s')",
                         dataId));
 
@@ -452,19 +303,14 @@ class JdbcDynamicTableSourceITCase implements JdbcTestBase {
                                 "SELECT S.id, S.name, D.id, D.timestamp6_col, D.double_col FROM value_source"
                                         + " AS S JOIN jdbc_lookup for system_time as of S.proctime AS D ON S.id = D.id")
                         .collect()) {
-            List<String> result =
-                    CollectionUtil.iteratorToList(iterator).stream()
-                            .map(Row::toString)
-                            .sorted()
-                            .collect(Collectors.toList());
-            List<String> expected = new ArrayList<>();
-            expected.add("+I[1, Alice, 1, 2020-01-01T15:35:00.123456, 100.1234]");
-            expected.add("+I[1, Alice, 1, 2020-01-01T15:35:00.123456, 100.1234]");
-            expected.add("+I[2, Bob, 2, 2020-01-01T15:36:01.123456, 101.1234]");
-            assertThat(result).hasSize(3);
-            assertThat(expected)
-                    .as("The actual output is not a subset of the expected set")
-                    .containsAll(expected);
+
+            List<Row> expected = new ArrayList<>();
+            expected.add(Row.of(1, "Alice", 1, "2020-01-01T15:35:00.123456", 1.79769E308));
+            expected.add(Row.of(1, "Alice", 1, "2020-01-01T15:35:00.123456", 1.79769E308));
+            expected.add(Row.of(2, "Bob", 2, "2020-01-01T15:36:01.123456", -1.79769E308));
+
+            assertQueryEquals(iterator, expected);
+
             if (caching == Caching.ENABLE_CACHE) {
                 // Validate cache
                 Map<String, LookupCacheManager.RefCountedCache> managedCaches =
@@ -512,6 +358,36 @@ class JdbcDynamicTableSourceITCase implements JdbcTestBase {
         expectedEntries.put(key3, Collections.emptyList());
 
         LookupCacheAssert.assertThat(cache).containsExactlyEntriesOf(expectedEntries);
+    }
+
+    private void assertQueryEquals(String query) {
+        assertQueryEquals(query, Arrays.asList(rowTableValues()));
+    }
+
+    private void assertQueryEquals(String query, List<Row> expected) {
+        assertQueryEquals(tEnv.executeSql(query).collect(), expected);
+    }
+
+    private void assertQueryEquals(Iterator<Row> rows, List<Row> expected) {
+        List<Row> actual = CollectionUtil.iteratorToList(rows);
+
+        assertThat(mapToAssertion(actual)).isEqualTo(mapToAssertion(expected));
+    }
+
+    private void assertQueryContains(String query) {
+        assertQueryContains(query, Arrays.asList(rowTableValues()));
+    }
+
+    private void assertQueryContains(String query, List<Row> expected) {
+        List<Row> actual = CollectionUtil.iteratorToList(tEnv.executeSql(query).collect());
+
+        assertThat(mapToAssertion(expected))
+                .as("The actual output is not a subset of the expected set.")
+                .containsAll(mapToAssertion(actual));
+    }
+
+    private List<String> mapToAssertion(List<Row> rows) {
+        return rows.stream().map(Row::toString).sorted().collect(Collectors.toList());
     }
 
     private enum Caching {

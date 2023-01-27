@@ -23,7 +23,7 @@ import org.apache.flink.connector.jdbc.databases.derby.DerbyMetadata;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.templates.BooksStore;
 import org.apache.flink.connector.jdbc.templates.BooksTable.BookEntry;
-import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.connector.jdbc.templates.round2.TableManaged;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;

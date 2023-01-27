@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.jdbc.databases;
 
-import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.connector.jdbc.templates.round2.TableManaged;
 
 import java.util.List;
 

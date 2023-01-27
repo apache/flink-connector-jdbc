@@ -29,7 +29,8 @@ import java.sql.Statement;
 import java.util.List;
 
 /** Table template. * */
-public interface TableManaged {
+public interface TableManaged
+        extends org.apache.flink.connector.jdbc.templates.round2.TableManaged {
 
     String getTableName();
 

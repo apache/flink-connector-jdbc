@@ -31,7 +31,8 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 /** Table builder template. * */
-public class TableBuilder implements TableManaged {
+public class TableBuilder
+        implements TableManaged, org.apache.flink.connector.jdbc.templates.round2.TableManaged {
 
     private final String name;
     private final TableField[] fields;

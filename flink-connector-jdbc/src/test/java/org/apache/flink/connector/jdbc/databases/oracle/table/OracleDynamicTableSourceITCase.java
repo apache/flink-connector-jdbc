@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.oracle.dialect;
+package org.apache.flink.connector.jdbc.databases.oracle.table;
 
 import org.apache.flink.connector.jdbc.databases.oracle.OracleTestBase;
-import org.apache.flink.connector.jdbc.templates.TableManaged;
 import org.apache.flink.connector.jdbc.templates.TableManual;
+import org.apache.flink.connector.jdbc.templates.round2.TableManaged;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -46,9 +46,9 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** The Table Source ITCase for {@link OracleDialect}. */
+/** The Table Source ITCase for Oracle. */
 @DisabledOnOs(OS.MAC)
-class OracleTableSourceITCase extends AbstractTestBase implements OracleTestBase {
+class OracleDynamicTableSourceITCase extends AbstractTestBase implements OracleTestBase {
 
     private static StreamExecutionEnvironment env;
     private static TableEnvironment tEnv;

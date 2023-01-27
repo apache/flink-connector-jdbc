@@ -46,7 +46,7 @@ import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.templates.BooksStore;
 import org.apache.flink.connector.jdbc.templates.BooksTable.BookEntry;
-import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.connector.jdbc.templates.round2.TableManaged;
 import org.apache.flink.core.fs.CloseableRegistry;
 import org.apache.flink.metrics.groups.OperatorMetricGroup;
 import org.apache.flink.runtime.state.DefaultOperatorStateBackend;

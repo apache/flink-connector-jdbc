@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.templates;
+package org.apache.flink.connector.jdbc.templates.round2;
 
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
@@ -27,26 +27,27 @@ import org.apache.flink.table.types.logical.VarCharType;
 
 import org.junit.jupiter.api.Test;
 
+import static org.apache.flink.connector.jdbc.templates.round2.TableBuilder2.field;
+import static org.apache.flink.connector.jdbc.templates.round2.TableBuilder2.pkField;
+import static org.apache.flink.connector.jdbc.templates.round2.TableBuilder2.tableRow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TableBuilderTest {
 
-    TableBuilder table =
-            TableBuilder.of(
+    TableBase<?> table =
+            tableRow(
                     "test",
-                    TableBuilder.field("id", DataTypes.INT().notNull(), true),
-                    TableBuilder.field("name", DataTypes.VARCHAR(10)));
+                    pkField("id", DataTypes.INT().notNull()),
+                    field("name", DataTypes.VARCHAR(10)));
 
     @Test
     void testTableCreationFails() {
         assertThrows(
-                IllegalArgumentException.class,
-                () -> TableBuilder.of(""),
-                "Table name must be defined");
+                IllegalArgumentException.class, () -> tableRow(""), "Table name must be defined");
         assertThrows(
                 IllegalArgumentException.class,
-                () -> TableBuilder.of("test"),
+                () -> tableRow("test"),
                 "Table fields must be defined");
     }
 
@@ -65,8 +66,19 @@ class TableBuilderTest {
     }
 
     @Test
+    void testQueryCreationWithDbType() {
+        TableRow table =
+                tableRow(
+                        "test",
+                        pkField("id", "DOUBLE", DataTypes.FLOAT().notNull()),
+                        field("type", "REAL", DataTypes.FLOAT()));
+        String expected = "CREATE TABLE test (id DOUBLE NOT NULL, type REAL, PRIMARY KEY (id))";
+        assertEquals(expected, table.getCreateQuery());
+    }
+
+    @Test
     void testQueryInsertInto() {
-        String expected = "INSERT INTO test (id, name) VALUES(?, ?)";
+        String expected = "INSERT INTO test (id, name) VALUES (?, ?)";
         assertEquals(expected, table.getInsertIntoQuery());
     }
 

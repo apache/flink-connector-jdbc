@@ -27,7 +27,7 @@ import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.flink.connector.jdbc.templates.BooksTable;
 import org.apache.flink.connector.jdbc.templates.BooksTable.BookEntry;
-import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.connector.jdbc.templates.round2.TableManaged;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

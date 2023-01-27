@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.sqlserver.dialect;
+package org.apache.flink.connector.jdbc.databases.sqlserver.table;
 
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.configuration.Configuration;
@@ -24,8 +24,10 @@ import org.apache.flink.connector.jdbc.databases.sqlserver.MsSqlServerTestBase;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.connector.jdbc.templates.TableBuilder;
 import org.apache.flink.connector.jdbc.templates.TableChecker;
-import org.apache.flink.connector.jdbc.templates.TableManaged;
 import org.apache.flink.connector.jdbc.templates.TableManual;
+import org.apache.flink.connector.jdbc.templates.round2.TableBuilder2;
+import org.apache.flink.connector.jdbc.templates.round2.TableManaged;
+import org.apache.flink.connector.jdbc.templates.round2.TableRow;
 import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -67,7 +69,7 @@ import static org.apache.flink.connector.jdbc.internal.JdbcTableOutputFormatTest
 import static org.apache.flink.table.api.Expressions.$;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSink;
 
-/** The Table Sink ITCase for {@link SqlServerDialect}. */
+/** The Table Sink ITCase for MSSqlServer. */
 @DisabledOnOs(OS.MAC)
 class SqlServerTableSinkITCase extends AbstractTestBase implements MsSqlServerTestBase {
 
@@ -96,8 +98,9 @@ class SqlServerTableSinkITCase extends AbstractTestBase implements MsSqlServerTe
                     TableBuilder.field("SCORE", DataTypes.INT().notNull()) // DEFAULT 0
                     );
 
-    private static final TableManual OUTPUT_TABLE4 =
-            TableManual.of("REAL_TABLE", "CREATE TABLE REAL_TABLE (real_data REAL)");
+    private static final TableRow OUTPUT_TABLE4 =
+            TableBuilder2.tableRow(
+                    "REAL_TABLE", TableBuilder2.field("real_data", "REAL", DataTypes.FLOAT()));
 
     private static final TableBuilder OUTPUT_TABLE5 =
             TableBuilder.of(
@@ -111,12 +114,7 @@ class SqlServerTableSinkITCase extends AbstractTestBase implements MsSqlServerTe
                     TableBuilder.field("email", DataTypes.VARCHAR(255)),
                     TableBuilder.field("balance", DataTypes.DECIMAL(18, 2)),
                     TableBuilder.field("balance2", DataTypes.DECIMAL(18, 2)));
-    private final String dbUrlWithCredentials =
-            String.format(
-                    "%s;username=%s;password=%s",
-                    getDbMetadata().getUrl(),
-                    getDbMetadata().getUser(),
-                    getDbMetadata().getPassword());
+    private final String dbUrlWithCredentials = getDbMetadata().getUrlWithCredentials();
 
     @Override
     public List<TableManaged> getManagedTables() {
@@ -191,7 +189,7 @@ class SqlServerTableSinkITCase extends AbstractTestBase implements MsSqlServerTe
                         + ")");
 
         tEnv.executeSql("INSERT INTO upsertSink SELECT CAST(1.1 as FLOAT)").await();
-        TableChecker.check(getDbMetadata(), OUTPUT_TABLE4, new Row[] {Row.of(1.1f)});
+        OUTPUT_TABLE4.checkContent(getDbMetadata(), new Row[] {Row.of(1.1f)});
     }
 
     @Test

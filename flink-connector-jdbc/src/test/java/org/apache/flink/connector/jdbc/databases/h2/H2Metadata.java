@@ -47,4 +47,9 @@ public class H2Metadata implements DatabaseMetadata {
     public String getUrl() {
         return String.format("jdbc:h2:mem:%s", schema);
     }
+
+    @Override
+    public String getUrlWithCredentials() {
+        return getUrl();
+    }
 }

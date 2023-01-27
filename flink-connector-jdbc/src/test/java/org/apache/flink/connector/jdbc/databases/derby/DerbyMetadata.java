@@ -49,4 +49,9 @@ public class DerbyMetadata implements DatabaseMetadata {
     public String getUrl() {
         return url;
     }
+
+    @Override
+    public String getUrlWithCredentials() {
+        return getUrl();
+    }
 }

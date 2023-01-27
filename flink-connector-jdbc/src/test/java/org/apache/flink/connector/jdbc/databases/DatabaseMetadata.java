@@ -31,6 +31,8 @@ public interface DatabaseMetadata extends Serializable {
 
     String getUrl();
 
+    String getUrlWithCredentials();
+
     default String getSchema() {
         return "";
     }

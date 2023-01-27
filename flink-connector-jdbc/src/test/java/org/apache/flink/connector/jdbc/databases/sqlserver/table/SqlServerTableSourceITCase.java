@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.sqlserver.dialect;
+package org.apache.flink.connector.jdbc.databases.sqlserver.table;
 
 import org.apache.flink.connector.jdbc.databases.sqlserver.MsSqlServerTestBase;
-import org.apache.flink.connector.jdbc.templates.TableManaged;
 import org.apache.flink.connector.jdbc.templates.TableManual;
+import org.apache.flink.connector.jdbc.templates.round2.TableManaged;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** The Table Source ITCase for {@link SqlServerDialect}. */
+/** The Table Source ITCase for MSSqlServer. */
 @DisabledOnOs(OS.MAC)
 class SqlServerTableSourceITCase extends AbstractTestBase implements MsSqlServerTestBase {
 
@@ -79,12 +79,7 @@ class SqlServerTableSourceITCase extends AbstractTestBase implements MsSqlServer
                             + "binary_col BINARY(10)"
                             + ")");
 
-    private final String dbUrlWithCredentials =
-            String.format(
-                    "%s;username=%s;password=%s",
-                    getDbMetadata().getUrl(),
-                    getDbMetadata().getUser(),
-                    getDbMetadata().getPassword());
+    private final String dbUrlWithCredentials = getDbMetadata().getUrlWithCredentials();
 
     @Override
     public List<TableManaged> getManagedTables() {

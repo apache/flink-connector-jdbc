@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 /** JDBC dialect for SqlServer. */
 @Internal
-public class SqlServerDialect extends AbstractDialect {
+class SqlServerDialect extends AbstractDialect {
     @Override
     public String dialectName() {
         return "SqlServer";

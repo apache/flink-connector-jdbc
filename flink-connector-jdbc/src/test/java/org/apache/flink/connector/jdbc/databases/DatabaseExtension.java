@@ -1,6 +1,6 @@
 package org.apache.flink.connector.jdbc.databases;
 
-import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.connector.jdbc.templates.round2.TableManaged;
 import org.apache.flink.util.function.BiConsumerWithException;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;

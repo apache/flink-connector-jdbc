@@ -53,6 +53,11 @@ public class MsSqlServerMetadata implements DatabaseMetadata {
     }
 
     @Override
+    public String getUrlWithCredentials() {
+        return String.format("%s;username=%s;password=%s", getUrl(), getUser(), getPassword());
+    }
+
+    @Override
     public String getSchema() {
         return "";
     }

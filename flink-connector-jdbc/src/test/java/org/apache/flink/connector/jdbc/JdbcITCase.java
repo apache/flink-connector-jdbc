@@ -22,8 +22,8 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.databases.derby.DerbyDatabase;
 import org.apache.flink.connector.jdbc.templates.BooksTable;
-import org.apache.flink.connector.jdbc.templates.TableManaged;
 import org.apache.flink.connector.jdbc.templates.WordsTable;
+import org.apache.flink.connector.jdbc.templates.round2.TableManaged;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import org.junit.jupiter.api.Test;

@@ -16,14 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.oracle.dialect;
+package org.apache.flink.connector.jdbc.databases.oracle.table;
 
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.databases.oracle.OracleTestBase;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.connector.jdbc.templates.TableBuilder;
-import org.apache.flink.connector.jdbc.templates.TableManaged;
+import org.apache.flink.connector.jdbc.templates.round2.TableManaged;
 import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -66,9 +66,9 @@ import static org.apache.flink.connector.jdbc.internal.JdbcTableOutputFormatTest
 import static org.apache.flink.table.api.Expressions.$;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSink;
 
-/** The Table Sink ITCase for {@link OracleDialect}. */
+/** The Table Sink ITCase for Oracle. */
 @DisabledOnOs(OS.MAC)
-class OracleTableSinkITCase extends AbstractTestBase implements OracleTestBase {
+class OracleDynamicTableSinkITCase extends AbstractTestBase implements OracleTestBase {
     private static final TableBuilder OUTPUT_TABLE1 =
             TableBuilder.of(
                     "dynamicSinkForUpsert",

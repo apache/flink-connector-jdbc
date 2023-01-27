@@ -53,6 +53,11 @@ public class MySqlMetadata implements DatabaseMetadata {
     }
 
     @Override
+    public String getUrlWithCredentials() {
+        return String.format("%s?user=%s&password=%s", this.url, this.username, this.password);
+    }
+
+    @Override
     public String getSchema() {
         return "";
     }

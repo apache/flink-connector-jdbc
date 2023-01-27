@@ -37,19 +37,6 @@ import static java.lang.String.format;
 /** Book table template. * */
 public class BooksTable extends TableBuilder implements TableManaged {
 
-    private final BookEntry[] tableTestData = {
-        new BookEntry(1001, ("Java public for dummies"), ("Tan Ah Teck"), 11.11, 11),
-        new BookEntry(1002, ("More Java for dummies"), ("Tan Ah Teck"), 22.22, 22),
-        new BookEntry(1003, ("More Java for more dummies"), ("Mohammad Ali"), 33.33, 33),
-        new BookEntry(1004, ("A Cup of Java"), ("Kumar"), 44.44, 44),
-        new BookEntry(1005, ("A Teaspoon of Java"), ("Kevin Jones"), 55.55, 55),
-        new BookEntry(1006, ("A Teaspoon of Java 1.4"), ("Kevin Jones"), 66.66, 66),
-        new BookEntry(1007, ("A Teaspoon of Java 1.5"), ("Kevin Jones"), 77.77, 77),
-        new BookEntry(1008, ("A Teaspoon of Java 1.6"), ("Kevin Jones"), 88.88, 88),
-        new BookEntry(1009, ("A Teaspoon of Java 1.7"), ("Kevin Jones"), 99.99, 99),
-        new BookEntry(1010, ("A Teaspoon of Java 1.8"), ("Kevin Jones"), null, 1010)
-    };
-
     private final JdbcStatementBuilder<BookEntry> statementBuilder =
             (ps, book) -> {
                 ps.setInt(1, book.id);
@@ -101,7 +88,7 @@ public class BooksTable extends TableBuilder implements TableManaged {
     }
 
     public List<BookEntry> getTestData() {
-        return Arrays.asList(tableTestData);
+        return Arrays.asList(BooksStore.TEST_DATA);
     }
 
     public JdbcStatementBuilder<BookEntry> getStatementBuilder() {
@@ -109,8 +96,7 @@ public class BooksTable extends TableBuilder implements TableManaged {
     }
 
     public void insertTableTestData(Connection conn) throws SQLException {
-        executeStatement(
-                conn, getInsertIntoQuery(), statementBuilder, Arrays.asList(tableTestData));
+        executeStatement(conn, getInsertIntoQuery(), statementBuilder, getTestData());
     }
 
     public List<BookEntry> selectAllTable(Connection conn) throws SQLException {
