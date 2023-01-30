@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.dialect.sqlserver;
 
+import org.apache.flink.connector.jdbc.databases.sqlserver.SqlServerDatabase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -29,7 +30,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.MSSQLServerContainer;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -43,12 +45,9 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The Table Source ITCase for {@link SqlServerDialect}. */
-class SqlServerTableSourceITCase extends AbstractTestBase {
+@DisabledOnOs(OS.MAC)
+class SqlServerTableSourceITCase extends AbstractTestBase implements SqlServerDatabase {
 
-    private static final MSSQLServerContainer container =
-            new MSSQLServerContainer("mcr.microsoft.com/mssql/server:2019-GA-ubuntu-16.04")
-                    .acceptLicense();
-    private static String containerUrl;
     private static final String INPUT_TABLE = "sql_test_table";
 
     private static StreamExecutionEnvironment env;
@@ -56,12 +55,12 @@ class SqlServerTableSourceITCase extends AbstractTestBase {
 
     @BeforeAll
     static void beforeAll() throws ClassNotFoundException, SQLException {
-        container.start();
-        containerUrl = container.getJdbcUrl();
-        Class.forName(container.getDriverClassName());
+        Class.forName(CONTAINER.getDriverClassName());
         try (Connection conn =
                         DriverManager.getConnection(
-                                containerUrl, container.getUsername(), container.getPassword());
+                                CONTAINER.getJdbcUrl(),
+                                CONTAINER.getUsername(),
+                                CONTAINER.getPassword());
                 Statement statement = conn.createStatement()) {
             statement.executeUpdate(
                     "CREATE TABLE "
@@ -108,14 +107,15 @@ class SqlServerTableSourceITCase extends AbstractTestBase {
 
     @AfterAll
     static void afterAll() throws Exception {
-        Class.forName(container.getDriverClassName());
+        Class.forName(CONTAINER.getDriverClassName());
         try (Connection conn =
                         DriverManager.getConnection(
-                                containerUrl, container.getUsername(), container.getPassword());
+                                CONTAINER.getJdbcUrl(),
+                                CONTAINER.getUsername(),
+                                CONTAINER.getPassword());
                 Statement statement = conn.createStatement()) {
             statement.executeUpdate("DROP TABLE " + INPUT_TABLE);
         }
-        container.stop();
     }
 
     @BeforeEach
@@ -213,16 +213,16 @@ class SqlServerTableSourceITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getMetadata().getJdbcUrl()
                         + "',"
                         + "  'table-name'='"
                         + INPUT_TABLE
                         + "',"
                         + "  'username'='"
-                        + container.getUsername()
+                        + getMetadata().getUsername()
                         + "',"
                         + "  'password'='"
-                        + container.getPassword()
+                        + getMetadata().getPassword()
                         + "'"
                         + ")");
     }
