@@ -1,6 +1,6 @@
 package org.apache.flink.connector.jdbc.dialect.postgres;
 
-import org.apache.flink.connector.jdbc.DbMetadata;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.databases.postgres.PostgresMetadata;
 import org.apache.flink.connector.jdbc.test.DockerImageVersions;
 import org.apache.flink.connector.jdbc.xa.JdbcExactlyOnceSinkE2eTest;
@@ -35,7 +35,7 @@ public class PostgresExactlyOnceSinkE2eTest extends JdbcExactlyOnceSinkE2eTest {
     }
 
     @Override
-    protected DbMetadata getDbMetadata() {
+    public DatabaseMetadata getMetadata() {
         return new PostgresMetadata(CONTAINER);
     }
 

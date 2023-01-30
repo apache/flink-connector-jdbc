@@ -83,14 +83,14 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
 
     @BeforeEach
     void initHelpers() throws Exception {
-        xaDataSource = getDbMetadata().buildXaDataSource();
+        xaDataSource = getMetadata().buildXaDataSource();
         xaHelper =
                 new JdbcXaFacadeTestHelper(
-                        getDbMetadata().buildXaDataSource(),
-                        getDbMetadata().getUrl(),
+                        getMetadata().buildXaDataSource(),
+                        getMetadata().getUrl(),
                         INPUT_TABLE,
-                        getDbMetadata().getUser(),
-                        getDbMetadata().getPassword());
+                        getMetadata().getUser(),
+                        getMetadata().getPassword());
         sinkHelper = buildSinkHelper(createStateHandler());
     }
 
@@ -109,10 +109,10 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
         try (JdbcXaFacadeTestHelper xa =
                 new JdbcXaFacadeTestHelper(
                         xaDataSource,
-                        getDbMetadata().getUrl(),
+                        getMetadata().getUrl(),
                         INPUT_TABLE,
-                        getDbMetadata().getUser(),
-                        getDbMetadata().getPassword())) {
+                        getMetadata().getUser(),
+                        getMetadata().getPassword())) {
             xa.cancelAllTx();
         }
     }

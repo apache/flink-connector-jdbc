@@ -89,5 +89,4 @@ public class OracleMetadata implements DatabaseMetadata {
     public String getVersion() {
         return version;
     }
-
 }

@@ -80,7 +80,7 @@ class JdbcFullTest extends JdbcDataTestBase {
                     JdbcOutputFormat.builder()
                             .setOptions(
                                     JdbcConnectorOptions.builder()
-                                            .setDBUrl(getDbMetadata().getUrl())
+                                            .setDBUrl(getMetadata().getUrl())
                                             .setTableName(OUTPUT_TABLE)
                                             .build())
                             .setFieldNames(new String[] {"id", "title", "author", "price", "qty"})
@@ -114,8 +114,8 @@ class JdbcFullTest extends JdbcDataTestBase {
         ExecutionEnvironment environment = ExecutionEnvironment.getExecutionEnvironment();
         JdbcInputFormat.JdbcInputFormatBuilder inputBuilder =
                 JdbcInputFormat.buildJdbcInputFormat()
-                        .setDrivername(getDbMetadata().getDriverClass())
-                        .setDBUrl(getDbMetadata().getUrl())
+                        .setDrivername(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getUrl())
                         .setQuery(SELECT_ALL_BOOKS)
                         .setRowTypeInfo(ROW_TYPE_INFO);
 
@@ -138,8 +138,8 @@ class JdbcFullTest extends JdbcDataTestBase {
         // in PreparedStatement.setObject (see its javadoc for more details)
         JdbcConnectionOptions connectionOptions =
                 new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-                        .withUrl(getDbMetadata().getUrl())
-                        .withDriverName(getDbMetadata().getDriverClass())
+                        .withUrl(getMetadata().getUrl())
+                        .withDriverName(getMetadata().getDriverClass())
                         .build();
 
         JdbcOutputFormat jdbcOutputFormat =
@@ -162,7 +162,7 @@ class JdbcFullTest extends JdbcDataTestBase {
         source.output(jdbcOutputFormat);
         environment.execute();
 
-        try (Connection dbConn = DriverManager.getConnection(getDbMetadata().getUrl());
+        try (Connection dbConn = DriverManager.getConnection(getMetadata().getUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS);
                 ResultSet resultSet = statement.executeQuery()) {
             int count = 0;
@@ -175,8 +175,7 @@ class JdbcFullTest extends JdbcDataTestBase {
 
     @AfterEach
     void clearOutputTable() throws Exception {
-        Class.forName(getDbMetadata().getDriverClass());
-        try (Connection conn = DriverManager.getConnection(getDbMetadata().getUrl());
+        try (Connection conn = getMetadata().getConnection();
                 Statement stat = conn.createStatement()) {
             stat.execute("DELETE FROM " + OUTPUT_TABLE);
 

@@ -66,5 +66,4 @@ public class DerbyMetadata implements DatabaseMetadata {
     public String getVersion() {
         return "derby:memory";
     }
-
 }

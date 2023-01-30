@@ -508,8 +508,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
 
     @AfterEach
     void clearOutputTable() throws Exception {
-        Class.forName(DERBY_EBOOKSHOP_DB.getDriverClass());
-        try (Connection conn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
+        try (Connection conn = DERBY_EBOOKSHOP_DB.getConnection();
                 Statement stat = conn.createStatement()) {
             stat.execute("DELETE FROM " + OUTPUT_TABLE);
         }

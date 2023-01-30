@@ -20,10 +20,10 @@ package org.apache.flink.connector.jdbc.xa;
 import org.apache.flink.FlinkVersion;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
 import org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
 import org.apache.flink.streaming.api.operators.StreamSink;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
@@ -91,10 +91,10 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
         try (JdbcXaFacadeTestHelper h =
                 new JdbcXaFacadeTestHelper(
                         JdbcXaSinkDerbyTest.derbyXaDs(),
-                        getDbMetadata().getUrl(),
+                        getMetadata().getUrl(),
                         JdbcTestFixture.INPUT_TABLE,
-                        getDbMetadata().getUser(),
-                        getDbMetadata().getPassword())) {
+                        getMetadata().getUser(),
+                        getMetadata().getPassword())) {
             h.assertDbContentsEquals(CP0);
         }
     }
@@ -105,7 +105,7 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
     }
 
     @Override
-    protected DbMetadata getDbMetadata() {
+    public DatabaseMetadata getMetadata() {
         return JdbcTestFixture.DERBY_EBOOKSHOP_DB;
     }
 

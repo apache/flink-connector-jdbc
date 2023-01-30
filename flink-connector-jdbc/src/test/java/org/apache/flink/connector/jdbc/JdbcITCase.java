@@ -19,6 +19,7 @@ package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.function.FunctionWithException;
 
@@ -73,8 +74,8 @@ public class JdbcITCase extends JdbcTestBase {
                                 String.format(INSERT_TEMPLATE, INPUT_TABLE),
                                 TEST_ENTRY_JDBC_STATEMENT_BUILDER,
                                 new JdbcConnectionOptionsBuilder()
-                                        .withUrl(getDbMetadata().getUrl())
-                                        .withDriverName(getDbMetadata().getDriverClass())
+                                        .withUrl(getMetadata().getUrl())
+                                        .withDriverName(getMetadata().getDriverClass())
                                         .build()));
         env.execute();
 
@@ -107,8 +108,8 @@ public class JdbcITCase extends JdbcTestBase {
                                     ps.setString(2, e.content);
                                 },
                                 new JdbcConnectionOptionsBuilder()
-                                        .withUrl(getDbMetadata().getUrl())
-                                        .withDriverName(getDbMetadata().getDriverClass())
+                                        .withUrl(getMetadata().getUrl())
+                                        .withDriverName(getMetadata().getDriverClass())
                                         .build()));
         env.execute();
 
@@ -117,7 +118,7 @@ public class JdbcITCase extends JdbcTestBase {
 
     private List<String> selectWords() throws SQLException {
         ArrayList<String> strings = new ArrayList<>();
-        try (Connection connection = DriverManager.getConnection(getDbMetadata().getUrl())) {
+        try (Connection connection = DriverManager.getConnection(getMetadata().getUrl())) {
             try (Statement st = connection.createStatement()) {
                 try (ResultSet rs = st.executeQuery("select word from words")) {
                     while (rs.next()) {
@@ -144,7 +145,7 @@ public class JdbcITCase extends JdbcTestBase {
 
     private List<TestEntry> selectBooks() throws SQLException {
         List<TestEntry> result = new ArrayList<>();
-        try (Connection connection = DriverManager.getConnection(getDbMetadata().getUrl())) {
+        try (Connection connection = DriverManager.getConnection(getMetadata().getUrl())) {
             connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             connection.setReadOnly(true);
             try (Statement st = connection.createStatement()) {
@@ -167,7 +168,7 @@ public class JdbcITCase extends JdbcTestBase {
     }
 
     @Override
-    protected DbMetadata getDbMetadata() {
+    public DatabaseMetadata getMetadata() {
         return DERBY_EBOOKSHOP_DB;
     }
 

@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -192,11 +191,8 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
                         .finish();
         jdbcInputFormat.openInputFormat();
 
-        Class.forName(DERBY_EBOOKSHOP_DB.getDriverClass());
         final int defaultFetchSize =
-                DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl())
-                        .createStatement()
-                        .getFetchSize();
+                DERBY_EBOOKSHOP_DB.getConnection().createStatement().getFetchSize();
 
         assertThat(jdbcInputFormat.getStatement().getFetchSize()).isEqualTo(defaultFetchSize);
     }
@@ -229,9 +225,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
                         .finish();
         jdbcInputFormat.openInputFormat();
 
-        Class.forName(DERBY_EBOOKSHOP_DB.getDriverClass());
-        final boolean defaultAutoCommit =
-                DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl()).getAutoCommit();
+        final boolean defaultAutoCommit = DERBY_EBOOKSHOP_DB.getConnection().getAutoCommit();
 
         assertThat(jdbcInputFormat.getDbConn().getAutoCommit()).isEqualTo(defaultAutoCommit);
     }
