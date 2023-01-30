@@ -24,5 +24,22 @@ package org.apache.flink.connector.jdbc.test;
  */
 public class DockerImageVersions {
 
-    public static final String POSTGRES = "postgres:9.6.12";
+    public static final String MSSQL_SERVER_2017 = "mcr.microsoft.com/mssql/server:2017-CU12";
+    public static final String MSSQL_SERVER_2019 =
+            "mcr.microsoft.com/mssql/server:2019-GA-ubuntu-16.04";
+
+    public static final String MSSQL_SERVER = MSSQL_SERVER_2019;
+
+    public static final String MYSQL_5_6 = "mysql:5.6.51";
+    public static final String MYSQL_5_7 = "mysql:5.7.41";
+    public static final String MYSQL_8_0 = "mysql:8.0.32";
+    public static final String MYSQL = MYSQL_8_0;
+
+    public static final String ORACLE_18 = "gvenzl/oracle-xe:18.4.0-slim-faststart";
+    public static final String ORACLE_21 = "gvenzl/oracle-xe:21.3.0-slim-faststart";
+    public static final String ORACLE = ORACLE_21;
+
+    public static final String POSTGRES_9 = "postgres:9.6.24";
+    public static final String POSTGRES_15 = "postgres:15.1";
+    public static final String POSTGRES = POSTGRES_15;
 }

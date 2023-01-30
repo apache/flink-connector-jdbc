@@ -24,7 +24,9 @@ import java.io.Serializable;
 /** Describes a database: driver, schema and urls. */
 public interface DbMetadata extends Serializable {
 
-    String getInitUrl();
+    default String getInitUrl() {
+        return getUrl();
+    }
 
     String getUrl();
 
