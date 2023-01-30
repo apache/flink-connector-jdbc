@@ -22,8 +22,6 @@ import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connector.jdbc.DbMetadata;
-import org.apache.flink.connector.jdbc.DerbyDbMetadata;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.JdbcITCase;
@@ -84,12 +82,11 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
     protected static final long CHECKPOINT_TIMEOUT_MS = 20_000L;
     protected static final long TASK_CANCELLATION_TIMEOUT_MS = 20_000L;
 
-    abstract protected SerializableSupplier<XADataSource> getDataSourceSupplier();
+    protected abstract SerializableSupplier<XADataSource> getDataSourceSupplier();
 
-    abstract protected String getDockerVersion();
+    protected abstract String getDockerVersion();
 
-    @RegisterExtension
-    static final MiniClusterExtension MINI_CLUSTER = createCluster();
+    @RegisterExtension static final MiniClusterExtension MINI_CLUSTER = createCluster();
 
     private static MiniClusterExtension createCluster() {
         Configuration configuration = new Configuration();
@@ -104,8 +101,7 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
                 new MiniClusterResourceConfiguration.Builder()
                         .setNumberTaskManagers(PARALLELISM)
                         .setConfiguration(configuration)
-                        .build()
-        );
+                        .build());
     }
 
     // track active sources for:
