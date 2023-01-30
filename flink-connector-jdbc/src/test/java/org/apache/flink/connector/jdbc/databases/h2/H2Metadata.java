@@ -37,6 +37,11 @@ public class H2Metadata implements DatabaseMetadata {
     }
 
     @Override
+    public String getJdbcUrlWithCredentials() {
+        return getJdbcUrl();
+    }
+
+    @Override
     public String getUsername() {
         return "";
     }
