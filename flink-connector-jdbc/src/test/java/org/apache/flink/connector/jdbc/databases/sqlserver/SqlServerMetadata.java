@@ -53,6 +53,11 @@ public class SqlServerMetadata implements DatabaseMetadata {
     }
 
     @Override
+    public String getJdbcUrlWithCredentials() {
+        return String.format("%s;username=%s;password=%s", getUrl(), getUser(), getPassword());
+    }
+
+    @Override
     public String getUsername() {
         return this.username;
     }

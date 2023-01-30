@@ -30,11 +30,6 @@ public class PostgresExactlyOnceSinkE2eTest extends JdbcExactlyOnceSinkE2eTest {
                     .withMaxTransactions(50);
 
     @Override
-    protected String getDockerVersion() {
-        return CONTAINER.getDockerImageName();
-    }
-
-    @Override
     public DatabaseMetadata getMetadata() {
         return new PostgresMetadata(CONTAINER);
     }

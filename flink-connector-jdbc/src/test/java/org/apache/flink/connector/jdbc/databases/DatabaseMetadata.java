@@ -39,6 +39,8 @@ public interface DatabaseMetadata extends Serializable {
 
     String getJdbcUrl();
 
+    String getJdbcUrlWithCredentials();
+
     String getUsername();
 
     String getPassword();

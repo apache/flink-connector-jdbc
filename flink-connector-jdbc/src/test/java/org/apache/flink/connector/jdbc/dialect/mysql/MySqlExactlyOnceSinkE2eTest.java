@@ -39,11 +39,6 @@ public class MySqlExactlyOnceSinkE2eTest extends JdbcExactlyOnceSinkE2eTest {
                             (CHECKPOINT_TIMEOUT_MS + TASK_CANCELLATION_TIMEOUT_MS) * 2);
 
     @Override
-    protected String getDockerVersion() {
-        return CONTAINER.getDockerImageName();
-    }
-
-    @Override
     public DatabaseMetadata getMetadata() {
         return new MySqlMetadata(CONTAINER);
     }

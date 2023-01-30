@@ -84,8 +84,6 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
 
     protected abstract SerializableSupplier<XADataSource> getDataSourceSupplier();
 
-    protected abstract String getDockerVersion();
-
     @RegisterExtension static final MiniClusterExtension MINI_CLUSTER = createCluster();
 
     private static MiniClusterExtension createCluster() {
@@ -124,7 +122,7 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
     @Test
     void testInsert() throws Exception {
         long started = System.currentTimeMillis();
-        LOG.info("Test insert for {}", getDockerVersion());
+        LOG.info("Test insert for {}", getMetadata().getVersion());
         int elementsPerSource = 50;
         int numElementsPerCheckpoint = 7;
         int minElementsPerFailure = numElementsPerCheckpoint / 3;
@@ -169,7 +167,7 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
                 .containsExactlyInAnyOrderElementsOf(expectedIds);
         LOG.info(
                 "Test insert for {} finished in {} ms.",
-                getDockerVersion(),
+                getMetadata().getVersion(),
                 System.currentTimeMillis() - started);
     }
 

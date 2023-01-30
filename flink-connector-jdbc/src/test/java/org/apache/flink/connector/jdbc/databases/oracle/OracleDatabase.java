@@ -19,9 +19,10 @@ package org.apache.flink.connector.jdbc.databases.oracle;
 
 import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.databases.DatabaseTest;
-import org.apache.flink.connector.jdbc.dialect.oracle.OracleContainer;
+import org.apache.flink.connector.jdbc.test.DockerImageVersions;
 
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.OracleContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -29,7 +30,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 public interface OracleDatabase extends DatabaseTest {
 
-    @Container JdbcDatabaseContainer<?> CONTAINER = new OracleContainer();
+    @Container
+    JdbcDatabaseContainer<?> CONTAINER =
+            new OracleContainer(DockerImageVersions.ORACLE)
+                    .withStartupTimeoutSeconds(240)
+                    .withConnectTimeoutSeconds(120);
 
     @Override
     default DatabaseMetadata getMetadata() {
