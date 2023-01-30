@@ -26,10 +26,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** E2E test for {@link MySqlCatalog}. */
 @Testcontainers
-public class MySqlCatalogITCase extends MySqlCatalogTestBase {
+public class MySql56CatalogITCase extends MySqlCatalogTestBase {
 
     @Container
-    private static final MySQLContainer<?> CONTAINER = createContainer(DockerImageVersions.MYSQL);
+    private static final MySQLContainer<?> CONTAINER =
+            createContainer(DockerImageVersions.MYSQL_5_6);
 
     @Override
     protected String getDatabaseUrl() {
