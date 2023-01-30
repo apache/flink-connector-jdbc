@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.table;
 
+import org.apache.flink.connector.jdbc.databases.mysql.MySqlDatabase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
@@ -32,22 +33,14 @@ import org.apache.flink.util.CollectionUtil;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static java.lang.String.format;
 import static java.lang.String.join;
@@ -57,17 +50,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Test unsigned type conversion between Flink and JDBC driver mysql, the test underlying use MySQL
  * to mock a DB.
  */
-@Testcontainers
-class UnsignedTypeConversionITCase extends AbstractTestBase {
+class UnsignedTypeConversionITCase extends AbstractTestBase implements MySqlDatabase {
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(UnsignedTypeConversionITCase.class);
 
-    private static final DockerImageName MYSQL_57_IMAGE = DockerImageName.parse("mysql:5.7.34");
-    private static final String DEFAULT_DB_NAME = "test";
     private static final String TABLE_NAME = "unsigned_test";
-    private static final String USER = "root";
-    private static final String PASSWORD = "";
     private static final List<String> COLUMNS =
             Arrays.asList(
                     "tiny_c",
@@ -78,13 +66,6 @@ class UnsignedTypeConversionITCase extends AbstractTestBase {
                     "int_un_c",
                     "big_c",
                     "big_un_c");
-
-    private static final Map<String, String> DEFAULT_CONTAINER_ENV_MAP =
-            new HashMap<String, String>() {
-                {
-                    put("MYSQL_ROOT_HOST", "%");
-                }
-            };
 
     private static final Object[] ROW =
             new Object[] {
@@ -98,19 +79,9 @@ class UnsignedTypeConversionITCase extends AbstractTestBase {
                 new BigDecimal("18446744073709551615")
             };
 
-    @Container
-    static final MySQLContainer<?> MYSQL_CONTAINER =
-            new MySQLContainer<>(MYSQL_57_IMAGE)
-                    .withEnv(DEFAULT_CONTAINER_ENV_MAP)
-                    .withUsername(USER)
-                    .withPassword(PASSWORD)
-                    .withDatabaseName(DEFAULT_DB_NAME)
-                    .withLogConsumer(new Slf4jLogConsumer(LOGGER));
-
     @Test
     void testUnsignedType() throws Exception {
-        try (Connection con =
-                DriverManager.getConnection(MYSQL_CONTAINER.getJdbcUrl(), USER, PASSWORD)) {
+        try (Connection con = getMetadata().getConnection()) {
             StreamExecutionEnvironment sEnv = StreamExecutionEnvironment.getExecutionEnvironment();
             TableEnvironment tableEnv = StreamTableEnvironment.create(sEnv);
             createMysqlTable(con);
@@ -173,7 +144,7 @@ class UnsignedTypeConversionITCase extends AbstractTestBase {
                         + "big_un_c DECIMAL(20, 0)) with("
                         + " 'connector' = 'jdbc',"
                         + " 'url' = '"
-                        + format("%s?user=%s&password=&", MYSQL_CONTAINER.getJdbcUrl(), USER)
+                        + getMetadata().getJdbcUrlWithCredentials()
                         + "',"
                         + " 'table-name' = '"
                         + TABLE_NAME
