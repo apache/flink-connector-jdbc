@@ -84,5 +84,4 @@ public class SqlServerMetadata implements DatabaseMetadata {
     public String getVersion() {
         return version;
     }
-
 }

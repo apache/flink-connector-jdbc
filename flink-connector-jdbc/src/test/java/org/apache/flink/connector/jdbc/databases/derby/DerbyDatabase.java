@@ -32,7 +32,8 @@ public interface DerbyDatabase extends DatabaseTest {
                     "derby.stream.error.field",
                     DerbyDatabase.class.getCanonicalName() + ".DEV_NULL");
             Class.forName(metadata.getDriverClass());
-            DriverManager.getConnection(String.format("%s;create=true", metadata.getJdbcUrl())).close();
+            DriverManager.getConnection(String.format("%s;create=true", metadata.getJdbcUrl()))
+                    .close();
         } catch (Exception e) {
             throw new FlinkRuntimeException(e);
         }

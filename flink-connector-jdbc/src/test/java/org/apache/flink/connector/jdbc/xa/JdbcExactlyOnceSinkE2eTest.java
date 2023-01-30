@@ -156,9 +156,9 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
 
         List<Integer> insertedIds =
                 getInsertedIds(
-                        getDbMetadata().getUrl(),
-                        getDbMetadata().getUser(),
-                        getDbMetadata().getPassword(),
+                        getMetadata().getUrl(),
+                        getMetadata().getUser(),
+                        getMetadata().getPassword(),
                         INPUT_TABLE);
         List<Integer> expectedIds =
                 IntStream.range(0, elementsPerSource * PARALLELISM)

@@ -84,6 +84,4 @@ public class MySqlMetadata implements DatabaseMetadata {
     public String getVersion() {
         return this.version;
     }
-
-
 }

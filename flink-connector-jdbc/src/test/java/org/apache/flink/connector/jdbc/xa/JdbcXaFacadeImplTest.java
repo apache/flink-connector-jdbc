@@ -17,9 +17,9 @@
 
 package org.apache.flink.connector.jdbc.xa;
 
-import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +59,7 @@ class JdbcXaFacadeImplTest extends JdbcTestBase {
 
     @Test
     void testRecover() throws Exception {
-        try (XaFacade f = XaFacadeImpl.fromXaDataSource(getDbMetadata().buildXaDataSource())) {
+        try (XaFacade f = XaFacadeImpl.fromXaDataSource(getMetadata().buildXaDataSource())) {
             f.open();
             assertThat(f.recover()).isEmpty();
             f.start(XID);
@@ -71,7 +71,7 @@ class JdbcXaFacadeImplTest extends JdbcTestBase {
             }
             f.endAndPrepare(XID);
         }
-        try (XaFacade f = XaFacadeImpl.fromXaDataSource(getDbMetadata().buildXaDataSource())) {
+        try (XaFacade f = XaFacadeImpl.fromXaDataSource(getMetadata().buildXaDataSource())) {
             f.open();
             Collection<Xid> recovered = f.recover();
             recovered.forEach(f::rollback);
@@ -99,7 +99,7 @@ class JdbcXaFacadeImplTest extends JdbcTestBase {
     }
 
     @Override
-    protected DbMetadata getDbMetadata() {
+    public DatabaseMetadata getMetadata() {
         return JdbcTestFixture.DERBY_EBOOKSHOP_DB;
     }
 }

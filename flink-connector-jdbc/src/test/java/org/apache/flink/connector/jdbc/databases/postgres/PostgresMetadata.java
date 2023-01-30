@@ -84,5 +84,4 @@ public class PostgresMetadata implements DatabaseMetadata {
     public String getVersion() {
         return version;
     }
-
 }

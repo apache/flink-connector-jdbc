@@ -18,7 +18,7 @@
 package org.apache.flink.connector.jdbc.databases.h2;
 
 import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.xa.h2.H2XaDsWrapper;
+import org.apache.flink.connector.jdbc.databases.h2.xa.H2XaDsWrapper;
 
 import javax.sql.XADataSource;
 
@@ -62,5 +62,4 @@ public class H2Metadata implements DatabaseMetadata {
     public String getVersion() {
         return "h2:mem";
     }
-
 }

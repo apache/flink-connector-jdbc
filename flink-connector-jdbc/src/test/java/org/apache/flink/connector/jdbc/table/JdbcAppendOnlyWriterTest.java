@@ -21,8 +21,8 @@ package org.apache.flink.connector.jdbc.table;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
@@ -34,7 +34,6 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.Statement;
 
 import static org.apache.flink.connector.jdbc.JdbcDataTestBase.toRow;
@@ -64,11 +63,10 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
                                     JdbcOutputFormat.builder()
                                             .setOptions(
                                                     JdbcConnectorOptions.builder()
-                                                            .setDBUrl(getDbMetadata().getUrl())
+                                                            .setDBUrl(getMetadata().getUrl())
                                                             .setDialect(
                                                                     JdbcDialectLoader.load(
-                                                                            getDbMetadata()
-                                                                                    .getUrl(),
+                                                                            getMetadata().getUrl(),
                                                                             getClass()
                                                                                     .getClassLoader()))
                                                             .setTableName(OUTPUT_TABLE)
@@ -96,8 +94,7 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
     }
 
     private void alterTable() throws Exception {
-        Class.forName(getDbMetadata().getDriverClass());
-        try (Connection conn = DriverManager.getConnection(getDbMetadata().getUrl());
+        try (Connection conn = getMetadata().getConnection();
                 Statement stat = conn.createStatement()) {
             stat.execute("ALTER  TABLE " + OUTPUT_TABLE + " DROP COLUMN " + fieldNames[1]);
         }
@@ -113,15 +110,14 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
             }
         }
         format = null;
-        Class.forName(getDbMetadata().getDriverClass());
-        try (Connection conn = DriverManager.getConnection(getDbMetadata().getUrl());
+        try (Connection conn = getMetadata().getConnection();
                 Statement stat = conn.createStatement()) {
             stat.execute("DELETE FROM " + OUTPUT_TABLE);
         }
     }
 
     @Override
-    protected DbMetadata getDbMetadata() {
+    public DatabaseMetadata getMetadata() {
         return DERBY_EBOOKSHOP_DB;
     }
 }

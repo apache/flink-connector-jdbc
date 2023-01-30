@@ -17,8 +17,8 @@
 
 package org.apache.flink.connector.jdbc.xa;
 
-import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 
 import org.apache.derby.jdbc.EmbeddedXADataSource;
 import org.junit.jupiter.api.Test;
@@ -163,13 +163,11 @@ class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     }
 
     static EmbeddedXADataSource derbyXaDs() {
-        EmbeddedXADataSource ds = new EmbeddedXADataSource();
-        ds.setDatabaseName(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getDbName());
-        return ds;
+        return (EmbeddedXADataSource) JdbcTestFixture.DERBY_EBOOKSHOP_DB.buildXaDataSource();
     }
 
     @Override
-    protected DbMetadata getDbMetadata() {
+    public DatabaseMetadata getMetadata() {
         return JdbcTestFixture.DERBY_EBOOKSHOP_DB;
     }
 }

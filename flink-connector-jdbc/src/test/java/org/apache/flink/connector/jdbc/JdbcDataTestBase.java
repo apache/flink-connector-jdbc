@@ -19,6 +19,7 @@ package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
@@ -40,11 +41,11 @@ import static org.mockito.Mockito.doReturn;
 public abstract class JdbcDataTestBase extends JdbcTestBase {
     @BeforeEach
     void initData() throws SQLException {
-        JdbcTestFixture.initData(getDbMetadata());
+        JdbcTestFixture.initData(getMetadata());
     }
 
     @Override
-    protected DbMetadata getDbMetadata() {
+    public DatabaseMetadata getMetadata() {
         return DERBY_EBOOKSHOP_DB;
     }
 
