@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
-import org.apache.flink.connector.jdbc.test.DockerImageVersions;
+import org.apache.flink.connector.jdbc.databases.mysql.MySqlDatabase;
 
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -29,8 +29,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public class MySql57CatalogITCase extends MySqlCatalogTestBase {
 
     @Container
-    private static final MySQLContainer<?> CONTAINER =
-            createContainer(DockerImageVersions.MYSQL_5_7);
+    private static final MySQLContainer<?> CONTAINER = createContainer(MySqlDatabase.MYSQL_5_7);
 
     @Override
     protected String getDatabaseUrl() {

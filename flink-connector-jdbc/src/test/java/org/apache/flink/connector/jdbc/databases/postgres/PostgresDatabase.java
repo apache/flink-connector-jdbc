@@ -19,7 +19,6 @@ package org.apache.flink.connector.jdbc.databases.postgres;
 
 import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.databases.DatabaseTest;
-import org.apache.flink.connector.jdbc.test.DockerImageVersions;
 
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -32,11 +31,12 @@ import static org.apache.flink.util.Preconditions.checkArgument;
 @Testcontainers
 public interface PostgresDatabase extends DatabaseTest {
 
+    String POSTGRES_9 = "postgres:9.6.24";
+    String POSTGRES_15 = "postgres:15.1";
+
     @Container
     PostgreSQLContainer<?> CONTAINER =
-            new PostgresXaContainer(DockerImageVersions.POSTGRES)
-                    .withMaxConnections(10)
-                    .withMaxTransactions(50);
+            new PostgresXaContainer(POSTGRES_15).withMaxConnections(10).withMaxTransactions(50);
 
     @Override
     default DatabaseMetadata getMetadata() {
