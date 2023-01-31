@@ -19,19 +19,26 @@ package org.apache.flink.connector.jdbc.databases.sqlserver;
 
 import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.databases.DatabaseTest;
-import org.apache.flink.connector.jdbc.test.DockerImageVersions;
 
 import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 /** A SqlServer database for testing. * */
 @Testcontainers
 public interface SqlServerDatabase extends DatabaseTest {
 
+    DockerImageName MSSQL_AZURE_SQL_EDGE =
+            DockerImageName.parse("mcr.microsoft.com/azure-sql-edge")
+                    .asCompatibleSubstituteFor("mcr.microsoft.com/mssql/server");
+
+    String MSSQL_SERVER_2017 = "mcr.microsoft.com/mssql/server:2017-CU12";
+    String MSSQL_SERVER_2019 = "mcr.microsoft.com/mssql/server:2019-GA-ubuntu-16.04";
+
     @Container
     MSSQLServerContainer<?> CONTAINER =
-            new MSSQLServerContainer<>(DockerImageVersions.MSSQL_SERVER).acceptLicense();
+            new MSSQLServerContainer<>(MSSQL_AZURE_SQL_EDGE).acceptLicense();
 
     @Override
     default DatabaseMetadata getMetadata() {

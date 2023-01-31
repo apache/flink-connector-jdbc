@@ -19,7 +19,6 @@ package org.apache.flink.connector.jdbc.databases.mysql;
 
 import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.databases.DatabaseTest;
-import org.apache.flink.connector.jdbc.test.DockerImageVersions;
 import org.apache.flink.util.ExceptionUtils;
 
 import org.slf4j.Logger;
@@ -41,9 +40,12 @@ import static org.apache.flink.util.Preconditions.checkArgument;
 @Testcontainers
 public interface MySqlDatabase extends DatabaseTest {
 
+    String MYSQL_5_6 = "mysql:5.6.51";
+    String MYSQL_5_7 = "mysql:5.7.41";
+    String MYSQL_8_0 = "mysql:8.0.32";
+
     @Container
-    MySqlXaContainer CONTAINER =
-            new MySqlXaContainer(DockerImageVersions.MYSQL).withLockWaitTimeout(50_000L);
+    MySqlXaContainer CONTAINER = new MySqlXaContainer(MYSQL_8_0).withLockWaitTimeout(50_000L);
 
     @Override
     default DatabaseMetadata getMetadata() {
