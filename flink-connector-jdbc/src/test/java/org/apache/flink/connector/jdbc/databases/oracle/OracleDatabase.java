@@ -29,14 +29,15 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 public interface OracleDatabase extends DatabaseTest {
 
-    String ORACLE_18 = "gvenzl/oracle-xe:18.4.0-slim-faststart";
+    String ORACLE_18 = "gvenzl/oracle-xe:18.4.0-slim";
     String ORACLE_21 = "gvenzl/oracle-xe:21.3.0-slim-faststart";
 
     @Container
     JdbcDatabaseContainer<?> CONTAINER =
             new OracleContainer(ORACLE_21)
                     .withStartupTimeoutSeconds(240)
-                    .withConnectTimeoutSeconds(120);
+                    .withConnectTimeoutSeconds(120)
+                    .usingSid();
 
     @Override
     default DatabaseMetadata getMetadata() {
