@@ -130,7 +130,7 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(PARALLELISM);
-        env.setRestartStrategy(fixedDelayRestart(Integer.MAX_VALUE, Time.milliseconds(100)));
+        env.setRestartStrategy(fixedDelayRestart(elementsPerSource * 2, Time.milliseconds(100)));
         env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
         env.enableCheckpointing(50, CheckpointingMode.EXACTLY_ONCE);
         // timeout checkpoints as some tasks may fail while triggering

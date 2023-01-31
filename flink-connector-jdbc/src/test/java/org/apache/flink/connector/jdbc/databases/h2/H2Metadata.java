@@ -22,7 +22,7 @@ import org.apache.flink.connector.jdbc.databases.h2.xa.H2XaDsWrapper;
 
 import javax.sql.XADataSource;
 
-/** H2DbMetadata. */
+/** H2 Metadata. */
 public class H2Metadata implements DatabaseMetadata {
 
     private final String schema;

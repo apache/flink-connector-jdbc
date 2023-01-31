@@ -1,6 +1,8 @@
 package org.apache.flink.connector.jdbc.dialect.oracle;
 
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.databases.oracle.OracleDatabase;
+import org.apache.flink.connector.jdbc.databases.oracle.OracleMetadata;
 import org.apache.flink.connector.jdbc.xa.JdbcExactlyOnceSinkE2eTest;
 import org.apache.flink.util.function.SerializableSupplier;
 
@@ -16,6 +18,11 @@ import java.sql.SQLException;
 @DisabledOnOs(OS.MAC)
 public class OracleExactlyOnceSinkE2eTest extends JdbcExactlyOnceSinkE2eTest
         implements OracleDatabase {
+
+    @Override
+    public DatabaseMetadata getMetadata() {
+        return new OracleMetadata(CONTAINER, true);
+    }
 
     @Override
     public SerializableSupplier<XADataSource> getDataSourceSupplier() {

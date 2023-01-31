@@ -23,7 +23,7 @@ import org.apache.derby.jdbc.EmbeddedXADataSource;
 
 import javax.sql.XADataSource;
 
-/** DerbyDbMetadata. */
+/** Derby Metadata. */
 public class DerbyMetadata implements DatabaseMetadata {
     private final String dbName;
 

@@ -1,6 +1,8 @@
 package org.apache.flink.connector.jdbc.dialect.mysql;
 
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.databases.mysql.MySqlDatabase;
+import org.apache.flink.connector.jdbc.databases.mysql.MySqlMetadata;
 import org.apache.flink.connector.jdbc.xa.JdbcExactlyOnceSinkE2eTest;
 import org.apache.flink.util.function.SerializableSupplier;
 
@@ -14,6 +16,11 @@ import javax.sql.XADataSource;
  */
 public class MySqlExactlyOnceSinkE2eTest extends JdbcExactlyOnceSinkE2eTest
         implements MySqlDatabase {
+
+    @Override
+    public DatabaseMetadata getMetadata() {
+        return new MySqlMetadata(CONTAINER, true);
+    }
 
     @Override
     public SerializableSupplier<XADataSource> getDataSourceSupplier() {
