@@ -1,21 +1,33 @@
-package org.apache.flink.connector.jdbc.dialect.mysql;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import org.apache.flink.connector.jdbc.DbMetadata;
-import org.apache.flink.connector.jdbc.databases.mysql.MySqlMetadata;
+package org.apache.flink.connector.jdbc.databases.mysql;
+
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.databases.DatabaseTest;
 import org.apache.flink.connector.jdbc.test.DockerImageVersions;
-import org.apache.flink.connector.jdbc.xa.JdbcExactlyOnceSinkE2eTest;
 import org.apache.flink.util.ExceptionUtils;
-import org.apache.flink.util.function.SerializableSupplier;
 
-import com.mysql.cj.jdbc.MysqlXADataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-
-import javax.sql.XADataSource;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -25,42 +37,21 @@ import java.sql.Statement;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 
-/**
- * A simple end-to-end test for {@link JdbcExactlyOnceSinkE2eTest}. Check for issues with errors on
- * closing connections.
- */
+/** A MySql database for testing. * */
 @Testcontainers
-public class MySqlExactlyOnceSinkE2eTest extends JdbcExactlyOnceSinkE2eTest {
+public interface MySqlDatabase extends DatabaseTest {
 
     @Container
-    private static final MySqlXaContainer CONTAINER =
-            new MySqlXaContainer(DockerImageVersions.MYSQL)
-                    .withLockWaitTimeout(
-                            (CHECKPOINT_TIMEOUT_MS + TASK_CANCELLATION_TIMEOUT_MS) * 2);
+    MySqlXaContainer CONTAINER =
+            new MySqlXaContainer(DockerImageVersions.MYSQL).withLockWaitTimeout(50_000L);
 
     @Override
-    protected String getDockerVersion() {
-        return CONTAINER.getDockerImageName();
-    }
-
-    @Override
-    protected DbMetadata getDbMetadata() {
+    default DatabaseMetadata getMetadata() {
         return new MySqlMetadata(CONTAINER);
     }
 
-    @Override
-    public SerializableSupplier<XADataSource> getDataSourceSupplier() {
-        return () -> {
-            MysqlXADataSource xaDataSource = new MysqlXADataSource();
-            xaDataSource.setUrl(CONTAINER.getJdbcUrl());
-            xaDataSource.setUser(CONTAINER.getUsername());
-            xaDataSource.setPassword(CONTAINER.getPassword());
-            return xaDataSource;
-        };
-    }
-
     /** {@link MySQLContainer} with XA enabled. */
-    static class MySqlXaContainer extends MySQLContainer<MySqlXaContainer> {
+    class MySqlXaContainer extends MySQLContainer<MySqlXaContainer> {
         private long lockWaitTimeout = 0;
         private volatile InnoDbStatusLogger innoDbStatusLogger;
 
@@ -117,7 +108,7 @@ public class MySqlExactlyOnceSinkE2eTest extends JdbcExactlyOnceSinkE2eTest {
     }
 
     /** InnoDB status logger. */
-    static class InnoDbStatusLogger {
+    class InnoDbStatusLogger {
         private static final Logger LOG = LoggerFactory.getLogger(InnoDbStatusLogger.class);
         private final Thread thread;
         private volatile boolean running;

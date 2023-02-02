@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
+import org.apache.flink.connector.jdbc.databases.derby.DerbyMetadata;
 import org.apache.flink.connector.jdbc.xa.h2.H2DbMetadata;
 import org.apache.flink.table.types.logical.RowType;
 
@@ -74,8 +75,8 @@ public class JdbcTestFixture {
     };
 
     private static final String EBOOKSHOP_SCHEMA_NAME = "ebookshop";
-    public static final DerbyDbMetadata DERBY_EBOOKSHOP_DB =
-            new DerbyDbMetadata(EBOOKSHOP_SCHEMA_NAME);
+    public static final DerbyMetadata DERBY_EBOOKSHOP_DB =
+            new DerbyMetadata(EBOOKSHOP_SCHEMA_NAME);
     public static final H2DbMetadata H2_EBOOKSHOP_DB = new H2DbMetadata(EBOOKSHOP_SCHEMA_NAME);
 
     /** TestEntry. */

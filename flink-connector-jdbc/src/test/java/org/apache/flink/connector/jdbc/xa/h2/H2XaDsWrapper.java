@@ -33,7 +33,7 @@ public class H2XaDsWrapper implements XADataSource {
 
     private final XADataSource wrapped;
 
-    H2XaDsWrapper(XADataSource wrapped) {
+    public H2XaDsWrapper(XADataSource wrapped) {
         this.wrapped = wrapped;
     }
 

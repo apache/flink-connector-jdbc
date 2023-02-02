@@ -15,17 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.mysql;
+package org.apache.flink.connector.jdbc.databases.mysql;
 
-import org.apache.flink.connector.jdbc.DbMetadata;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 
 import com.mysql.cj.jdbc.MysqlXADataSource;
 import org.testcontainers.containers.MySQLContainer;
 
 import javax.sql.XADataSource;
 
-/** Postgres Metadata. */
-public class MySqlMetadata implements DbMetadata {
+/** MySql Metadata. */
+public class MySqlMetadata implements DatabaseMetadata {
 
     private final String username;
     private final String password;
@@ -34,11 +34,11 @@ public class MySqlMetadata implements DbMetadata {
     private final String version;
     private final boolean xaEnabled;
 
-    protected MySqlMetadata(MySQLContainer<?> container) {
+    public MySqlMetadata(MySQLContainer<?> container) {
         this(container, false);
     }
 
-    protected MySqlMetadata(MySQLContainer<?> container, boolean hasXaEnabled) {
+    public MySqlMetadata(MySQLContainer<?> container, boolean hasXaEnabled) {
         this.username = container.getUsername();
         this.password = container.getPassword();
         this.url = container.getJdbcUrl();
@@ -48,8 +48,18 @@ public class MySqlMetadata implements DbMetadata {
     }
 
     @Override
-    public String getUrl() {
+    public String getJdbcUrl() {
         return this.url;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.username;
+    }
+
+    @Override
+    public String getPassword() {
+        return this.password;
     }
 
     @Override
@@ -59,8 +69,8 @@ public class MySqlMetadata implements DbMetadata {
         }
 
         MysqlXADataSource xaDataSource = new MysqlXADataSource();
-        xaDataSource.setUrl(getUrl());
-        xaDataSource.setUser(getUser());
+        xaDataSource.setUrl(getJdbcUrl());
+        xaDataSource.setUser(getUsername());
         xaDataSource.setPassword(getPassword());
         return xaDataSource;
     }
@@ -71,12 +81,9 @@ public class MySqlMetadata implements DbMetadata {
     }
 
     @Override
-    public String getUser() {
-        return this.username;
+    public String getVersion() {
+        return this.version;
     }
 
-    @Override
-    public String getPassword() {
-        return this.password;
-    }
+
 }

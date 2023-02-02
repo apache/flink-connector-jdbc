@@ -24,7 +24,7 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/** E2E test for {@link MySqlCatalog}. */
+/** E2E test for {@link MySqlCatalog} with MySql version 5.7. */
 @Testcontainers
 public class MySql57CatalogITCase extends MySqlCatalogTestBase {
 
