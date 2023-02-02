@@ -19,10 +19,6 @@
 on:
   workflow_call:
     inputs:
-      flink_url:
-        description: "Url to Flink binary."
-        required: true
-        type: string
       flink_version:
         description: "Flink version to test against."
         required: true
@@ -76,23 +72,24 @@ jobs:
       - name: Create cache dirs
         run: mkdir -p ${{ env.FLINK_CACHE_DIR }}
 
-      - name: Cache Flink binary
+      - name: Restore cached Flink binary
         if: ${{ inputs.cache_flink_binary == 'true' }}
-        uses: actions/cache@v3
-        id: cache-flink
+        uses: actions/cache/restore@v3
+        id: restore-cache-flink
         with:
           path: ${{ env.FLINK_CACHE_DIR }}
-          key: ${{ inputs.flink_url }}
+          key: ${{ inputs.flink_version }}
 
-      - name: Download Flink binary
+      - name: Download Flink binary from dist
+        id: download-binary
         working-directory: ${{ env.FLINK_CACHE_DIR }}
         if: steps.cache-flink.outputs.cache-hit != 'true'
-        run: wget -q -c ${{ inputs.flink_url }} -O - | tar -xz
+        run: wget -q -c https://dist.apache.org/repos/dist/release/flink/flink-${{ inputs.flink_version }}/flink-${{ inputs.flink_version }}-bin-scala_2.12.tgz -O - | tar -xz
         continue-on-error: true
 
       - name: Download Flink binary from archive
         working-directory: ${{ env.FLINK_CACHE_DIR }}
-        if: steps.cache-flink.outputs.cache-hit != 'true'
+        if: steps.cache-flink.outputs.cache-hit != 'true' && steps.download-binary.outcome != 'success'
         run: wget -q -c https://archive.apache.org/dist/flink/flink-${{ inputs.flink_version }}/flink-${{ inputs.flink_version }}-bin-scala_2.12.tgz -O - | tar -xz
 
       - name: Compile and test
@@ -107,9 +104,18 @@ jobs:
             ${{ env.MVN_CONNECTION_OPTIONS }} \
             -Dlog4j.configurationFile=file://$(pwd)/tools/ci/log4j.properties \
             | tee ${{ env.MVN_BUILD_OUTPUT_FILE }}
+
       - name: Check licensing
         run: |
           mvn ${MVN_COMMON_OPTIONS} exec:java@check-license -N \
             -Dexec.args="${{ env.MVN_BUILD_OUTPUT_FILE }} $(pwd) ${{ env.MVN_VALIDATION_DIR }}" \
             ${{ env.MVN_CONNECTION_OPTIONS }} \
             -Dlog4j.configurationFile=file://$(pwd)/tools/ci/log4j.properties
+
+      - name: Cache Flink binary
+        if: ${{ inputs.cache_flink_binary == 'true' }}
+        uses: actions/cache/save@v3
+        id: cache-flink
+        with:
+          path: ${{ env.FLINK_CACHE_DIR }}
+          key: ${{ inputs.flink_version }}
