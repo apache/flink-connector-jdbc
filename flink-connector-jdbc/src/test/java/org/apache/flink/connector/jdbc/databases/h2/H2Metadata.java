@@ -15,47 +15,52 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc;
+package org.apache.flink.connector.jdbc.databases.h2;
 
-import org.apache.derby.jdbc.EmbeddedXADataSource;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.xa.h2.H2XaDsWrapper;
 
 import javax.sql.XADataSource;
 
-/** DerbyDbMetadata. */
-public class DerbyDbMetadata implements DbMetadata {
-    private final String dbName;
-    private final String dbInitUrl;
-    private final String url;
+/** H2DbMetadata. */
+public class H2Metadata implements DatabaseMetadata {
 
-    public DerbyDbMetadata(String schemaName) {
-        dbName = "memory:" + schemaName;
-        url = "jdbc:derby:" + dbName;
-        dbInitUrl = url + ";create=true";
-    }
+    private final String schema;
 
-    public String getDbName() {
-        return dbName;
+    public H2Metadata(String schema) {
+        this.schema = schema;
     }
 
     @Override
-    public String getInitUrl() {
-        return dbInitUrl;
+    public String getJdbcUrl() {
+        return String.format("jdbc:h2:mem:%s", schema);
+    }
+
+    @Override
+    public String getUsername() {
+        return "";
+    }
+
+    @Override
+    public String getPassword() {
+        return "";
     }
 
     @Override
     public XADataSource buildXaDataSource() {
-        EmbeddedXADataSource ds = new EmbeddedXADataSource();
-        ds.setDatabaseName(dbName);
-        return ds;
+        final org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
+        ds.setUrl(getJdbcUrl());
+        return new H2XaDsWrapper(ds);
     }
 
     @Override
     public String getDriverClass() {
-        return "org.apache.derby.jdbc.EmbeddedDriver";
+        return "org.h2.Driver";
     }
 
     @Override
-    public String getUrl() {
-        return url;
+    public String getVersion() {
+        return "h2:mem";
     }
+
 }

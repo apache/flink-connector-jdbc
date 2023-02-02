@@ -15,19 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.oracle;
+package org.apache.flink.connector.jdbc.databases.sqlserver;
 
-import org.apache.flink.connector.jdbc.DbMetadata;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 
-import oracle.jdbc.xa.client.OracleXADataSource;
-import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.postgresql.xa.PGXADataSource;
+import org.testcontainers.containers.MSSQLServerContainer;
 
 import javax.sql.XADataSource;
 
-import java.sql.SQLException;
-
-/** Postgres Metadata. */
-public class OracleMetadata implements DbMetadata {
+/** SqlServer Metadata. */
+public class SqlServerMetadata implements DatabaseMetadata {
 
     private final String username;
     private final String password;
@@ -36,11 +34,11 @@ public class OracleMetadata implements DbMetadata {
     private final String version;
     private final boolean xaEnabled;
 
-    protected OracleMetadata(JdbcDatabaseContainer<?> container) {
+    protected SqlServerMetadata(MSSQLServerContainer<?> container) {
         this(container, false);
     }
 
-    protected OracleMetadata(JdbcDatabaseContainer<?> container, boolean hasXaEnabled) {
+    protected SqlServerMetadata(MSSQLServerContainer<?> container, boolean hasXaEnabled) {
         this.username = container.getUsername();
         this.password = container.getPassword();
         this.url = container.getJdbcUrl();
@@ -50,8 +48,18 @@ public class OracleMetadata implements DbMetadata {
     }
 
     @Override
-    public String getUrl() {
+    public String getJdbcUrl() {
         return this.url;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.username;
+    }
+
+    @Override
+    public String getPassword() {
+        return this.password;
     }
 
     @Override
@@ -59,15 +67,12 @@ public class OracleMetadata implements DbMetadata {
         if (!xaEnabled) {
             throw new UnsupportedOperationException();
         }
-        try {
-            OracleXADataSource xaDataSource = new OracleXADataSource();
-            xaDataSource.setURL(getUrl());
-            xaDataSource.setUser(getUser());
-            xaDataSource.setPassword(getPassword());
-            return xaDataSource;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+
+        PGXADataSource xaDataSource = new PGXADataSource();
+        xaDataSource.setUrl(getJdbcUrl());
+        xaDataSource.setUser(getUsername());
+        xaDataSource.setPassword(getPassword());
+        return xaDataSource;
     }
 
     @Override
@@ -76,12 +81,8 @@ public class OracleMetadata implements DbMetadata {
     }
 
     @Override
-    public String getUser() {
-        return this.username;
+    public String getVersion() {
+        return version;
     }
 
-    @Override
-    public String getPassword() {
-        return this.password;
-    }
 }

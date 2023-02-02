@@ -1,6 +1,7 @@
 package org.apache.flink.connector.jdbc.dialect.postgres;
 
 import org.apache.flink.connector.jdbc.DbMetadata;
+import org.apache.flink.connector.jdbc.databases.postgres.PostgresMetadata;
 import org.apache.flink.connector.jdbc.test.DockerImageVersions;
 import org.apache.flink.connector.jdbc.xa.JdbcExactlyOnceSinkE2eTest;
 import org.apache.flink.util.function.SerializableSupplier;

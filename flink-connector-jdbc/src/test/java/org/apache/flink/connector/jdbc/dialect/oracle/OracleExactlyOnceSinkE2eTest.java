@@ -1,6 +1,7 @@
 package org.apache.flink.connector.jdbc.dialect.oracle;
 
 import org.apache.flink.connector.jdbc.DbMetadata;
+import org.apache.flink.connector.jdbc.databases.oracle.OracleMetadata;
 import org.apache.flink.connector.jdbc.xa.JdbcExactlyOnceSinkE2eTest;
 import org.apache.flink.util.function.SerializableSupplier;
 
