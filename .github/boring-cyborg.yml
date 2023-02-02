@@ -26,7 +26,6 @@ labelPRBasedOnFilePath:
 
   component=Connectors/JDBC:
     - flink-connector-jdbc*/**/*
-    - flink-sql-connector-jdbc*/**/*
 
 ###### IssueLink Adder #################################################################################################
 # Insert Issue (Jira/Github etc) link in PR description based on the Issue ID in PR title.
