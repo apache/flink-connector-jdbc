@@ -47,7 +47,7 @@ under the License.
     </modules>
 
     <properties>
-        <flink.version>1.16.0</flink.version>
+        <flink.version>1.16.1</flink.version>
         <flink.shaded.version>15.0</flink.shaded.version>
 
         <jackson-bom.version>2.13.4.20221013</jackson-bom.version>
