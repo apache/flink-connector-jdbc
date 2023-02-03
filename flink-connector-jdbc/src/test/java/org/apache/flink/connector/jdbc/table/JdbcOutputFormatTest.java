@@ -437,7 +437,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                                 TEST_DATA[i].qty));
             }
             try (ResultSet resultSet = statement.executeQuery()) {
-                assertThat(resultSet.next()).isFalse();
+                assertThat(resultSet.next()).isTrue();
             }
         } finally {
             outputFormat.close();
