@@ -28,28 +28,24 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * A {@link JdbcBatchStatementExecutor} that executes supplied statement for given the records
  * (without any pre-processing).
  */
-class SimpleBatchStatementExecutor<T, V> implements JdbcBatchStatementExecutor<T> {
+class SimpleBatchStatementExecutor<T> implements JdbcBatchStatementExecutor<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimpleBatchStatementExecutor.class);
 
     private final String sql;
-    private final JdbcStatementBuilder<V> parameterSetter;
-    private final Function<T, V> valueTransformer;
-    private final List<V> batch;
+    private final JdbcStatementBuilder<T> parameterSetter;
+    private final List<T> batch;
 
     private transient PreparedStatement st;
 
-    SimpleBatchStatementExecutor(
-            String sql, JdbcStatementBuilder<V> statementBuilder, Function<T, V> valueTransformer) {
+    SimpleBatchStatementExecutor(String sql, JdbcStatementBuilder<T> statementBuilder) {
         this.sql = sql;
         this.parameterSetter = statementBuilder;
-        this.valueTransformer = valueTransformer;
         this.batch = new ArrayList<>();
     }
 
@@ -60,13 +56,13 @@ class SimpleBatchStatementExecutor<T, V> implements JdbcBatchStatementExecutor<T
 
     @Override
     public void addToBatch(T record) {
-        batch.add(valueTransformer.apply(record));
+        batch.add(record);
     }
 
     @Override
     public void executeBatch() throws SQLException {
         if (!batch.isEmpty()) {
-            for (V r : batch) {
+            for (T r : batch) {
                 parameterSetter.accept(st, r);
                 st.addBatch();
             }

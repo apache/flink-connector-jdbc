@@ -18,8 +18,10 @@
 
 package org.apache.flink.connector.jdbc.dialect.oracle;
 
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.databases.oracle.OracleDatabase;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
@@ -445,6 +447,8 @@ class OracleTableSinkITCase extends AbstractTestBase implements OracleDatabase {
         GenericJdbcSinkFunction<RowData> sinkFunction =
                 (GenericJdbcSinkFunction<RowData>) sinkProvider.createSinkFunction();
         sinkFunction.setRuntimeContext(new MockStreamingRuntimeContext(true, 1, 0));
+        sinkFunction.setInputType(
+                TypeInformation.of(GenericRowData.class), JdbcTestBase.getExecutionConfig(false));
         sinkFunction.open(new Configuration());
         sinkFunction.invoke(GenericRowData.of(1L), SinkContextUtil.forTimestamp(1));
         sinkFunction.invoke(GenericRowData.of(2L), SinkContextUtil.forTimestamp(1));

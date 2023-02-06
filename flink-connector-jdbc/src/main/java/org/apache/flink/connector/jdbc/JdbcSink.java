@@ -29,8 +29,6 @@ import org.apache.flink.util.function.SerializableSupplier;
 
 import javax.sql.XADataSource;
 
-import java.util.function.Function;
-
 /** Facade to create JDBC {@link SinkFunction sinks}. */
 @PublicEvolving
 public class JdbcSink {
@@ -71,10 +69,7 @@ public class JdbcSink {
                 new JdbcOutputFormat<>(
                         new SimpleJdbcConnectionProvider(connectionOptions),
                         executionOptions,
-                        context ->
-                                JdbcBatchStatementExecutor.simple(
-                                        sql, statementBuilder, Function.identity()),
-                        JdbcOutputFormat.RecordExtractor.identity()));
+                        () -> JdbcBatchStatementExecutor.simple(sql, statementBuilder)));
     }
 
     /**
