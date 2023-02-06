@@ -25,7 +25,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * Currently, this statement executor is only used for table/sql to buffer records, because the
@@ -35,14 +34,10 @@ import java.util.function.Function;
 public final class TableBufferedStatementExecutor implements JdbcBatchStatementExecutor<RowData> {
 
     private final JdbcBatchStatementExecutor<RowData> statementExecutor;
-    private final Function<RowData, RowData> valueTransform;
     private final List<RowData> buffer = new ArrayList<>();
 
-    public TableBufferedStatementExecutor(
-            JdbcBatchStatementExecutor<RowData> statementExecutor,
-            Function<RowData, RowData> valueTransform) {
+    public TableBufferedStatementExecutor(JdbcBatchStatementExecutor<RowData> statementExecutor) {
         this.statementExecutor = statementExecutor;
-        this.valueTransform = valueTransform;
     }
 
     @Override
@@ -52,8 +47,7 @@ public final class TableBufferedStatementExecutor implements JdbcBatchStatementE
 
     @Override
     public void addToBatch(RowData record) throws SQLException {
-        RowData value = valueTransform.apply(record); // copy or not
-        buffer.add(value);
+        buffer.add(record);
     }
 
     @Override
