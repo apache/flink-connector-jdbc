@@ -17,10 +17,15 @@
 
 package org.apache.flink.connector.jdbc;
 
+import org.apache.flink.api.common.ExecutionConfig;
+import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.connector.jdbc.databases.DatabaseTest;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.mockito.Mockito;
+
+import static org.mockito.Mockito.doReturn;
 
 /**
  * Base class for JDBC test using DDL from {@link JdbcTestFixture}. It uses create tables before
@@ -37,5 +42,18 @@ public abstract class JdbcTestBase implements DatabaseTest {
     public void after() throws Exception {
         JdbcTestFixture.cleanupData(getMetadata().getJdbcUrl());
         JdbcTestFixture.cleanUpDatabasesStatic(getMetadata());
+    }
+
+    public static RuntimeContext getRuntimeContext(Boolean reused) {
+        ExecutionConfig config = getExecutionConfig(reused);
+        RuntimeContext context = Mockito.mock(RuntimeContext.class);
+        doReturn(config).when(context).getExecutionConfig();
+        return context;
+    }
+
+    public static ExecutionConfig getExecutionConfig(Boolean reused) {
+        ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
+        doReturn(reused).when(config).isObjectReuseEnabled();
+        return config;
     }
 }

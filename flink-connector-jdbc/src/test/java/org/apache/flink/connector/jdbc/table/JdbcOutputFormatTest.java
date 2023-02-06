@@ -18,9 +18,11 @@
 
 package org.apache.flink.connector.jdbc.table;
 
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
+import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
 import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.table.api.DataTypes;
@@ -110,7 +112,10 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                                             .setJdbcExecutionOptions(
                                                     JdbcExecutionOptions.builder().build())
                                             .build();
-                            outputFormat.open(0, 1);
+                            JdbcOutputSerializer<RowData> serializer =
+                                    JdbcOutputSerializer.of(TypeInformation.of(RowData.class))
+                                            .configure(getExecutionConfig(true));
+                            outputFormat.open(serializer);
                         })
                 .isInstanceOf(IOException.class)
                 .hasMessage(expectedMsg);
@@ -141,7 +146,11 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                                             .setJdbcExecutionOptions(
                                                     JdbcExecutionOptions.builder().build())
                                             .build();
-                            outputFormat.open(0, 1);
+
+                            JdbcOutputSerializer<RowData> serializer =
+                                    JdbcOutputSerializer.of(TypeInformation.of(RowData.class))
+                                            .configure(getExecutionConfig(true));
+                            outputFormat.open(serializer);
                         })
                 .isInstanceOf(IllegalStateException.class);
     }
@@ -173,8 +182,10 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                                             .setRowDataTypeInfo(rowDataTypeInfo)
                                             .build();
 
-                            setRuntimeContext(outputFormat, false);
-                            outputFormat.open(0, 1);
+                            JdbcOutputSerializer<RowData> serializer =
+                                    JdbcOutputSerializer.of(TypeInformation.of(RowData.class))
+                                            .configure(getExecutionConfig(true));
+                            outputFormat.open(serializer);
 
                             RowData row =
                                     buildGenericData(4, "hello", "world", 0.99, "imthewrongtype");
@@ -211,8 +222,11 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                                                     JdbcExecutionOptions.builder().build())
                                             .setRowDataTypeInfo(rowDataTypeInfo)
                                             .build();
-                            setRuntimeContext(outputFormat, false);
-                            outputFormat.open(0, 1);
+
+                            JdbcOutputSerializer<RowData> serializer =
+                                    JdbcOutputSerializer.of(TypeInformation.of(RowData.class))
+                                            .configure(getExecutionConfig(true));
+                            outputFormat.open(serializer);
 
                             TestEntry entry = TEST_DATA[0];
                             RowData row =
@@ -252,8 +266,11 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                                                     JdbcExecutionOptions.builder().build())
                                             .setRowDataTypeInfo(rowDataTypeInfo)
                                             .build();
-                            setRuntimeContext(outputFormat, true);
-                            outputFormat.open(0, 1);
+
+                            JdbcOutputSerializer<RowData> serializer =
+                                    JdbcOutputSerializer.of(TypeInformation.of(RowData.class))
+                                            .configure(getExecutionConfig(true));
+                            outputFormat.open(serializer);
 
                             TestEntry entry = TEST_DATA[0];
                             RowData row =
@@ -297,11 +314,11 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         .setJdbcExecutionOptions(JdbcExecutionOptions.builder().build())
                         .setRowDataTypeInfo(rowDataTypeInfo)
                         .build();
-        setRuntimeContext(outputFormat, true);
-        outputFormat.open(0, 1);
 
-        setRuntimeContext(outputFormat, true);
-        outputFormat.open(0, 1);
+        JdbcOutputSerializer<RowData> serializer =
+                JdbcOutputSerializer.of(TypeInformation.of(RowData.class))
+                        .configure(getExecutionConfig(true));
+        outputFormat.open(serializer);
 
         for (TestEntry entry : TEST_DATA) {
             outputFormat.writeRecord(
@@ -352,12 +369,15 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         .setJdbcExecutionOptions(executionOptions)
                         .setRowDataTypeInfo(rowDataTypeInfo)
                         .build();
-        setRuntimeContext(outputFormat, true);
-        outputFormat.open(0, 1);
+
+        JdbcOutputSerializer<RowData> serializer =
+                JdbcOutputSerializer.of(TypeInformation.of(RowData.class))
+                        .configure(getExecutionConfig(true));
+        outputFormat.open(serializer);
 
         try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getJdbcUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS_2)) {
-            outputFormat.open(0, 1);
+
             for (int i = 0; i < 2; ++i) {
                 outputFormat.writeRecord(
                         buildGenericData(
@@ -422,11 +442,15 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         .setJdbcExecutionOptions(executionOptions)
                         .setRowDataTypeInfo(rowDataTypeInfo)
                         .build();
-        setRuntimeContext(outputFormat, true);
+
+        JdbcOutputSerializer<RowData> serializer =
+                JdbcOutputSerializer.of(TypeInformation.of(RowData.class))
+                        .configure(getExecutionConfig(true));
+        outputFormat.open(serializer);
 
         try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getJdbcUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS_2)) {
-            outputFormat.open(0, 1);
+
             for (int i = 0; i < 2; ++i) {
                 outputFormat.writeRecord(
                         buildGenericData(
@@ -467,8 +491,11 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         .setJdbcExecutionOptions(JdbcExecutionOptions.builder().build())
                         .setRowDataTypeInfo(rowDataTypeInfo)
                         .build();
-        setRuntimeContext(outputFormat, true);
-        outputFormat.open(0, 1);
+
+        JdbcOutputSerializer<RowData> serializer =
+                JdbcOutputSerializer.of(TypeInformation.of(RowData.class))
+                        .configure(getExecutionConfig(true));
+        outputFormat.open(serializer);
 
         // write records
         for (int i = 0; i < 3; i++) {

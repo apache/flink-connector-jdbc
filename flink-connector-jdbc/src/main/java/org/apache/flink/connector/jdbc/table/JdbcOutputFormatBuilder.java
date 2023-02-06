@@ -18,9 +18,7 @@
 
 package org.apache.flink.connector.jdbc.table;
 
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
@@ -100,10 +98,7 @@ public class JdbcOutputFormatBuilder implements Serializable {
             return new JdbcOutputFormat<>(
                     new SimpleJdbcConnectionProvider(jdbcOptions),
                     executionOptions,
-                    ctx ->
-                            createBufferReduceExecutor(
-                                    dmlOptions, ctx, rowDataTypeInformation, logicalTypes),
-                    JdbcOutputFormat.RecordExtractor.identity());
+                    () -> createBufferReduceExecutor(dmlOptions, logicalTypes));
         } else {
             // append only query
             final String sql =
@@ -114,23 +109,17 @@ public class JdbcOutputFormatBuilder implements Serializable {
             return new JdbcOutputFormat<>(
                     new SimpleJdbcConnectionProvider(jdbcOptions),
                     executionOptions,
-                    ctx ->
+                    () ->
                             createSimpleBufferedExecutor(
-                                    ctx,
                                     dmlOptions.getDialect(),
                                     dmlOptions.getFieldNames(),
                                     logicalTypes,
-                                    sql,
-                                    rowDataTypeInformation),
-                    JdbcOutputFormat.RecordExtractor.identity());
+                                    sql));
         }
     }
 
     private static JdbcBatchStatementExecutor<RowData> createBufferReduceExecutor(
-            JdbcDmlOptions opt,
-            RuntimeContext ctx,
-            TypeInformation<RowData> rowDataTypeInfo,
-            LogicalType[] fieldTypes) {
+            JdbcDmlOptions opt, LogicalType[] fieldTypes) {
         checkArgument(opt.getKeyFields().isPresent());
         JdbcDialect dialect = opt.getDialect();
         String tableName = opt.getTableName();
@@ -141,12 +130,6 @@ public class JdbcOutputFormatBuilder implements Serializable {
                         .toArray();
         LogicalType[] pkTypes =
                 Arrays.stream(pkFields).mapToObj(f -> fieldTypes[f]).toArray(LogicalType[]::new);
-        final TypeSerializer<RowData> typeSerializer =
-                rowDataTypeInfo.createSerializer(ctx.getExecutionConfig());
-        final Function<RowData, RowData> valueTransform =
-                ctx.getExecutionConfig().isObjectReuseEnabled()
-                        ? typeSerializer::copy
-                        : Function.identity();
 
         return new TableBufferReducedStatementExecutor(
                 createUpsertRowExecutor(
@@ -158,24 +141,14 @@ public class JdbcOutputFormatBuilder implements Serializable {
                         pkNames,
                         pkTypes),
                 createDeleteExecutor(dialect, tableName, pkNames, pkTypes),
-                createRowKeyExtractor(fieldTypes, pkFields),
-                valueTransform);
+                createRowKeyExtractor(fieldTypes, pkFields));
     }
 
     private static JdbcBatchStatementExecutor<RowData> createSimpleBufferedExecutor(
-            RuntimeContext ctx,
-            JdbcDialect dialect,
-            String[] fieldNames,
-            LogicalType[] fieldTypes,
-            String sql,
-            TypeInformation<RowData> rowDataTypeInfo) {
-        final TypeSerializer<RowData> typeSerializer =
-                rowDataTypeInfo.createSerializer(ctx.getExecutionConfig());
+            JdbcDialect dialect, String[] fieldNames, LogicalType[] fieldTypes, String sql) {
+
         return new TableBufferedStatementExecutor(
-                createSimpleRowExecutor(dialect, fieldNames, fieldTypes, sql),
-                ctx.getExecutionConfig().isObjectReuseEnabled()
-                        ? typeSerializer::copy
-                        : Function.identity());
+                createSimpleRowExecutor(dialect, fieldNames, fieldTypes, sql));
     }
 
     private static JdbcBatchStatementExecutor<RowData> createUpsertRowExecutor(

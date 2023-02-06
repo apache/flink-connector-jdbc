@@ -29,6 +29,7 @@ import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
+import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.xa.XaFacade.EmptyXaTransactionException;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
@@ -49,7 +50,6 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static org.apache.flink.connector.jdbc.xa.JdbcXaSinkFunctionState.of;
 
@@ -142,6 +142,7 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
     private final JdbcOutputFormat<T, T, JdbcBatchStatementExecutor<T>> outputFormat;
     private final XaSinkStateHandler stateHandler;
     private final JdbcExactlyOnceOptions options;
+    private JdbcOutputSerializer<T> serializer;
 
     // checkpoints and the corresponding transactions waiting for completion notification from JM
     private transient List<CheckpointAndXid> preparedXids = new ArrayList<>();
@@ -172,10 +173,7 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
                 new JdbcOutputFormat<>(
                         xaFacade,
                         executionOptions,
-                        context ->
-                                JdbcBatchStatementExecutor.simple(
-                                        sql, statementBuilder, Function.identity()),
-                        JdbcOutputFormat.RecordExtractor.identity()),
+                        () -> JdbcBatchStatementExecutor.simple(sql, statementBuilder)),
                 xaFacade,
                 XidGenerator.semanticXidGenerator(),
                 new XaSinkStateHandlerImpl(),
@@ -227,6 +225,9 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
     @Override
     public void open(Configuration configuration) throws Exception {
         super.open(configuration);
+        // Recheck if execution config change
+        this.serializer.configure(getRuntimeContext().getExecutionConfig());
+
         xidGenerator.open();
         xaFacade.open();
         hangingXids = new LinkedList<>(xaGroupOps.failOrRollback(hangingXids).getForRetry());
@@ -239,11 +240,8 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
             xaGroupOps.recoverAndRollback(getRuntimeContext(), xidGenerator);
         }
         beginTx(0L);
-        outputFormat.setRuntimeContext(getRuntimeContext());
         // open format only after starting the transaction so it gets a ready to  use connection
-        outputFormat.open(
-                getRuntimeContext().getIndexOfThisSubtask(),
-                getRuntimeContext().getNumberOfParallelSubtasks());
+        outputFormat.open(this.serializer);
     }
 
     @Override
@@ -364,7 +362,9 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void setInputType(TypeInformation<?> type, ExecutionConfig executionConfig) {
-        outputFormat.setInputType(type, executionConfig);
+        this.serializer =
+                JdbcOutputSerializer.of((TypeInformation<T>) type).configure(executionConfig);
     }
 }

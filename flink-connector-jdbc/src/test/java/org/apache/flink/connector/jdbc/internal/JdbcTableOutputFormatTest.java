@@ -18,9 +18,7 @@
 
 package org.apache.flink.connector.jdbc.internal;
 
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.internal.connection.SimpleJdbcConnectionProvider;
@@ -32,7 +30,6 @@ import org.apache.flink.types.Row;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -48,7 +45,6 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
 
 /** Tests for the {@link JdbcOutputFormat}. */
 public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
@@ -114,7 +110,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
                                 .withMaxRetries(1)
                                 .withBatchIntervalMs(Long.MAX_VALUE) // disable periodic flush
                                 .build(),
-                        ctx ->
+                        () ->
                                 new JdbcBatchStatementExecutor<Row>() {
 
                                     @Override
@@ -134,7 +130,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
                                     @Override
                                     public void closeStatements() {}
                                 },
-                        ctx ->
+                        () ->
                                 new JdbcBatchStatementExecutor<Row>() {
                                     @Override
                                     public void prepareStatements(Connection connection) {
@@ -154,14 +150,13 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
                                     @Override
                                     public void closeStatements() {}
                                 });
-        RuntimeContext context = Mockito.mock(RuntimeContext.class);
-        ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
-        doReturn(config).when(context).getExecutionConfig();
-        doReturn(true).when(config).isObjectReuseEnabled();
-        format.setRuntimeContext(context);
-        format.open(0, 1);
 
-        format.writeRecord(Tuple2.of(false /* false = delete*/, toRow(TEST_DATA[0])));
+        JdbcOutputSerializer<Row> serializer =
+                JdbcOutputSerializer.of(TypeInformation.of(Row.class))
+                        .configure(getExecutionConfig(true));
+        format.open(serializer);
+
+        format.writeRecord(toRowDelete(TEST_DATA[0]));
         format.flush();
 
         assertThat(deleteExecuted[0]).as("Delete should be executed").isTrue();
@@ -189,29 +184,28 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
                         new SimpleJdbcConnectionProvider(options),
                         dmlOptions,
                         JdbcExecutionOptions.defaults());
-        RuntimeContext context = Mockito.mock(RuntimeContext.class);
-        ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
-        doReturn(config).when(context).getExecutionConfig();
-        doReturn(true).when(config).isObjectReuseEnabled();
-        format.setRuntimeContext(context);
-        format.open(0, 1);
+
+        JdbcOutputSerializer<Row> serializer =
+                JdbcOutputSerializer.of(TypeInformation.of(Row.class))
+                        .configure(getExecutionConfig(true));
+        format.open(serializer);
 
         for (TestEntry entry : TEST_DATA) {
-            format.writeRecord(Tuple2.of(true, toRow(entry)));
+            format.writeRecord(toRow(entry));
         }
         format.flush();
         check(Arrays.stream(TEST_DATA).map(JdbcDataTestBase::toRow).toArray(Row[]::new));
 
         // override
         for (TestEntry entry : TEST_DATA) {
-            format.writeRecord(Tuple2.of(true, toRow(entry)));
+            format.writeRecord(toRow(entry));
         }
         format.flush();
         check(Arrays.stream(TEST_DATA).map(JdbcDataTestBase::toRow).toArray(Row[]::new));
 
         // delete
         for (int i = 0; i < TEST_DATA.length / 2; i++) {
-            format.writeRecord(Tuple2.of(false, toRow(TEST_DATA[i])));
+            format.writeRecord(toRowDelete(TEST_DATA[i]));
         }
         Row[] expected = new Row[TEST_DATA.length - TEST_DATA.length / 2];
         for (int i = TEST_DATA.length / 2; i < TEST_DATA.length; i++) {

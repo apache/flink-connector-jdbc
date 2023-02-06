@@ -18,19 +18,19 @@
 
 package org.apache.flink.connector.jdbc.table;
 
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
+import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
+import org.apache.flink.connector.jdbc.internal.RowJdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
+import org.apache.flink.types.Row;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -42,7 +42,6 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doReturn;
 
 /** Test for the Append only mode. */
 class JdbcAppendOnlyWriterTest extends JdbcTestBase {
@@ -60,7 +59,7 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
         assertThatThrownBy(
                         () -> {
                             format =
-                                    JdbcOutputFormat.builder()
+                                    RowJdbcOutputFormat.builder()
                                             .setOptions(
                                                     JdbcConnectorOptions.builder()
                                                             .setDBUrl(getMetadata().getJdbcUrl())
@@ -75,17 +74,17 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
                                             .setFieldNames(fieldNames)
                                             .setKeyFields(null)
                                             .build();
-                            RuntimeContext context = Mockito.mock(RuntimeContext.class);
-                            ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
-                            doReturn(config).when(context).getExecutionConfig();
-                            doReturn(true).when(config).isObjectReuseEnabled();
-                            format.setRuntimeContext(context);
-                            format.open(0, 1);
+
+                            JdbcOutputSerializer<Row> serializer =
+                                    JdbcOutputSerializer.of(TypeInformation.of(Row.class))
+                                            .configure(getExecutionConfig(true));
+
+                            format.open(serializer);
 
                             // alter table schema to trigger retry logic after failure.
                             alterTable();
                             for (TestEntry entry : TEST_DATA) {
-                                format.writeRecord(Tuple2.of(true, toRow(entry)));
+                                format.writeRecord(toRow(entry));
                             }
 
                             // after retry default times, throws a BatchUpdateException.

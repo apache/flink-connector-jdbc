@@ -38,6 +38,7 @@ import org.apache.flink.api.common.state.ReducingState;
 import org.apache.flink.api.common.state.ReducingStateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -63,7 +64,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.apache.flink.connector.jdbc.JdbcITCase.TEST_ENTRY_JDBC_STATEMENT_BUILDER;
@@ -124,6 +124,7 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
         JdbcXaSinkFunction<TestEntry> sink =
                 buildSink(new SemanticXidGenerator(), xaFacade, state, batchInterval);
         sink.initializeState(buildInitCtx(false));
+        sink.setInputType(TypeInformation.of(TestEntry.class), getExecutionConfig(false));
         sink.open(new Configuration());
         return sink;
     }
@@ -140,12 +141,10 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
                                 .withBatchIntervalMs(batchInterval)
                                 .withMaxRetries(0)
                                 .build(),
-                        ctx ->
+                        () ->
                                 JdbcBatchStatementExecutor.simple(
                                         String.format(INSERT_TEMPLATE, INPUT_TABLE),
-                                        TEST_ENTRY_JDBC_STATEMENT_BUILDER,
-                                        Function.identity()),
-                        JdbcOutputFormat.RecordExtractor.identity());
+                                        TEST_ENTRY_JDBC_STATEMENT_BUILDER));
         JdbcXaSinkFunction<TestEntry> sink =
                 new JdbcXaSinkFunction<>(
                         format,

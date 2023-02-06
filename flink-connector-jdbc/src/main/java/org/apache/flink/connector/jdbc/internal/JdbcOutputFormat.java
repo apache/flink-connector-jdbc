@@ -20,76 +20,36 @@ package org.apache.flink.connector.jdbc.internal;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.common.io.RichOutputFormat;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.typeutils.InputTypeConfigurable;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
 import org.apache.flink.connector.jdbc.internal.connection.JdbcConnectionProvider;
-import org.apache.flink.connector.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
-import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
-import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
-import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatementImpl;
-import org.apache.flink.connector.jdbc.utils.JdbcUtils;
-import org.apache.flink.types.Row;
-import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
-import org.apache.flink.util.function.SerializableFunction;
+import org.apache.flink.util.function.SerializableSupplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static org.apache.flink.connector.jdbc.utils.JdbcUtils.setRecordToStatement;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /** A JDBC outputFormat that supports batching records before writing records to database. */
 @Internal
 public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExecutor<JdbcIn>>
-        extends RichOutputFormat<In> implements Flushable, InputTypeConfigurable {
+        implements Flushable, AutoCloseable, Serializable {
 
     protected final JdbcConnectionProvider connectionProvider;
-    @Nullable private TypeSerializer<In> serializer;
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public void setInputType(TypeInformation<?> type, ExecutionConfig executionConfig) {
-        if (executionConfig.isObjectReuseEnabled()) {
-            this.serializer = (TypeSerializer<In>) type.createSerializer(executionConfig);
-        }
-    }
-
-    /**
-     * An interface to extract a value from given argument.
-     *
-     * @param <F> The type of given argument
-     * @param <T> The type of the return value
-     */
-    public interface RecordExtractor<F, T> extends Function<F, T>, Serializable {
-        static <T> RecordExtractor<T, T> identity() {
-            return x -> x;
-        }
-    }
 
     /**
      * A factory for creating {@link JdbcBatchStatementExecutor} instance.
@@ -97,7 +57,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
      * @param <T> The type of instance.
      */
     public interface StatementExecutorFactory<T extends JdbcBatchStatementExecutor<?>>
-            extends SerializableFunction<RuntimeContext, T> {}
+            extends SerializableSupplier<T> {}
 
     private static final long serialVersionUID = 1L;
 
@@ -105,8 +65,13 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
 
     private final JdbcExecutionOptions executionOptions;
     private final StatementExecutorFactory<JdbcExec> statementExecutorFactory;
-    private final RecordExtractor<In, JdbcIn> jdbcRecordExtractor;
 
+    @SuppressWarnings("unchecked")
+    protected Function<In, JdbcIn> getExtractor() {
+        return in -> (JdbcIn) in;
+    }
+
+    private transient JdbcOutputSerializer<In> serializer;
     private transient JdbcExec jdbcStatementExecutor;
     private transient int batchCount = 0;
     private transient volatile boolean closed = false;
@@ -118,29 +83,21 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
     public JdbcOutputFormat(
             @Nonnull JdbcConnectionProvider connectionProvider,
             @Nonnull JdbcExecutionOptions executionOptions,
-            @Nonnull StatementExecutorFactory<JdbcExec> statementExecutorFactory,
-            @Nonnull RecordExtractor<In, JdbcIn> recordExtractor) {
+            @Nonnull StatementExecutorFactory<JdbcExec> statementExecutorFactory) {
         this.connectionProvider = checkNotNull(connectionProvider);
         this.executionOptions = checkNotNull(executionOptions);
         this.statementExecutorFactory = checkNotNull(statementExecutorFactory);
-        this.jdbcRecordExtractor = checkNotNull(recordExtractor);
     }
 
-    @Override
-    public void configure(Configuration parameters) {}
-
-    /**
-     * Connects to the target database and initializes the prepared statement.
-     *
-     * @param taskNumber The number of the parallel instance.
-     */
-    @Override
-    public void open(int taskNumber, int numTasks) throws IOException {
+    /** Connects to the target database and initializes the prepared statement. */
+    public void open(@Nonnull JdbcOutputSerializer<In> serializer) throws IOException {
+        this.serializer = checkNotNull(serializer, "Serializer must be defined");
         try {
             connectionProvider.getOrEstablishConnection();
         } catch (Exception e) {
             throw new IOException("unable to open JDBC writer", e);
         }
+
         jdbcStatementExecutor = createAndOpenStatementExecutor(statementExecutorFactory);
         if (executionOptions.getBatchIntervalMs() != 0 && executionOptions.getBatchSize() != 1) {
             this.scheduler =
@@ -167,7 +124,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
 
     private JdbcExec createAndOpenStatementExecutor(
             StatementExecutorFactory<JdbcExec> statementExecutorFactory) throws IOException {
-        JdbcExec exec = statementExecutorFactory.apply(getRuntimeContext());
+        JdbcExec exec = statementExecutorFactory.get();
         try {
             exec.prepareStatements(connectionProvider.getConnection());
         } catch (SQLException e) {
@@ -182,13 +139,12 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
         }
     }
 
-    @Override
     public final synchronized void writeRecord(In record) throws IOException {
         checkFlushException();
 
         try {
             In recordCopy = copyIfNecessary(record);
-            addToBatch(record, jdbcRecordExtractor.apply(recordCopy));
+            addToBatch(record, getExtractor().apply(recordCopy));
             batchCount++;
             if (executionOptions.getBatchSize() > 0
                     && batchCount >= executionOptions.getBatchSize()) {
@@ -200,7 +156,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
     }
 
     private In copyIfNecessary(In record) {
-        return serializer == null ? record : serializer.copy(record);
+        return this.serializer.serialize(record);
     }
 
     protected void addToBatch(In original, JdbcIn extracted) throws SQLException {
@@ -276,126 +232,6 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
         }
         connectionProvider.closeConnection();
         checkFlushException();
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /** Builder for a {@link JdbcOutputFormat}. */
-    public static class Builder {
-        private JdbcConnectorOptions options;
-        private String[] fieldNames;
-        private String[] keyFields;
-        private int[] fieldTypes;
-        private JdbcExecutionOptions.Builder executionOptionsBuilder =
-                JdbcExecutionOptions.builder();
-
-        /** required, jdbc options. */
-        public Builder setOptions(JdbcConnectorOptions options) {
-            this.options = options;
-            return this;
-        }
-
-        /** required, field names of this jdbc sink. */
-        public Builder setFieldNames(String[] fieldNames) {
-            this.fieldNames = fieldNames;
-            return this;
-        }
-
-        /** required, upsert unique keys. */
-        public Builder setKeyFields(String[] keyFields) {
-            this.keyFields = keyFields;
-            return this;
-        }
-
-        /** required, field types of this jdbc sink. */
-        public Builder setFieldTypes(int[] fieldTypes) {
-            this.fieldTypes = fieldTypes;
-            return this;
-        }
-
-        /**
-         * optional, flush max size (includes all append, upsert and delete records), over this
-         * number of records, will flush data.
-         */
-        public Builder setFlushMaxSize(int flushMaxSize) {
-            executionOptionsBuilder.withBatchSize(flushMaxSize);
-            return this;
-        }
-
-        /** optional, flush interval mills, over this time, asynchronous threads will flush data. */
-        public Builder setFlushIntervalMills(long flushIntervalMills) {
-            executionOptionsBuilder.withBatchIntervalMs(flushIntervalMills);
-            return this;
-        }
-
-        /** optional, max retry times for jdbc connector. */
-        public Builder setMaxRetryTimes(int maxRetryTimes) {
-            executionOptionsBuilder.withMaxRetries(maxRetryTimes);
-            return this;
-        }
-
-        /**
-         * Finalizes the configuration and checks validity.
-         *
-         * @return Configured JdbcUpsertOutputFormat
-         */
-        public JdbcOutputFormat<Tuple2<Boolean, Row>, Row, JdbcBatchStatementExecutor<Row>>
-                build() {
-            checkNotNull(options, "No options supplied.");
-            checkNotNull(fieldNames, "No fieldNames supplied.");
-            JdbcDmlOptions dml =
-                    JdbcDmlOptions.builder()
-                            .withTableName(options.getTableName())
-                            .withDialect(options.getDialect())
-                            .withFieldNames(fieldNames)
-                            .withKeyFields(keyFields)
-                            .withFieldTypes(fieldTypes)
-                            .build();
-            if (dml.getKeyFields().isPresent() && dml.getKeyFields().get().length > 0) {
-                return new TableJdbcUpsertOutputFormat(
-                        new SimpleJdbcConnectionProvider(options),
-                        dml,
-                        executionOptionsBuilder.build());
-            } else {
-                // warn: don't close over builder fields
-                String sql =
-                        FieldNamedPreparedStatementImpl.parseNamedStatement(
-                                options.getDialect()
-                                        .getInsertIntoStatement(
-                                                dml.getTableName(), dml.getFieldNames()),
-                                new HashMap<>());
-                return new JdbcOutputFormat<>(
-                        new SimpleJdbcConnectionProvider(options),
-                        executionOptionsBuilder.build(),
-                        ctx ->
-                                createSimpleRowExecutor(
-                                        sql,
-                                        dml.getFieldTypes(),
-                                        ctx.getExecutionConfig().isObjectReuseEnabled()),
-                        tuple2 -> {
-                            Preconditions.checkArgument(tuple2.f0);
-                            return tuple2.f1;
-                        });
-            }
-        }
-    }
-
-    static JdbcBatchStatementExecutor<Row> createSimpleRowExecutor(
-            String sql, int[] fieldTypes, boolean objectReuse) {
-        return JdbcBatchStatementExecutor.simple(
-                sql,
-                createRowJdbcStatementBuilder(fieldTypes),
-                objectReuse ? Row::copy : Function.identity());
-    }
-
-    /**
-     * Creates a {@link JdbcStatementBuilder} for {@link Row} using the provided SQL types array.
-     * Uses {@link JdbcUtils#setRecordToStatement}
-     */
-    static JdbcStatementBuilder<Row> createRowJdbcStatementBuilder(int[] types) {
-        return (st, record) -> setRecordToStatement(st, types, record);
     }
 
     public void updateExecutor(boolean reconnect) throws SQLException, ClassNotFoundException {
