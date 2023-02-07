@@ -23,7 +23,7 @@ import org.apache.flink.util.FlinkRuntimeException;
 
 import java.sql.DriverManager;
 
-/** H2 database for testing. * */
+/** H2 database for testing. */
 public interface H2XaDatabase extends DatabaseTest {
 
     DatabaseMetadata METADATA = startDatabase();

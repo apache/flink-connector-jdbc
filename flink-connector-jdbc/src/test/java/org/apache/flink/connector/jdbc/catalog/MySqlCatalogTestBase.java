@@ -257,7 +257,7 @@ abstract class MySqlCatalogTestBase {
     }
 
     @Test
-    void testGetDb_DatabaseNotExistException() throws Exception {
+    void testGetDb_DatabaseNotExistException() {
         String databaseNotExist = "nonexistent";
         assertThatThrownBy(() -> catalog.getDatabase(databaseNotExist))
                 .satisfies(
@@ -275,7 +275,7 @@ abstract class MySqlCatalogTestBase {
     }
 
     @Test
-    void testDbExists() throws Exception {
+    void testDbExists() {
         String databaseNotExist = "nonexistent";
         assertThat(catalog.databaseExists(databaseNotExist)).isFalse();
         assertThat(catalog.databaseExists(TEST_DB)).isTrue();
@@ -296,7 +296,7 @@ abstract class MySqlCatalogTestBase {
     }
 
     @Test
-    void testListTables_DatabaseNotExistException() throws DatabaseNotExistException {
+    void testListTables_DatabaseNotExistException() {
         String anyDatabase = "anyDatabase";
         assertThatThrownBy(() -> catalog.listTables(anyDatabase))
                 .satisfies(
@@ -314,7 +314,7 @@ abstract class MySqlCatalogTestBase {
     }
 
     @Test
-    void testGetTables_TableNotExistException() throws TableNotExistException {
+    void testGetTables_TableNotExistException() {
         String anyTableNotExist = "anyTable";
         assertThatThrownBy(() -> catalog.getTable(new ObjectPath(TEST_DB, anyTableNotExist)))
                 .satisfies(
@@ -326,7 +326,7 @@ abstract class MySqlCatalogTestBase {
     }
 
     @Test
-    void testGetTables_TableNotExistException_NoDb() throws TableNotExistException {
+    void testGetTables_TableNotExistException_NoDb() {
         String databaseNotExist = "nonexistdb";
         String tableNotExist = "anyTable";
         assertThatThrownBy(() -> catalog.getTable(new ObjectPath(databaseNotExist, tableNotExist)))
@@ -354,8 +354,8 @@ abstract class MySqlCatalogTestBase {
                         .primaryKeyNamed("PRIMARY", Collections.singletonList("uid"))
                         .build();
         CatalogBaseTable tablePK1 = catalog.getTable(new ObjectPath(TEST_DB, TEST_TABLE_PK));
-        assertThat(tableSchemaTestPK1.getPrimaryKey().get())
-                .isEqualTo(tablePK1.getUnresolvedSchema().getPrimaryKey().get());
+        assertThat(tableSchemaTestPK1.getPrimaryKey())
+                .contains(tablePK1.getUnresolvedSchema().getPrimaryKey().get());
 
         // test the PK of test2.t_user
         Schema tableSchemaTestPK2 =
@@ -365,8 +365,8 @@ abstract class MySqlCatalogTestBase {
                         .primaryKeyNamed("PRIMARY", Collections.singletonList("pid"))
                         .build();
         CatalogBaseTable tablePK2 = catalog.getTable(new ObjectPath(TEST_DB2, TEST_TABLE_PK));
-        assertThat(tableSchemaTestPK2.getPrimaryKey().get())
-                .isEqualTo(tablePK2.getUnresolvedSchema().getPrimaryKey().get());
+        assertThat(tableSchemaTestPK2.getPrimaryKey())
+                .contains(tablePK2.getUnresolvedSchema().getPrimaryKey().get());
     }
 
     // ------ test select query. ------

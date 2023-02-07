@@ -152,12 +152,7 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
 
         env.execute();
 
-        List<Integer> insertedIds =
-                getInsertedIds(
-                        getMetadata().getUrl(),
-                        getMetadata().getUser(),
-                        getMetadata().getPassword(),
-                        INPUT_TABLE);
+        List<Integer> insertedIds = getInsertedIds(getMetadata(), INPUT_TABLE);
         List<Integer> expectedIds =
                 IntStream.range(0, elementsPerSource * PARALLELISM)
                         .boxed()
@@ -287,11 +282,6 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
                     && running
                     && !Thread.currentThread().isInterrupted()
                     && haveActiveSources()) {
-                if (System.currentTimeMillis() - start > 10_000) {
-                    // debugging FLINK-22889 (TODO: remove after resolved)
-                    LOG.debug("Slept more than 10s", new Exception());
-                    start = Long.MAX_VALUE;
-                }
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {

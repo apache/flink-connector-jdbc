@@ -8,7 +8,7 @@ import java.io.OutputStream;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-/** Derby database for testing. * */
+/** Derby database for testing. */
 public interface DerbyDatabase extends DatabaseTest {
 
     @SuppressWarnings("unused") // used in string constant in prepareDatabase

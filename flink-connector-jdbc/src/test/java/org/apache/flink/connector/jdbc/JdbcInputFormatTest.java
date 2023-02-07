@@ -29,8 +29,10 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.ROW_TYPE_INFO;
@@ -180,8 +182,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
-    void testDefaultFetchSizeIsUsedIfNotConfiguredOtherwise()
-            throws SQLException, ClassNotFoundException {
+    void testDefaultFetchSizeIsUsedIfNotConfiguredOtherwise() throws SQLException {
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
@@ -191,10 +192,11 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
                         .finish();
         jdbcInputFormat.openInputFormat();
 
-        final int defaultFetchSize =
-                DERBY_EBOOKSHOP_DB.getConnection().createStatement().getFetchSize();
-
-        assertThat(jdbcInputFormat.getStatement().getFetchSize()).isEqualTo(defaultFetchSize);
+        try (Connection dbConn = DERBY_EBOOKSHOP_DB.getConnection();
+                Statement dbStatement = dbConn.createStatement();
+                Statement inputStatement = jdbcInputFormat.getStatement()) {
+            assertThat(inputStatement.getFetchSize()).isEqualTo(dbStatement.getFetchSize());
+        }
     }
 
     @Test

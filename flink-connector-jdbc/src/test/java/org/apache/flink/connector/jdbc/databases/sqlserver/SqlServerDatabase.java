@@ -25,7 +25,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-/** A SqlServer database for testing. * */
+/** A SqlServer database for testing. */
 @Testcontainers
 public interface SqlServerDatabase extends DatabaseTest {
 

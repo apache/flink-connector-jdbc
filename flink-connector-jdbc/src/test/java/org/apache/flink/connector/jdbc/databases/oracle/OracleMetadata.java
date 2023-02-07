@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.databases.oracle;
 import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 
 import oracle.jdbc.xa.client.OracleXADataSource;
-import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.OracleContainer;
 
 import javax.sql.XADataSource;
 
@@ -36,14 +36,20 @@ public class OracleMetadata implements DatabaseMetadata {
     private final String version;
     private final boolean xaEnabled;
 
-    public OracleMetadata(JdbcDatabaseContainer<?> container) {
+    public OracleMetadata(OracleContainer container) {
         this(container, false);
     }
 
-    public OracleMetadata(JdbcDatabaseContainer<?> container, boolean hasXaEnabled) {
+    public OracleMetadata(OracleContainer container, boolean hasXaEnabled) {
         this.username = container.getUsername();
         this.password = container.getPassword();
-        this.url = container.getJdbcUrl();
+        this.url =
+                "jdbc:oracle:thin:@"
+                        + container.getHost()
+                        + ":"
+                        + container.getOraclePort()
+                        + ":"
+                        + container.getSid();
         this.driver = container.getDriverClassName();
         this.version = container.getDockerImageName();
         this.xaEnabled = hasXaEnabled;

@@ -36,7 +36,7 @@ import java.sql.Statement;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 
-/** A MySql database for testing. * */
+/** A MySql database for testing. */
 @Testcontainers
 public interface MySqlDatabase extends DatabaseTest {
 
