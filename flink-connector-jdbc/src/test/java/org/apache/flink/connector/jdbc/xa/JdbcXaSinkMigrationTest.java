@@ -89,12 +89,7 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
             harness.open();
         }
         try (JdbcXaFacadeTestHelper h =
-                new JdbcXaFacadeTestHelper(
-                        JdbcXaSinkDerbyTest.derbyXaDs(),
-                        getMetadata().getUrl(),
-                        JdbcTestFixture.INPUT_TABLE,
-                        getMetadata().getUser(),
-                        getMetadata().getPassword())) {
+                new JdbcXaFacadeTestHelper(getMetadata(), JdbcTestFixture.INPUT_TABLE)) {
             h.assertDbContentsEquals(CP0);
         }
     }
@@ -180,11 +175,7 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
     private static void cancelAllTx() throws Exception {
         try (JdbcXaFacadeTestHelper xa =
                 new JdbcXaFacadeTestHelper(
-                        derbyXaDs(),
-                        JdbcTestFixture.DERBY_EBOOKSHOP_DB.getUrl(),
-                        JdbcTestFixture.INPUT_TABLE,
-                        JdbcTestFixture.DERBY_EBOOKSHOP_DB.getUser(),
-                        JdbcTestFixture.DERBY_EBOOKSHOP_DB.getPassword())) {
+                        JdbcTestFixture.DERBY_EBOOKSHOP_DB, JdbcTestFixture.INPUT_TABLE)) {
             xa.cancelAllTx();
         }
     }

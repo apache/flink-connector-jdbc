@@ -53,7 +53,8 @@ class JdbcXaSinkNoInsertionTest extends JdbcXaSinkTestBase implements H2XaDataba
 
     @Test
     void testNoInsertAfterFacadeClose() throws Exception {
-        try (XaFacadeImpl xaFacade = XaFacadeImpl.fromXaDataSource(xaDataSource)) {
+        try (XaFacadeImpl xaFacade =
+                XaFacadeImpl.fromXaDataSource(getMetadata().buildXaDataSource())) {
             sinkHelper =
                     new JdbcXaSinkTestHelper(
                             buildAndInit(0, xaFacade), new TestXaSinkStateHandler());

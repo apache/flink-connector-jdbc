@@ -20,12 +20,11 @@ package org.apache.flink.connector.jdbc.databases.oracle;
 import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.databases.DatabaseTest;
 
-import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.OracleContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/** A Oracle database for testing. * */
+/** A Oracle database for testing. */
 @Testcontainers
 public interface OracleDatabase extends DatabaseTest {
 
@@ -33,7 +32,7 @@ public interface OracleDatabase extends DatabaseTest {
     String ORACLE_21 = "gvenzl/oracle-xe:21.3.0-slim-faststart";
 
     @Container
-    JdbcDatabaseContainer<?> CONTAINER =
+    OracleContainer CONTAINER =
             new OracleContainer(ORACLE_21)
                     .withStartupTimeoutSeconds(240)
                     .withConnectTimeoutSeconds(120)

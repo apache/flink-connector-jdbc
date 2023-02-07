@@ -27,7 +27,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 
-/** A Postgres database for testing. * */
+/** A Postgres database for testing. */
 @Testcontainers
 public interface PostgresDatabase extends DatabaseTest {
 

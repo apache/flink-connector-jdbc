@@ -85,7 +85,10 @@ class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     void testCommitUponStart() throws Exception {
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP0);
         sinkHelper.close();
-        buildAndInit(0, XaFacadeImpl.fromXaDataSource(xaDataSource), sinkHelper.getState());
+        buildAndInit(
+                0,
+                XaFacadeImpl.fromXaDataSource(getMetadata().buildXaDataSource()),
+                sinkHelper.getState());
         xaHelper.assertDbContentsEquals(JdbcTestFixture.CP0);
     }
 
@@ -155,7 +158,8 @@ class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
         sinkHelper =
                 new JdbcXaSinkTestHelper(
                         buildAndInit(
-                                Integer.MAX_VALUE, XaFacadeImpl.fromXaDataSource(xaDataSource)),
+                                Integer.MAX_VALUE,
+                                XaFacadeImpl.fromXaDataSource(getMetadata().buildXaDataSource())),
                         new TestXaSinkStateHandler());
         sinkHelper.emit(TEST_DATA[0]);
         sinkHelper.emit(TEST_DATA[0]); // duplicate
