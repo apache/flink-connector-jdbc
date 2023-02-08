@@ -18,7 +18,7 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
-import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 
 import org.apache.derby.jdbc.EmbeddedXADataSource;
 import org.junit.jupiter.api.Test;

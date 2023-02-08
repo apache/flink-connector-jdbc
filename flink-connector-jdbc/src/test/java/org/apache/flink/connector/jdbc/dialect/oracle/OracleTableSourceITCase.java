@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.dialect.oracle;
 
-import org.apache.flink.connector.jdbc.databases.oracle.OracleDatabase;
+import org.apache.flink.connector.jdbc.testutils.databases.oracle.OracleDatabase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;

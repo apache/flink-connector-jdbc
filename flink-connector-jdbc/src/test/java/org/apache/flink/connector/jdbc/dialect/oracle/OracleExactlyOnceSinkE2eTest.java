@@ -1,6 +1,6 @@
 package org.apache.flink.connector.jdbc.dialect.oracle;
 
-import org.apache.flink.connector.jdbc.databases.oracle.OracleXaDatabase;
+import org.apache.flink.connector.jdbc.testutils.databases.oracle.OracleXaDatabase;
 import org.apache.flink.connector.jdbc.xa.JdbcExactlyOnceSinkE2eTest;
 import org.apache.flink.util.function.SerializableSupplier;
 

@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.catalog.factory;
 
 import org.apache.flink.connector.jdbc.catalog.JdbcCatalog;
 import org.apache.flink.connector.jdbc.catalog.PostgresCatalog;
-import org.apache.flink.connector.jdbc.databases.postgres.PostgresDatabase;
+import org.apache.flink.connector.jdbc.testutils.databases.postgres.PostgresDatabase;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CommonCatalogOptions;
 import org.apache.flink.table.factories.FactoryUtil;

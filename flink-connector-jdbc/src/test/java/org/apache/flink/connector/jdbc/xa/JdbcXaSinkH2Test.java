@@ -18,8 +18,8 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
-import org.apache.flink.connector.jdbc.databases.h2.H2XaDatabase;
-import org.apache.flink.connector.jdbc.databases.h2.xa.H2XaDsWrapper;
+import org.apache.flink.connector.jdbc.testutils.databases.h2.H2XaDatabase;
+import org.apache.flink.connector.jdbc.testutils.databases.h2.xa.H2XaDsWrapper;
 
 import org.junit.jupiter.api.Test;
 

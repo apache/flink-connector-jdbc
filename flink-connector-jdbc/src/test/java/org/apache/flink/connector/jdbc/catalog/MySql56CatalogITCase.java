@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
-import org.apache.flink.connector.jdbc.databases.mysql.MySqlDatabase;
+import org.apache.flink.connector.jdbc.testutils.databases.mysql.MySqlDatabase;
 
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;

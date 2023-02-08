@@ -15,27 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc;
+package org.apache.flink.connector.jdbc.testutils.databases.oracle;
 
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.testcontainers.containers.OracleContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
-/**
- * Base class for JDBC test using DDL from {@link JdbcTestFixture}. It uses create tables before
- * each test and drops afterwards.
- */
-public abstract class JdbcTestBase implements DatabaseTest {
+/** A Oracle database for testing. */
+@Testcontainers
+public interface OracleXaDatabase extends DatabaseTest, OracleImages {
 
-    @BeforeEach
-    public void before() throws Exception {
-        JdbcTestFixture.initSchema(getMetadata());
-    }
+    @Container
+    OracleContainer CONTAINER =
+            new OracleContainer(ORACLE_21)
+                    .withStartupTimeoutSeconds(240)
+                    .withConnectTimeoutSeconds(120)
+                    .usingSid();
 
-    @AfterEach
-    public void after() throws Exception {
-        JdbcTestFixture.cleanupData(getMetadata().getJdbcUrl());
-        JdbcTestFixture.cleanUpDatabasesStatic(getMetadata());
+    @Override
+    default DatabaseMetadata getMetadata() {
+        return new OracleMetadata(CONTAINER, true);
     }
 }

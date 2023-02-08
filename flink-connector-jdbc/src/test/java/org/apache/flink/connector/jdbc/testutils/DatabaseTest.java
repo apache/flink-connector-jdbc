@@ -15,27 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc;
+package org.apache.flink.connector.jdbc.testutils;
 
-import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
+import java.util.Collections;
+import java.util.List;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+/** Base interface for tests that have dependency in a database. */
+public interface DatabaseTest {
 
-/**
- * Base class for JDBC test using DDL from {@link JdbcTestFixture}. It uses create tables before
- * each test and drops afterwards.
- */
-public abstract class JdbcTestBase implements DatabaseTest {
+    DatabaseMetadata getMetadata();
 
-    @BeforeEach
-    public void before() throws Exception {
-        JdbcTestFixture.initSchema(getMetadata());
-    }
-
-    @AfterEach
-    public void after() throws Exception {
-        JdbcTestFixture.cleanupData(getMetadata().getJdbcUrl());
-        JdbcTestFixture.cleanUpDatabasesStatic(getMetadata());
+    default List<TableManaged> getManagedTables() {
+        return Collections.emptyList();
     }
 }

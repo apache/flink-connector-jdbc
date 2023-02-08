@@ -18,8 +18,8 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
-import org.apache.flink.connector.jdbc.databases.postgres.PostgresDatabase;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
+import org.apache.flink.connector.jdbc.testutils.databases.postgres.PostgresDatabase;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.types.logical.DecimalType;

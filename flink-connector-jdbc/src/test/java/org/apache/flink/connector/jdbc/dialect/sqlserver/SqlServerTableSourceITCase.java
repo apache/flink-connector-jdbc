@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.dialect.sqlserver;
 
-import org.apache.flink.connector.jdbc.databases.sqlserver.SqlServerDatabase;
+import org.apache.flink.connector.jdbc.testutils.databases.sqlserver.SqlServerDatabase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;

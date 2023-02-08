@@ -1,8 +1,8 @@
 package org.apache.flink.connector.jdbc.dialect.mysql;
 
-import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.databases.mysql.MySqlDatabase;
-import org.apache.flink.connector.jdbc.databases.mysql.MySqlMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.databases.mysql.MySqlDatabase;
+import org.apache.flink.connector.jdbc.testutils.databases.mysql.MySqlMetadata;
 import org.apache.flink.connector.jdbc.xa.JdbcExactlyOnceSinkE2eTest;
 import org.apache.flink.util.function.SerializableSupplier;
 

@@ -15,27 +15,8 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc;
-
-import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-
 /**
- * Base class for JDBC test using DDL from {@link JdbcTestFixture}. It uses create tables before
- * each test and drops afterwards.
+ * This package holds some workarounds for the H2 XA client, plus {@link
+ * org.apache.flink.connector.jdbc.xa.h2.H2DbMetadata}. Used only for testing.
  */
-public abstract class JdbcTestBase implements DatabaseTest {
-
-    @BeforeEach
-    public void before() throws Exception {
-        JdbcTestFixture.initSchema(getMetadata());
-    }
-
-    @AfterEach
-    public void after() throws Exception {
-        JdbcTestFixture.cleanupData(getMetadata().getJdbcUrl());
-        JdbcTestFixture.cleanUpDatabasesStatic(getMetadata());
-    }
-}
+package org.apache.flink.connector.jdbc.testutils.databases.h2.xa;

@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.dialect.oracle;
 
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connector.jdbc.databases.oracle.OracleDatabase;
+import org.apache.flink.connector.jdbc.testutils.databases.oracle.OracleDatabase;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
 import org.apache.flink.streaming.api.datastream.DataStream;

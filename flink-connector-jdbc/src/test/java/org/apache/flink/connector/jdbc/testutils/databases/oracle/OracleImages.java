@@ -15,27 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc;
+package org.apache.flink.connector.jdbc.testutils.databases.oracle;
 
-import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-
-/**
- * Base class for JDBC test using DDL from {@link JdbcTestFixture}. It uses create tables before
- * each test and drops afterwards.
- */
-public abstract class JdbcTestBase implements DatabaseTest {
-
-    @BeforeEach
-    public void before() throws Exception {
-        JdbcTestFixture.initSchema(getMetadata());
-    }
-
-    @AfterEach
-    public void after() throws Exception {
-        JdbcTestFixture.cleanupData(getMetadata().getJdbcUrl());
-        JdbcTestFixture.cleanUpDatabasesStatic(getMetadata());
-    }
+/** Oracle docker images. */
+public interface OracleImages {
+    String ORACLE_18 = "gvenzl/oracle-xe:18.4.0-slim";
+    String ORACLE_21 = "gvenzl/oracle-xe:21.3.0-slim-faststart";
 }

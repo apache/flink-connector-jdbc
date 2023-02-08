@@ -1,8 +1,8 @@
 package org.apache.flink.connector.jdbc.dialect.postgres;
 
-import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.databases.postgres.PostgresDatabase;
-import org.apache.flink.connector.jdbc.databases.postgres.PostgresMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.databases.postgres.PostgresDatabase;
+import org.apache.flink.connector.jdbc.testutils.databases.postgres.PostgresMetadata;
 import org.apache.flink.connector.jdbc.xa.JdbcExactlyOnceSinkE2eTest;
 import org.apache.flink.util.function.SerializableSupplier;
 
