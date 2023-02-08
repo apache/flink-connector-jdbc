@@ -66,7 +66,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
                             jdbcInputFormat =
                                     JdbcInputFormat.buildJdbcInputFormat()
                                             .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                                             .setQuery(SELECT_ALL_BOOKS)
                                             .finish();
                             jdbcInputFormat.openInputFormat();
@@ -82,7 +82,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
                             jdbcInputFormat =
                                     JdbcInputFormat.buildJdbcInputFormat()
                                             .setDrivername("org.apache.derby.jdbc.idontexist")
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                                             .setQuery(SELECT_ALL_BOOKS)
                                             .setRowTypeInfo(ROW_TYPE_INFO)
                                             .finish();
@@ -114,7 +114,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
                             jdbcInputFormat =
                                     JdbcInputFormat.buildJdbcInputFormat()
                                             .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                                             .setQuery("iamnotsql")
                                             .setRowTypeInfo(ROW_TYPE_INFO)
                                             .finish();
@@ -145,7 +145,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
                             jdbcInputFormat =
                                     JdbcInputFormat.buildJdbcInputFormat()
                                             .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                                             .setRowTypeInfo(ROW_TYPE_INFO)
                                             .finish();
                         })
@@ -160,7 +160,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
                             jdbcInputFormat =
                                     JdbcInputFormat.buildJdbcInputFormat()
                                             .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                                             .setQuery(SELECT_ALL_BOOKS)
                                             .setRowTypeInfo(ROW_TYPE_INFO)
                                             .setFetchSize(-7)
@@ -174,7 +174,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setQuery(SELECT_ALL_BOOKS)
                         .setRowTypeInfo(ROW_TYPE_INFO)
                         .setFetchSize(Integer.MIN_VALUE)
@@ -186,7 +186,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setQuery(SELECT_ALL_BOOKS)
                         .setRowTypeInfo(ROW_TYPE_INFO)
                         .finish();
@@ -205,7 +205,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setQuery(SELECT_ALL_BOOKS)
                         .setRowTypeInfo(ROW_TYPE_INFO)
                         .setFetchSize(desiredFetchSize)
@@ -221,7 +221,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setQuery(SELECT_ALL_BOOKS)
                         .setRowTypeInfo(ROW_TYPE_INFO)
                         .finish();
@@ -239,7 +239,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setQuery(SELECT_ALL_BOOKS)
                         .setRowTypeInfo(ROW_TYPE_INFO)
                         .setAutoCommit(desiredAutoCommit)
@@ -254,7 +254,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setQuery(SELECT_ALL_BOOKS)
                         .setRowTypeInfo(ROW_TYPE_INFO)
                         .setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)
@@ -287,7 +287,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setQuery(SELECT_ALL_BOOKS_SPLIT_BY_ID)
                         .setRowTypeInfo(ROW_TYPE_INFO)
                         .setParametersProvider(pramProvider)
@@ -325,7 +325,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setQuery(SELECT_ALL_BOOKS_SPLIT_BY_ID)
                         .setRowTypeInfo(ROW_TYPE_INFO)
                         .setParametersProvider(pramProvider)
@@ -363,7 +363,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setQuery(SELECT_ALL_BOOKS_SPLIT_BY_AUTHOR)
                         .setRowTypeInfo(ROW_TYPE_INFO)
                         .setParametersProvider(paramProvider)
@@ -404,7 +404,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setQuery(SELECT_EMPTY)
                         .setRowTypeInfo(ROW_TYPE_INFO)
                         .setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)

@@ -67,7 +67,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
     void testUpsertFormatCloseBeforeOpen() throws Exception {
         JdbcConnectorOptions options =
                 JdbcConnectorOptions.builder()
-                        .setDBUrl(getMetadata().getUrl())
+                        .setDBUrl(getMetadata().getJdbcUrl())
                         .setTableName(OUTPUT_TABLE)
                         .build();
         JdbcDmlOptions dmlOptions =
@@ -102,7 +102,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
                 new TableJdbcUpsertOutputFormat(
                         new SimpleJdbcConnectionProvider(
                                 JdbcConnectorOptions.builder()
-                                        .setDBUrl(getMetadata().getUrl())
+                                        .setDBUrl(getMetadata().getJdbcUrl())
                                         .setTableName(OUTPUT_TABLE)
                                         .build()) {
                             @Override
@@ -174,7 +174,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
     void testJdbcOutputFormat() throws Exception {
         JdbcConnectorOptions options =
                 JdbcConnectorOptions.builder()
-                        .setDBUrl(getMetadata().getUrl())
+                        .setDBUrl(getMetadata().getJdbcUrl())
                         .setTableName(OUTPUT_TABLE)
                         .build();
         JdbcDmlOptions dmlOptions =
@@ -222,7 +222,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
     }
 
     private void check(Row[] rows) throws SQLException {
-        check(rows, getMetadata().getUrl(), OUTPUT_TABLE, fieldNames);
+        check(rows, getMetadata().getJdbcUrl(), OUTPUT_TABLE, fieldNames);
     }
 
     public static void check(Row[] rows, String url, String table, String[] fields)

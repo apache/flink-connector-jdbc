@@ -210,7 +210,7 @@ public class JdbcTestFixture implements DerbyDatabase {
     }
 
     static void initData(DatabaseMetadata dbMetadata) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(dbMetadata.getUrl())) {
+        try (Connection conn = DriverManager.getConnection(dbMetadata.getJdbcUrl())) {
             insertDataIntoInputTable(conn);
         }
     }

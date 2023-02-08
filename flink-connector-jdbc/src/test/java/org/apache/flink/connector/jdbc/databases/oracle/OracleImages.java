@@ -17,25 +17,8 @@
 
 package org.apache.flink.connector.jdbc.databases.oracle;
 
-import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.databases.DatabaseTest;
-
-import org.testcontainers.containers.OracleContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-
-/** A Oracle database for testing. */
-@Testcontainers
-public interface OracleDatabase extends DatabaseTest, OracleImages {
-
-    @Container
-    OracleContainer CONTAINER =
-            new OracleContainer(ORACLE_21)
-                    .withStartupTimeoutSeconds(240)
-                    .withConnectTimeoutSeconds(120);
-
-    @Override
-    default DatabaseMetadata getMetadata() {
-        return new OracleMetadata(CONTAINER);
-    }
+/** Oracle docker images. */
+public interface OracleImages {
+    String ORACLE_18 = "gvenzl/oracle-xe:18.4.0-slim";
+    String ORACLE_21 = "gvenzl/oracle-xe:21.3.0-slim-faststart";
 }

@@ -29,14 +29,6 @@ import java.sql.DriverManager;
 /** Describes a database: driver, schema and urls. */
 public interface DatabaseMetadata extends Serializable {
 
-    default String getUrl() {
-        return getJdbcUrl();
-    }
-
-    default String getUser() {
-        return getUsername();
-    }
-
     String getJdbcUrl();
 
     String getJdbcUrlWithCredentials();
@@ -63,7 +55,7 @@ public interface DatabaseMetadata extends Serializable {
     default Connection getConnection() {
         try {
             Class.forName(getDriverClass());
-            return DriverManager.getConnection(getUrl(), getUser(), getPassword());
+            return DriverManager.getConnection(getJdbcUrl(), getUsername(), getPassword());
         } catch (Exception e) {
             throw new FlinkRuntimeException(e);
         }

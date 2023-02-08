@@ -43,13 +43,7 @@ public class OracleMetadata implements DatabaseMetadata {
     public OracleMetadata(OracleContainer container, boolean hasXaEnabled) {
         this.username = container.getUsername();
         this.password = container.getPassword();
-        this.url =
-                "jdbc:oracle:thin:@"
-                        + container.getHost()
-                        + ":"
-                        + container.getOraclePort()
-                        + ":"
-                        + container.getSid();
+        this.url = container.getJdbcUrl();
         this.driver = container.getDriverClassName();
         this.version = container.getDockerImageName();
         this.xaEnabled = hasXaEnabled;
@@ -62,7 +56,7 @@ public class OracleMetadata implements DatabaseMetadata {
 
     @Override
     public String getJdbcUrlWithCredentials() {
-        return String.format("%s?user=%s&password=%s", this.url, this.username, this.password);
+        return String.format("%s?user=%s&password=%s", getJdbcUrl(), getUsername(), getPassword());
     }
 
     @Override

@@ -68,7 +68,7 @@ import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSin
 /** The ITCase for {@link JdbcDynamicTableSink}. */
 class JdbcDynamicTableSinkITCase extends AbstractTestBase {
 
-    public static final String DB_URL = DERBY_EBOOKSHOP_DB.getUrl();
+    public static final String DB_URL = DERBY_EBOOKSHOP_DB.getJdbcUrl();
     public static final String OUTPUT_TABLE1 = "dynamicSinkForUpsert";
     public static final String OUTPUT_TABLE2 = "dynamicSinkForAppend";
     public static final String OUTPUT_TABLE3 = "dynamicSinkForBatch";

@@ -294,11 +294,6 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         private void waitOtherSources() throws InterruptedException {
             long start = System.currentTimeMillis();
             while (running && haveActiveSources()) {
-                if (System.currentTimeMillis() - start > 10_000) {
-                    // debugging FLINK-22889 (TODO: remove after resolved)
-                    LOG.debug("Slept more than 10s", new Exception());
-                    start = Long.MAX_VALUE;
-                }
                 activeSources
                         .get(getRuntimeContext().getAttemptNumber())
                         .await(100, TimeUnit.MILLISECONDS);
@@ -361,7 +356,7 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         @Override
         public TestEntry map(TestEntry value) throws Exception {
             if (--remaining <= 0) {
-                LOG.debug("Mapper failing intentionally");
+                LOG.debug("Mapper failing intentionally.");
                 throw new TestException();
             }
             return value;

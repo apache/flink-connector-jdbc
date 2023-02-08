@@ -63,10 +63,11 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
                                     JdbcOutputFormat.builder()
                                             .setOptions(
                                                     JdbcConnectorOptions.builder()
-                                                            .setDBUrl(getMetadata().getUrl())
+                                                            .setDBUrl(getMetadata().getJdbcUrl())
                                                             .setDialect(
                                                                     JdbcDialectLoader.load(
-                                                                            getMetadata().getUrl(),
+                                                                            getMetadata()
+                                                                                    .getJdbcUrl(),
                                                                             getClass()
                                                                                     .getClassLoader()))
                                                             .setTableName(OUTPUT_TABLE)

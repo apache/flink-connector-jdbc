@@ -35,7 +35,7 @@ public abstract class JdbcTestBase implements DatabaseTest {
 
     @AfterEach
     public void after() throws Exception {
-        JdbcTestFixture.cleanupData(getMetadata().getUrl());
+        JdbcTestFixture.cleanupData(getMetadata().getJdbcUrl());
         JdbcTestFixture.cleanUpDatabasesStatic(getMetadata());
     }
 }
