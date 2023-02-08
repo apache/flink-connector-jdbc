@@ -26,16 +26,17 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** A Oracle database for testing. */
 @Testcontainers
-public interface OracleDatabase extends DatabaseTest, OracleImages {
+public interface OracleXaDatabase extends DatabaseTest, OracleImages {
 
     @Container
     OracleContainer CONTAINER =
             new OracleContainer(ORACLE_21)
                     .withStartupTimeoutSeconds(240)
-                    .withConnectTimeoutSeconds(120);
+                    .withConnectTimeoutSeconds(120)
+                    .usingSid();
 
     @Override
     default DatabaseMetadata getMetadata() {
-        return new OracleMetadata(CONTAINER);
+        return new OracleMetadata(CONTAINER, true);
     }
 }

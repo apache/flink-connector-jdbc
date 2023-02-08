@@ -80,7 +80,7 @@ class JdbcFullTest extends JdbcDataTestBase {
                     JdbcOutputFormat.builder()
                             .setOptions(
                                     JdbcConnectorOptions.builder()
-                                            .setDBUrl(getMetadata().getUrl())
+                                            .setDBUrl(getMetadata().getJdbcUrl())
                                             .setTableName(OUTPUT_TABLE)
                                             .build())
                             .setFieldNames(new String[] {"id", "title", "author", "price", "qty"})
@@ -115,7 +115,7 @@ class JdbcFullTest extends JdbcDataTestBase {
         JdbcInputFormat.JdbcInputFormatBuilder inputBuilder =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(getMetadata().getDriverClass())
-                        .setDBUrl(getMetadata().getUrl())
+                        .setDBUrl(getMetadata().getJdbcUrl())
                         .setQuery(SELECT_ALL_BOOKS)
                         .setRowTypeInfo(ROW_TYPE_INFO);
 
@@ -138,7 +138,7 @@ class JdbcFullTest extends JdbcDataTestBase {
         // in PreparedStatement.setObject (see its javadoc for more details)
         JdbcConnectionOptions connectionOptions =
                 new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-                        .withUrl(getMetadata().getUrl())
+                        .withUrl(getMetadata().getJdbcUrl())
                         .withDriverName(getMetadata().getDriverClass())
                         .build();
 
@@ -162,7 +162,7 @@ class JdbcFullTest extends JdbcDataTestBase {
         source.output(jdbcOutputFormat);
         environment.execute();
 
-        try (Connection dbConn = DriverManager.getConnection(getMetadata().getUrl());
+        try (Connection dbConn = DriverManager.getConnection(getMetadata().getJdbcUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS);
                 ResultSet resultSet = statement.executeQuery()) {
             int count = 0;

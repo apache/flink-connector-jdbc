@@ -74,7 +74,7 @@ public class JdbcITCase extends JdbcTestBase {
                                 String.format(INSERT_TEMPLATE, INPUT_TABLE),
                                 TEST_ENTRY_JDBC_STATEMENT_BUILDER,
                                 new JdbcConnectionOptionsBuilder()
-                                        .withUrl(getMetadata().getUrl())
+                                        .withUrl(getMetadata().getJdbcUrl())
                                         .withDriverName(getMetadata().getDriverClass())
                                         .build()));
         env.execute();
@@ -108,7 +108,7 @@ public class JdbcITCase extends JdbcTestBase {
                                     ps.setString(2, e.content);
                                 },
                                 new JdbcConnectionOptionsBuilder()
-                                        .withUrl(getMetadata().getUrl())
+                                        .withUrl(getMetadata().getJdbcUrl())
                                         .withDriverName(getMetadata().getDriverClass())
                                         .build()));
         env.execute();
@@ -118,7 +118,7 @@ public class JdbcITCase extends JdbcTestBase {
 
     private List<String> selectWords() throws SQLException {
         ArrayList<String> strings = new ArrayList<>();
-        try (Connection connection = DriverManager.getConnection(getMetadata().getUrl())) {
+        try (Connection connection = DriverManager.getConnection(getMetadata().getJdbcUrl())) {
             try (Statement st = connection.createStatement()) {
                 try (ResultSet rs = st.executeQuery("select word from words")) {
                     while (rs.next()) {
@@ -145,7 +145,7 @@ public class JdbcITCase extends JdbcTestBase {
 
     private List<TestEntry> selectBooks() throws SQLException {
         List<TestEntry> result = new ArrayList<>();
-        try (Connection connection = DriverManager.getConnection(getMetadata().getUrl())) {
+        try (Connection connection = DriverManager.getConnection(getMetadata().getJdbcUrl())) {
             connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             connection.setReadOnly(true);
             try (Statement st = connection.createStatement()) {

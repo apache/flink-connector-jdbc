@@ -35,8 +35,8 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB
 import static org.mockito.Mockito.doReturn;
 
 /**
- * Base class for JDBC test using data from {@link JdbcTestFixture}. It uses {@link DerbyDbMetadata}
- * and inserts data before each test.
+ * Base class for JDBC test using data from {@link JdbcTestFixture}. It uses {@link
+ * org.apache.flink.connector.jdbc.databases.derby.DerbyMetadata} and inserts data before each test.
  */
 public abstract class JdbcDataTestBase extends JdbcTestBase {
     @BeforeEach

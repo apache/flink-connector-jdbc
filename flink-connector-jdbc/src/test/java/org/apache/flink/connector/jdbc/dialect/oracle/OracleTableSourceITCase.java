@@ -30,8 +30,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -47,7 +45,6 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The Table Source ITCase for {@link OracleDialect}. */
-@DisabledOnOs(OS.MAC)
 class OracleTableSourceITCase extends AbstractTestBase implements OracleDatabase {
 
     private static final String INPUT_TABLE = "oracle_test_table";

@@ -196,7 +196,7 @@ class SqlServerTableSinkITCase extends AbstractTestBase implements SqlServerData
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + getMetadata().getUrl()
+                        + getMetadata().getJdbcUrl()
                         + "',"
                         + "  'table-name'='"
                         + OUTPUT_TABLE4

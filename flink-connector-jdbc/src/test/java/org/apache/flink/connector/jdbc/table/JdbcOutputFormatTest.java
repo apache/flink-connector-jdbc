@@ -92,7 +92,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                             JdbcConnectorOptions jdbcOptions =
                                     JdbcConnectorOptions.builder()
                                             .setDriverName("org.apache.derby.jdbc.idontexist")
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                                             .setTableName(INPUT_TABLE)
                                             .build();
                             JdbcDmlOptions dmlOptions =
@@ -153,7 +153,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                             JdbcConnectorOptions jdbcOptions =
                                     JdbcConnectorOptions.builder()
                                             .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                                             .setTableName(INPUT_TABLE)
                                             .build();
                             JdbcDmlOptions dmlOptions =
@@ -192,7 +192,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                             JdbcConnectorOptions jdbcOptions =
                                     JdbcConnectorOptions.builder()
                                             .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                                             .setTableName(OUTPUT_TABLE)
                                             .build();
                             JdbcDmlOptions dmlOptions =
@@ -233,7 +233,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                             JdbcConnectorOptions jdbcOptions =
                                     JdbcConnectorOptions.builder()
                                             .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                                             .setTableName(OUTPUT_TABLE)
                                             .build();
                             JdbcDmlOptions dmlOptions =
@@ -279,7 +279,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
                         .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setTableName(OUTPUT_TABLE)
                         .build();
         JdbcDmlOptions dmlOptions =
@@ -310,7 +310,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
 
         outputFormat.close();
 
-        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
+        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getJdbcUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS);
                 ResultSet resultSet = statement.executeQuery()) {
             int recordCount = 0;
@@ -332,7 +332,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
                         .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setTableName(OUTPUT_TABLE_2)
                         .build();
         JdbcDmlOptions dmlOptions =
@@ -355,7 +355,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
         setRuntimeContext(outputFormat, true);
         outputFormat.open(0, 1);
 
-        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
+        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getJdbcUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS_2)) {
             outputFormat.open(0, 1);
             for (int i = 0; i < 2; ++i) {
@@ -402,7 +402,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
                         .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setTableName(OUTPUT_TABLE_2)
                         .build();
         JdbcDmlOptions dmlOptions =
@@ -424,7 +424,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         .build();
         setRuntimeContext(outputFormat, true);
 
-        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
+        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getJdbcUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS_2)) {
             outputFormat.open(0, 1);
             for (int i = 0; i < 2; ++i) {
@@ -449,7 +449,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
         JdbcConnectorOptions jdbcOptions =
                 JdbcConnectorOptions.builder()
                         .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getUrl())
+                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                         .setTableName(OUTPUT_TABLE_3)
                         .build();
         JdbcDmlOptions dmlOptions =
@@ -489,7 +489,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
 
         outputFormat.close();
 
-        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getUrl());
+        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getJdbcUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS_3);
                 ResultSet resultSet = statement.executeQuery()) {
             int recordCount = 0;
