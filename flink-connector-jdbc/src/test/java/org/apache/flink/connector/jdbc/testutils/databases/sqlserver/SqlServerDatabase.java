@@ -17,31 +17,39 @@
 
 package org.apache.flink.connector.jdbc.testutils.databases.sqlserver;
 
+import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
+import org.apache.flink.util.FlinkRuntimeException;
 
 import org.testcontainers.containers.MSSQLServerContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 /** A SqlServer database for testing. */
-@Testcontainers
-public interface SqlServerDatabase extends DatabaseTest {
+public class SqlServerDatabase extends DatabaseExtension implements SqlServerImages {
 
-    DockerImageName MSSQL_AZURE_SQL_EDGE =
-            DockerImageName.parse("mcr.microsoft.com/azure-sql-edge")
-                    .asCompatibleSubstituteFor("mcr.microsoft.com/mssql/server");
-
-    String MSSQL_SERVER_2017 = "mcr.microsoft.com/mssql/server:2017-CU12";
-    String MSSQL_SERVER_2019 = "mcr.microsoft.com/mssql/server:2019-GA-ubuntu-16.04";
-
-    @Container
-    MSSQLServerContainer<?> CONTAINER =
+    private static final MSSQLServerContainer<?> CONTAINER =
             new MSSQLServerContainer<>(MSSQL_AZURE_SQL_EDGE).acceptLicense();
 
+    private static SqlServerMetadata metadata;
+
+    public static SqlServerMetadata getMetadata() {
+        if (!CONTAINER.isRunning()) {
+            throw new FlinkRuntimeException("Container is stopped.");
+        }
+        if (metadata == null) {
+            metadata = new SqlServerMetadata(CONTAINER, true);
+        }
+        return metadata;
+    }
+
     @Override
-    default DatabaseMetadata getMetadata() {
-        return new SqlServerMetadata(CONTAINER);
+    protected DatabaseMetadata startDatabase() throws Exception {
+        CONTAINER.start();
+        return getMetadata();
+    }
+
+    @Override
+    protected void stopDatabase() throws Exception {
+        CONTAINER.stop();
+        metadata = null;
     }
 }

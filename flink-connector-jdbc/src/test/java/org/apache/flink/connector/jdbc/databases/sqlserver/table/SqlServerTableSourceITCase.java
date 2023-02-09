@@ -16,107 +16,92 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.sqlserver;
+package org.apache.flink.connector.jdbc.databases.sqlserver.table;
 
-import org.apache.flink.connector.jdbc.testutils.databases.sqlserver.SqlServerDatabase;
+import org.apache.flink.connector.jdbc.databases.sqlserver.SqlServerTestBase;
+import org.apache.flink.connector.jdbc.databases.sqlserver.dialect.SqlServerDialect;
+import org.apache.flink.connector.jdbc.testutils.TableManaged;
+import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CollectionUtil;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbType;
+import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.field;
+import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The Table Source ITCase for {@link SqlServerDialect}. */
-class SqlServerTableSourceITCase extends AbstractTestBase implements SqlServerDatabase {
+class SqlServerTableSourceITCase extends AbstractTestBase implements SqlServerTestBase {
 
-    private static final String INPUT_TABLE = "sql_test_table";
+    private static final TableRow INPUT_TABLE =
+            tableRow(
+                    "sql_test_table",
+                    field("id", dbType("INT"), DataTypes.INT().notNull()),
+                    field("tiny_int", dbType("TINYINT"), DataTypes.TINYINT()),
+                    field("small_int", dbType("SMALLINT"), DataTypes.SMALLINT()),
+                    field("big_int", dbType("BIGINT"), DataTypes.BIGINT().notNull()),
+                    field("float_col", dbType("REAL"), DataTypes.FLOAT()),
+                    field("double_col", dbType("FLOAT"), DataTypes.DOUBLE()),
+                    field("decimal_col", dbType("DECIMAL(10, 4)"), DataTypes.DECIMAL(10, 4)),
+                    field("bool", dbType("BIT"), DataTypes.BOOLEAN()),
+                    field("date_col", dbType("DATE"), DataTypes.DATE()),
+                    field("time_col", dbType("TIME(5)"), DataTypes.TIME(0)),
+                    field("datetime_col", dbType("DATETIME"), DataTypes.TIMESTAMP()),
+                    field(
+                            "datetime2_col",
+                            dbType("DATETIME2"),
+                            DataTypes.TIMESTAMP_WITH_TIME_ZONE()),
+                    field("char_col", dbType("CHAR"), DataTypes.STRING()),
+                    field("nchar_col", dbType("NCHAR(3)"), DataTypes.STRING()),
+                    field("varchar2_col", dbType("VARCHAR(30)"), DataTypes.STRING()),
+                    field("nvarchar2_col", dbType("NVARCHAR(30)"), DataTypes.STRING()),
+                    field("text_col", dbType("TEXT"), DataTypes.STRING()),
+                    field("ntext_col", dbType("NTEXT"), DataTypes.STRING()),
+                    field("binary_col", dbType("BINARY(10)"), DataTypes.BYTES()));
+
+    private static final String INPUT_TABLE_NAME = INPUT_TABLE.getTableName();
 
     private static StreamExecutionEnvironment env;
     private static TableEnvironment tEnv;
 
-    @BeforeAll
-    static void beforeAll() throws ClassNotFoundException, SQLException {
-        Class.forName(CONTAINER.getDriverClassName());
-        try (Connection conn =
-                        DriverManager.getConnection(
-                                CONTAINER.getJdbcUrl(),
-                                CONTAINER.getUsername(),
-                                CONTAINER.getPassword());
-                Statement statement = conn.createStatement()) {
-            statement.executeUpdate(
-                    "CREATE TABLE "
-                            + INPUT_TABLE
-                            + " ("
-                            + "id INT NOT NULL,"
-                            + "tiny_int TINYINT,"
-                            + "small_int SMALLINT,"
-                            + "big_int BIGINT,"
-                            + "float_col REAL,"
-                            + "double_col FLOAT ,"
-                            + "decimal_col DECIMAL(10, 4) NOT NULL,"
-                            + "bool BIT NOT NULL,"
-                            + "date_col DATE NOT NULL,"
-                            + "time_col TIME(5) NOT NULL,"
-                            + "datetime_col DATETIME,"
-                            + "datetime2_col DATETIME2,"
-                            + "char_col CHAR NOT NULL,"
-                            + "nchar_col NCHAR(3) NOT NULL,"
-                            + "varchar2_col VARCHAR(30) NOT NULL,"
-                            + "nvarchar2_col NVARCHAR(30) NOT NULL,"
-                            + "text_col TEXT,"
-                            + "ntext_col NTEXT,"
-                            + "binary_col BINARY(10)"
-                            + ")");
-            statement.executeUpdate(
-                    "INSERT INTO "
-                            + INPUT_TABLE
-                            + " VALUES ("
-                            + "1, 2, 4, 10000000000, 1.12345, 2.12345678791, 100.1234, 0, "
-                            + "'1997-01-01', '05:20:20.222','2020-01-01 15:35:00.123',"
-                            + "'2020-01-01 15:35:00.1234567', 'a', 'abc', 'abcdef', 'xyz',"
-                            + "'Hello World', 'World Hello', 1024)");
-            statement.executeUpdate(
-                    "INSERT INTO "
-                            + INPUT_TABLE
-                            + " VALUES ("
-                            + "2, 2, 4, 10000000000, 1.12345, 2.12345678791, 101.1234, 1, "
-                            + "'1997-01-02', '05:20:20.222','2020-01-01 15:36:01.123',"
-                            + "'2020-01-01 15:36:01.1234567', 'a', 'abc', 'abcdef', 'xyz',"
-                            + "'Hey Leonard', 'World Hello', 1024)");
-        }
-    }
-
-    @AfterAll
-    static void afterAll() throws Exception {
-        Class.forName(CONTAINER.getDriverClassName());
-        try (Connection conn =
-                        DriverManager.getConnection(
-                                CONTAINER.getJdbcUrl(),
-                                CONTAINER.getUsername(),
-                                CONTAINER.getPassword());
-                Statement statement = conn.createStatement()) {
-            statement.executeUpdate("DROP TABLE " + INPUT_TABLE);
-        }
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Collections.singletonList(INPUT_TABLE);
     }
 
     @BeforeEach
-    void before() throws Exception {
+    void before() throws SQLException {
+
+        try (Connection conn = getMetadata().getConnection()) {
+            INPUT_TABLE.insertIntoTableValues(
+                    conn,
+                    "1, 2, 4, 10000000000, 1.12345, 2.12345678791, 100.1234, 0, "
+                            + "'1997-01-01', '05:20:20.222','2020-01-01 15:35:00.123',"
+                            + "'2020-01-01 15:35:00.1234567', 'a', 'abc', 'abcdef', 'xyz',"
+                            + "'Hello World', 'World Hello', 1024");
+            INPUT_TABLE.insertIntoTableValues(
+                    conn,
+                    "2, 2, 4, 10000000000, 1.12345, 2.12345678791, 101.1234, 1, "
+                            + "'1997-01-02', '05:20:20.222','2020-01-01 15:36:01.123',"
+                            + "'2020-01-01 15:36:01.1234567', 'a', 'abc', 'abcdef', 'xyz',"
+                            + "'Hey Leonard', 'World Hello', 1024");
+        }
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         tEnv = StreamTableEnvironment.create(env);
     }
@@ -124,7 +109,7 @@ class SqlServerTableSourceITCase extends AbstractTestBase implements SqlServerDa
     @Test
     void testJdbcSource() throws Exception {
         createFlinkTable();
-        Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE).collect();
+        Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_NAME).collect();
         List<String> result =
                 CollectionUtil.iteratorToList(collected).stream()
                         .map(Row::toString)
@@ -149,7 +134,8 @@ class SqlServerTableSourceITCase extends AbstractTestBase implements SqlServerDa
     void testProject() throws Exception {
         createFlinkTable();
         Iterator<Row> collected =
-                tEnv.executeSql("SELECT id,datetime_col,decimal_col FROM " + INPUT_TABLE).collect();
+                tEnv.executeSql("SELECT id,datetime_col,decimal_col FROM " + INPUT_TABLE_NAME)
+                        .collect();
         List<String> result =
                 CollectionUtil.iteratorToList(collected).stream()
                         .map(Row::toString)
@@ -170,7 +156,7 @@ class SqlServerTableSourceITCase extends AbstractTestBase implements SqlServerDa
         Iterator<Row> collected =
                 tEnv.executeSql(
                                 "SELECT id,datetime_col,decimal_col FROM "
-                                        + INPUT_TABLE
+                                        + INPUT_TABLE_NAME
                                         + " WHERE id = 1")
                         .collect();
         List<String> result =
@@ -186,7 +172,7 @@ class SqlServerTableSourceITCase extends AbstractTestBase implements SqlServerDa
     private void createFlinkTable() {
         tEnv.executeSql(
                 "CREATE TABLE "
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + " ("
                         + "id INT NOT NULL,"
                         + "tiny_int TINYINT,"
@@ -213,7 +199,7 @@ class SqlServerTableSourceITCase extends AbstractTestBase implements SqlServerDa
                         + getMetadata().getJdbcUrl()
                         + "',"
                         + "  'table-name'='"
-                        + INPUT_TABLE
+                        + INPUT_TABLE_NAME
                         + "',"
                         + "  'username'='"
                         + getMetadata().getUsername()

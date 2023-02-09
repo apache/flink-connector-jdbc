@@ -17,4 +17,4 @@ org.apache.flink.connector.jdbc.dialect.derby.DerbyDialectFactory
 org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialectFactory
 org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialectFactory
 org.apache.flink.connector.jdbc.databases.oracle.dialect.OracleDialectFactory
-org.apache.flink.connector.jdbc.dialect.sqlserver.SqlServerDialectFactory
+org.apache.flink.connector.jdbc.databases.sqlserver.dialect.SqlServerDialectFactory
