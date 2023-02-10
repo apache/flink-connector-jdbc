@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.oracle;
+package org.apache.flink.connector.jdbc.databases.oracle.dialect;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
 import org.apache.flink.connector.jdbc.dialect.AbstractDialect;
-import org.apache.flink.connector.jdbc.internal.converter.OracleRowConverter;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 
@@ -31,7 +31,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /** JDBC dialect for Oracle. */
-class OracleDialect extends AbstractDialect {
+@Internal
+public class OracleDialect extends AbstractDialect {
 
     private static final long serialVersionUID = 1L;
 

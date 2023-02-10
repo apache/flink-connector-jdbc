@@ -17,26 +17,42 @@
 
 package org.apache.flink.connector.jdbc.testutils.databases.oracle;
 
+import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
+import org.apache.flink.util.FlinkRuntimeException;
 
 import org.testcontainers.containers.OracleContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-/** A Oracle database for testing. */
-@Testcontainers
-public interface OracleXaDatabase extends DatabaseTest, OracleImages {
+/** A Oracle XA database for testing. */
+public class OracleXaDatabase extends DatabaseExtension implements OracleImages {
 
-    @Container
-    OracleContainer CONTAINER =
+    private static final OracleContainer CONTAINER =
             new OracleContainer(ORACLE_21)
                     .withStartupTimeoutSeconds(240)
                     .withConnectTimeoutSeconds(120)
                     .usingSid();
 
+    private static OracleMetadata metadata;
+
+    public static OracleMetadata getMetadata() {
+        if (!CONTAINER.isRunning()) {
+            throw new FlinkRuntimeException("Container is stopped.");
+        }
+        if (metadata == null) {
+            metadata = new OracleMetadata(CONTAINER, true);
+        }
+        return metadata;
+    }
+
     @Override
-    default DatabaseMetadata getMetadata() {
-        return new OracleMetadata(CONTAINER, true);
+    protected DatabaseMetadata startDatabase() throws Exception {
+        CONTAINER.start();
+        return getMetadata();
+    }
+
+    @Override
+    protected void stopDatabase() throws Exception {
+        CONTAINER.stop();
+        metadata = null;
     }
 }

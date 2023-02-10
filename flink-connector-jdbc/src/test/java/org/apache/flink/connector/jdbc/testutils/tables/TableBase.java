@@ -23,7 +23,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -124,11 +126,28 @@ public abstract class TableBase<T> implements TableManaged {
                 pkFields.isEmpty() ? "" : String.format(", PRIMARY KEY (%s)", pkFields));
     }
 
+    public String getCreateQueryForFlink(DatabaseMetadata metadata, String newName) {
+        return getCreateQueryForFlink(metadata, newName, Collections.emptyList());
+    }
+
     public String getCreateQueryForFlink(
-            DatabaseMetadata metadata, String newName, String... withParams) {
+            DatabaseMetadata metadata, String newName, List<String> withParams) {
+        return getCreateQueryForFlink(
+                metadata, newName, Arrays.asList(getTableFields()), withParams);
+    }
+
+    public String getCreateQueryForFlink(
+            DatabaseMetadata metadata,
+            String newName,
+            List<String> newFields,
+            List<String> withParams) {
+
+        Map<String, TableField> fieldsMap =
+                Arrays.stream(this.fields).collect(Collectors.toMap(TableField::getName, f -> f));
 
         String fields =
-                Arrays.stream(this.fields)
+                newFields.stream()
+                        .map(fieldsMap::get)
                         .map(field -> String.format("%s %s", field.getName(), field.getDataType()))
                         .collect(Collectors.joining(", "));
         List<String> params = new ArrayList<>();
@@ -137,7 +156,7 @@ public abstract class TableBase<T> implements TableManaged {
         params.add(String.format("'url'='%s'", metadata.getJdbcUrl()));
         params.add(String.format("'username'='%s'", metadata.getUsername()));
         params.add(String.format("'password'='%s'", metadata.getPassword()));
-        params.addAll(Arrays.asList(withParams));
+        params.addAll(withParams);
 
         return String.format(
                 "CREATE TABLE %s (%s) WITH (%s)", newName, fields, String.join(", ", params));

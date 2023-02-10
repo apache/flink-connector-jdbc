@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.oracle;
+package org.apache.flink.connector.jdbc.databases.oracle.dialect;
 
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
 

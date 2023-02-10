@@ -72,13 +72,15 @@ public abstract class DatabaseExtension
                         clazz -> {
                             DatabaseMetadata metadata =
                                     getStore(context).get(uniqueKey, DatabaseMetadata.class);
-                            try (Connection conn = metadata.getConnection()) {
-                                for (TableManaged table :
-                                        getDatabaseBaseTest(clazz).getManagedTables()) {
-                                    execute.accept(table, conn);
+                            if (metadata != null) {
+                                try (Connection conn = metadata.getConnection()) {
+                                    for (TableManaged table :
+                                            getDatabaseBaseTest(clazz).getManagedTables()) {
+                                        execute.accept(table, conn);
+                                    }
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
                                 }
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
                             }
                         });
     }

@@ -124,7 +124,7 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         long started = System.currentTimeMillis();
         LOG.info("Test insert for {}", getMetadata().getVersion());
         int elementsPerSource = 50;
-        int numElementsPerCheckpoint = 7;
+        int numElementsPerCheckpoint = 10;
         int minElementsPerFailure = numElementsPerCheckpoint / 3;
         int maxElementsPerFailure = numElementsPerCheckpoint * 3;
 

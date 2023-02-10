@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.internal.converter;
+package org.apache.flink.connector.jdbc.databases.oracle.dialect;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.converter.AbstractJdbcRowConverter;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.StringData;
@@ -48,6 +49,7 @@ import java.time.ZonedDateTime;
  * Runtime converter that responsible to convert between JDBC object and Flink internal object for
  * Oracle.
  */
+@Internal
 public class OracleRowConverter extends AbstractJdbcRowConverter {
 
     private static final long serialVersionUID = 1L;
