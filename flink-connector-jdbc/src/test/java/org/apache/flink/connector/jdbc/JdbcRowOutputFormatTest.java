@@ -33,7 +33,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.INPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
@@ -62,7 +61,7 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
         }
         jdbcOutputFormat = null;
 
-        try (Connection conn = DERBY_EBOOKSHOP_DB.getConnection();
+        try (Connection conn = getMetadata().getConnection();
                 Statement stat = conn.createStatement()) {
             stat.execute("DELETE FROM " + OUTPUT_TABLE);
         }
@@ -75,7 +74,7 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
             jdbcOutputFormat =
                     JdbcRowOutputFormat.buildJdbcOutputFormat()
                             .setDrivername("org.apache.derby.jdbc.idontexist")
-                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
+                            .setDBUrl(getMetadata().getJdbcUrl())
                             .setQuery(String.format(INSERT_TEMPLATE, INPUT_TABLE))
                             .finish();
             jdbcOutputFormat.open(0, 1);
@@ -91,7 +90,7 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
 
         jdbcOutputFormat =
                 JdbcRowOutputFormat.buildJdbcOutputFormat()
-                        .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
+                        .setDrivername(getMetadata().getDriverClass())
                         .setDBUrl("jdbc:der:iamanerror:mory:ebookshop")
                         .setQuery(String.format(INSERT_TEMPLATE, INPUT_TABLE))
                         .finish();
@@ -106,8 +105,8 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
         try {
             jdbcOutputFormat =
                     JdbcRowOutputFormat.buildJdbcOutputFormat()
-                            .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
+                            .setDrivername(getMetadata().getDriverClass())
+                            .setDBUrl(getMetadata().getJdbcUrl())
                             .setQuery("iamnotsql")
                             .finish();
             setRuntimeContext(jdbcOutputFormat, true);
@@ -124,7 +123,7 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
         try {
             jdbcOutputFormat =
                     JdbcRowOutputFormat.buildJdbcOutputFormat()
-                            .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
+                            .setDrivername(getMetadata().getDriverClass())
                             .setQuery(String.format(INSERT_TEMPLATE, INPUT_TABLE))
                             .finish();
         } catch (Exception e) {
@@ -139,8 +138,8 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
         try {
             jdbcOutputFormat =
                     JdbcRowOutputFormat.buildJdbcOutputFormat()
-                            .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
+                            .setDrivername(getMetadata().getDriverClass())
+                            .setDBUrl(getMetadata().getJdbcUrl())
                             .setQuery(String.format(INSERT_TEMPLATE, INPUT_TABLE))
                             .finish();
             setRuntimeContext(jdbcOutputFormat, true);
@@ -167,8 +166,8 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
         try {
             jdbcOutputFormat =
                     JdbcRowOutputFormat.buildJdbcOutputFormat()
-                            .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
+                            .setDrivername(getMetadata().getDriverClass())
+                            .setDBUrl(getMetadata().getJdbcUrl())
                             .setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE))
                             .setSqlTypes(
                                     new int[] {
@@ -203,8 +202,8 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
         try {
             jdbcOutputFormat =
                     JdbcRowOutputFormat.buildJdbcOutputFormat()
-                            .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                            .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
+                            .setDrivername(getMetadata().getDriverClass())
+                            .setDBUrl(getMetadata().getJdbcUrl())
                             .setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE))
                             .setSqlTypes(
                                     new int[] {
@@ -240,8 +239,8 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
     void testJdbcOutputFormat() throws IOException, SQLException {
         jdbcOutputFormat =
                 JdbcRowOutputFormat.buildJdbcOutputFormat()
-                        .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
+                        .setDrivername(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getJdbcUrl())
                         .setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE))
                         .finish();
         setRuntimeContext(jdbcOutputFormat, true);
@@ -253,7 +252,7 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
 
         jdbcOutputFormat.close();
 
-        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getJdbcUrl());
+        try (Connection dbConn = DriverManager.getConnection(getMetadata().getJdbcUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS);
                 ResultSet resultSet = statement.executeQuery()) {
             int recordCount = 0;
@@ -274,13 +273,13 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
     void testFlush() throws SQLException, IOException {
         jdbcOutputFormat =
                 JdbcRowOutputFormat.buildJdbcOutputFormat()
-                        .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
+                        .setDrivername(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getJdbcUrl())
                         .setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE_2))
                         .setBatchSize(3)
                         .finish();
         setRuntimeContext(jdbcOutputFormat, true);
-        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getJdbcUrl());
+        try (Connection dbConn = DriverManager.getConnection(getMetadata().getJdbcUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS_2)) {
             jdbcOutputFormat.open(0, 1);
             for (int i = 0; i < 2; ++i) {
@@ -314,8 +313,8 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
     void testInvalidConnectionInJdbcOutputFormat() throws IOException, SQLException {
         jdbcOutputFormat =
                 JdbcRowOutputFormat.buildJdbcOutputFormat()
-                        .setDrivername(DERBY_EBOOKSHOP_DB.getDriverClass())
-                        .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
+                        .setDrivername(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getJdbcUrl())
                         .setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE_3))
                         .finish();
         setRuntimeContext(jdbcOutputFormat, true);
@@ -335,7 +334,7 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
 
         jdbcOutputFormat.close();
 
-        try (Connection dbConn = DriverManager.getConnection(DERBY_EBOOKSHOP_DB.getJdbcUrl());
+        try (Connection dbConn = DriverManager.getConnection(getMetadata().getJdbcUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS_3);
                 ResultSet resultSet = statement.executeQuery()) {
             int recordCount = 0;

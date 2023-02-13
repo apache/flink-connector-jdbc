@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.derby;
+package org.apache.flink.connector.jdbc.databases.derby.dialect;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
 import org.apache.flink.connector.jdbc.dialect.AbstractDialect;
-import org.apache.flink.connector.jdbc.internal.converter.DerbyRowConverter;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 
@@ -28,6 +28,7 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 
+@Internal
 class DerbyDialect extends AbstractDialect {
 
     private static final long serialVersionUID = 1L;

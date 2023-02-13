@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.jdbc.databases.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -45,8 +46,8 @@ import org.apache.flink.table.runtime.connector.sink.SinkRuntimeProviderContext;
 import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -60,15 +61,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
 import static org.apache.flink.connector.jdbc.internal.JdbcTableOutputFormatTest.check;
 import static org.apache.flink.table.api.Expressions.$;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSink;
 
 /** The ITCase for {@link JdbcDynamicTableSink}. */
-class JdbcDynamicTableSinkITCase extends AbstractTestBase {
+class JdbcDynamicTableSinkITCase extends AbstractTestBase implements DerbyTestBase {
 
-    public static final String DB_URL = DERBY_EBOOKSHOP_DB.getJdbcUrl();
     public static final String OUTPUT_TABLE1 = "dynamicSinkForUpsert";
     public static final String OUTPUT_TABLE2 = "dynamicSinkForAppend";
     public static final String OUTPUT_TABLE3 = "dynamicSinkForBatch";
@@ -76,9 +75,9 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
     public static final String OUTPUT_TABLE5 = "checkpointTable";
     public static final String USER_TABLE = "USER_TABLE";
 
-    @BeforeAll
-    static void beforeAll() throws SQLException {
-        try (Connection conn = DERBY_EBOOKSHOP_DB.getConnection();
+    @BeforeEach
+    void beforeAll() throws SQLException {
+        try (Connection conn = getMetadata().getConnection();
                 Statement stat = conn.createStatement()) {
             stat.executeUpdate(
                     "CREATE TABLE "
@@ -123,10 +122,10 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
         }
     }
 
-    @AfterAll
-    static void afterAll() throws Exception {
+    @AfterEach
+    void afterEach() throws Exception {
         TestValuesTableFactory.clearAllData();
-        try (Connection conn = DERBY_EBOOKSHOP_DB.getConnection();
+        try (Connection conn = getMetadata().getConnection();
                 Statement stat = conn.createStatement()) {
             stat.execute("DROP TABLE " + OUTPUT_TABLE1);
             stat.execute("DROP TABLE " + OUTPUT_TABLE2);
@@ -186,7 +185,7 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + DB_URL
+                        + getMetadata().getJdbcUrl()
                         + "',"
                         + "  'table-name'='"
                         + OUTPUT_TABLE4
@@ -194,7 +193,11 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
                         + ")");
 
         tEnv.executeSql("INSERT INTO upsertSink SELECT CAST(1.0 as FLOAT)").await();
-        check(new Row[] {Row.of(1.0f)}, DB_URL, "REAL_TABLE", new String[] {"real_data"});
+        check(
+                new Row[] {Row.of(1.0f)},
+                getMetadata().getJdbcUrl(),
+                "REAL_TABLE",
+                new String[] {"real_data"});
     }
 
     @Test
@@ -232,7 +235,7 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + DB_URL
+                        + getMetadata().getJdbcUrl()
                         + "',"
                         + "  'table-name'='"
                         + OUTPUT_TABLE1
@@ -258,7 +261,7 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
                     Row.of(7, 1, 1, Timestamp.valueOf("1970-01-01 00:00:00.021")),
                     Row.of(9, 1, 1, Timestamp.valueOf("1970-01-01 00:00:00.015"))
                 },
-                DB_URL,
+                getMetadata().getJdbcUrl(),
                 OUTPUT_TABLE1,
                 new String[] {"cnt", "lencnt", "cTag", "ts"});
     }
@@ -284,7 +287,7 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + DB_URL
+                        + getMetadata().getJdbcUrl()
                         + "',"
                         + "  'table-name'='"
                         + OUTPUT_TABLE2
@@ -299,7 +302,7 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
                     Row.of(10, 4, Timestamp.valueOf("1970-01-01 00:00:00.01")),
                     Row.of(20, 6, Timestamp.valueOf("1970-01-01 00:00:00.02"))
                 },
-                DB_URL,
+                getMetadata().getJdbcUrl(),
                 OUTPUT_TABLE2,
                 new String[] {"id", "num", "ts"});
     }
@@ -315,7 +318,7 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
                         + ") WITH ( "
                         + "'connector' = 'jdbc',"
                         + "'url'='"
-                        + DB_URL
+                        + getMetadata().getJdbcUrl()
                         + "',"
                         + "'table-name' = '"
                         + OUTPUT_TABLE3
@@ -342,7 +345,7 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
                     Row.of("Kim", 42),
                     Row.of("Bob", 1)
                 },
-                DB_URL,
+                getMetadata().getJdbcUrl(),
                 OUTPUT_TABLE3,
                 new String[] {"NAME", "SCORE"});
     }
@@ -375,7 +378,7 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
                         + ") WITH (\n"
                         + "  'connector' = 'jdbc',"
                         + "  'url'='"
-                        + DB_URL
+                        + getMetadata().getJdbcUrl()
                         + "',"
                         + "  'table-name' = '"
                         + USER_TABLE
@@ -407,7 +410,7 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
                             new BigDecimal("11.30"),
                             new BigDecimal("22.60"))
                 },
-                DB_URL,
+                getMetadata().getJdbcUrl(),
                 USER_TABLE,
                 new String[] {"user_id", "user_name", "email", "balance", "balance2"});
     }
@@ -416,7 +419,7 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
     void testFlushBufferWhenCheckpoint() throws Exception {
         Map<String, String> options = new HashMap<>();
         options.put("connector", "jdbc");
-        options.put("url", DB_URL);
+        options.put("url", getMetadata().getJdbcUrl());
         options.put("table-name", OUTPUT_TABLE5);
         options.put("sink.buffer-flush.interval", "0");
 
@@ -435,9 +438,13 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
         sinkFunction.invoke(GenericRowData.of(1L), SinkContextUtil.forTimestamp(1));
         sinkFunction.invoke(GenericRowData.of(2L), SinkContextUtil.forTimestamp(1));
 
-        check(new Row[] {}, DB_URL, OUTPUT_TABLE5, new String[] {"id"});
+        check(new Row[] {}, getMetadata().getJdbcUrl(), OUTPUT_TABLE5, new String[] {"id"});
         sinkFunction.snapshotState(new StateSnapshotContextSynchronousImpl(1, 1));
-        check(new Row[] {Row.of(1L), Row.of(2L)}, DB_URL, OUTPUT_TABLE5, new String[] {"id"});
+        check(
+                new Row[] {Row.of(1L), Row.of(2L)},
+                getMetadata().getJdbcUrl(),
+                OUTPUT_TABLE5,
+                new String[] {"id"});
         sinkFunction.close();
     }
 }

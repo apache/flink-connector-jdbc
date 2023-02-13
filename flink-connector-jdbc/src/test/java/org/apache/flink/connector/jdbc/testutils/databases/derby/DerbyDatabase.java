@@ -1,7 +1,7 @@
 package org.apache.flink.connector.jdbc.testutils.databases.derby;
 
+import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import java.io.OutputStream;
@@ -9,24 +9,27 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /** Derby database for testing. */
-public interface DerbyDatabase extends DatabaseTest {
+public class DerbyDatabase extends DatabaseExtension {
 
     @SuppressWarnings("unused") // used in string constant in prepareDatabase
-    OutputStream DEV_NULL =
+    public static final OutputStream DEV_NULL =
             new OutputStream() {
                 @Override
                 public void write(int b) {}
             };
 
-    DatabaseMetadata METADATA = startDatabase();
+    private static DerbyMetadata metadata;
 
-    @Override
-    default DatabaseMetadata getMetadata() {
-        return METADATA;
+    public static DerbyMetadata getMetadata() {
+        if (metadata == null) {
+            metadata = new DerbyMetadata("test");
+        }
+        return metadata;
     }
 
-    static DatabaseMetadata startDatabase() {
-        DatabaseMetadata metadata = new DerbyMetadata("test");
+    @Override
+    public DatabaseMetadata startDatabase() throws Exception {
+        DatabaseMetadata metadata = getMetadata();
         try {
             System.setProperty(
                     "derby.stream.error.field",
@@ -40,12 +43,14 @@ public interface DerbyDatabase extends DatabaseTest {
         return metadata;
     }
 
-    default void stopDatabase() throws Exception {
-        DatabaseMetadata metadata = getMetadata();
+    @Override
+    protected void stopDatabase() throws Exception {
         try {
             DriverManager.getConnection(String.format("%s;shutdown=true", metadata.getJdbcUrl()))
                     .close();
         } catch (SQLException ignored) {
+        } finally {
+            metadata = null;
         }
     }
 }

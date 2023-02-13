@@ -20,7 +20,6 @@ package org.apache.flink.connector.jdbc;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
-import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.databases.derby.DerbyMetadata;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
@@ -32,7 +31,6 @@ import org.mockito.Mockito;
 
 import java.sql.SQLException;
 
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
 import static org.mockito.Mockito.doReturn;
 
 /**
@@ -43,11 +41,6 @@ public abstract class JdbcDataTestBase extends JdbcTestBase {
     @BeforeEach
     void initData() throws SQLException {
         JdbcTestFixture.initData(getMetadata());
-    }
-
-    @Override
-    public DatabaseMetadata getMetadata() {
-        return DERBY_EBOOKSHOP_DB;
     }
 
     public static Row toRow(JdbcTestFixture.TestEntry entry) {

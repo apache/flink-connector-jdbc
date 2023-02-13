@@ -20,8 +20,8 @@ package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
+import org.apache.flink.connector.jdbc.databases.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.testutils.databases.derby.DerbyDatabase;
 import org.apache.flink.table.types.logical.RowType;
 
 import java.io.OutputStream;
@@ -36,7 +36,7 @@ import static org.apache.flink.table.types.utils.TypeConversions.fromLegacyInfoT
 
 /** Test data and helper objects for JDBC tests. */
 @SuppressWarnings("SpellCheckingInspection")
-public class JdbcTestFixture implements DerbyDatabase {
+public class JdbcTestFixture implements DerbyTestBase {
     public static final JdbcTestCheckpoint CP0 = new JdbcTestCheckpoint(0, 1, 2, 3);
     public static final JdbcTestCheckpoint CP1 = new JdbcTestCheckpoint(1, 4, 5, 6);
 
@@ -73,8 +73,6 @@ public class JdbcTestFixture implements DerbyDatabase {
         new TestEntry(1009, ("A Teaspoon of Java 1.7"), ("Kevin Jones"), 99.99, 99),
         new TestEntry(1010, ("A Teaspoon of Java 1.8"), ("Kevin Jones"), null, 1010)
     };
-
-    public static final DatabaseMetadata DERBY_EBOOKSHOP_DB = DerbyDatabase.startDatabase();
 
     /** TestEntry. */
     public static class TestEntry implements Serializable {

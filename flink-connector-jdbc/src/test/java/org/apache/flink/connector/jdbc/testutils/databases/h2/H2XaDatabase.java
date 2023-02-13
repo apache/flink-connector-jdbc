@@ -17,24 +17,27 @@
 
 package org.apache.flink.connector.jdbc.testutils.databases.h2;
 
+import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import java.sql.DriverManager;
 
 /** H2 database for testing. */
-public interface H2XaDatabase extends DatabaseTest {
+public class H2XaDatabase extends DatabaseExtension {
 
-    DatabaseMetadata METADATA = startDatabase();
+    private static H2Metadata metadata;
 
-    @Override
-    default DatabaseMetadata getMetadata() {
-        return METADATA;
+    public static H2Metadata getMetadata() {
+        if (metadata == null) {
+            metadata = new H2Metadata("test");
+        }
+        return metadata;
     }
 
-    static DatabaseMetadata startDatabase() {
-        DatabaseMetadata metadata = new H2Metadata("test");
+    @Override
+    protected DatabaseMetadata startDatabase() throws Exception {
+        DatabaseMetadata metadata = getMetadata();
         try {
             Class.forName(metadata.getDriverClass());
             DriverManager.getConnection(
@@ -47,4 +50,7 @@ public interface H2XaDatabase extends DatabaseTest {
         }
         return metadata;
     }
+
+    @Override
+    protected void stopDatabase() throws Exception {}
 }

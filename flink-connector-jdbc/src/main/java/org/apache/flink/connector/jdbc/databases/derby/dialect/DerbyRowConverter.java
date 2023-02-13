@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.internal.converter;
+package org.apache.flink.connector.jdbc.databases.derby.dialect;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.converter.AbstractJdbcRowConverter;
 import org.apache.flink.table.types.logical.RowType;
 
@@ -25,6 +26,7 @@ import org.apache.flink.table.types.logical.RowType;
  * Runtime converter that responsible to convert between JDBC object and Flink internal object for
  * Derby.
  */
+@Internal
 public class DerbyRowConverter extends AbstractJdbcRowConverter {
 
     private static final long serialVersionUID = 1L;
