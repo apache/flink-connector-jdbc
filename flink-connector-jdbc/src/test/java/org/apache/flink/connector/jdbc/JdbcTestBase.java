@@ -35,7 +35,6 @@ public abstract class JdbcTestBase implements DerbyTestBase {
 
     @AfterEach
     public void after() throws Exception {
-        JdbcTestFixture.cleanupData(getMetadata());
         JdbcTestFixture.cleanUpDatabasesStatic(getMetadata());
     }
 }

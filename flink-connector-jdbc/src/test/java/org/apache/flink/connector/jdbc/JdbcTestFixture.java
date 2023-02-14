@@ -185,7 +185,7 @@ public class JdbcTestFixture implements DerbyTestBase {
 
     public static void initSchema(DatabaseMetadata metadata) throws SQLException {
         try (Connection conn = metadata.getConnection()) {
-            createTable(conn, JdbcTestFixture.INPUT_TABLE);
+            createTable(conn, INPUT_TABLE);
             createTable(conn, OUTPUT_TABLE);
             createTable(conn, OUTPUT_TABLE_2);
             createTable(conn, OUTPUT_TABLE_3);

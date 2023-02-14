@@ -29,7 +29,8 @@ public class OracleDatabase extends DatabaseExtension implements OracleImages {
     private static final OracleContainer CONTAINER =
             new OracleContainer(ORACLE_21)
                     .withStartupTimeoutSeconds(240)
-                    .withConnectTimeoutSeconds(120);
+                    .withConnectTimeoutSeconds(120)
+                    .usingSid();
 
     private static OracleMetadata metadata;
 
@@ -38,7 +39,7 @@ public class OracleDatabase extends DatabaseExtension implements OracleImages {
             throw new FlinkRuntimeException("Container is stopped.");
         }
         if (metadata == null) {
-            metadata = new OracleMetadata(CONTAINER);
+            metadata = new OracleMetadata(CONTAINER, true);
         }
         return metadata;
     }

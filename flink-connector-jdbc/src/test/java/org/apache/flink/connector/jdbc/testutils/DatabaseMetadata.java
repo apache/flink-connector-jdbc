@@ -19,6 +19,7 @@ package org.apache.flink.connector.jdbc.testutils;
 
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.util.FlinkRuntimeException;
+import org.apache.flink.util.function.SerializableSupplier;
 
 import javax.sql.XADataSource;
 
@@ -42,6 +43,10 @@ public interface DatabaseMetadata extends Serializable {
     String getDriverClass();
 
     String getVersion();
+
+    default SerializableSupplier<XADataSource> getXaSourceSupplier() {
+        return this::buildXaDataSource;
+    }
 
     default JdbcConnectionOptions getConnectionOptions() {
         return new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()

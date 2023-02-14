@@ -19,7 +19,7 @@ package org.apache.flink.connector.jdbc.testutils.databases.sqlserver;
 
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 
-import org.postgresql.xa.PGXADataSource;
+import com.microsoft.sqlserver.jdbc.SQLServerXADataSource;
 import org.testcontainers.containers.MSSQLServerContainer;
 
 import javax.sql.XADataSource;
@@ -74,8 +74,8 @@ public class SqlServerMetadata implements DatabaseMetadata {
             throw new UnsupportedOperationException();
         }
 
-        PGXADataSource xaDataSource = new PGXADataSource();
-        xaDataSource.setUrl(getJdbcUrl());
+        SQLServerXADataSource xaDataSource = new SQLServerXADataSource();
+        xaDataSource.setURL(getJdbcUrl());
         xaDataSource.setUser(getUsername());
         xaDataSource.setPassword(getPassword());
         return xaDataSource;
