@@ -28,8 +28,9 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 
+/** JDBC dialect for Derby. */
 @Internal
-class DerbyDialect extends AbstractDialect {
+public class DerbyDialect extends AbstractDialect {
 
     private static final long serialVersionUID = 1L;
 

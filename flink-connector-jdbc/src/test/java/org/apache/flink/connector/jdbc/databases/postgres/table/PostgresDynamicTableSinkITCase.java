@@ -16,14 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.mysql.xa;
+package org.apache.flink.connector.jdbc.databases.postgres.table;
 
-import org.apache.flink.connector.jdbc.databases.mysql.MySqlTestBase;
-import org.apache.flink.connector.jdbc.xa.JdbcExactlyOnceSinkE2eTest;
+import org.apache.flink.connector.jdbc.databases.postgres.PostgresTestBase;
+import org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialect;
+import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSinkITCase;
 
-/**
- * A simple end-to-end test for {@link JdbcExactlyOnceSinkE2eTest}. Check for issues with errors on
- * closing connections.
- */
-public class MySqlExactlyOnceSinkE2eTest extends JdbcExactlyOnceSinkE2eTest
-        implements MySqlTestBase {}
+/** The Table Sink ITCase for {@link PostgresDialect}. */
+public class PostgresDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
+        implements PostgresTestBase {}

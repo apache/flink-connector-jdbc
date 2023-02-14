@@ -17,6 +17,6 @@
 
 /**
  * This package holds some workarounds for the H2 XA client, plus {@link
- * org.apache.flink.connector.jdbc.xa.h2.H2DbMetadata}. Used only for testing.
+ * org.apache.flink.connector.jdbc.testutils.databases.h2.H2Metadata}. Used only for testing.
  */
 package org.apache.flink.connector.jdbc.testutils.databases.h2.xa;

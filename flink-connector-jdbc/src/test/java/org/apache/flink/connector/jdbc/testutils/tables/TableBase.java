@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.flink.connector.jdbc.testutils.tables;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -9,6 +27,8 @@ import org.apache.flink.connector.jdbc.testutils.functions.JdbcResultSetBuilder;
 import org.apache.flink.connector.jdbc.utils.JdbcTypeUtil;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
+import org.apache.flink.table.catalog.Column;
+import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
@@ -49,12 +69,16 @@ public abstract class TableBase<T> implements TableManaged {
         return name;
     }
 
+    private Stream<TableField> getStreamFields() {
+        return Arrays.stream(this.fields);
+    }
+
     private Stream<String> getStreamFieldNames() {
-        return Arrays.stream(this.fields).map(TableField::getName);
+        return getStreamFields().map(TableField::getName);
     }
 
     private Stream<DataType> getStreamDataTypes() {
-        return Arrays.stream(this.fields).map(TableField::getDataType);
+        return getStreamFields().map(TableField::getDataType);
     }
 
     public String[] getTableFields() {
@@ -62,7 +86,7 @@ public abstract class TableBase<T> implements TableManaged {
     }
 
     public DataTypes.Field[] getTableDataFields() {
-        return Arrays.stream(this.fields)
+        return getStreamFields()
                 .map(field -> DataTypes.FIELD(field.getName(), field.getDataType()))
                 .toArray(DataTypes.Field[]::new);
     }
@@ -98,11 +122,10 @@ public abstract class TableBase<T> implements TableManaged {
 
     public Schema getTableSchema() {
         Schema.Builder schema = Schema.newBuilder();
-        Arrays.stream(this.fields)
-                .forEach(field -> schema.column(field.getName(), field.getDataType()));
+        getStreamFields().forEach(field -> schema.column(field.getName(), field.getDataType()));
 
         String pkFields =
-                Arrays.stream(this.fields)
+                getStreamFields()
                         .filter(TableField::isPkField)
                         .map(TableField::getName)
                         .collect(Collectors.joining(", "));
@@ -111,18 +134,23 @@ public abstract class TableBase<T> implements TableManaged {
         return schema.build();
     }
 
+    public ResolvedSchema getTableResolvedSchema() {
+        return ResolvedSchema.of(
+                getStreamFields()
+                        .map(field -> Column.physical(field.getName(), field.getDataType()))
+                        .collect(Collectors.toList()));
+    }
+
     public String getCreateQuery() {
         String pkFields =
-                Arrays.stream(this.fields)
+                getStreamFields()
                         .filter(TableField::isPkField)
                         .map(TableField::getName)
                         .collect(Collectors.joining(", "));
         return String.format(
                 "CREATE TABLE %s (%s%s)",
                 name,
-                Arrays.stream(this.fields)
-                        .map(TableField::asString)
-                        .collect(Collectors.joining(", ")),
+                getStreamFields().map(TableField::asString).collect(Collectors.joining(", ")),
                 pkFields.isEmpty() ? "" : String.format(", PRIMARY KEY (%s)", pkFields));
     }
 
@@ -143,13 +171,24 @@ public abstract class TableBase<T> implements TableManaged {
             List<String> withParams) {
 
         Map<String, TableField> fieldsMap =
-                Arrays.stream(this.fields).collect(Collectors.toMap(TableField::getName, f -> f));
+                getStreamFields().collect(Collectors.toMap(TableField::getName, f -> f));
 
         String fields =
                 newFields.stream()
                         .map(fieldsMap::get)
                         .map(field -> String.format("%s %s", field.getName(), field.getDataType()))
                         .collect(Collectors.joining(", "));
+        String pkFields =
+                getStreamFields()
+                        .filter(TableField::isPkField)
+                        .map(TableField::getName)
+                        .collect(Collectors.joining(", "));
+
+        String primaryKey =
+                (pkFields.isEmpty())
+                        ? ""
+                        : String.format(", PRIMARY KEY (%s) NOT ENFORCED", pkFields);
+
         List<String> params = new ArrayList<>();
         params.add("'connector'='jdbc'");
         params.add(String.format("'table-name'='%s'", getTableName()));
@@ -159,7 +198,8 @@ public abstract class TableBase<T> implements TableManaged {
         params.addAll(withParams);
 
         return String.format(
-                "CREATE TABLE %s (%s) WITH (%s)", newName, fields, String.join(", ", params));
+                "CREATE TABLE %s (%s%s) WITH (%s)",
+                newName, fields, primaryKey, String.join(", ", params));
     }
 
     private String getInsertIntoQuery(String... values) {
@@ -196,6 +236,12 @@ public abstract class TableBase<T> implements TableManaged {
 
     public void insertIntoTableValues(Connection conn, String... values) throws SQLException {
         executeUpdate(conn, getInsertIntoQuery(values));
+    }
+
+    public List<T> selectAllTable(DatabaseMetadata metadata) throws SQLException {
+        try (Connection conn = metadata.getConnection()) {
+            return selectAllTable(conn);
+        }
     }
 
     public List<T> selectAllTable(Connection conn) throws SQLException {
