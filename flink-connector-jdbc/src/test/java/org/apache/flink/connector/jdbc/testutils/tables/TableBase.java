@@ -285,6 +285,10 @@ public abstract class TableBase<T> implements TableManaged {
     protected <T> T getNullable(ResultSet rs, FunctionWithException<ResultSet, T, SQLException> get)
             throws SQLException {
         T value = get.apply(rs);
+        return getNullable(rs, value);
+    }
+
+    protected <T> T getNullable(ResultSet rs, T value) throws SQLException {
         return rs.wasNull() ? null : value;
     }
 }
