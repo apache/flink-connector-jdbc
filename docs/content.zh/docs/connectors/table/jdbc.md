@@ -246,7 +246,7 @@ ON myTopic.key = MyUserTable.id;
       <td>可选</td>
       <td style="word-wrap: break-word;">3</td>
       <td>Integer</td>
-      <td>查询数据库失败的最大重试时间。</td>
+      <td>查询数据库失败的最大重试次数。</td>
     </tr>
     <tr>
       <td><h5>sink.buffer-flush.max-rows</h5></td>
