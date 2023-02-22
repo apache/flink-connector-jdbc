@@ -79,6 +79,9 @@ public class JdbcFilterPushdownPreparedStatementVisitor
         if (BuiltInFunctionDefinitions.AND.equals(call.getFunctionDefinition())) {
             return renderBinaryOperator("AND", call.getResolvedChildren());
         }
+        if (BuiltInFunctionDefinitions.LIKE.equals(call.getFunctionDefinition())) {
+            return renderBinaryOperator("LIKE", call.getResolvedChildren());
+        }
         if (BuiltInFunctionDefinitions.IS_NULL.equals(call.getFunctionDefinition())) {
             return renderUnaryOperator("IS NULL", call.getResolvedChildren().get(0), true);
         }

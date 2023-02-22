@@ -144,7 +144,8 @@ class JdbcFilterPushdownPreparedStatementVisitorTest {
                         new Object[] {"real_col > 0.5", "real_col > ?", new BigDecimal("0.5")},
                         new Object[] {
                             "double_col <= -0.3", "double_col <= ?", new BigDecimal("-0.3")
-                        })
+                        },
+                        new Object[] {"description LIKE '_bcd%'", "description LIKE ?", "_bcd%"})
                 .forEach(
                         inputs ->
                                 assertSimpleInputExprEqualsOutExpr(
