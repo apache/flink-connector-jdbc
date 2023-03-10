@@ -104,7 +104,7 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
 
     @Override
     public Connection getOrEstablishConnection() throws SQLException, ClassNotFoundException {
-        if (connection != null) {
+        if (isConnectionValid()) {
             return connection;
         }
         if (jdbcOptions.getDriverName() == null) {
@@ -131,14 +131,14 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
 
     @Override
     public void closeConnection() {
-        if (connection != null) {
-            try {
+        try {
+            if(isConnectionValid()){
                 connection.close();
-            } catch (SQLException e) {
-                LOG.warn("JDBC connection close failed.", e);
-            } finally {
-                connection = null;
             }
+        } catch (SQLException e) {
+            LOG.warn("JDBC connection close failed.", e);
+        } finally {
+            connection = null;
         }
     }
 
