@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
+import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Schema;
@@ -56,7 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test base for {@link MySqlCatalog}. */
-abstract class MySqlCatalogTestBase {
+abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
 
     public static final Logger LOG = LoggerFactory.getLogger(MySqlCatalogTestBase.class);
     protected static final String TEST_CATALOG_NAME = "mysql_catalog";
