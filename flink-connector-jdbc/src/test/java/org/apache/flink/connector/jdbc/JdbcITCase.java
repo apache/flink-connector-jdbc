@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.function.FunctionWithException;
 
@@ -48,7 +49,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Smoke tests for the {@link JdbcSink} and the underlying classes. */
-public class JdbcITCase extends JdbcTestBase {
+public class JdbcITCase extends JdbcTestBase implements JdbcITCaseBase {
 
     public static final JdbcStatementBuilder<TestEntry> TEST_ENTRY_JDBC_STATEMENT_BUILDER =
             (ps, t) -> {
