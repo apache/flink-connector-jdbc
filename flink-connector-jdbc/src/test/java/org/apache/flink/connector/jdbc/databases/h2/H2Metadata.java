@@ -15,25 +15,46 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.xa.h2;
+package org.apache.flink.connector.jdbc.databases.h2;
 
-import org.apache.flink.connector.jdbc.DbMetadata;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.databases.h2.xa.H2XaDsWrapper;
 
 import javax.sql.XADataSource;
 
-/** H2DbMetadata. */
-public class H2DbMetadata implements DbMetadata {
+/** H2 Metadata. */
+public class H2Metadata implements DatabaseMetadata {
 
     private final String schema;
 
-    public H2DbMetadata(String schema) {
+    public H2Metadata(String schema) {
         this.schema = schema;
+    }
+
+    @Override
+    public String getJdbcUrl() {
+        return String.format("jdbc:h2:mem:%s", schema);
+    }
+
+    @Override
+    public String getJdbcUrlWithCredentials() {
+        return getJdbcUrl();
+    }
+
+    @Override
+    public String getUsername() {
+        return "";
+    }
+
+    @Override
+    public String getPassword() {
+        return "";
     }
 
     @Override
     public XADataSource buildXaDataSource() {
         final org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
-        ds.setUrl(getUrl());
+        ds.setUrl(getJdbcUrl());
         return new H2XaDsWrapper(ds);
     }
 
@@ -43,14 +64,7 @@ public class H2DbMetadata implements DbMetadata {
     }
 
     @Override
-    public String getUrl() {
-        return String.format("jdbc:h2:mem:%s;INIT=SET SCHEMA %s", schema, schema);
-    }
-
-    @Override
-    public String getInitUrl() {
-        return String.format(
-                "jdbc:h2:mem:%s;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS %s\\;SET SCHEMA %s",
-                schema, schema, schema);
+    public String getVersion() {
+        return "h2:mem";
     }
 }

@@ -15,22 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc;
+package org.apache.flink.connector.jdbc.databases.derby;
+
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 
 import org.apache.derby.jdbc.EmbeddedXADataSource;
 
 import javax.sql.XADataSource;
 
-/** DerbyDbMetadata. */
-public class DerbyDbMetadata implements DbMetadata {
+/** Derby Metadata. */
+public class DerbyMetadata implements DatabaseMetadata {
     private final String dbName;
-    private final String dbInitUrl;
-    private final String url;
 
-    public DerbyDbMetadata(String schemaName) {
+    public DerbyMetadata(String schemaName) {
         dbName = "memory:" + schemaName;
-        url = "jdbc:derby:" + dbName;
-        dbInitUrl = url + ";create=true";
     }
 
     public String getDbName() {
@@ -38,8 +36,23 @@ public class DerbyDbMetadata implements DbMetadata {
     }
 
     @Override
-    public String getInitUrl() {
-        return dbInitUrl;
+    public String getJdbcUrl() {
+        return String.format("jdbc:derby:%s", dbName);
+    }
+
+    @Override
+    public String getJdbcUrlWithCredentials() {
+        return getJdbcUrl();
+    }
+
+    @Override
+    public String getUsername() {
+        return "";
+    }
+
+    @Override
+    public String getPassword() {
+        return "";
     }
 
     @Override
@@ -55,7 +68,7 @@ public class DerbyDbMetadata implements DbMetadata {
     }
 
     @Override
-    public String getUrl() {
-        return url;
+    public String getVersion() {
+        return "derby:memory";
     }
 }

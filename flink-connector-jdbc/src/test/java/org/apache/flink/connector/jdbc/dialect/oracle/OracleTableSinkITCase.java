@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.dialect.oracle;
 
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.jdbc.databases.oracle.OracleDatabase;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -66,10 +67,7 @@ import static org.apache.flink.table.api.Expressions.$;
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSink;
 
 /** The Table Sink ITCase for {@link OracleDialect}. */
-class OracleTableSinkITCase extends AbstractTestBase {
-
-    private static final OracleContainer container = new OracleContainer();
-    private static String containerUrl;
+class OracleTableSinkITCase extends AbstractTestBase implements OracleDatabase {
 
     public static final String OUTPUT_TABLE1 = "dynamicSinkForUpsert";
     public static final String OUTPUT_TABLE2 = "dynamicSinkForAppend";
@@ -80,10 +78,12 @@ class OracleTableSinkITCase extends AbstractTestBase {
 
     @BeforeAll
     static void beforeAll() throws ClassNotFoundException, SQLException {
-        container.start();
-        containerUrl = container.getJdbcUrl();
-        Class.forName(container.getDriverClassName());
-        try (Connection conn = DriverManager.getConnection(containerUrl);
+        Class.forName(CONTAINER.getDriverClassName());
+        try (Connection conn =
+                        DriverManager.getConnection(
+                                CONTAINER.getJdbcUrl(),
+                                CONTAINER.getUsername(),
+                                CONTAINER.getPassword());
                 Statement stat = conn.createStatement()) {
             stat.executeUpdate(
                     "CREATE TABLE "
@@ -131,8 +131,12 @@ class OracleTableSinkITCase extends AbstractTestBase {
     @AfterAll
     static void afterAll() throws Exception {
         TestValuesTableFactory.clearAllData();
-        Class.forName(container.getDriverClassName());
-        try (Connection conn = DriverManager.getConnection(containerUrl);
+        Class.forName(CONTAINER.getDriverClassName());
+        try (Connection conn =
+                        DriverManager.getConnection(
+                                CONTAINER.getJdbcUrl(),
+                                CONTAINER.getUsername(),
+                                CONTAINER.getPassword());
                 Statement stat = conn.createStatement()) {
             stat.execute("DROP TABLE " + OUTPUT_TABLE1);
             stat.execute("DROP TABLE " + OUTPUT_TABLE2);
@@ -141,7 +145,6 @@ class OracleTableSinkITCase extends AbstractTestBase {
             stat.execute("DROP TABLE " + OUTPUT_TABLE5);
             stat.execute("DROP TABLE " + USER_TABLE);
         }
-        container.stop();
     }
 
     public static DataStream<Tuple4<Integer, Long, String, Timestamp>> get4TupleDataStream(
@@ -193,7 +196,7 @@ class OracleTableSinkITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getMetadata().getJdbcUrlWithCredentials()
                         + "',"
                         + "  'table-name'='"
                         + OUTPUT_TABLE4
@@ -201,7 +204,11 @@ class OracleTableSinkITCase extends AbstractTestBase {
                         + ")");
 
         tEnv.executeSql("INSERT INTO upsertSink SELECT CAST(1.1 as FLOAT)").await();
-        check(new Row[] {Row.of(1.1f)}, containerUrl, "REAL_TABLE", new String[] {"real_data"});
+        check(
+                new Row[] {Row.of(1.1f)},
+                getMetadata().getJdbcUrlWithCredentials(),
+                "REAL_TABLE",
+                new String[] {"real_data"});
     }
 
     @Test
@@ -239,7 +246,7 @@ class OracleTableSinkITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getMetadata().getJdbcUrlWithCredentials()
                         + "',"
                         + "  'table-name'='"
                         + OUTPUT_TABLE1
@@ -265,7 +272,7 @@ class OracleTableSinkITCase extends AbstractTestBase {
                     Row.of(7, 1, 1, Timestamp.valueOf("1970-01-01 00:00:00.021")),
                     Row.of(9, 1, 1, Timestamp.valueOf("1970-01-01 00:00:00.015"))
                 },
-                containerUrl,
+                getMetadata().getJdbcUrlWithCredentials(),
                 OUTPUT_TABLE1,
                 new String[] {"cnt", "lencnt", "cTag", "ts"});
     }
@@ -291,7 +298,7 @@ class OracleTableSinkITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getMetadata().getJdbcUrlWithCredentials()
                         + "',"
                         + "  'table-name'='"
                         + OUTPUT_TABLE2
@@ -306,7 +313,7 @@ class OracleTableSinkITCase extends AbstractTestBase {
                     Row.of(10, 4, Timestamp.valueOf("1970-01-01 00:00:00.01")),
                     Row.of(20, 6, Timestamp.valueOf("1970-01-01 00:00:00.02"))
                 },
-                containerUrl,
+                getMetadata().getJdbcUrlWithCredentials(),
                 OUTPUT_TABLE2,
                 new String[] {"id", "num", "ts"});
     }
@@ -322,7 +329,7 @@ class OracleTableSinkITCase extends AbstractTestBase {
                         + ") WITH ( "
                         + "'connector' = 'jdbc',"
                         + "'url'='"
-                        + containerUrl
+                        + getMetadata().getJdbcUrlWithCredentials()
                         + "',"
                         + "'table-name' = '"
                         + OUTPUT_TABLE3
@@ -349,7 +356,7 @@ class OracleTableSinkITCase extends AbstractTestBase {
                     Row.of("Kim", 42),
                     Row.of("Bob", 1)
                 },
-                containerUrl,
+                getMetadata().getJdbcUrlWithCredentials(),
                 OUTPUT_TABLE3,
                 new String[] {"NAME", "SCORE"});
     }
@@ -382,7 +389,7 @@ class OracleTableSinkITCase extends AbstractTestBase {
                         + ") WITH (\n"
                         + "  'connector' = 'jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getMetadata().getJdbcUrlWithCredentials()
                         + "',"
                         + "  'table-name' = '"
                         + USER_TABLE
@@ -414,7 +421,7 @@ class OracleTableSinkITCase extends AbstractTestBase {
                             new BigDecimal("11.3"),
                             new BigDecimal("22.6"))
                 },
-                containerUrl,
+                getMetadata().getJdbcUrlWithCredentials(),
                 USER_TABLE,
                 new String[] {"user_id", "user_name", "email", "balance", "balance2"});
     }
@@ -423,7 +430,7 @@ class OracleTableSinkITCase extends AbstractTestBase {
     void testFlushBufferWhenCheckpoint() throws Exception {
         Map<String, String> options = new HashMap<>();
         options.put("connector", "jdbc");
-        options.put("url", containerUrl);
+        options.put("url", getMetadata().getJdbcUrlWithCredentials());
         options.put("table-name", OUTPUT_TABLE5);
         options.put("sink.buffer-flush.interval", "0");
 
@@ -442,9 +449,17 @@ class OracleTableSinkITCase extends AbstractTestBase {
         sinkFunction.invoke(GenericRowData.of(1L), SinkContextUtil.forTimestamp(1));
         sinkFunction.invoke(GenericRowData.of(2L), SinkContextUtil.forTimestamp(1));
 
-        check(new Row[] {}, containerUrl, OUTPUT_TABLE5, new String[] {"id"});
+        check(
+                new Row[] {},
+                getMetadata().getJdbcUrlWithCredentials(),
+                OUTPUT_TABLE5,
+                new String[] {"id"});
         sinkFunction.snapshotState(new StateSnapshotContextSynchronousImpl(1, 1));
-        check(new Row[] {Row.of(1L), Row.of(2L)}, containerUrl, OUTPUT_TABLE5, new String[] {"id"});
+        check(
+                new Row[] {Row.of(1L), Row.of(2L)},
+                getMetadata().getJdbcUrlWithCredentials(),
+                OUTPUT_TABLE5,
+                new String[] {"id"});
         sinkFunction.close();
     }
 }

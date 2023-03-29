@@ -55,7 +55,6 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import javax.sql.XADataSource;
 import javax.transaction.xa.Xid;
 
 import java.io.Serializable;
@@ -79,18 +78,10 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
 
     JdbcXaFacadeTestHelper xaHelper;
     JdbcXaSinkTestHelper sinkHelper;
-    XADataSource xaDataSource;
 
     @BeforeEach
     void initHelpers() throws Exception {
-        xaDataSource = getDbMetadata().buildXaDataSource();
-        xaHelper =
-                new JdbcXaFacadeTestHelper(
-                        getDbMetadata().buildXaDataSource(),
-                        getDbMetadata().getUrl(),
-                        INPUT_TABLE,
-                        getDbMetadata().getUser(),
-                        getDbMetadata().getPassword());
+        xaHelper = new JdbcXaFacadeTestHelper(getMetadata(), INPUT_TABLE);
         sinkHelper = buildSinkHelper(createStateHandler());
     }
 
@@ -106,13 +97,7 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
         if (xaHelper != null) {
             xaHelper.close();
         }
-        try (JdbcXaFacadeTestHelper xa =
-                new JdbcXaFacadeTestHelper(
-                        xaDataSource,
-                        getDbMetadata().getUrl(),
-                        INPUT_TABLE,
-                        getDbMetadata().getUser(),
-                        getDbMetadata().getPassword())) {
+        try (JdbcXaFacadeTestHelper xa = new JdbcXaFacadeTestHelper(getMetadata(), INPUT_TABLE)) {
             xa.cancelAllTx();
         }
     }
@@ -122,7 +107,7 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
     }
 
     private XaFacadeImpl getXaFacade() {
-        return XaFacadeImpl.fromXaDataSource(xaDataSource);
+        return XaFacadeImpl.fromXaDataSource(getMetadata().buildXaDataSource());
     }
 
     JdbcXaSinkFunction<TestEntry> buildAndInit() throws Exception {

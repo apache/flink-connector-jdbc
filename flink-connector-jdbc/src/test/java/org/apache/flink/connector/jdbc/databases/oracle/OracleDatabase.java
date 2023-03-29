@@ -15,14 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.test;
+package org.apache.flink.connector.jdbc.databases.oracle;
 
-/**
- * Utility class for defining the image names and versions of Docker containers used during the Java
- * tests. The names/versions are centralised here in order to make testing version updates easier,
- * as well as to provide a central file to use as a key when caching testing Docker files.
- */
-public class DockerImageVersions {
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.databases.DatabaseTest;
 
-    public static final String POSTGRES = "postgres:9.6.12";
+import org.testcontainers.containers.OracleContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+/** A Oracle database for testing. */
+@Testcontainers
+public interface OracleDatabase extends DatabaseTest, OracleImages {
+
+    @Container
+    OracleContainer CONTAINER =
+            new OracleContainer(ORACLE_21)
+                    .withStartupTimeoutSeconds(240)
+                    .withConnectTimeoutSeconds(120);
+
+    @Override
+    default DatabaseMetadata getMetadata() {
+        return new OracleMetadata(CONTAINER);
+    }
 }

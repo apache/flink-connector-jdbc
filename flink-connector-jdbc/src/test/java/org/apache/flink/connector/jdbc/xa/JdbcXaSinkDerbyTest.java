@@ -17,8 +17,8 @@
 
 package org.apache.flink.connector.jdbc.xa;
 
-import org.apache.flink.connector.jdbc.DbMetadata;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 
 import org.apache.derby.jdbc.EmbeddedXADataSource;
 import org.junit.jupiter.api.Test;
@@ -85,7 +85,10 @@ class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     void testCommitUponStart() throws Exception {
         sinkHelper.emitAndSnapshot(JdbcTestFixture.CP0);
         sinkHelper.close();
-        buildAndInit(0, XaFacadeImpl.fromXaDataSource(xaDataSource), sinkHelper.getState());
+        buildAndInit(
+                0,
+                XaFacadeImpl.fromXaDataSource(getMetadata().buildXaDataSource()),
+                sinkHelper.getState());
         xaHelper.assertDbContentsEquals(JdbcTestFixture.CP0);
     }
 
@@ -155,7 +158,8 @@ class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
         sinkHelper =
                 new JdbcXaSinkTestHelper(
                         buildAndInit(
-                                Integer.MAX_VALUE, XaFacadeImpl.fromXaDataSource(xaDataSource)),
+                                Integer.MAX_VALUE,
+                                XaFacadeImpl.fromXaDataSource(getMetadata().buildXaDataSource())),
                         new TestXaSinkStateHandler());
         sinkHelper.emit(TEST_DATA[0]);
         sinkHelper.emit(TEST_DATA[0]); // duplicate
@@ -163,13 +167,11 @@ class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
     }
 
     static EmbeddedXADataSource derbyXaDs() {
-        EmbeddedXADataSource ds = new EmbeddedXADataSource();
-        ds.setDatabaseName(JdbcTestFixture.DERBY_EBOOKSHOP_DB.getDbName());
-        return ds;
+        return (EmbeddedXADataSource) JdbcTestFixture.DERBY_EBOOKSHOP_DB.buildXaDataSource();
     }
 
     @Override
-    protected DbMetadata getDbMetadata() {
+    public DatabaseMetadata getMetadata() {
         return JdbcTestFixture.DERBY_EBOOKSHOP_DB;
     }
 }

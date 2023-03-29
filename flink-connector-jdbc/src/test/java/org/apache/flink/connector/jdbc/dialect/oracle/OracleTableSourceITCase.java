@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.dialect.oracle;
 
+import org.apache.flink.connector.jdbc.databases.oracle.OracleDatabase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -44,10 +45,8 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** The Table Source ITCase for {@link OracleDialect}. */
-class OracleTableSourceITCase extends AbstractTestBase {
+class OracleTableSourceITCase extends AbstractTestBase implements OracleDatabase {
 
-    private static final OracleContainer container = new OracleContainer();
-    private static String containerUrl;
     private static final String INPUT_TABLE = "oracle_test_table";
 
     private static StreamExecutionEnvironment env;
@@ -55,10 +54,12 @@ class OracleTableSourceITCase extends AbstractTestBase {
 
     @BeforeAll
     static void beforeAll() throws ClassNotFoundException, SQLException {
-        container.start();
-        containerUrl = container.getJdbcUrl();
-        Class.forName(container.getDriverClassName());
-        try (Connection conn = DriverManager.getConnection(containerUrl);
+        Class.forName(CONTAINER.getDriverClassName());
+        try (Connection conn =
+                        DriverManager.getConnection(
+                                CONTAINER.getJdbcUrl(),
+                                CONTAINER.getUsername(),
+                                CONTAINER.getPassword());
                 Statement statement = conn.createStatement()) {
             statement.executeUpdate(
                     "CREATE TABLE "
@@ -98,12 +99,15 @@ class OracleTableSourceITCase extends AbstractTestBase {
 
     @AfterAll
     static void afterAll() throws Exception {
-        Class.forName(container.getDriverClassName());
-        try (Connection conn = DriverManager.getConnection(containerUrl);
+        Class.forName(CONTAINER.getDriverClassName());
+        try (Connection conn =
+                        DriverManager.getConnection(
+                                CONTAINER.getJdbcUrl(),
+                                CONTAINER.getUsername(),
+                                CONTAINER.getPassword());
                 Statement statement = conn.createStatement()) {
             statement.executeUpdate("DROP TABLE " + INPUT_TABLE);
         }
-        container.stop();
     }
 
     @BeforeEach
@@ -135,7 +139,7 @@ class OracleTableSourceITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getMetadata().getJdbcUrlWithCredentials()
                         + "',"
                         + "  'table-name'='"
                         + INPUT_TABLE
@@ -172,7 +176,7 @@ class OracleTableSourceITCase extends AbstractTestBase {
                         + ") WITH ("
                         + "  'connector'='jdbc',"
                         + "  'url'='"
-                        + containerUrl
+                        + getMetadata().getJdbcUrlWithCredentials()
                         + "',"
                         + "  'table-name'='"
                         + INPUT_TABLE
@@ -215,7 +219,7 @@ class OracleTableSourceITCase extends AbstractTestBase {
                         + ") WITH (\n"
                         + "  'connector'='jdbc',\n"
                         + "  'url'='"
-                        + containerUrl
+                        + getMetadata().getJdbcUrlWithCredentials()
                         + "',\n"
                         + "  'table-name'='"
                         + INPUT_TABLE

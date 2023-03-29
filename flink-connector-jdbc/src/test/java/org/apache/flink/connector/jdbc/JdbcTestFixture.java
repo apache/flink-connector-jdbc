@@ -20,7 +20,8 @@ package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
-import org.apache.flink.connector.jdbc.xa.h2.H2DbMetadata;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.databases.derby.DerbyDatabase;
 import org.apache.flink.table.types.logical.RowType;
 
 import java.io.OutputStream;
@@ -35,7 +36,7 @@ import static org.apache.flink.table.types.utils.TypeConversions.fromLegacyInfoT
 
 /** Test data and helper objects for JDBC tests. */
 @SuppressWarnings("SpellCheckingInspection")
-public class JdbcTestFixture {
+public class JdbcTestFixture implements DerbyDatabase {
     public static final JdbcTestCheckpoint CP0 = new JdbcTestCheckpoint(0, 1, 2, 3);
     public static final JdbcTestCheckpoint CP1 = new JdbcTestCheckpoint(1, 4, 5, 6);
 
@@ -73,10 +74,7 @@ public class JdbcTestFixture {
         new TestEntry(1010, ("A Teaspoon of Java 1.8"), ("Kevin Jones"), null, 1010)
     };
 
-    private static final String EBOOKSHOP_SCHEMA_NAME = "ebookshop";
-    public static final DerbyDbMetadata DERBY_EBOOKSHOP_DB =
-            new DerbyDbMetadata(EBOOKSHOP_SCHEMA_NAME);
-    public static final H2DbMetadata H2_EBOOKSHOP_DB = new H2DbMetadata(EBOOKSHOP_SCHEMA_NAME);
+    public static final DatabaseMetadata DERBY_EBOOKSHOP_DB = DerbyDatabase.startDatabase();
 
     /** TestEntry. */
     public static class TestEntry implements Serializable {
@@ -187,14 +185,8 @@ public class JdbcTestFixture {
                 public void write(int b) {}
             };
 
-    public static void initSchema(DbMetadata dbMetadata)
-            throws ClassNotFoundException, SQLException {
-        System.setProperty(
-                "derby.stream.error.field", JdbcTestFixture.class.getCanonicalName() + ".DEV_NULL");
-        Class.forName(dbMetadata.getDriverClass());
-        try (Connection conn =
-                DriverManager.getConnection(
-                        dbMetadata.getInitUrl(), dbMetadata.getUser(), dbMetadata.getPassword())) {
+    public static void initSchema(DatabaseMetadata metadata) throws SQLException {
+        try (Connection conn = metadata.getConnection()) {
             createTable(conn, JdbcTestFixture.INPUT_TABLE);
             createTable(conn, OUTPUT_TABLE);
             createTable(conn, OUTPUT_TABLE_2);
@@ -217,8 +209,8 @@ public class JdbcTestFixture {
         }
     }
 
-    static void initData(DbMetadata dbMetadata) throws SQLException {
-        try (Connection conn = DriverManager.getConnection(dbMetadata.getUrl())) {
+    static void initData(DatabaseMetadata dbMetadata) throws SQLException {
+        try (Connection conn = DriverManager.getConnection(dbMetadata.getJdbcUrl())) {
             insertDataIntoInputTable(conn);
         }
     }
@@ -233,10 +225,9 @@ public class JdbcTestFixture {
         stat.close();
     }
 
-    public static void cleanUpDatabasesStatic(DbMetadata dbMetadata)
-            throws ClassNotFoundException, SQLException {
-        Class.forName(dbMetadata.getDriverClass());
-        try (Connection conn = DriverManager.getConnection(dbMetadata.getUrl());
+    public static void cleanUpDatabasesStatic(DatabaseMetadata dbMetadata) throws SQLException {
+
+        try (Connection conn = dbMetadata.getConnection();
                 Statement stat = conn.createStatement()) {
 
             stat.executeUpdate("DROP TABLE " + INPUT_TABLE);

@@ -15,35 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc;
+package org.apache.flink.connector.jdbc.databases.oracle;
 
-import javax.sql.XADataSource;
-
-import java.io.Serializable;
-
-/** Describes a database: driver, schema and urls. */
-public interface DbMetadata extends Serializable {
-
-    String getInitUrl();
-
-    String getUrl();
-
-    default String getUser() {
-        return "";
-    }
-
-    default String getPassword() {
-        return "";
-    }
-
-    XADataSource buildXaDataSource();
-
-    String getDriverClass();
-
-    default JdbcConnectionOptions toConnectionOptions() {
-        return new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-                .withDriverName(getDriverClass())
-                .withUrl(getUrl())
-                .build();
-    }
+/** Oracle docker images. */
+public interface OracleImages {
+    String ORACLE_18 = "gvenzl/oracle-xe:18.4.0-slim";
+    String ORACLE_21 = "gvenzl/oracle-xe:21.3.0-slim-faststart";
 }

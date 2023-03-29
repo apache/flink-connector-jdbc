@@ -20,7 +20,6 @@ package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connector.jdbc.JdbcTestFixture;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -52,7 +51,6 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -70,7 +68,7 @@ import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSin
 /** The ITCase for {@link JdbcDynamicTableSink}. */
 class JdbcDynamicTableSinkITCase extends AbstractTestBase {
 
-    public static final String DB_URL = "jdbc:derby:memory:upsert";
+    public static final String DB_URL = DERBY_EBOOKSHOP_DB.getJdbcUrl();
     public static final String OUTPUT_TABLE1 = "dynamicSinkForUpsert";
     public static final String OUTPUT_TABLE2 = "dynamicSinkForAppend";
     public static final String OUTPUT_TABLE3 = "dynamicSinkForBatch";
@@ -79,12 +77,8 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
     public static final String USER_TABLE = "USER_TABLE";
 
     @BeforeAll
-    static void beforeAll() throws ClassNotFoundException, SQLException {
-        System.setProperty(
-                "derby.stream.error.field", JdbcTestFixture.class.getCanonicalName() + ".DEV_NULL");
-
-        Class.forName(DERBY_EBOOKSHOP_DB.getDriverClass());
-        try (Connection conn = DriverManager.getConnection(DB_URL + ";create=true");
+    static void beforeAll() throws SQLException {
+        try (Connection conn = DERBY_EBOOKSHOP_DB.getConnection();
                 Statement stat = conn.createStatement()) {
             stat.executeUpdate(
                     "CREATE TABLE "
@@ -132,8 +126,7 @@ class JdbcDynamicTableSinkITCase extends AbstractTestBase {
     @AfterAll
     static void afterAll() throws Exception {
         TestValuesTableFactory.clearAllData();
-        Class.forName(DERBY_EBOOKSHOP_DB.getDriverClass());
-        try (Connection conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = DERBY_EBOOKSHOP_DB.getConnection();
                 Statement stat = conn.createStatement()) {
             stat.execute("DROP TABLE " + OUTPUT_TABLE1);
             stat.execute("DROP TABLE " + OUTPUT_TABLE2);

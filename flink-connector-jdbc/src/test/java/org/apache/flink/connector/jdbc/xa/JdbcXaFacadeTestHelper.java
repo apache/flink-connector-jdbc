@@ -18,11 +18,9 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.connector.jdbc.JdbcTestCheckpoint;
-
-import javax.sql.XADataSource;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -37,20 +35,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class JdbcXaFacadeTestHelper implements AutoCloseable {
     private final String table;
-    private final String dbUrl;
-    private final String user;
-    private final String pass;
+    private final DatabaseMetadata metadata;
     private final XaFacade xaFacade;
 
-    JdbcXaFacadeTestHelper(
-            XADataSource xaDataSource, String dbUrl, String table, String user, String pass)
-            throws Exception {
-        this.dbUrl = dbUrl;
+    JdbcXaFacadeTestHelper(DatabaseMetadata metadata, String table) throws Exception {
+        this.metadata = metadata;
         this.table = table;
-        this.xaFacade = XaFacadeImpl.fromXaDataSource(xaDataSource);
+        this.xaFacade = XaFacadeImpl.fromXaDataSource(metadata.buildXaDataSource());
         this.xaFacade.open();
-        this.user = user;
-        this.pass = pass;
     }
 
     void assertPreparedTxCountEquals(int expected) {
@@ -72,20 +64,19 @@ class JdbcXaFacadeTestHelper implements AutoCloseable {
     }
 
     private List<Integer> getInsertedIds() throws SQLException {
-        return getInsertedIds(dbUrl, user, pass, table);
+        return getInsertedIds(metadata, table);
     }
 
-    static List<Integer> getInsertedIds(String dbUrl, String user, String pass, String table)
+    static List<Integer> getInsertedIds(DatabaseMetadata metadata, String table)
             throws SQLException {
         List<Integer> dbContents = new ArrayList<>();
-        try (Connection connection = DriverManager.getConnection(dbUrl, user, pass)) {
+        try (Connection connection = metadata.getConnection()) {
             connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             connection.setReadOnly(true);
-            try (Statement st = connection.createStatement()) {
-                try (ResultSet rs = st.executeQuery("select id from " + table)) {
-                    while (rs.next()) {
-                        dbContents.add(rs.getInt(1));
-                    }
+            try (Statement st = connection.createStatement();
+                    ResultSet rs = st.executeQuery("select id from " + table)) {
+                while (rs.next()) {
+                    dbContents.add(rs.getInt(1));
                 }
             }
         }
@@ -93,14 +84,13 @@ class JdbcXaFacadeTestHelper implements AutoCloseable {
     }
 
     int countInDb() throws SQLException {
-        try (Connection connection = DriverManager.getConnection(dbUrl)) {
+        try (Connection connection = metadata.getConnection()) {
             connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
             connection.setReadOnly(true);
-            try (Statement st = connection.createStatement()) {
-                try (ResultSet rs = st.executeQuery("select count(1) from " + table)) {
-                    rs.next();
-                    return rs.getInt(1);
-                }
+            try (Statement st = connection.createStatement();
+                    ResultSet rs = st.executeQuery("select count(1) from " + table)) {
+                rs.next();
+                return rs.getInt(1);
             }
         }
     }

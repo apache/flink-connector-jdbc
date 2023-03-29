@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.xa.h2;
+package org.apache.flink.connector.jdbc.databases.h2.xa;
 
 import org.apache.flink.util.function.ThrowingRunnable;
 
