@@ -18,20 +18,16 @@
 
 package org.apache.flink.connector.jdbc.internal.converter;
 
-import org.apache.flink.table.data.GenericArrayData;
-import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
 
 import io.crate.shade.org.postgresql.jdbc.PgArray;
 
-import java.lang.reflect.Array;
 
 /**
  * Runtime converter that responsible to convert between JDBC object and Flink internal object for
  * CrateDB.
  */
-public class CrateDBRowConverter extends PostgresRowConverter {
+public class CrateDBRowConverter extends AbstractPostgresCompatibleRowConverter<PgArray> {
 
     private static final long serialVersionUID = 1L;
 
@@ -42,24 +38,5 @@ public class CrateDBRowConverter extends PostgresRowConverter {
 
     public CrateDBRowConverter(RowType rowType) {
         super(rowType);
-    }
-
-    @Override
-    protected JdbcDeserializationConverter createPostgresArrayConverter(ArrayType arrayType) {
-        // Since PGJDBC 42.2.15 (https://github.com/pgjdbc/pgjdbc/pull/1194) bytea[] is wrapped in
-        // primitive byte arrays
-        final Class<?> elementClass =
-                LogicalTypeUtils.toInternalConversionClass(arrayType.getElementType());
-        final JdbcDeserializationConverter elementConverter =
-                createNullableInternalConverter(arrayType.getElementType());
-        return val -> {
-            PgArray pgArray = (PgArray) val;
-            Object[] in = (Object[]) pgArray.getArray();
-            final Object[] array = (Object[]) Array.newInstance(elementClass, in.length);
-            for (int i = 0; i < in.length; i++) {
-                array[i] = elementConverter.deserialize(in[i]);
-            }
-            return new GenericArrayData(array);
-        };
     }
 }
