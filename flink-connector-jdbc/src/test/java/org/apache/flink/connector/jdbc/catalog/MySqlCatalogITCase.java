@@ -19,13 +19,16 @@
 package org.apache.flink.connector.jdbc.catalog;
 
 import org.apache.flink.connector.jdbc.databases.mysql.MySqlDatabase;
+import org.apache.flink.test.junit5.MiniClusterExtension;
 
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** E2E test for {@link MySqlCatalog}. */
 @Testcontainers
+@ExtendWith(MiniClusterExtension.class)
 public class MySqlCatalogITCase extends MySqlCatalogTestBase {
 
     @Container
