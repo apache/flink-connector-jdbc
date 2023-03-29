@@ -49,41 +49,41 @@ public class PostgresTypeMapper implements JdbcDialectTypeMapper {
     // float <=> float8
     // boolean <=> bool
     // decimal <=> numeric
-    private static final String PG_SMALLSERIAL = "smallserial";
-    private static final String PG_SERIAL = "serial";
-    private static final String PG_BIGSERIAL = "bigserial";
-    private static final String PG_BYTEA = "bytea";
-    private static final String PG_BYTEA_ARRAY = "_bytea";
-    private static final String PG_SMALLINT = "int2";
-    private static final String PG_SMALLINT_ARRAY = "_int2";
-    private static final String PG_INTEGER = "int4";
-    private static final String PG_INTEGER_ARRAY = "_int4";
-    private static final String PG_BIGINT = "int8";
-    private static final String PG_BIGINT_ARRAY = "_int8";
-    private static final String PG_REAL = "float4";
-    private static final String PG_REAL_ARRAY = "_float4";
-    private static final String PG_DOUBLE_PRECISION = "float8";
-    private static final String PG_DOUBLE_PRECISION_ARRAY = "_float8";
-    private static final String PG_NUMERIC = "numeric";
-    private static final String PG_NUMERIC_ARRAY = "_numeric";
-    private static final String PG_BOOLEAN = "bool";
-    private static final String PG_BOOLEAN_ARRAY = "_bool";
-    private static final String PG_TIMESTAMP = "timestamp";
-    private static final String PG_TIMESTAMP_ARRAY = "_timestamp";
-    private static final String PG_TIMESTAMPTZ = "timestamptz";
-    private static final String PG_TIMESTAMPTZ_ARRAY = "_timestamptz";
-    private static final String PG_DATE = "date";
-    private static final String PG_DATE_ARRAY = "_date";
-    private static final String PG_TIME = "time";
-    private static final String PG_TIME_ARRAY = "_time";
-    private static final String PG_TEXT = "text";
-    private static final String PG_TEXT_ARRAY = "_text";
-    private static final String PG_CHAR = "bpchar";
-    private static final String PG_CHAR_ARRAY = "_bpchar";
-    private static final String PG_CHARACTER = "character";
-    private static final String PG_CHARACTER_ARRAY = "_character";
-    private static final String PG_CHARACTER_VARYING = "varchar";
-    private static final String PG_CHARACTER_VARYING_ARRAY = "_varchar";
+    protected static final String PG_SMALLSERIAL = "smallserial";
+    protected static final String PG_SERIAL = "serial";
+    protected static final String PG_BIGSERIAL = "bigserial";
+    protected static final String PG_BYTEA = "bytea";
+    protected static final String PG_BYTEA_ARRAY = "_bytea";
+    protected static final String PG_SMALLINT = "int2";
+    protected static final String PG_SMALLINT_ARRAY = "_int2";
+    protected static final String PG_INTEGER = "int4";
+    protected static final String PG_INTEGER_ARRAY = "_int4";
+    protected static final String PG_BIGINT = "int8";
+    protected static final String PG_BIGINT_ARRAY = "_int8";
+    protected static final String PG_REAL = "float4";
+    protected static final String PG_REAL_ARRAY = "_float4";
+    protected static final String PG_DOUBLE_PRECISION = "float8";
+    protected static final String PG_DOUBLE_PRECISION_ARRAY = "_float8";
+    protected static final String PG_NUMERIC = "numeric";
+    protected static final String PG_NUMERIC_ARRAY = "_numeric";
+    protected static final String PG_BOOLEAN = "bool";
+    protected static final String PG_BOOLEAN_ARRAY = "_bool";
+    protected static final String PG_TIMESTAMP = "timestamp";
+    protected static final String PG_TIMESTAMP_ARRAY = "_timestamp";
+    protected static final String PG_TIMESTAMPTZ = "timestamptz";
+    protected static final String PG_TIMESTAMPTZ_ARRAY = "_timestamptz";
+    protected static final String PG_DATE = "date";
+    protected static final String PG_DATE_ARRAY = "_date";
+    protected static final String PG_TIME = "time";
+    protected static final String PG_TIME_ARRAY = "_time";
+    protected static final String PG_TEXT = "text";
+    protected static final String PG_TEXT_ARRAY = "_text";
+    protected static final String PG_CHAR = "bpchar";
+    protected static final String PG_CHAR_ARRAY = "_bpchar";
+    protected static final String PG_CHARACTER = "character";
+    protected static final String PG_CHARACTER_ARRAY = "_character";
+    protected static final String PG_CHARACTER_VARYING = "varchar";
+    protected static final String PG_CHARACTER_VARYING_ARRAY = "_varchar";
 
     @Override
     public DataType mapping(ObjectPath tablePath, ResultSetMetaData metadata, int colIndex)
@@ -93,6 +93,15 @@ public class PostgresTypeMapper implements JdbcDialectTypeMapper {
         int precision = metadata.getPrecision(colIndex);
         int scale = metadata.getScale(colIndex);
 
+        DataType dataType = getMapping(pgType, precision, scale);
+        if (dataType == null) {
+            throw new UnsupportedOperationException(
+                    String.format("Doesn't support Postgres type '%s' yet", pgType));
+        }
+        return dataType;
+    }
+
+    protected DataType getMapping(String pgType, int precision, int scale) {
         switch (pgType) {
             case PG_BOOLEAN:
                 return DataTypes.BOOLEAN();
@@ -128,14 +137,14 @@ public class PostgresTypeMapper implements JdbcDialectTypeMapper {
             case PG_NUMERIC:
                 // see SPARK-26538: handle numeric without explicit precision and scale.
                 if (precision > 0) {
-                    return DataTypes.DECIMAL(precision, metadata.getScale(colIndex));
+                    return DataTypes.DECIMAL(precision, scale);
                 }
                 return DataTypes.DECIMAL(DecimalType.MAX_PRECISION, 18);
             case PG_NUMERIC_ARRAY:
                 // see SPARK-26538: handle numeric without explicit precision and scale.
                 if (precision > 0) {
                     return DataTypes.ARRAY(
-                            DataTypes.DECIMAL(precision, metadata.getScale(colIndex)));
+                            DataTypes.DECIMAL(precision, scale));
                 }
                 return DataTypes.ARRAY(DataTypes.DECIMAL(DecimalType.MAX_PRECISION, 18));
             case PG_CHAR:
@@ -169,8 +178,7 @@ public class PostgresTypeMapper implements JdbcDialectTypeMapper {
             case PG_DATE_ARRAY:
                 return DataTypes.ARRAY(DataTypes.DATE());
             default:
-                throw new UnsupportedOperationException(
-                        String.format("Doesn't support Postgres type '%s' yet", pgType));
+                return null;
         }
     }
 }

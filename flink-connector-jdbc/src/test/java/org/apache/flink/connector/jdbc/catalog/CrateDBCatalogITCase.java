@@ -109,7 +109,7 @@ class CrateDBCatalogITCase extends CrateDBCatalogTestBase {
                                         + "from `%s` group by `int`, `short`",
                                 TABLE_TARGET_PRIMITIVE, TABLE_PRIMITIVE_TYPE))
                 .await();
-
+        executeSQL(String.format("REFRESH TABLE doc.%s", TABLE_TARGET_PRIMITIVE));
         List<Row> results =
                 CollectionUtil.iteratorToList(
                         tEnv.sqlQuery(String.format("select * from `%s`", TABLE_TARGET_PRIMITIVE))

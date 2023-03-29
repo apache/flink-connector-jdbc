@@ -18,29 +18,17 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
-import org.apache.flink.util.StringUtils;
-
-import java.util.Objects;
-
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /**
  * Table path of CrateDB in Flink. Can be of formats "table_name" or "schema_name.table_name". When
  * it's "table_name", the schema name defaults to "doc".
  */
-public class CrateDBTablePath {
+public class CrateDBTablePath extends PostgresTablePath {
 
     private static final String DEFAULT_CRATE_SCHEMA_NAME = "doc";
-
-    private final String crateDBSchemaName;
-    private final String crateDBTableName;
-
-    public CrateDBTablePath(String crateDBSchemaName, String crateDBTableName) {
-        checkArgument(!StringUtils.isNullOrWhitespaceOnly(crateDBSchemaName));
-        checkArgument(!StringUtils.isNullOrWhitespaceOnly(crateDBTableName));
-
-        this.crateDBSchemaName = crateDBSchemaName;
-        this.crateDBTableName = crateDBTableName;
+    public CrateDBTablePath(String pgSchemaName, String pgTableName) {
+        super(pgSchemaName, pgTableName);
     }
 
     public static CrateDBTablePath fromFlinkTableName(String flinkTableName) {
@@ -48,55 +36,22 @@ public class CrateDBTablePath {
             String[] path = flinkTableName.split("\\.");
 
             checkArgument(
-                    path != null && path.length == 2,
+                    path.length == 2,
                     String.format(
                             "Table name '%s' is not valid. The parsed length is %d",
                             flinkTableName, path.length));
 
             return new CrateDBTablePath(path[0], path[1]);
         } else {
-            return new CrateDBTablePath(DEFAULT_CRATE_SCHEMA_NAME, flinkTableName);
+            return new CrateDBTablePath(getDefaultSchemaName(), flinkTableName);
         }
     }
 
     public static String toFlinkTableName(String schema, String table) {
-        return new CrateDBTablePath(schema, table).getFullPath();
+        return new PostgresTablePath(schema, table).getFullPath();
     }
 
-    public String getFullPath() {
-        return String.format("%s.%s", crateDBSchemaName, crateDBTableName);
-    }
-
-    public String getCrateDBTableName() {
-        return crateDBTableName;
-    }
-
-    public String getCrateDBSchemaName() {
-        return crateDBSchemaName;
-    }
-
-    @Override
-    public String toString() {
-        return getFullPath();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        CrateDBTablePath that = (CrateDBTablePath) o;
-        return Objects.equals(crateDBSchemaName, that.crateDBSchemaName)
-                && Objects.equals(crateDBTableName, that.crateDBTableName);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(crateDBSchemaName, crateDBTableName);
+    protected static String getDefaultSchemaName() {
+        return DEFAULT_CRATE_SCHEMA_NAME;
     }
 }

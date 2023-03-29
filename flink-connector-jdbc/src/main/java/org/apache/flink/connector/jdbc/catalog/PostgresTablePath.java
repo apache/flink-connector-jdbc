@@ -36,8 +36,14 @@ public class PostgresTablePath {
     private final String pgTableName;
 
     public PostgresTablePath(String pgSchemaName, String pgTableName) {
-        checkArgument(!StringUtils.isNullOrWhitespaceOnly(pgSchemaName));
-        checkArgument(!StringUtils.isNullOrWhitespaceOnly(pgTableName));
+        checkArgument(!StringUtils.isNullOrWhitespaceOnly(pgSchemaName),
+                String.format(
+                        "Schema name '%s' is not valid. Null or empty is not allowed",
+                        pgSchemaName));
+        checkArgument(!StringUtils.isNullOrWhitespaceOnly(pgTableName),
+                String.format(
+                        "Table name '%s' is not valid. Null or empty is not allowed",
+                        pgTableName));
 
         this.pgSchemaName = pgSchemaName;
         this.pgTableName = pgTableName;
@@ -55,7 +61,7 @@ public class PostgresTablePath {
 
             return new PostgresTablePath(path[0], path[1]);
         } else {
-            return new PostgresTablePath(DEFAULT_POSTGRES_SCHEMA_NAME, flinkTableName);
+            return new PostgresTablePath(getDefaultSchemaName(), flinkTableName);
         }
     }
 
@@ -73,6 +79,10 @@ public class PostgresTablePath {
 
     public String getPgSchemaName() {
         return pgSchemaName;
+    }
+
+    protected static String getDefaultSchemaName() {
+        return DEFAULT_POSTGRES_SCHEMA_NAME;
     }
 
     @Override

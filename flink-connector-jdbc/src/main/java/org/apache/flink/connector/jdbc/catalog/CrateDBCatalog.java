@@ -19,31 +19,23 @@
 package org.apache.flink.connector.jdbc.catalog;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeMapper;
 import org.apache.flink.connector.jdbc.dialect.cratedb.CrateDBTypeMapper;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
-import org.apache.flink.table.types.DataType;
-import org.apache.flink.util.Preconditions;
 
 import org.apache.flink.shaded.guava30.com.google.common.collect.ImmutableList;
 
-import org.apache.commons.compress.utils.Lists;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /** Catalog for CrateDB. */
 @Internal
-public class CrateDBCatalog extends AbstractJdbcCatalog {
+public class CrateDBCatalog extends PostgresCatalog {
 
     private static final Logger LOG = LoggerFactory.getLogger(CrateDBCatalog.class);
 
@@ -58,8 +50,6 @@ public class CrateDBCatalog extends AbstractJdbcCatalog {
                 }
             };
 
-    private final JdbcDialectTypeMapper dialectTypeMapper;
-
     protected CrateDBCatalog(
             ClassLoader userClassLoader,
             String catalogName,
@@ -67,8 +57,7 @@ public class CrateDBCatalog extends AbstractJdbcCatalog {
             String username,
             String pwd,
             String baseUrl) {
-        super(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
-        this.dialectTypeMapper = new CrateDBTypeMapper();
+        super(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl, new CrateDBTypeMapper());
     }
 
     // ------ databases ------
@@ -78,57 +67,24 @@ public class CrateDBCatalog extends AbstractJdbcCatalog {
         return ImmutableList.of(DEFAULT_DATABASE);
     }
 
+    // ------ schemas ------
+
+    protected Set<String> getBuiltinSchemas() {
+        return builtinSchemas;
+    }
+
     // ------ tables ------
 
     @Override
-    public List<String> listTables(String databaseName)
-            throws DatabaseNotExistException, CatalogException {
-
-        Preconditions.checkState(
-                StringUtils.isNotBlank(databaseName), "Database name must not be blank.");
-        if (!databaseExists(databaseName)) {
-            throw new DatabaseNotExistException(getName(), databaseName);
-        }
-
-        List<String> tables = Lists.newArrayList();
-
-        // get all schemas
-        List<String> schemas =
-                extractColumnValuesBySQL(
-                        baseUrl + databaseName,
-                        "SELECT schema_name FROM information_schema.schemata",
-                        1,
-                        schema -> !builtinSchemas.contains(schema));
-
-        // get all tables
-        for (String schema : schemas) {
-            // position 1 is database name, position 2 is schema name, position 3 is table name
-            List<String> pureTables =
-                    extractColumnValuesBySQL(
-                            baseUrl + databaseName,
-                            "SELECT table_name FROM information_schema.tables "
-                                    + "WHERE table_schema = ? "
-                                    + "ORDER BY table_type, table_name",
-                            1,
-                            null,
-                            schema);
-            tables.addAll(
-                    pureTables.stream()
-                            .map(pureTable -> schema + "." + pureTable)
-                            .collect(Collectors.toList()));
-        }
-        return tables;
-    }
-
-    /**
-     * Converts Postgres type to Flink {@link DataType}.
-     *
-     * @see org.postgresql.jdbc.TypeInfoCache
-     */
-    @Override
-    protected DataType fromJDBCType(ObjectPath tablePath, ResultSetMetaData metadata, int colIndex)
-            throws SQLException {
-        return dialectTypeMapper.mapping(tablePath, metadata, colIndex);
+    protected List<String> getPureTables(String databaseName, String schema) {
+        return extractColumnValuesBySQL(
+                baseUrl + databaseName,
+                "SELECT table_name FROM information_schema.tables "
+                        + "WHERE table_schema = ? "
+                        + "ORDER BY table_type, table_name",
+                1,
+                null,
+                schema);
     }
 
     @Override
@@ -158,13 +114,12 @@ public class CrateDBCatalog extends AbstractJdbcCatalog {
 
     @Override
     protected String getTableName(ObjectPath tablePath) {
-        return CrateDBTablePath.fromFlinkTableName(tablePath.getObjectName()).getCrateDBTableName();
+        return CrateDBTablePath.fromFlinkTableName(tablePath.getObjectName()).getPgTableName();
     }
 
     @Override
     protected String getSchemaName(ObjectPath tablePath) {
-        return CrateDBTablePath.fromFlinkTableName(tablePath.getObjectName())
-                .getCrateDBSchemaName();
+        return CrateDBTablePath.fromFlinkTableName(tablePath.getObjectName()).getPgSchemaName();
     }
 
     @Override
