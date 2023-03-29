@@ -18,30 +18,27 @@
 
 package org.apache.flink.connector.jdbc.dialect.cratedb;
 
-import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
-import org.apache.flink.connector.jdbc.dialect.psql.PostgresDialect;
+import org.apache.flink.connector.jdbc.dialect.AbstractPostgresCompatibleDialect;
 import org.apache.flink.connector.jdbc.internal.converter.CrateDBRowConverter;
 import org.apache.flink.table.types.logical.RowType;
 
-import java.util.Optional;
-
 /** JDBC dialect for CrateDB. */
-public class CrateDBDialect extends PostgresDialect {
+public class CrateDBDialect extends AbstractPostgresCompatibleDialect<CrateDBRowConverter> {
 
     private static final long serialVersionUID = 1L;
 
     @Override
-    public JdbcRowConverter getRowConverter(RowType rowType) {
+    protected CrateDBRowConverter rowConverter(RowType rowType) {
         return new CrateDBRowConverter(rowType);
     }
 
     @Override
-    public Optional<String> defaultDriverName() {
-        return Optional.of("io.crate.client.jdbc.CrateDriver");
+    protected String defaultDriver() {
+        return "io.crate.client.jdbc.CrateDriver";
     }
 
     @Override
-    public String dialectName() {
+    protected String dialect() {
         return "CrateDB";
     }
 }

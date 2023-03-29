@@ -30,16 +30,18 @@ import java.lang.reflect.Array;
 
 /**
  * Runtime converter that responsible to convert between JDBC object and Flink internal object for
- * PostgreSQL.
+ * PostgreSQL compatible databases.
  */
-public class AbstractPostgresCompatibleRowConverter<T extends java.sql.Array> extends AbstractJdbcRowConverter {
+public abstract class AbstractPostgresCompatibleRowConverter<T extends java.sql.Array> extends AbstractJdbcRowConverter {
 
     private static final long serialVersionUID = 1L;
 
     @Override
     public String converterName() {
-        return "PostgreSQL";
+        return name();
     }
+
+    protected abstract String name();
 
     public AbstractPostgresCompatibleRowConverter(RowType rowType) {
         super(rowType);

@@ -32,7 +32,7 @@ public class CrateDBRowConverter extends AbstractPostgresCompatibleRowConverter<
     private static final long serialVersionUID = 1L;
 
     @Override
-    public String converterName() {
+    protected String name() {
         return "CrateDB";
     }
 
