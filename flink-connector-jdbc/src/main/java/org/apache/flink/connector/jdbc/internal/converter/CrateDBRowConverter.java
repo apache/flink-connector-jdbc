@@ -22,7 +22,6 @@ import org.apache.flink.table.types.logical.RowType;
 
 import io.crate.shade.org.postgresql.jdbc.PgArray;
 
-
 /**
  * Runtime converter that responsible to convert between JDBC object and Flink internal object for
  * CrateDB.

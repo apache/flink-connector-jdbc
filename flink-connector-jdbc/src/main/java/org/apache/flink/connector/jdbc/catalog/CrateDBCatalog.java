@@ -57,7 +57,14 @@ public class CrateDBCatalog extends PostgresCatalog {
             String username,
             String pwd,
             String baseUrl) {
-        super(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl, new CrateDBTypeMapper());
+        super(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                username,
+                pwd,
+                baseUrl,
+                new CrateDBTypeMapper());
     }
 
     // ------ databases ------

@@ -77,7 +77,14 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
             String username,
             String pwd,
             String baseUrl) {
-        this(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl, new PostgresTypeMapper());
+        this(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                username,
+                pwd,
+                baseUrl,
+                new PostgresTypeMapper());
     }
 
     protected PostgresCatalog(
@@ -115,14 +122,14 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
     protected List<String> getPureTables(String databaseName, String schema) {
         // position 1 is database name, position 2 is schema name, position 3 is table name
         return extractColumnValuesBySQL(
-                        baseUrl + databaseName,
-                        "SELECT * FROM information_schema.tables "
-                                + "WHERE table_type = 'BASE TABLE' "
-                                + "AND table_schema = ? "
-                                + "ORDER BY table_type, table_name;",
-                        3,
-                        null,
-                        schema);
+                baseUrl + databaseName,
+                "SELECT * FROM information_schema.tables "
+                        + "WHERE table_type = 'BASE TABLE' "
+                        + "AND table_schema = ? "
+                        + "ORDER BY table_type, table_name;",
+                3,
+                null,
+                schema);
     }
 
     @Override

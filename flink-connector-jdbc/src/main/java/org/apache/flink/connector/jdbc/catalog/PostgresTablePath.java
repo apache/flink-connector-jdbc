@@ -36,10 +36,12 @@ public class PostgresTablePath {
     private final String pgTableName;
 
     public PostgresTablePath(String pgSchemaName, String pgTableName) {
-        checkArgument(!StringUtils.isNullOrWhitespaceOnly(pgSchemaName),
-                        "Schema name is not valid. Null or empty is not allowed");
-        checkArgument(!StringUtils.isNullOrWhitespaceOnly(pgTableName),
-                        "Table name is not valid. Null or empty is not allowed");
+        checkArgument(
+                !StringUtils.isNullOrWhitespaceOnly(pgSchemaName),
+                "Schema name is not valid. Null or empty is not allowed");
+        checkArgument(
+                !StringUtils.isNullOrWhitespaceOnly(pgTableName),
+                "Table name is not valid. Null or empty is not allowed");
 
         this.pgSchemaName = pgSchemaName;
         this.pgTableName = pgTableName;

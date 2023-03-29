@@ -44,7 +44,8 @@ class PostgresTablePathTest {
                 .isEqualTo(new PostgresTablePath("public", "my_table"));
         assertThatThrownBy(() -> PostgresTablePath.fromFlinkTableName("postgres.public.my_table"))
                 .isExactlyInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Table name 'postgres.public.my_table' is not valid. The parsed length is 3");
+                .hasMessage(
+                        "Table name 'postgres.public.my_table' is not valid. The parsed length is 3");
         assertThatThrownBy(() -> PostgresTablePath.fromFlinkTableName(""))
                 .isExactlyInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Table name is not valid. Null or empty is not allowed");

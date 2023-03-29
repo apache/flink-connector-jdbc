@@ -27,6 +27,7 @@ import static org.apache.flink.util.Preconditions.checkArgument;
 public class CrateDBTablePath extends PostgresTablePath {
 
     private static final String DEFAULT_CRATE_SCHEMA_NAME = "doc";
+
     public CrateDBTablePath(String pgSchemaName, String pgTableName) {
         super(pgSchemaName, pgTableName);
     }

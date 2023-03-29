@@ -143,8 +143,7 @@ public class PostgresTypeMapper implements JdbcDialectTypeMapper {
             case PG_NUMERIC_ARRAY:
                 // see SPARK-26538: handle numeric without explicit precision and scale.
                 if (precision > 0) {
-                    return DataTypes.ARRAY(
-                            DataTypes.DECIMAL(precision, scale));
+                    return DataTypes.ARRAY(DataTypes.DECIMAL(precision, scale));
                 }
                 return DataTypes.ARRAY(DataTypes.DECIMAL(DecimalType.MAX_PRECISION, 18));
             case PG_CHAR:
