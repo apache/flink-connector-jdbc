@@ -20,13 +20,11 @@ package org.apache.flink.connector.jdbc.catalog;
 
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.TableEnvironment;
-import org.apache.flink.test.junit5.MiniClusterExtension;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CollectionUtil;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 
@@ -35,7 +33,6 @@ import static org.apache.flink.table.api.config.ExecutionConfigOptions.TABLE_EXE
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** E2E test for {@link CrateDBCatalog}. */
-@ExtendWith(MiniClusterExtension.class)
 class CrateDBCatalogITCase extends CrateDBCatalogTestBase {
 
     private TableEnvironment tEnv;
