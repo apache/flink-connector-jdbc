@@ -21,14 +21,10 @@ package org.apache.flink.connector.jdbc.dialect.cratedb;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.dialect.psql.PostgresTypeMapper;
 import org.apache.flink.table.api.DataTypes;
-import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.types.DataType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 
 /** CrateDBTypeMapper util class. */
 @Internal
@@ -42,24 +38,9 @@ public class CrateDBTypeMapper extends PostgresTypeMapper {
     private static final String PG_STRING_ARRAY = "_string";
 
     @Override
-    public DataType mapping(ObjectPath tablePath, ResultSetMetaData metadata, int colIndex)
-            throws SQLException {
-        String pgType = metadata.getColumnTypeName(colIndex);
-
-        int precision = metadata.getPrecision(colIndex);
-        int scale = metadata.getScale(colIndex);
-
-        DataType dataType = getMapping(pgType, precision, scale);
-        if (dataType == null) {
-            throw new UnsupportedOperationException(
-                    String.format("Doesn't support CrateDB type '%s' yet", pgType));
-        }
-        return dataType;
-    }
-
-    @Override
     protected DataType getMapping(String pgType, int precision, int scale) {
         switch (pgType) {
+            case PG_SERIAL:
             case PG_BIGSERIAL:
                 return null;
             case PG_STRING:
@@ -69,5 +50,10 @@ public class CrateDBTypeMapper extends PostgresTypeMapper {
             default:
                 return super.getMapping(pgType, precision, scale);
         }
+    }
+
+    @Override
+    protected String getDBType() {
+        return "CrateDB";
     }
 }

@@ -34,7 +34,7 @@ class CrateDBTablePathTest {
                 .isEqualTo("crate.my_schema.my_table");
         assertThatThrownBy(() -> CrateDBTablePath.toFlinkTableName("", "my_table"))
                 .isExactlyInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Schema name '' is not valid. Null or empty is not allowed");
+                .hasMessage("Schema name is not valid. Null or empty is not allowed");
     }
 
     @Test
@@ -48,6 +48,6 @@ class CrateDBTablePathTest {
                 .hasMessage("Table name 'crate.doc.my_table' is not valid. The parsed length is 3");
         assertThatThrownBy(() -> CrateDBTablePath.fromFlinkTableName(""))
                 .isExactlyInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Table name '' is not valid. Null or empty is not allowed");
+                .hasMessage("Table name is not valid. Null or empty is not allowed");
     }
 }
