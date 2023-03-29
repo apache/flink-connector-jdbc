@@ -36,14 +36,7 @@ public abstract class AbstractPostgresCompatibleRowConverter<T extends java.sql.
 
     private static final long serialVersionUID = 1L;
 
-    @Override
-    public String converterName() {
-        return name();
-    }
-
-    protected abstract String name();
-
-    public AbstractPostgresCompatibleRowConverter(RowType rowType) {
+    protected AbstractPostgresCompatibleRowConverter(RowType rowType) {
         super(rowType);
     }
 

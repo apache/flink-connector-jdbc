@@ -18,9 +18,7 @@
 
 package org.apache.flink.connector.jdbc.dialect;
 
-import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
-import org.apache.flink.table.types.logical.RowType;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -29,7 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /** JDBC dialect for PostgreSQL compatible databases. */
-public abstract class AbstractPostgresCompatibleDialect<C extends JdbcRowConverter> extends AbstractDialect {
+public abstract class AbstractPostgresCompatibleDialect extends AbstractDialect {
 
     private static final long serialVersionUID = 1L;
 
@@ -44,18 +42,8 @@ public abstract class AbstractPostgresCompatibleDialect<C extends JdbcRowConvert
     private static final int MIN_DECIMAL_PRECISION = 1;
 
     @Override
-    public C getRowConverter(RowType rowType) {
-        return rowConverter(rowType);
-    }
-
-    @Override
     public String getLimitClause(long limit) {
         return "LIMIT " + limit;
-    }
-
-    @Override
-    public Optional<String> defaultDriverName() {
-        return Optional.of(defaultDriver());
     }
 
     /** Postgres upsert query. It use ON CONFLICT ... DO UPDATE SET.. to replace into Postgres. */
@@ -82,11 +70,6 @@ public abstract class AbstractPostgresCompatibleDialect<C extends JdbcRowConvert
     @Override
     public String quoteIdentifier(String identifier) {
         return identifier;
-    }
-
-    @Override
-    public String dialectName() {
-        return dialect();
     }
 
     @Override
@@ -126,10 +109,4 @@ public abstract class AbstractPostgresCompatibleDialect<C extends JdbcRowConvert
                 LogicalTypeRoot.TIMESTAMP_WITH_LOCAL_TIME_ZONE,
                 LogicalTypeRoot.ARRAY);
     }
-
-    protected abstract C rowConverter(RowType rowType);
-
-    protected abstract  String defaultDriver();
-
-    protected abstract String dialect();
 }

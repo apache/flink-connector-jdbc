@@ -22,23 +22,25 @@ import org.apache.flink.connector.jdbc.dialect.AbstractPostgresCompatibleDialect
 import org.apache.flink.connector.jdbc.internal.converter.PostgresRowConverter;
 import org.apache.flink.table.types.logical.RowType;
 
+import java.util.Optional;
+
 /** JDBC dialect for PostgreSQL. */
-public class PostgresDialect extends AbstractPostgresCompatibleDialect<PostgresRowConverter> {
+public class PostgresDialect extends AbstractPostgresCompatibleDialect {
 
     private static final long serialVersionUID = 1L;
 
     @Override
-    protected PostgresRowConverter rowConverter(RowType rowType) {
+    public PostgresRowConverter getRowConverter(RowType rowType) {
         return new PostgresRowConverter(rowType);
     }
 
     @Override
-    protected String defaultDriver() {
-        return "org.postgresql.Driver";
+    public Optional<String> defaultDriverName() {
+        return Optional.of("org.postgresql.Driver");
     }
 
     @Override
-    protected String dialect() {
+    public String dialectName() {
         return "PostgreSQL";
     }
 }

@@ -30,12 +30,12 @@ public class PostgresRowConverter extends AbstractPostgresCompatibleRowConverter
 
     private static final long serialVersionUID = 1L;
 
-    @Override
-    protected String name() {
-        return "PostgreSQL";
-    }
-
     public PostgresRowConverter(RowType rowType) {
         super(rowType);
+    }
+
+    @Override
+    public String converterName() {
+        return "PostgreSQL";
     }
 }
