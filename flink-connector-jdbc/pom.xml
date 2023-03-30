@@ -187,6 +187,14 @@ under the License.
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Vertica test -->
+		<dependency>
+			<groupId>com.vertica.jdbc</groupId>
+			<artifactId>vertica-jdbc</artifactId>
+			<version>12.0.3-0</version>
+			<scope>test</scope>
+		</dependency>
+
 		<!-- H2 tests -->
 		<dependency>
 			<groupId>com.h2database</groupId>
