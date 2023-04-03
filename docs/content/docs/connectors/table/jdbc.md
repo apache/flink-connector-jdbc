@@ -49,7 +49,7 @@ A driver dependency is also required to connect to a specified database. Here ar
 |:-----------| :------------------| :----------------------| :----------------|
 | MySQL      |       `mysql`      | `mysql-connector-java` | [Download](https://repo.maven.apache.org/maven2/mysql/mysql-connector-java/) |
 | Oracle     | `com.oracle.database.jdbc` |        `ojdbc8`        | [Download](https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8) |
-| PostgreSQL |  `org.postgresql`  |      `postgresql`      | [Download](https://jdbc.postgresql.org/download.html) |
+| PostgreSQL |  `org.postgresql`  |      `postgresql`      | [Download](https://jdbc.postgresql.org/download/) |
 | Derby      | `org.apache.derby` |        `derby`         | [Download](http://db.apache.org/derby/derby_downloads.html) |
 | SQL Server | `com.microsoft.sqlserver` |        `mssql-jdbc`         | [Download](https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-ver16) |
 
