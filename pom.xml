@@ -299,6 +299,20 @@ under the License.
                 <version>2.1</version>
             </dependency>
 
+            <!-- For dependency convergence on mockito/powermock mismatch -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.12.10</version>
+            </dependency>
+
+            <!-- For dependency convergence on mockito/powermock mismatch -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>1.12.10</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
