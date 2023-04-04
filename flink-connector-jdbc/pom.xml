@@ -78,6 +78,13 @@ under the License.
 			<scope>provided</scope>
 		</dependency>
 
+		<!-- CrateDB -->
+		<dependency>
+			<groupId>io.crate</groupId>
+			<artifactId>crate-jdbc</artifactId>
+			<version>2.6.0</version>
+			<scope>provided</scope>
+		</dependency>
 
 		<!-- Tests -->
 

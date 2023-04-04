@@ -105,13 +105,13 @@ public interface CrateDBDatabase extends DatabaseTest {
 
         @Override
         public String getDriverClassName() {
-            return "org.postgresql.Driver";
+            return "io.crate.client.jdbc.CrateDriver";
         }
 
         @Override
         public String getJdbcUrl() {
             String additionalUrlParams = constructUrlParameters("?", "&");
-            return ("jdbc:postgresql://"
+            return ("jdbc:crate://"
                     + getHost()
                     + ":"
                     + getMappedPort(CRATEDB_PG_PORT)
