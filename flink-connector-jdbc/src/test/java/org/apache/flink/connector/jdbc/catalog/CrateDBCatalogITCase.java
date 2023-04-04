@@ -116,7 +116,7 @@ class CrateDBCatalogITCase extends CrateDBCatalogTestBase {
                                 .execute()
                                 .collect());
         assertThat(results)
-                .hasToString("[+I[1, 3, 4, 5.5, 6.6, true, b, 2016-06-22T22:10:25.123]]");
+                .hasToString("[+I[1, 3, 4, 5.5, 6.6, true, b, 2016-06-23T01:10:25.123]]");
     }
 
     @Test

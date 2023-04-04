@@ -19,7 +19,7 @@
 package org.apache.flink.connector.jdbc.dialect.cratedb;
 
 import org.apache.flink.connector.jdbc.dialect.AbstractPostgresCompatibleDialect;
-import org.apache.flink.connector.jdbc.internal.converter.CrateDBRowConverter;
+import org.apache.flink.connector.jdbc.internal.converter.PostgresRowConverter;
 import org.apache.flink.table.types.logical.RowType;
 
 import java.util.Optional;
@@ -35,12 +35,19 @@ public class CrateDBDialect extends AbstractPostgresCompatibleDialect {
     }
 
     @Override
-    public CrateDBRowConverter getRowConverter(RowType rowType) {
-        return new CrateDBRowConverter(rowType);
+    public PostgresRowConverter getRowConverter(RowType rowType) {
+        return new PostgresRowConverter(rowType);
     }
 
     @Override
     public Optional<String> defaultDriverName() {
-        return Optional.of("io.crate.client.jdbc.CrateDriver");
+        return Optional.of("org.postgresql.Driver");
+    }
+
+    @Override
+    public String appendDefaultUrlProperties(String url) {
+        // Use CrateDB URL to choose this dialect, but replace it with PostgreSQL prefix
+        // to use the vanilla PostgreSQL JDBC Driver, and not the custom CrateDB one.
+        return url.replace("jdbc:crate:", "jdbc:postgresql:");
     }
 }

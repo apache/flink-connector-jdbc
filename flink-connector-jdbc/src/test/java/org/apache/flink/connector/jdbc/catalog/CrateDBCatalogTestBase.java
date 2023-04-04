@@ -159,7 +159,7 @@ class CrateDBCatalogTestBase implements CrateDBDatabase {
                         .column("timestamp", DataTypes.TIMESTAMP(6))
                         //                        .column("timestamptz",
                         // DataTypes.TIMESTAMP_WITH_TIME_ZONE(6))
-                        .primaryKeyNamed("primitive_table_pk", "short", "int")
+                        .primaryKeyNamed("primitive_table_pkey", "short", "int")
                         .build(),
                 "int integer, "
                         + "short short, "
