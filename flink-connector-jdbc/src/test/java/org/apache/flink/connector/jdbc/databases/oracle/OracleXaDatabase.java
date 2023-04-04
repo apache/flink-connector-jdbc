@@ -30,7 +30,7 @@ public interface OracleXaDatabase extends DatabaseTest, OracleImages {
 
     @Container
     OracleContainer CONTAINER =
-            new OracleContainer(ORACLE_21)
+            new OracleContainer(ORACLE_18)
                     .withStartupTimeoutSeconds(240)
                     .withConnectTimeoutSeconds(120)
                     .usingSid();
