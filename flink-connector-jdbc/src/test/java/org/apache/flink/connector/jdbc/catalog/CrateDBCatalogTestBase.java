@@ -30,6 +30,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.TimeZone;
 
 /** Test base for {@link CrateDBCatalog}. */
 class CrateDBCatalogTestBase implements CrateDBDatabase {
@@ -52,6 +53,9 @@ class CrateDBCatalogTestBase implements CrateDBDatabase {
 
     @BeforeAll
     static void init() throws SQLException {
+        // For deterministic timestamp field results
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+
         // jdbc:crate://localhost:50807/crate?user=crate
         String jdbcUrl = CONTAINER.getJdbcUrl();
         // jdbc:crate://localhost:50807/
@@ -157,8 +161,7 @@ class CrateDBCatalogTestBase implements CrateDBDatabase {
                         .column("character_varying", DataTypes.VARCHAR(20))
                         .column("ip", DataTypes.STRING())
                         .column("timestamp", DataTypes.TIMESTAMP(6))
-                        //                        .column("timestamptz",
-                        // DataTypes.TIMESTAMP_WITH_TIME_ZONE(6))
+                        //  .column("timestamptz", DataTypes.TIMESTAMP_WITH_TIME_ZONE(6))
                         .primaryKeyNamed("primitive_table_pk", "short", "int")
                         .build(),
                 "int integer, "
@@ -178,7 +181,7 @@ class CrateDBCatalogTestBase implements CrateDBDatabase {
                         + "character_varying character varying(20), "
                         + "ip ip, "
                         + "timestamp timestamp, "
-                        //                        + "timestamptz timestamptz, "
+                        // + "timestamptz timestamptz, "
                         + "PRIMARY KEY (short, int)",
                 // Values
                 "1,"
@@ -198,7 +201,7 @@ class CrateDBCatalogTestBase implements CrateDBDatabase {
                         + "'e',"
                         + "'0:0:0:0:0:ffff:c0a8:64',"
                         + "'2016-06-22 19:10:25.123456'");
-        //                        + "'2006-06-22 19:10:25.123456'"
+        //  + "'2006-06-22 19:10:25.123456'");
     }
 
     // TODO: add back timestamptz once planner supports timestamp with timezone
@@ -222,7 +225,7 @@ class CrateDBCatalogTestBase implements CrateDBDatabase {
                         .column("character_varying_arr", DataTypes.ARRAY(DataTypes.VARCHAR(20)))
                         .column("ip", DataTypes.ARRAY(DataTypes.STRING()))
                         .column("timestamp_arr", DataTypes.ARRAY(DataTypes.TIMESTAMP(6)))
-                        //                        .column("timestamptz_arr",
+                        // .column("timestamptz_arr",
                         // DataTypes.ARRAY(DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE(4)))
                         .column("null_text_arr", DataTypes.ARRAY(DataTypes.STRING()))
                         .build(),
@@ -243,7 +246,7 @@ class CrateDBCatalogTestBase implements CrateDBDatabase {
                         + "character_varying_arr character varying(20)[],"
                         + "ip string[],"
                         + "timestamp_arr timestamp[], "
-                        //                        + "timestamptz_arr timestamptz[], "
+                        // + "timestamptz_arr timestamptz[], "
                         + "null_text_arr text[]",
                 // Values
                 "[1,2,3],"
@@ -262,9 +265,8 @@ class CrateDBCatalogTestBase implements CrateDBDatabase {
                         + "['b','c','d'],"
                         + "['b','c','d'],"
                         + "['0:0:0:0:0:ffff:c0a8:64', '10.2.5.28', '127.0.0.6'],"
-                        + "['2016-06-22 19:10:25.123456', '2019-06-22 19:10:25.123456'],"
-                        //                                + "[\"2006-06-22 19:10:25.123456\",
-                        // \"2009-06-22 19:10:25.123456\"],"
+                        + "['2016-06-22 19:10:25.123456', '2019-06-22 11:22:33.987654'],"
+                        // + "['2006-06-22 19:10:25.123456', '2019-06-22 11:22:33.987654'],"
                         + "NULL");
     }
 

@@ -54,6 +54,7 @@ public interface CrateDBDatabase extends DatabaseTest {
                     .withUsername("crate")
                     .withPassword("crate")
                     .withCommand("crate")
+                    .withEnv("TZ", "UTC") // For deterministic timestamp field results
                     .waitingFor(WAIT_STRATEGY);
 
     @Override
@@ -70,8 +71,6 @@ public interface CrateDBDatabase extends DatabaseTest {
 
         public static final String IMAGE = "crate";
 
-        public static final String DEFAULT_TAG = "latest";
-
         protected static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse(IMAGE);
 
         private String databaseName = "crate";
@@ -79,19 +78,6 @@ public interface CrateDBDatabase extends DatabaseTest {
         private String username = "crate";
 
         private String password = "crate";
-
-        /**
-         * @deprecated use {@link #CrateDBContainer(DockerImageName)} or {@link
-         *     #CrateDBContainer(String)} instead
-         */
-        @Deprecated
-        public CrateDBContainer() {
-            this(DEFAULT_IMAGE_NAME.withTag(DEFAULT_TAG));
-        }
-
-        public CrateDBContainer(final String dockerImageName) {
-            this(DockerImageName.parse(dockerImageName));
-        }
 
         public CrateDBContainer(final DockerImageName dockerImageName) {
             super(dockerImageName);

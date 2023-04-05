@@ -116,7 +116,7 @@ class CrateDBCatalogITCase extends CrateDBCatalogTestBase {
                                 .execute()
                                 .collect());
         assertThat(results)
-                .hasToString("[+I[1, 3, 4, 5.5, 6.6, true, b, 2016-06-22T22:10:25.123]]");
+                .hasToString("[+I[1, 3, 4, 5.5, 6.6, true, b, 2016-06-22T19:10:25.123]]");
     }
 
     @Test
@@ -129,7 +129,7 @@ class CrateDBCatalogITCase extends CrateDBCatalogTestBase {
 
         assertThat(results)
                 .hasToString(
-                        "[+I[1, 3, 3, 4, 4, 5.5, 5.5, 6.6, 6.6, true, a, b, c, d  , e, 192.168.0.100, 2016-06-22T22:10:25.123]]");
+                        "[+I[1, 3, 3, 4, 4, 5.5, 5.5, 6.6, 6.6, true, a, b, c, d  , e, 192.168.0.100, 2016-06-22T19:10:25.123]]");
     }
 
     @Test
@@ -142,6 +142,6 @@ class CrateDBCatalogITCase extends CrateDBCatalogTestBase {
 
         assertThat(results)
                 .hasToString(
-                        "[+I[[1, 2, 3], [3, 4, 5], [3, 4, 5], [4, 5, 6], [4, 5, 6], [5.5, 6.6, 7.7], [5.5, 6.6, 7.7], [6.6, 7.7, 8.8], [6.6, 7.7, 8.8], [true, false, true], [a, b, c], [a, b, c], [b, c, d], [b  , c  , d  ], [b, c, d], [0:0:0:0:0:ffff:c0a8:64, 10.2.5.28, 127.0.0.6], [2016-06-22T22:10:25.123, 2019-06-22T22:10:25.123], null]]");
+                        "[+I[[1, 2, 3], [3, 4, 5], [3, 4, 5], [4, 5, 6], [4, 5, 6], [5.5, 6.6, 7.7], [5.5, 6.6, 7.7], [6.6, 7.7, 8.8], [6.6, 7.7, 8.8], [true, false, true], [a, b, c], [a, b, c], [b, c, d], [b  , c  , d  ], [b, c, d], [0:0:0:0:0:ffff:c0a8:64, 10.2.5.28, 127.0.0.6], [2016-06-22T19:10:25.123, 2019-06-22T11:22:33.987], null]]");
     }
 }
