@@ -48,8 +48,8 @@ public interface CrateDBDatabase extends DatabaseTest {
                     .withStartupTimeout(Duration.of(60, SECONDS));
 
     @Container
-    CrateDBContainer<?> CONTAINER =
-            new CrateDBContainer<>(CRATEDB_DOCKER_IMAGE)
+    CrateDBContainer CONTAINER =
+            new CrateDBContainer(CRATEDB_DOCKER_IMAGE)
                     .withDatabaseName("crate")
                     .withUsername("crate")
                     .withPassword("crate")
@@ -63,11 +63,10 @@ public interface CrateDBDatabase extends DatabaseTest {
     }
 
     /**
-     * Workaround to use testcontainers until: <a
-     * href="https://github.com/testcontainers/testcontainers-java/pull/6790"/>is merged.
+     * Workaround to use testcontainers with <a
+     * href="https://crate.io/docs/jdbc/en/latest/index.html">legacy CrateDB JDBC driver</a>.
      */
-    class CrateDBContainer<SELF extends CrateDBContainer<SELF>>
-            extends JdbcDatabaseContainer<SELF> {
+    class CrateDBContainer extends JdbcDatabaseContainer<CrateDBContainer> {
 
         public static final String IMAGE = "crate";
 
@@ -127,19 +126,19 @@ public interface CrateDBDatabase extends DatabaseTest {
         }
 
         @Override
-        public SELF withDatabaseName(final String databaseName) {
+        public CrateDBContainer withDatabaseName(final String databaseName) {
             this.databaseName = databaseName;
             return self();
         }
 
         @Override
-        public SELF withUsername(final String username) {
+        public CrateDBContainer withUsername(final String username) {
             this.username = username;
             return self();
         }
 
         @Override
-        public SELF withPassword(final String password) {
+        public CrateDBContainer withPassword(final String password) {
             this.password = password;
             return self();
         }

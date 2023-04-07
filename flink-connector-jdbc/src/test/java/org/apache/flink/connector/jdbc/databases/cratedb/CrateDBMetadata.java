@@ -30,7 +30,7 @@ public class CrateDBMetadata implements DatabaseMetadata {
     private final String driver;
     private final String version;
 
-    public CrateDBMetadata(CrateDBDatabase.CrateDBContainer<?> container) {
+    public CrateDBMetadata(CrateDBDatabase.CrateDBContainer container) {
         this.username = container.getUsername();
         this.password = container.getPassword();
         this.url = container.getJdbcUrl();
