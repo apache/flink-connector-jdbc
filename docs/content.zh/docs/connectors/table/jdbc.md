@@ -42,7 +42,7 @@ JDBC 连接器允许使用 JDBC 驱动向任意类型的关系型数据库读取
 依赖
 ------------
 
-{{< sql_download_table "jdbc" >}}
+{{< sql_connector_download_table "jdbc" 3.0.0 >}}
 
 JDBC 连接器不是二进制发行版的一部分，请查阅[这里]({{< ref "docs/dev/configuration/overview" >}})了解如何在集群运行中引用 JDBC 连接器。
 
