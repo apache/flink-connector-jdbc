@@ -25,7 +25,7 @@ import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
-import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
+import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +62,7 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
                             format =
                                     JdbcOutputFormat.builder()
                                             .setOptions(
-                                                    JdbcConnectorOptions.builder()
+                                                    InternalJdbcConnectionOptions.builder()
                                                             .setDBUrl(getMetadata().getJdbcUrl())
                                                             .setDialect(
                                                                     JdbcDialectLoader.load(
