@@ -21,7 +21,7 @@ package org.apache.flink.connector.jdbc.table;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
+import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcNumericBetweenParametersProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
@@ -66,7 +66,7 @@ class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
                 DataTypes.INT()
             };
     final JdbcDialect dialect =
-            JdbcConnectorOptions.builder()
+            InternalJdbcConnectionOptions.builder()
                     .setDBUrl(DERBY_EBOOKSHOP_DB.getJdbcUrl())
                     .setTableName(INPUT_TABLE)
                     .build()

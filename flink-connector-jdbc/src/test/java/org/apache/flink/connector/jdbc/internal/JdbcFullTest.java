@@ -23,14 +23,13 @@ import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.JdbcInputFormat;
 import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
 import org.apache.flink.connector.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
-import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
+import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.split.JdbcNumericBetweenParametersProvider;
 import org.apache.flink.types.Row;
 
@@ -79,7 +78,7 @@ class JdbcFullTest extends JdbcDataTestBase {
             JdbcOutputFormat jdbcOutputFormat =
                     JdbcOutputFormat.builder()
                             .setOptions(
-                                    JdbcConnectorOptions.builder()
+                                    InternalJdbcConnectionOptions.builder()
                                             .setDBUrl(getMetadata().getJdbcUrl())
                                             .setTableName(OUTPUT_TABLE)
                                             .build())
@@ -136,8 +135,9 @@ class JdbcFullTest extends JdbcDataTestBase {
         // NOTE: in this case (with Derby driver) setSqlTypes could be skipped, but
         // some databases don't null values correctly when no column type was specified
         // in PreparedStatement.setObject (see its javadoc for more details)
-        JdbcConnectionOptions connectionOptions =
-                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+        org.apache.flink.connector.jdbc.JdbcConnectionOptions connectionOptions =
+                new org.apache.flink.connector.jdbc.JdbcConnectionOptions
+                                .JdbcConnectionOptionsBuilder()
                         .withUrl(getMetadata().getJdbcUrl())
                         .withDriverName(getMetadata().getDriverClass())
                         .build();

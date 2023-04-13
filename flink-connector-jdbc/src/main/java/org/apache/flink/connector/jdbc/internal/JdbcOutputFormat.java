@@ -33,7 +33,7 @@ import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
 import org.apache.flink.connector.jdbc.internal.connection.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
-import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
+import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatementImpl;
 import org.apache.flink.connector.jdbc.utils.JdbcUtils;
@@ -284,7 +284,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
 
     /** Builder for a {@link JdbcOutputFormat}. */
     public static class Builder {
-        private JdbcConnectorOptions options;
+        private InternalJdbcConnectionOptions options;
         private String[] fieldNames;
         private String[] keyFields;
         private int[] fieldTypes;
@@ -292,7 +292,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
                 JdbcExecutionOptions.builder();
 
         /** required, jdbc options. */
-        public Builder setOptions(JdbcConnectorOptions options) {
+        public Builder setOptions(InternalJdbcConnectionOptions options) {
             this.options = options;
             return this;
         }

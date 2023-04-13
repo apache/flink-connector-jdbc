@@ -25,7 +25,7 @@ import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
-import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
+import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.types.Row;
 
@@ -65,8 +65,8 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
 
     @Test
     void testUpsertFormatCloseBeforeOpen() throws Exception {
-        JdbcConnectorOptions options =
-                JdbcConnectorOptions.builder()
+        InternalJdbcConnectionOptions options =
+                InternalJdbcConnectionOptions.builder()
                         .setDBUrl(getMetadata().getJdbcUrl())
                         .setTableName(OUTPUT_TABLE)
                         .build();
@@ -101,7 +101,7 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
         format =
                 new TableJdbcUpsertOutputFormat(
                         new SimpleJdbcConnectionProvider(
-                                JdbcConnectorOptions.builder()
+                                InternalJdbcConnectionOptions.builder()
                                         .setDBUrl(getMetadata().getJdbcUrl())
                                         .setTableName(OUTPUT_TABLE)
                                         .build()) {
@@ -172,8 +172,8 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
 
     @Test
     void testJdbcOutputFormat() throws Exception {
-        JdbcConnectorOptions options =
-                JdbcConnectorOptions.builder()
+        InternalJdbcConnectionOptions options =
+                InternalJdbcConnectionOptions.builder()
                         .setDBUrl(getMetadata().getJdbcUrl())
                         .setTableName(OUTPUT_TABLE)
                         .build();
