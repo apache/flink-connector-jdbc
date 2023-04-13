@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
+import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcReadOptions;
 import org.apache.flink.connector.jdbc.split.CompositeJdbcParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
@@ -68,7 +68,7 @@ public class JdbcDynamicTableSource
                 SupportsFilterPushDown {
     private static final Logger LOG = LoggerFactory.getLogger(JdbcDynamicTableSource.class);
 
-    private final JdbcConnectorOptions options;
+    private final InternalJdbcConnectionOptions options;
     private final JdbcReadOptions readOptions;
     private final int lookupMaxRetryTimes;
     @Nullable private final LookupCache cache;
@@ -79,7 +79,7 @@ public class JdbcDynamicTableSource
     private Serializable[] pushdownParams = new Serializable[0];
 
     public JdbcDynamicTableSource(
-            JdbcConnectorOptions options,
+            InternalJdbcConnectionOptions options,
             JdbcReadOptions readOptions,
             int lookupMaxRetryTimes,
             @Nullable LookupCache cache,

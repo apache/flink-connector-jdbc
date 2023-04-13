@@ -25,7 +25,7 @@ import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
-import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
+import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcReadOptions;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
@@ -90,7 +90,8 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         validateConfigOptions(config, context.getClassLoader());
         validateDataTypeWithJdbcDialect(
                 context.getPhysicalRowDataType(), config.get(URL), context.getClassLoader());
-        JdbcConnectorOptions jdbcOptions = getJdbcOptions(config, context.getClassLoader());
+        InternalJdbcConnectionOptions jdbcOptions =
+                getJdbcOptions(config, context.getClassLoader());
 
         return new JdbcDynamicTableSink(
                 jdbcOptions,
@@ -126,11 +127,11 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         dialect.validate((RowType) dataType.getLogicalType());
     }
 
-    private JdbcConnectorOptions getJdbcOptions(
+    private InternalJdbcConnectionOptions getJdbcOptions(
             ReadableConfig readableConfig, ClassLoader classLoader) {
         final String url = readableConfig.get(URL);
-        final JdbcConnectorOptions.Builder builder =
-                JdbcConnectorOptions.builder()
+        final InternalJdbcConnectionOptions.Builder builder =
+                InternalJdbcConnectionOptions.builder()
                         .setClassLoader(classLoader)
                         .setDBUrl(url)
                         .setTableName(readableConfig.get(TABLE_NAME))
@@ -169,7 +170,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
     }
 
     private JdbcDmlOptions getJdbcDmlOptions(
-            JdbcConnectorOptions jdbcOptions, DataType dataType, int[] primaryKeyIndexes) {
+            InternalJdbcConnectionOptions jdbcOptions, DataType dataType, int[] primaryKeyIndexes) {
 
         String[] keyFields =
                 Arrays.stream(primaryKeyIndexes)
