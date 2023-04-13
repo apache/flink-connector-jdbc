@@ -48,7 +48,7 @@ under the License.
 
     <properties>
         <flink.version>1.16.0</flink.version>
-        <flink.shaded.version>15.0</flink.shaded.version>
+        <flink.shaded.version>16.1</flink.shaded.version>
 
         <jackson-bom.version>2.13.4.20221013</jackson-bom.version>
         <junit4.version>4.13.2</junit4.version>
@@ -70,7 +70,6 @@ under the License.
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-shaded-force-shading</artifactId>
-            <version>${flink.shaded.version}</version>
         </dependency>
 
         <!-- Root dependencies for all projects -->
@@ -181,6 +180,13 @@ under the License.
                 <artifactId>flink-test-utils-junit</artifactId>
                 <version>${flink.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <!-- For dependency convergence -->
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-shaded-force-shading</artifactId>
+                <version>${flink.shaded.version}</version>
             </dependency>
 
             <!-- Flink ArchUnit -->
