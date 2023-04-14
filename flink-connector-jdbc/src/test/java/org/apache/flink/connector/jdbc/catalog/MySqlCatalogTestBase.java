@@ -31,8 +31,6 @@ import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CollectionUtil;
 
-import org.apache.flink.shaded.guava30.com.google.common.collect.Lists;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -124,11 +122,11 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
                     .column("col_time_p3", DataTypes.TIME(3))
                     .column("col_timestamp_p3", DataTypes.TIMESTAMP(3))
                     .column("col_varbinary", DataTypes.BYTES())
-                    .primaryKeyNamed("PRIMARY", Lists.newArrayList("pid"))
+                    .primaryKeyNamed("PRIMARY", Collections.singletonList("pid"))
                     .build();
 
     protected static final List<Row> TABLE_ROWS =
-            Lists.newArrayList(
+            Arrays.asList(
                     Row.ofKind(
                             RowKind.INSERT,
                             1L,
@@ -381,7 +379,7 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
                                 .collect());
         assertThat(results)
                 .isEqualTo(
-                        Lists.newArrayList(
+                        Arrays.asList(
                                 Row.ofKind(RowKind.INSERT, 1L), Row.ofKind(RowKind.INSERT, 2L)));
     }
 
@@ -459,6 +457,7 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
                                                 TEST_TABLE_SINK_FROM_GROUPED_BY))
                                 .execute()
                                 .collect());
-        assertThat(results).isEqualTo(Lists.newArrayList(Row.ofKind(RowKind.INSERT, 2L, -1L)));
+        assertThat(results)
+                .isEqualTo(Collections.singletonList(Row.ofKind(RowKind.INSERT, 2L, -1L)));
     }
 }
