@@ -81,6 +81,7 @@ public class JdbcExecutionOptions implements Serializable {
     }
 
     /** Builder for {@link JdbcExecutionOptions}. */
+    @PublicEvolving
     public static final class Builder {
         private long intervalMs = DEFAULT_INTERVAL_MILLIS;
         private int size = DEFAULT_SIZE;

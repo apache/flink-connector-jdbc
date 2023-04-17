@@ -17,12 +17,12 @@
 
 package org.apache.flink.connector.jdbc.xa;
 
-import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 
 import java.io.Serializable;
 
-@PublicEvolving
+@Internal
 interface XaSinkStateHandler extends Serializable {
 
     JdbcXaSinkFunctionState load(FunctionInitializationContext context) throws Exception;
