@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.table.catalog.CatalogBaseTable;
@@ -120,6 +121,7 @@ public class JdbcCatalog extends AbstractJdbcCatalog {
     // ------ getters ------
 
     @VisibleForTesting
+    @Internal
     public AbstractJdbcCatalog getInternal() {
         return internal;
     }

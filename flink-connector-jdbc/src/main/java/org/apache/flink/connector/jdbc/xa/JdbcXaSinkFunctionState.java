@@ -17,6 +17,8 @@
 
 package org.apache.flink.connector.jdbc.xa;
 
+import org.apache.flink.annotation.Internal;
+
 import javax.annotation.concurrent.ThreadSafe;
 import javax.transaction.xa.Xid;
 
@@ -28,6 +30,7 @@ import static java.util.Collections.unmodifiableCollection;
 
 /** Thread-safe (assuming immutable {@link Xid} implementation). */
 @ThreadSafe
+@Internal
 class JdbcXaSinkFunctionState {
     private final Collection<CheckpointAndXid> prepared;
     private final Collection<Xid> hanging;
