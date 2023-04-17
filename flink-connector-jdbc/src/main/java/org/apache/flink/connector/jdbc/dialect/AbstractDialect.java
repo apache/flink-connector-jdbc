@@ -246,6 +246,7 @@ public abstract class AbstractDialect implements JdbcDialect {
     public abstract Set<LogicalTypeRoot> supportedTypes();
 
     /** A range from [min,max] where min <= max. */
+    @PublicEvolving
     public static class Range {
         private final int min;
 
