@@ -24,6 +24,7 @@ import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcReadOptions;
 import org.apache.flink.connector.jdbc.split.CompositeJdbcParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
+import org.apache.flink.connector.jdbc.split.JdbcMultiTableProvider;
 import org.apache.flink.connector.jdbc.split.JdbcNumericBetweenParametersProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.table.connector.ChangelogMode;
@@ -132,6 +133,15 @@ public class JdbcDynamicTableSource
             builder.setFetchSize(readOptions.getFetchSize());
         }
         final JdbcDialect dialect = options.getDialect();
+        JdbcNumericBetweenParametersProvider jdbcNumericBetweenParametersProvider = null;
+        // Data sharding configuration
+        if (readOptions.getPartitionColumnName().isPresent()) {
+            long lowerBound = readOptions.getPartitionLowerBound().get();
+            long upperBound = readOptions.getPartitionUpperBound().get();
+            int numPartitions = readOptions.getNumPartitions().get();
+            jdbcNumericBetweenParametersProvider = new JdbcNumericBetweenParametersProvider(lowerBound, upperBound).ofBatchNum(numPartitions);
+        }
+
         String query =
                 dialect.getSelectFromStatement(
                         options.getTableName(),
@@ -178,7 +188,18 @@ public class JdbcDynamicTableSource
         LOG.debug("Query generated for JDBC scan: " + query);
 
         builder.setQuery(query);
+
+        // Shard according to table
+        List<JdbcMultiTableProvider.TableItem>  tableItems = options.getTables();
+        String dbName = options.getDbName();
+
+        if (tableItems.size() > 0) {
+            builder.setParametersProvider(new JdbcMultiTableProvider(dbName, tableItems)
+                .withPartition(jdbcNumericBetweenParametersProvider));
+        }
+
         final RowType rowType = (RowType) physicalRowDataType.getLogicalType();
+
         builder.setRowConverter(dialect.getRowConverter(rowType));
         builder.setRowDataTypeInfo(
                 runtimeProviderContext.createTypeInformation(physicalRowDataType));

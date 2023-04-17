@@ -23,6 +23,7 @@ import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcReadOptions;
+import org.apache.flink.connector.jdbc.split.JdbcMultiTableProvider;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.catalog.Column;
 import org.apache.flink.table.catalog.ResolvedSchema;
@@ -35,9 +36,11 @@ import org.apache.flink.table.connector.source.lookup.cache.DefaultLookupCache;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSink;
@@ -247,6 +250,14 @@ class JdbcDynamicTableFactoryTest {
 
         DynamicTableSink actual = createTableSink(SCHEMA, properties);
 
+        List<JdbcMultiTableProvider.TableItem> tableItemList = new ArrayList<>();
+        String url = "jdbc:mysql://localhost:3306/order_([0-9]{1,}),jdbc:mysql://localhost:3306/order_([0-9]{1,})";
+        String tableName = "order_([0-9]{1,})";
+        //数据查询模板,String table = params[1].toString();
+//        String queryTemplate = queryTemplate(pa, dialect);
+        JdbcMultiTableProvider.TableItem item = new JdbcMultiTableProvider.TableItem();
+//        item.setUrl(url);
+//        item.setTable();
         JdbcConnectorOptions options =
                 JdbcConnectorOptions.builder()
                         .setDBUrl("jdbc:derby:memory:mydb")

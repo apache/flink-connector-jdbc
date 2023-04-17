@@ -27,7 +27,9 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
+import org.apache.flink.connector.jdbc.RdbDialects;
 import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
+import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.internal.connection.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
@@ -51,6 +53,8 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** InputFormat for {@link JdbcDynamicTableSource}. */
 @Internal
@@ -69,6 +73,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
     private int resultSetConcurrency;
     private JdbcRowConverter rowConverter;
     private TypeInformation<RowData> rowDataTypeInfo;
+    private static final String tableRegex = "\\([^\\(\\)]+\\)";
 
     private transient PreparedStatement statement;
     private transient ResultSet resultSet;
@@ -153,59 +158,167 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
     @Override
     public void open(InputSplit inputSplit) throws IOException {
         try {
-            if (inputSplit != null && parameterValues != null) {
-                for (int i = 0; i < parameterValues[inputSplit.getSplitNumber()].length; i++) {
-                    Object param = parameterValues[inputSplit.getSplitNumber()][i];
-                    if (param instanceof String) {
-                        statement.setString(i + 1, (String) param);
-                    } else if (param instanceof Long) {
-                        statement.setLong(i + 1, (Long) param);
-                    } else if (param instanceof Integer) {
-                        statement.setInt(i + 1, (Integer) param);
-                    } else if (param instanceof Double) {
-                        statement.setDouble(i + 1, (Double) param);
-                    } else if (param instanceof Boolean) {
-                        statement.setBoolean(i + 1, (Boolean) param);
-                    } else if (param instanceof Float) {
-                        statement.setFloat(i + 1, (Float) param);
-                    } else if (param instanceof BigDecimal) {
-                        statement.setBigDecimal(i + 1, (BigDecimal) param);
-                    } else if (param instanceof Byte) {
-                        statement.setByte(i + 1, (Byte) param);
-                    } else if (param instanceof Short) {
-                        statement.setShort(i + 1, (Short) param);
-                    } else if (param instanceof Date) {
-                        statement.setDate(i + 1, (Date) param);
-                    } else if (param instanceof Time) {
-                        statement.setTime(i + 1, (Time) param);
-                    } else if (param instanceof Timestamp) {
-                        statement.setTimestamp(i + 1, (Timestamp) param);
-                    } else if (param instanceof Array) {
-                        statement.setArray(i + 1, (Array) param);
-                    } else {
-                        // extends with other types if needed
-                        throw new IllegalArgumentException(
-                                "open() failed. Parameter "
-                                        + i
-                                        + " of type "
-                                        + param.getClass()
-                                        + " is not handled (yet).");
-                    }
-                }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(
-                            String.format(
-                                    "Executing '%s' with parameters %s",
-                                    queryTemplate,
-                                    Arrays.deepToString(
-                                            parameterValues[inputSplit.getSplitNumber()])));
-                }
+            Object[] params = parameterValues[inputSplit.getSplitNumber()];
+            Connection dbConn = connectionProvider.getOrEstablishConnection();
+            String url = params[0].toString();
+            if (url.split(",").length == 0) {
+                initStatementByNoSplitTable(inputSplit, params);
+            } else {
+                final JdbcDialect dialect = RdbDialects.get(url);
+                String queryTemplate = queryTemplate(params, dialect);
+                statement = dbConn.prepareStatement(queryTemplate, resultSetType, resultSetConcurrency);
+                // 'url' = 'jdbc:mysql://localhost:3306/order_([0-9]{1,}),jdbc:mysql://localhost:3306/order_([0-9]{1,})',
+                //  'table-name' = 'order_([0-9]{1,})',
+                initStatementBySplitTable(inputSplit, params);
+            }
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(
+                    String.format(
+                        "Executing '%s' with parameters %s",
+                        queryTemplate,
+                        Arrays.deepToString(
+                            parameterValues[inputSplit.getSplitNumber()])));
             }
             resultSet = statement.executeQuery();
             hasNext = resultSet.next();
-        } catch (SQLException se) {
+        } catch (ClassNotFoundException | RuntimeException| SQLException se) {
             throw new IllegalArgumentException("open() failed." + se.getMessage(), se);
         }
+    }
+
+    /**
+     * 从index=2 开始为数据分片配置
+     * @param inputSplit
+     * @param params
+     * @throws SQLException
+     */
+    public void  initStatementBySplitTable(InputSplit inputSplit, Object[] params) throws SQLException {
+        for (int i = 2; i < parameterValues[inputSplit.getSplitNumber()].length; i++) {
+            Object param = parameterValues[inputSplit.getSplitNumber()][i];
+            if (param instanceof String) {
+                statement.setString(i - 1, (String) param);
+            } else if (param instanceof Long) {
+                statement.setLong(i - 1, (Long) param);
+            } else if (param instanceof Integer) {
+                statement.setInt(i - 1, (Integer) param);
+            } else if (param instanceof Double) {
+                statement.setDouble(i - 1, (Double) param);
+            } else if (param instanceof Boolean) {
+                statement.setBoolean(i - 1, (Boolean) param);
+            } else if (param instanceof Float) {
+                statement.setFloat(i - 1, (Float) param);
+            } else if (param instanceof BigDecimal) {
+                statement.setBigDecimal(i - 1, (BigDecimal) param);
+            } else if (param instanceof Byte) {
+                statement.setByte(i - 1, (Byte) param);
+            } else if (param instanceof Short) {
+                statement.setShort(i - 1, (Short) param);
+            } else if (param instanceof Date) {
+                statement.setDate(i - 1, (Date) param);
+            } else if (param instanceof Time) {
+                statement.setTime(i - 1, (Time) param);
+            } else if (param instanceof Timestamp) {
+                statement.setTimestamp(i - 1, (Timestamp) param);
+            } else if (param instanceof Array) {
+                statement.setArray(i - 1, (Array) param);
+            } else {
+                // extends with other types if needed
+                throw new IllegalArgumentException(
+                    "open() failed. Parameter "
+                        + i
+                        + " of type "
+                        + param.getClass()
+                        + " is not handled (yet).");
+            }
+        }
+    }
+
+    public void initStatementByNoSplitTable(InputSplit inputSplit, Object[] params) throws SQLException {
+        if (inputSplit != null && parameterValues != null) {
+            for (int i = 0; i < params.length; i++) {
+                Object param = params[i];
+                if (param instanceof String) {
+                    statement.setString(i + 1, (String) param);
+                } else if (param instanceof Long) {
+                    statement.setLong(i + 1, (Long) param);
+                } else if (param instanceof Integer) {
+                    statement.setInt(i + 1, (Integer) param);
+                } else if (param instanceof Double) {
+                    statement.setDouble(i + 1, (Double) param);
+                } else if (param instanceof Boolean) {
+                    statement.setBoolean(i + 1, (Boolean) param);
+                } else if (param instanceof Float) {
+                    statement.setFloat(i + 1, (Float) param);
+                } else if (param instanceof BigDecimal) {
+                    statement.setBigDecimal(i + 1, (BigDecimal) param);
+                } else if (param instanceof Byte) {
+                    statement.setByte(i + 1, (Byte) param);
+                } else if (param instanceof Short) {
+                    statement.setShort(i + 1, (Short) param);
+                } else if (param instanceof Date) {
+                    statement.setDate(i + 1, (Date) param);
+                } else if (param instanceof Time) {
+                    statement.setTime(i + 1, (Time) param);
+                } else if (param instanceof Timestamp) {
+                    statement.setTimestamp(i + 1, (Timestamp) param);
+                } else if (param instanceof Array) {
+                    statement.setArray(i + 1, (Array) param);
+                } else {
+                    // extends with other types if needed
+                    throw new IllegalArgumentException(
+                        "open() failed. Parameter "
+                            + i
+                            + " of type "
+                            + param.getClass()
+                            + " is not handled (yet).");
+                }
+            }
+        }
+    }
+
+    /**
+     * 查看所有分表，格式如下
+     * 'url' = 'jdbc:mysql://localhost:3306/order_([0-9]{1,}),jdbc:mysql://localhost:3306/order_([0-9]{1,})',
+     * 'table-name' = 'order_([0-9]{1,})'
+     * @param params
+     * @param dialect
+     * @return
+     */
+    private String queryTemplate(Object[] params, JdbcDialect dialect) {
+        String result = "";
+        String tableName = params[1].toString();
+        String dbName = params[2].toString();
+        if (checkSplitTable(tableName)) {
+            String realTable = assembleSplitTableName(tableName);
+            String dialectName = dialect.dialectName();
+            if (dialectName.equals("Oracle")) {
+               result =  dialect.getSelectFromLikeStatement("sys.all_tables",new String[]{"table_name"},new String[]{ "OWNER",  dbName, "table_name", realTable } );
+            } else if (dialectName.equals("Postgres")) {
+                // SELECT * FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema = ?
+                result = dialect.getSelectFromLikeStatement("information_schema.tables", new String[] {"table_name"} ,new String[]{ "table_type" , "BASE TABLE", "table_schema", dbName, "table_name", realTable});
+            } else {
+                result = dialect.getSelectFromLikeStatement("information_schema.tables", new String[] {"table_name"} ,new String[]{"table_schema", dbName, "table_name", realTable});
+            }
+        }
+
+        return result;
+    }
+
+    private String assembleSplitTableName(String tableName) {
+        String[] allTableName = tableName.split("()");
+        String wholeTableName = allTableName[0];
+        tableName = wholeTableName.substring(0, wholeTableName.length() - 1);
+        return tableName;
+    }
+
+    private boolean checkSplitTable(String tableName) {
+        Pattern pattern = Pattern.compile(tableRegex);
+        Matcher matcher = pattern.matcher(tableName);
+        if (matcher.find()) {
+            return true;
+        }
+        return false;
     }
 
     /**

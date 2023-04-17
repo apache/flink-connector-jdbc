@@ -22,9 +22,11 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
+import org.apache.flink.connector.jdbc.split.JdbcMultiTableProvider;
 
 import javax.annotation.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -37,26 +39,37 @@ public class JdbcConnectorOptions extends JdbcConnectionOptions {
     private static final long serialVersionUID = 1L;
 
     private final String tableName;
+    //Oracle和Postgres的schemaName为dbName
+    private final String dbName;
     private final JdbcDialect dialect;
     private final @Nullable Integer parallelism;
+    private final List<JdbcMultiTableProvider.TableItem> tables;
 
     private JdbcConnectorOptions(
             String dbURL,
             String tableName,
+            String dbName,
             @Nullable String driverName,
             @Nullable String username,
             @Nullable String password,
             JdbcDialect dialect,
             @Nullable Integer parallelism,
-            int connectionCheckTimeoutSeconds) {
+            int connectionCheckTimeoutSeconds,
+            List<JdbcMultiTableProvider.TableItem> tables) {
         super(dbURL, driverName, username, password, connectionCheckTimeoutSeconds);
         this.tableName = tableName;
+        this.dbName = dbName;
         this.dialect = dialect;
         this.parallelism = parallelism;
+        this.tables = tables;
     }
 
     public String getTableName() {
         return tableName;
+    }
+
+    public String getDbName() {
+        return dbName;
     }
 
     public JdbcDialect getDialect() {
@@ -67,9 +80,14 @@ public class JdbcConnectorOptions extends JdbcConnectionOptions {
         return parallelism;
     }
 
+    public List<JdbcMultiTableProvider.TableItem> getTables() {
+        return tables;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
+
 
     @Override
     public boolean equals(Object o) {
@@ -108,12 +126,14 @@ public class JdbcConnectorOptions extends JdbcConnectionOptions {
         private ClassLoader classLoader;
         private String dbURL;
         private String tableName;
+        private String dbName;
         private String driverName;
         private String username;
         private String password;
         private JdbcDialect dialect;
         private Integer parallelism;
         private int connectionCheckTimeoutSeconds = 60;
+        private List<JdbcMultiTableProvider.TableItem> tables;
 
         /**
          * optional, specifies the classloader to use in the planner for load the class in user jar.
@@ -131,6 +151,11 @@ public class JdbcConnectorOptions extends JdbcConnectionOptions {
         /** required, table name. */
         public Builder setTableName(String tableName) {
             this.tableName = tableName;
+            return this;
+        }
+
+        public Builder setDbName(String dbName) {
+            this.dbName = dbName;
             return this;
         }
 
@@ -180,6 +205,10 @@ public class JdbcConnectorOptions extends JdbcConnectionOptions {
             this.parallelism = parallelism;
             return this;
         }
+        public Builder setTables(List<JdbcMultiTableProvider.TableItem> tables) {
+            this.tables = tables;
+            return this;
+        }
 
         public JdbcConnectorOptions build() {
             checkNotNull(dbURL, "No dbURL supplied.");
@@ -200,12 +229,14 @@ public class JdbcConnectorOptions extends JdbcConnectionOptions {
             return new JdbcConnectorOptions(
                     dialect.appendDefaultUrlProperties(dbURL),
                     tableName,
+                    dbName,
                     driverName,
                     username,
                     password,
                     dialect,
                     parallelism,
-                    connectionCheckTimeoutSeconds);
+                    connectionCheckTimeoutSeconds,
+                    tables);
         }
     }
 }

@@ -133,6 +133,8 @@ public interface JdbcDialect extends Serializable {
      */
     String getDeleteStatement(String tableName, String[] conditionFields);
 
+    String getSelectFromLikeStatement(String tableName, String[] selectFields, String[] conditionFields);
+
     /**
      * Constructs the dialects select statement for fields with given conditions. The returned
      * string will be used as a {@link java.sql.PreparedStatement}. Fields in the statement must be

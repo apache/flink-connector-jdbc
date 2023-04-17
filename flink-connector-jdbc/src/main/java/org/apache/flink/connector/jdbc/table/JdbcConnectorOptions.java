@@ -21,10 +21,12 @@ package org.apache.flink.connector.jdbc.table;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
+import org.apache.flink.connector.jdbc.split.JdbcMultiTableProvider;
 import org.apache.flink.table.connector.source.lookup.LookupOptions;
 import org.apache.flink.table.factories.FactoryUtil;
 
 import java.time.Duration;
+import java.util.List;
 
 /** Options for the JDBC connector. */
 @PublicEvolving

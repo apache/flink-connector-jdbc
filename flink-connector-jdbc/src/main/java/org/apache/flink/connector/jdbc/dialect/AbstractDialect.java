@@ -175,6 +175,23 @@ public abstract class AbstractDialect implements JdbcDialect {
         return "DELETE FROM " + quoteIdentifier(tableName) + " WHERE " + conditionClause;
     }
 
+    @Override
+    public String getSelectFromLikeStatement(String tableName, String[] selectFields, String[] tablePrefix) {
+        String selectExpressions =
+            Arrays.stream(selectFields)
+                .map(this::quoteIdentifier)
+                .collect(Collectors.joining(", "));
+        String fieldExpressions =
+            Arrays.stream(tablePrefix)
+                .map(f -> format("%s like :%s", quoteIdentifier(f), f))
+                .collect(Collectors.joining());
+        return "SELECT "
+            + selectExpressions
+            + " FROM "
+            + quoteIdentifier(tableName)
+            + (tablePrefix.length > 0  ? " WHERE " + fieldExpressions : "");
+    }
+
     /**
      * A simple {@code SELECT} statement.
      *
