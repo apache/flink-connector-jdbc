@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.postgres;
+package org.apache.flink.connector.jdbc.databases.postgres.dialect;
 
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
 

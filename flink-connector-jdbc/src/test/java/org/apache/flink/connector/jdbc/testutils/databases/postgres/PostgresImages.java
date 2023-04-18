@@ -15,27 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc;
+package org.apache.flink.connector.jdbc.testutils.databases.postgres;
 
-import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-
-/**
- * Base class for JDBC test using DDL from {@link JdbcTestFixture}. It uses create tables before
- * each test and drops afterwards.
- */
-public abstract class JdbcTestBase implements DatabaseTest {
-
-    @BeforeEach
-    public void before() throws Exception {
-        JdbcTestFixture.initSchema(getMetadata());
-    }
-
-    @AfterEach
-    public void after() throws Exception {
-        JdbcTestFixture.cleanupData(getMetadata());
-        JdbcTestFixture.cleanUpDatabasesStatic(getMetadata());
-    }
+/** Postgres docker images. */
+public interface PostgresImages {
+    String POSTGRES_9 = "postgres:9.6.24";
+    String POSTGRES_15 = "postgres:15.1";
 }

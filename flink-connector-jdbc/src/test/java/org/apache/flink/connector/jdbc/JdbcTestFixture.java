@@ -238,8 +238,8 @@ public class JdbcTestFixture implements DerbyDatabase {
         }
     }
 
-    static void cleanupData(String url) throws Exception {
-        try (Connection conn = DriverManager.getConnection(url)) {
+    static void cleanupData(DatabaseMetadata dbMetadata) throws Exception {
+        try (Connection conn = dbMetadata.getConnection()) {
             executeUpdate(conn, "delete from " + INPUT_TABLE);
             executeUpdate(conn, "delete from " + WORDS_TABLE);
         }

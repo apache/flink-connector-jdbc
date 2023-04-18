@@ -17,34 +17,47 @@
 
 package org.apache.flink.connector.jdbc.testutils.databases.postgres;
 
+import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
+import org.apache.flink.util.FlinkRuntimeException;
 
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /** A Postgres database for testing. */
-@Testcontainers
-public interface PostgresDatabase extends DatabaseTest {
+public class PostgresDatabase extends DatabaseExtension implements PostgresImages {
 
-    String POSTGRES_9 = "postgres:9.6.24";
-    String POSTGRES_15 = "postgres:15.1";
-
-    @Container
-    PostgreSQLContainer<?> CONTAINER =
+    private static final PostgreSQLContainer<?> CONTAINER =
             new PostgresXaContainer(POSTGRES_15).withMaxConnections(10).withMaxTransactions(50);
 
+    private static PostgresMetadata metadata;
+
+    public static PostgresMetadata getMetadata() {
+        if (!CONTAINER.isRunning()) {
+            throw new FlinkRuntimeException("Container is stopped.");
+        }
+        if (metadata == null) {
+            metadata = new PostgresMetadata(CONTAINER, true);
+        }
+        return metadata;
+    }
+
     @Override
-    default DatabaseMetadata getMetadata() {
-        return new PostgresMetadata(CONTAINER);
+    protected DatabaseMetadata startDatabase() throws Exception {
+        CONTAINER.start();
+        return getMetadata();
+    }
+
+    @Override
+    protected void stopDatabase() throws Exception {
+        CONTAINER.stop();
+        metadata = null;
     }
 
     /** {@link PostgreSQLContainer} with XA enabled (by setting max_prepared_transactions). */
-    class PostgresXaContainer extends PostgreSQLContainer<PostgresXaContainer> {
+    public static class PostgresXaContainer extends PostgreSQLContainer<PostgresXaContainer> {
         private static final int SUPERUSER_RESERVED_CONNECTIONS = 1;
         private int maxConnections = SUPERUSER_RESERVED_CONNECTIONS + 1;
         private int maxTransactions = 1;

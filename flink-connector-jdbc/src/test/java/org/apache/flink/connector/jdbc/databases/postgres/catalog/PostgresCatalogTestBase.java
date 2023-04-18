@@ -16,14 +16,17 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.databases.postgres.catalog;
 
+import org.apache.flink.connector.jdbc.databases.postgres.PostgresTestBase;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.connector.jdbc.testutils.databases.postgres.PostgresDatabase;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.types.logical.DecimalType;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,13 +37,17 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /** Test base for {@link PostgresCatalog}. */
-class PostgresCatalogTestBase implements PostgresDatabase, JdbcITCaseBase {
+class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
 
     public static final Logger LOG = LoggerFactory.getLogger(PostgresCatalogTestBase.class);
 
+    private static DatabaseMetadata getStaticMetadata() {
+        return PostgresDatabase.getMetadata();
+    }
+
     protected static final String TEST_CATALOG_NAME = "mypg";
-    protected static final String TEST_USERNAME = CONTAINER.getUsername();
-    protected static final String TEST_PWD = CONTAINER.getPassword();
+    protected static final String TEST_USERNAME = getStaticMetadata().getUsername();
+    protected static final String TEST_PWD = getStaticMetadata().getPassword();
     protected static final String TEST_DB = "test";
     protected static final String TEST_SCHEMA = "test_schema";
     protected static final String TABLE1 = "t1";
@@ -59,7 +66,7 @@ class PostgresCatalogTestBase implements PostgresDatabase, JdbcITCaseBase {
     @BeforeAll
     static void init() throws SQLException {
         // jdbc:postgresql://localhost:50807/postgres?user=postgres
-        String jdbcUrl = CONTAINER.getJdbcUrl();
+        String jdbcUrl = getStaticMetadata().getJdbcUrl();
         // jdbc:postgresql://localhost:50807/
         baseUrl = jdbcUrl.substring(0, jdbcUrl.lastIndexOf("/"));
 
@@ -123,6 +130,42 @@ class PostgresCatalogTestBase implements PostgresDatabase, JdbcITCaseBase {
                 PostgresCatalog.DEFAULT_DATABASE,
                 String.format(
                         "insert into %s values (%s);", TABLE_SERIAL_TYPE, getSerialTable().values));
+    }
+
+    @AfterAll
+    static void afterAll() throws SQLException {
+        executeSQL(TEST_DB, String.format("DROP SCHEMA %s CASCADE", TEST_SCHEMA));
+        executeSQL(
+                TEST_DB,
+                String.format("DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE2)));
+
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format("DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE1)));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format("DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE4)));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format("DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE5)));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format(
+                        "DROP TABLE %s ",
+                        PostgresTablePath.fromFlinkTableName(TABLE_PRIMITIVE_TYPE)));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format(
+                        "DROP TABLE %s ",
+                        PostgresTablePath.fromFlinkTableName(TABLE_PRIMITIVE_TYPE2)));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format(
+                        "DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE_ARRAY_TYPE)));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format(
+                        "DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE_SERIAL_TYPE)));
     }
 
     public static void createTable(PostgresTablePath tablePath, String tableSchemaSql)

@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.psql;
+package org.apache.flink.connector.jdbc.databases.postgres.dialect;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
 import org.apache.flink.connector.jdbc.dialect.AbstractDialect;
-import org.apache.flink.connector.jdbc.internal.converter.PostgresRowConverter;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 
@@ -30,7 +30,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** JDBC dialect for PostgreSQL. */
+/** JDBC dialect for PostgresSQL. */
+@Internal
 public class PostgresDialect extends AbstractDialect {
 
     private static final long serialVersionUID = 1L;

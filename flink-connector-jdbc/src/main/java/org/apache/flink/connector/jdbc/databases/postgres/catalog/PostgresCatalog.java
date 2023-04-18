@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.databases.postgres.catalog;
 
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.connector.jdbc.catalog.AbstractJdbcCatalog;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeMapper;
-import org.apache.flink.connector.jdbc.dialect.psql.PostgresTypeMapper;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
@@ -70,7 +70,7 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
 
     private final JdbcDialectTypeMapper dialectTypeMapper;
 
-    protected PostgresCatalog(
+    public PostgresCatalog(
             ClassLoader userClassLoader,
             String catalogName,
             String defaultDatabase,

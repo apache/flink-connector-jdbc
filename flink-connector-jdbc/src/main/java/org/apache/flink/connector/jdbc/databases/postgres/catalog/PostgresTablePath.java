@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.databases.postgres.catalog;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.util.StringUtils;
 
 import java.util.Objects;
@@ -25,9 +26,10 @@ import java.util.Objects;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /**
- * Table path of PostgreSQL in Flink. Can be of formats "table_name" or "schema_name.table_name".
+ * Table path of PostgresSQL in Flink. Can be of formats "table_name" or "schema_name.table_name".
  * When it's "table_name", the schema name defaults to "public".
  */
+@Internal
 public class PostgresTablePath {
 
     private static final String DEFAULT_POSTGRES_SCHEMA_NAME = "public";

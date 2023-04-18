@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.databases.postgres.catalog;
 
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.catalog.CatalogBaseTable;
@@ -24,6 +24,7 @@ import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -53,9 +54,9 @@ class PostgresCatalogTest extends PostgresCatalogTestBase {
 
     @Test
     void testDbExists() {
-        assertThat(catalog.databaseExists("nonexistent")).isFalse();
+        Assertions.assertThat(catalog.databaseExists("nonexistent")).isFalse();
 
-        assertThat(catalog.databaseExists(PostgresCatalog.DEFAULT_DATABASE)).isTrue();
+        Assertions.assertThat(catalog.databaseExists(PostgresCatalog.DEFAULT_DATABASE)).isTrue();
     }
 
     // ------ tables ------
@@ -88,12 +89,15 @@ class PostgresCatalogTest extends PostgresCatalogTestBase {
 
     @Test
     void testTableExists() {
-        assertThat(catalog.tableExists(new ObjectPath(TEST_DB, "nonexist"))).isFalse();
+        Assertions.assertThat(catalog.tableExists(new ObjectPath(TEST_DB, "nonexist"))).isFalse();
 
-        assertThat(catalog.tableExists(new ObjectPath(PostgresCatalog.DEFAULT_DATABASE, TABLE1)))
+        Assertions.assertThat(
+                        catalog.tableExists(
+                                new ObjectPath(PostgresCatalog.DEFAULT_DATABASE, TABLE1)))
                 .isTrue();
-        assertThat(catalog.tableExists(new ObjectPath(TEST_DB, TABLE2))).isTrue();
-        assertThat(catalog.tableExists(new ObjectPath(TEST_DB, "test_schema.t3"))).isTrue();
+        Assertions.assertThat(catalog.tableExists(new ObjectPath(TEST_DB, TABLE2))).isTrue();
+        Assertions.assertThat(catalog.tableExists(new ObjectPath(TEST_DB, "test_schema.t3")))
+                .isTrue();
     }
 
     @Test

@@ -114,7 +114,8 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
 
     @AfterEach
     @Override
-    public void after() {
+    public void after() throws Exception {
+        super.after();
         activeSources.clear();
         inactiveMappers.clear();
     }

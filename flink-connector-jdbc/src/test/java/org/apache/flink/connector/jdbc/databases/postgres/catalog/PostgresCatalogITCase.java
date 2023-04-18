@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.databases.postgres.catalog;
 
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.TableEnvironment;
@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.apache.flink.connector.jdbc.catalog.PostgresCatalog.DEFAULT_DATABASE;
+import static org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog.DEFAULT_DATABASE;
 import static org.apache.flink.table.api.config.ExecutionConfigOptions.TABLE_EXEC_RESOURCE_DEFAULT_PARALLELISM;
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.psql;
+package org.apache.flink.connector.jdbc.databases.postgres.catalog;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeMapper;

@@ -16,16 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.catalog.factory;
+package org.apache.flink.connector.jdbc.databases.postgres.catalog.factory;
 
 import org.apache.flink.connector.jdbc.catalog.JdbcCatalog;
-import org.apache.flink.connector.jdbc.catalog.PostgresCatalog;
-import org.apache.flink.connector.jdbc.testutils.databases.postgres.PostgresDatabase;
+import org.apache.flink.connector.jdbc.catalog.factory.JdbcCatalogFactory;
+import org.apache.flink.connector.jdbc.catalog.factory.JdbcCatalogFactoryOptions;
+import org.apache.flink.connector.jdbc.databases.postgres.PostgresTestBase;
+import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CommonCatalogOptions;
 import org.apache.flink.table.factories.FactoryUtil;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +39,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link JdbcCatalogFactory}. */
-class JdbcCatalogFactoryTest implements PostgresDatabase {
+class JdbcCatalogFactoryTest implements PostgresTestBase {
 
     public static final Logger LOG = LoggerFactory.getLogger(JdbcCatalogFactoryTest.class);
 
@@ -45,13 +47,11 @@ class JdbcCatalogFactoryTest implements PostgresDatabase {
     protected static JdbcCatalog catalog;
 
     protected static final String TEST_CATALOG_NAME = "mypg";
-    protected static final String TEST_USERNAME = CONTAINER.getUsername();
-    protected static final String TEST_PWD = CONTAINER.getPassword();
 
-    @BeforeAll
-    static void setup() throws SQLException {
+    @BeforeEach
+    void setup() throws SQLException {
         // jdbc:postgresql://localhost:50807/postgres?user=postgres
-        String jdbcUrl = CONTAINER.getJdbcUrl();
+        String jdbcUrl = getMetadata().getJdbcUrl();
         // jdbc:postgresql://localhost:50807/
         baseUrl = jdbcUrl.substring(0, jdbcUrl.lastIndexOf("/"));
 
@@ -60,8 +60,8 @@ class JdbcCatalogFactoryTest implements PostgresDatabase {
                         Thread.currentThread().getContextClassLoader(),
                         TEST_CATALOG_NAME,
                         PostgresCatalog.DEFAULT_DATABASE,
-                        TEST_USERNAME,
-                        TEST_PWD,
+                        getMetadata().getUsername(),
+                        getMetadata().getPassword(),
                         baseUrl);
     }
 
@@ -71,8 +71,8 @@ class JdbcCatalogFactoryTest implements PostgresDatabase {
         options.put(CommonCatalogOptions.CATALOG_TYPE.key(), JdbcCatalogFactoryOptions.IDENTIFIER);
         options.put(
                 JdbcCatalogFactoryOptions.DEFAULT_DATABASE.key(), PostgresCatalog.DEFAULT_DATABASE);
-        options.put(JdbcCatalogFactoryOptions.USERNAME.key(), TEST_USERNAME);
-        options.put(JdbcCatalogFactoryOptions.PASSWORD.key(), TEST_PWD);
+        options.put(JdbcCatalogFactoryOptions.USERNAME.key(), getMetadata().getUsername());
+        options.put(JdbcCatalogFactoryOptions.PASSWORD.key(), getMetadata().getPassword());
         options.put(JdbcCatalogFactoryOptions.BASE_URL.key(), baseUrl);
 
         final Catalog actualCatalog =
