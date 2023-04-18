@@ -16,9 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.databases.mysql.catalog;
 
+import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
+import org.apache.flink.connector.jdbc.testutils.TableManaged;
+import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Schema;
@@ -31,101 +34,56 @@ import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CollectionUtil;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.Date;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
+import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbType;
+import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.field;
+import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.pkField;
+import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 import static org.apache.flink.core.testutils.FlinkAssertions.anyCauseMatches;
 import static org.apache.flink.table.api.config.ExecutionConfigOptions.TABLE_EXEC_RESOURCE_DEFAULT_PARALLELISM;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test base for {@link MySqlCatalog}. */
-abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
+public abstract class MySqlCatalogTestBase implements JdbcITCaseBase, DatabaseTest {
 
-    public static final Logger LOG = LoggerFactory.getLogger(MySqlCatalogTestBase.class);
-    protected static final String TEST_CATALOG_NAME = "mysql_catalog";
-    protected static final String TEST_USERNAME = "mysql";
-    protected static final String TEST_PWD = "mysql";
-    protected static final String TEST_DB = "test";
-    protected static final String TEST_DB2 = "test2";
-    protected static final String TEST_TABLE_ALL_TYPES = "t_all_types";
-    protected static final String TEST_SINK_TABLE_ALL_TYPES = "t_all_types_sink";
-    protected static final String TEST_TABLE_SINK_FROM_GROUPED_BY = "t_grouped_by_sink";
-    protected static final String TEST_TABLE_PK = "t_pk";
-    protected static final String MYSQL_INIT_SCRIPT = "mysql-scripts/catalog-init-for-test.sql";
-    protected static final Map<String, String> DEFAULT_CONTAINER_ENV_MAP =
-            new HashMap<String, String>() {
-                {
-                    put("MYSQL_ROOT_HOST", "%");
-                }
-            };
+    private static final Logger LOG = LoggerFactory.getLogger(MySqlCatalogTestBase.class);
+    private static final String TEST_CATALOG_NAME = "mysql_catalog";
+    private static final String TEST_DB = "test";
+    private static final String TEST_DB2 = "test2";
 
-    protected static final Schema TABLE_SCHEMA =
-            Schema.newBuilder()
-                    .column("pid", DataTypes.BIGINT().notNull())
-                    .column("col_bigint", DataTypes.BIGINT())
-                    .column("col_bigint_unsigned", DataTypes.DECIMAL(20, 0))
-                    .column("col_binary", DataTypes.BYTES())
-                    .column("col_bit", DataTypes.BOOLEAN())
-                    .column("col_blob", DataTypes.BYTES())
-                    .column("col_char", DataTypes.CHAR(10))
-                    .column("col_date", DataTypes.DATE())
-                    .column("col_datetime", DataTypes.TIMESTAMP(0))
-                    .column("col_decimal", DataTypes.DECIMAL(10, 0))
-                    .column("col_decimal_unsigned", DataTypes.DECIMAL(11, 0))
-                    .column("col_double", DataTypes.DOUBLE())
-                    .column("col_double_unsigned", DataTypes.DOUBLE())
-                    .column("col_enum", DataTypes.CHAR(6))
-                    .column("col_float", DataTypes.FLOAT())
-                    .column("col_float_unsigned", DataTypes.FLOAT())
-                    .column("col_int", DataTypes.INT())
-                    .column("col_int_unsigned", DataTypes.BIGINT())
-                    .column("col_integer", DataTypes.INT())
-                    .column("col_integer_unsigned", DataTypes.BIGINT())
-                    .column("col_longblob", DataTypes.BYTES())
-                    .column("col_longtext", DataTypes.STRING())
-                    .column("col_mediumblob", DataTypes.BYTES())
-                    .column("col_mediumint", DataTypes.INT())
-                    .column("col_mediumint_unsigned", DataTypes.INT())
-                    .column("col_mediumtext", DataTypes.VARCHAR(5592405))
-                    .column("col_numeric", DataTypes.DECIMAL(10, 0))
-                    .column("col_numeric_unsigned", DataTypes.DECIMAL(11, 0))
-                    .column("col_real", DataTypes.DOUBLE())
-                    .column("col_real_unsigned", DataTypes.DOUBLE())
-                    .column("col_set", DataTypes.CHAR(18))
-                    .column("col_smallint", DataTypes.SMALLINT())
-                    .column("col_smallint_unsigned", DataTypes.INT())
-                    .column("col_text", DataTypes.VARCHAR(21845))
-                    .column("col_time", DataTypes.TIME(0))
-                    .column("col_timestamp", DataTypes.TIMESTAMP(0))
-                    .column("col_tinytext", DataTypes.VARCHAR(85))
-                    .column("col_tinyint", DataTypes.TINYINT())
-                    .column("col_tinyint_unsinged", DataTypes.SMALLINT())
-                    .column("col_tinyblob", DataTypes.BYTES())
-                    .column("col_varchar", DataTypes.VARCHAR(255))
-                    .column("col_datetime_p3", DataTypes.TIMESTAMP(3).notNull())
-                    .column("col_time_p3", DataTypes.TIME(3))
-                    .column("col_timestamp_p3", DataTypes.TIMESTAMP(3))
-                    .column("col_varbinary", DataTypes.BYTES())
-                    .primaryKeyNamed("PRIMARY", Collections.singletonList("pid"))
-                    .build();
+    private static final TableRow TABLE_ALL_TYPES = createTableAllTypeTable("t_all_types");
+    private static final TableRow TABLE_ALL_TYPES_SINK =
+            createTableAllTypeTable("t_all_types_sink");
+    private static final TableRow TABLE_GROUPED_BY_SINK = createGroupedTable("t_grouped_by_sink");
+    private static final TableRow TABLE_PK = createGroupedTable("t_pk");
+    private static final TableRow TABLE_PK2 =
+            tableRow(
+                    "t_pk",
+                    pkField(
+                            "pid",
+                            dbType("int(11) NOT NULL AUTO_INCREMENT"),
+                            DataTypes.BIGINT().notNull()),
+                    field("col_varchar", dbType("varchar(255)"), DataTypes.BIGINT()));
 
-    protected static final List<Row> TABLE_ROWS =
+    private static final List<Row> TABLE_ALL_TYPES_ROWS =
             Arrays.asList(
                     Row.ofKind(
                             RowKind.INSERT,
@@ -221,31 +179,134 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
                             Time.valueOf("09:33:43").toLocalTime(),
                             Timestamp.valueOf("2021-08-04 01:53:19.098").toLocalDateTime(),
                             null));
-
     private MySqlCatalog catalog;
     private TableEnvironment tEnv;
 
-    protected static MySQLContainer<?> createContainer(String dockerImage) {
-        return new MySQLContainer<>(DockerImageName.parse(dockerImage))
-                .withUsername("root")
-                .withPassword("")
-                .withEnv(DEFAULT_CONTAINER_ENV_MAP)
-                .withInitScript(MYSQL_INIT_SCRIPT)
-                .withLogConsumer(new Slf4jLogConsumer(LOG));
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Arrays.asList(
+                TABLE_ALL_TYPES, TABLE_ALL_TYPES_SINK, TABLE_GROUPED_BY_SINK, TABLE_PK);
     }
 
-    protected abstract String getDatabaseUrl();
+    private static TableRow createTableAllTypeTable(String tableName) {
+        return tableRow(
+                tableName,
+                pkField(
+                        "pid",
+                        dbType("bigint(20) NOT NULL AUTO_INCREMENT"),
+                        DataTypes.BIGINT().notNull()),
+                field("col_bigint", dbType("bigint(20)"), DataTypes.BIGINT()),
+                field(
+                        "col_bigint_unsigned",
+                        dbType("bigint(20) unsigned"),
+                        DataTypes.DECIMAL(20, 0)),
+                field("col_binary", dbType("binary(100)"), DataTypes.BYTES()),
+                field("col_bit", dbType("bit(1)"), DataTypes.BOOLEAN()),
+                field("col_blob", dbType("blob"), DataTypes.BYTES()),
+                field("col_char", dbType("char(10)"), DataTypes.CHAR(10)),
+                field("col_date", dbType("date"), DataTypes.DATE()),
+                field(
+                        "col_datetime",
+                        dbType("datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
+                        DataTypes.TIMESTAMP(0)),
+                field("col_decimal", dbType("decimal(10,0)"), DataTypes.DECIMAL(10, 0)),
+                field(
+                        "col_decimal_unsigned",
+                        dbType("decimal(10,0) unsigned"),
+                        DataTypes.DECIMAL(11, 0)),
+                field("col_double", dbType("double"), DataTypes.DOUBLE()),
+                field("col_double_unsigned", dbType("double unsigned"), DataTypes.DOUBLE()),
+                field("col_enum", dbType("enum('enum1','enum2','enum11')"), DataTypes.CHAR(6)),
+                field("col_float", dbType("float"), DataTypes.FLOAT()),
+                field("col_float_unsigned", dbType("float unsigned"), DataTypes.FLOAT()),
+                field("col_int", dbType("int(11)"), DataTypes.INT()),
+                field("col_int_unsigned", dbType("int(10) unsigned"), DataTypes.BIGINT()),
+                field("col_integer", dbType("int(11)"), DataTypes.INT()),
+                field("col_integer_unsigned", dbType("int(10) unsigned"), DataTypes.BIGINT()),
+                field("col_longblob", dbType("longblob"), DataTypes.BYTES()),
+                field(
+                        "col_longtext",
+                        dbType("longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin"),
+                        DataTypes.STRING()),
+                field("col_mediumblob", dbType("mediumblob"), DataTypes.BYTES()),
+                field("col_mediumint", dbType("mediumint(9)"), DataTypes.INT()),
+                field("col_mediumint_unsigned", dbType("mediumint(8) unsigned"), DataTypes.INT()),
+                field("col_mediumtext", dbType("mediumtext"), DataTypes.VARCHAR(5592405)),
+                field("col_numeric", dbType("decimal(10,0)"), DataTypes.DECIMAL(10, 0)),
+                field(
+                        "col_numeric_unsigned",
+                        dbType("decimal(10,0) unsigned"),
+                        DataTypes.DECIMAL(11, 0)),
+                field("col_real", dbType("double"), DataTypes.DOUBLE()),
+                field("col_real_unsigned", dbType("double unsigned"), DataTypes.DOUBLE()),
+                field("col_set", dbType("set('set_ele1','set_ele12')"), DataTypes.CHAR(18)),
+                field("col_smallint", dbType("smallint(6)"), DataTypes.SMALLINT()),
+                field("col_smallint_unsigned", dbType("smallint(5) unsigned"), DataTypes.INT()),
+                field("col_text", dbType("text"), DataTypes.VARCHAR(21845)),
+                field("col_time", dbType("time"), DataTypes.TIME(0)),
+                field(
+                        "col_timestamp",
+                        dbType(
+                                "timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"),
+                        DataTypes.TIMESTAMP(0)),
+                field("col_tinytext", dbType("tinytext"), DataTypes.VARCHAR(85)),
+                field("col_tinyint", dbType("tinyint"), DataTypes.TINYINT()),
+                field(
+                        "col_tinyint_unsinged",
+                        dbType("tinyint(255) unsigned"),
+                        DataTypes.SMALLINT()),
+                field("col_tinyblob", dbType("tinyblob"), DataTypes.BYTES()),
+                field("col_varchar", dbType("varchar(255)"), DataTypes.VARCHAR(255)),
+                field(
+                        "col_datetime_p3",
+                        dbType(
+                                "datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)"),
+                        DataTypes.TIMESTAMP(3).notNull()),
+                field("col_time_p3", dbType("time(3)"), DataTypes.TIME(3)),
+                field(
+                        "col_timestamp_p3",
+                        dbType(
+                                "timestamp(3) NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)"),
+                        DataTypes.TIMESTAMP(3)),
+                field("col_varbinary", dbType("varbinary(255)"), DataTypes.BYTES()));
+    }
+
+    private static TableRow createGroupedTable(String tableName) {
+        return tableRow(
+                tableName,
+                pkField(
+                        "pid",
+                        dbType("bigint(20) NOT NULL AUTO_INCREMENT"),
+                        DataTypes.BIGINT().notNull()),
+                field("col_bigint", dbType("bigint(20)"), DataTypes.BIGINT()));
+    }
 
     @BeforeEach
     void setup() {
+        try (Connection conn = getMetadata().getConnection();
+                Statement st = conn.createStatement()) {
+            TABLE_ALL_TYPES.insertIntoTableValues(
+                    conn,
+                    "1, -1, 1, null, b'1', null, 'hello', '2021-08-04', '2021-08-04 01:54:16', -1, 1, -1, 1, 'enum2', -9.1, 9.1, -1, 1, -1, 1, null, 'col_longtext', null, -1, 1, 'col_mediumtext', -99, 99, -1, 1, 'set_ele1', -1, 1, 'col_text', '10:32:34', '2021-08-04 01:54:16', 'col_tinytext', -1, 1, null, 'col_varchar', '2021-08-04 01:54:16.463', '09:33:43.000', '2021-08-04 01:54:16.463', null",
+                    "2, -1, 1, null, b'1', null, 'hello', '2021-08-04', '2021-08-04 01:53:19', -1, 1, -1, 1, 'enum2', -9.1, 9.1, -1, 1, -1, 1, null, 'col_longtext', null, -1, 1, 'col_mediumtext', -99, 99, -1, 1, 'set_ele1,set_ele12', -1, 1, 'col_text', '10:32:34', '2021-08-04 01:53:19', 'col_tinytext', -1, 1, null, 'col_varchar', '2021-08-04 01:53:19.098', '09:33:43.000', '2021-08-04 01:53:19.098', null");
+
+            st.execute(String.format("CREATE DATABASE `%s` CHARSET=utf8", TEST_DB2));
+            st.execute(String.format("use `%s`", TEST_DB2));
+            st.execute(TABLE_PK2.getCreateQuery());
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
         catalog =
                 new MySqlCatalog(
                         Thread.currentThread().getContextClassLoader(),
                         TEST_CATALOG_NAME,
                         TEST_DB,
-                        TEST_USERNAME,
-                        TEST_PWD,
-                        getDatabaseUrl());
+                        getMetadata().getUsername(),
+                        getMetadata().getPassword(),
+                        getMetadata()
+                                .getJdbcUrl()
+                                .substring(0, getMetadata().getJdbcUrl().lastIndexOf("/")));
 
         this.tEnv = TableEnvironment.create(EnvironmentSettings.inStreamingMode());
         tEnv.getConfig().set(TABLE_EXEC_RESOURCE_DEFAULT_PARALLELISM, 1);
@@ -253,6 +314,16 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
         // Use mysql catalog.
         tEnv.registerCatalog(TEST_CATALOG_NAME, catalog);
         tEnv.useCatalog(TEST_CATALOG_NAME);
+    }
+
+    @AfterEach
+    void afterEach() {
+        try (Connection conn = getMetadata().getConnection();
+                Statement st = conn.createStatement()) {
+            st.execute(String.format("DROP DATABASE IF EXISTS `%s`", TEST_DB2));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
@@ -287,11 +358,9 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
         List<String> actual = catalog.listTables(TEST_DB);
         assertThat(actual)
                 .isEqualTo(
-                        Arrays.asList(
-                                TEST_TABLE_ALL_TYPES,
-                                TEST_SINK_TABLE_ALL_TYPES,
-                                TEST_TABLE_SINK_FROM_GROUPED_BY,
-                                TEST_TABLE_PK));
+                        getManagedTables().stream()
+                                .map(TableManaged::getTableName)
+                                .collect(Collectors.toList()));
     }
 
     @Test
@@ -309,7 +378,8 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
     void testTableExists() {
         String tableNotExist = "nonexist";
         assertThat(catalog.tableExists(new ObjectPath(TEST_DB, tableNotExist))).isFalse();
-        assertThat(catalog.tableExists(new ObjectPath(TEST_DB, TEST_TABLE_ALL_TYPES))).isTrue();
+        assertThat(catalog.tableExists(new ObjectPath(TEST_DB, TABLE_ALL_TYPES.getTableName())))
+                .isTrue();
     }
 
     @Test
@@ -339,33 +409,26 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
 
     @Test
     void testGetTable() throws TableNotExistException {
-        CatalogBaseTable table = catalog.getTable(new ObjectPath(TEST_DB, TEST_TABLE_ALL_TYPES));
-        assertThat(table.getUnresolvedSchema()).isEqualTo(TABLE_SCHEMA);
+        CatalogBaseTable table =
+                catalog.getTable(new ObjectPath(TEST_DB, TABLE_ALL_TYPES.getTableName()));
+        assertThat(table.getUnresolvedSchema()).isEqualTo(TABLE_ALL_TYPES.getTableSchema());
     }
 
     @Test
     void testGetTablePrimaryKey() throws TableNotExistException {
         // test the PK of test.t_user
-        Schema tableSchemaTestPK1 =
-                Schema.newBuilder()
-                        .column("uid", DataTypes.BIGINT().notNull())
-                        .column("col_bigint", DataTypes.BIGINT())
-                        .primaryKeyNamed("PRIMARY", Collections.singletonList("uid"))
-                        .build();
-        CatalogBaseTable tablePK1 = catalog.getTable(new ObjectPath(TEST_DB, TEST_TABLE_PK));
+        Schema tableSchemaTestPK1 = TABLE_PK.getTableSchema();
+        CatalogBaseTable tablePK1 =
+                catalog.getTable(new ObjectPath(TEST_DB, TABLE_PK.getTableName()));
         assertThat(tableSchemaTestPK1.getPrimaryKey())
-                .contains(tablePK1.getUnresolvedSchema().getPrimaryKey().get());
+                .isEqualTo(tablePK1.getUnresolvedSchema().getPrimaryKey());
 
-        // test the PK of test2.t_user
-        Schema tableSchemaTestPK2 =
-                Schema.newBuilder()
-                        .column("pid", DataTypes.INT().notNull())
-                        .column("col_varchar", DataTypes.VARCHAR(255))
-                        .primaryKeyNamed("PRIMARY", Collections.singletonList("pid"))
-                        .build();
-        CatalogBaseTable tablePK2 = catalog.getTable(new ObjectPath(TEST_DB2, TEST_TABLE_PK));
+        // test the PK of TEST_DB2.t_user
+        Schema tableSchemaTestPK2 = TABLE_PK2.getTableSchema();
+        CatalogBaseTable tablePK2 =
+                catalog.getTable(new ObjectPath(TEST_DB2, TABLE_PK2.getTableName()));
         assertThat(tableSchemaTestPK2.getPrimaryKey())
-                .contains(tablePK2.getUnresolvedSchema().getPrimaryKey().get());
+                .isEqualTo(tablePK2.getUnresolvedSchema().getPrimaryKey());
     }
 
     // ------ test select query. ------
@@ -374,7 +437,10 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
     void testSelectField() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
-                        tEnv.sqlQuery(String.format("select pid from %s", TEST_TABLE_ALL_TYPES))
+                        tEnv.sqlQuery(
+                                        String.format(
+                                                "select pid from %s",
+                                                TABLE_ALL_TYPES.getTableName()))
                                 .execute()
                                 .collect());
         assertThat(results)
@@ -387,11 +453,13 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
     void testWithoutCatalogDB() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
-                        tEnv.sqlQuery(String.format("select * from %s", TEST_TABLE_ALL_TYPES))
+                        tEnv.sqlQuery(
+                                        String.format(
+                                                "select * from %s", TABLE_ALL_TYPES.getTableName()))
                                 .execute()
                                 .collect());
 
-        assertThat(results).isEqualTo(TABLE_ROWS);
+        assertThat(results).isEqualTo(TABLE_ALL_TYPES_ROWS);
     }
 
     @Test
@@ -401,10 +469,10 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
                         tEnv.sqlQuery(
                                         String.format(
                                                 "select * from `%s`.`%s`",
-                                                TEST_DB, TEST_TABLE_ALL_TYPES))
+                                                TEST_DB, TABLE_ALL_TYPES.getTableName()))
                                 .execute()
                                 .collect());
-        assertThat(results).isEqualTo(TABLE_ROWS);
+        assertThat(results).isEqualTo(TABLE_ALL_TYPES_ROWS);
     }
 
     @Test
@@ -416,10 +484,10 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
                                                 "select * from %s.%s.`%s`",
                                                 TEST_CATALOG_NAME,
                                                 catalog.getDefaultDatabase(),
-                                                TEST_TABLE_ALL_TYPES))
+                                                TABLE_ALL_TYPES.getTableName()))
                                 .execute()
                                 .collect());
-        assertThat(results).isEqualTo(TABLE_ROWS);
+        assertThat(results).isEqualTo(TABLE_ALL_TYPES_ROWS);
     }
 
     @Test
@@ -428,15 +496,18 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
         String sql =
                 String.format(
                         "insert into `%s` select * from `%s`",
-                        TEST_SINK_TABLE_ALL_TYPES, TEST_TABLE_ALL_TYPES);
+                        TABLE_ALL_TYPES_SINK.getTableName(), TABLE_ALL_TYPES.getTableName());
         tEnv.executeSql(sql).await();
 
         List<Row> results =
                 CollectionUtil.iteratorToList(
-                        tEnv.sqlQuery(String.format("select * from %s", TEST_SINK_TABLE_ALL_TYPES))
+                        tEnv.sqlQuery(
+                                        String.format(
+                                                "select * from %s",
+                                                TABLE_ALL_TYPES_SINK.getTableName()))
                                 .execute()
                                 .collect());
-        assertThat(results).isEqualTo(TABLE_ROWS);
+        assertThat(results).isEqualTo(TABLE_ALL_TYPES_ROWS);
     }
 
     @Test
@@ -446,7 +517,8 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
                         String.format(
                                 "insert into `%s` select max(`pid`) `pid`, `col_bigint` from `%s` "
                                         + "group by `col_bigint` ",
-                                TEST_TABLE_SINK_FROM_GROUPED_BY, TEST_TABLE_ALL_TYPES))
+                                TABLE_GROUPED_BY_SINK.getTableName(),
+                                TABLE_ALL_TYPES.getTableName()))
                 .await();
 
         List<Row> results =
@@ -454,7 +526,7 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
                         tEnv.sqlQuery(
                                         String.format(
                                                 "select * from `%s`",
-                                                TEST_TABLE_SINK_FROM_GROUPED_BY))
+                                                TABLE_GROUPED_BY_SINK.getTableName()))
                                 .execute()
                                 .collect());
         assertThat(results)

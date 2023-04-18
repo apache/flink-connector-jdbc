@@ -16,25 +16,20 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.internal.converter;
+package org.apache.flink.connector.jdbc.databases.mysql.catalog;
 
-import org.apache.flink.connector.jdbc.converter.AbstractJdbcRowConverter;
-import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.databases.mysql.MySql56Database;
 
-/**
- * Runtime converter that responsible to convert between JDBC object and Flink internal object for
- * MySQL.
- */
-public class MySQLRowConverter extends AbstractJdbcRowConverter {
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-    private static final long serialVersionUID = 1L;
+/** E2E test for {@link MySqlCatalog} with MySql version 5.6. */
+public class MySql56CatalogITCase extends MySqlCatalogTestBase {
+
+    @RegisterExtension private static final MySql56Database DATABASE = new MySql56Database();
 
     @Override
-    public String converterName() {
-        return "MySQL";
-    }
-
-    public MySQLRowConverter(RowType rowType) {
-        super(rowType);
+    public DatabaseMetadata getMetadata() {
+        return MySql56Database.getMetadata();
     }
 }

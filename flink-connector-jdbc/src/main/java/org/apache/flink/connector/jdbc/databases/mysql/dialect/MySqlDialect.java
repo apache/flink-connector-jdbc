@@ -16,12 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.mysql;
+package org.apache.flink.connector.jdbc.databases.mysql.dialect;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
 import org.apache.flink.connector.jdbc.dialect.AbstractDialect;
-import org.apache.flink.connector.jdbc.internal.converter.MySQLRowConverter;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 

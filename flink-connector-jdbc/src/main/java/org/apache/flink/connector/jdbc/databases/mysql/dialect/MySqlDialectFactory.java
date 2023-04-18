@@ -16,23 +16,22 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.databases.mysql.dialect;
 
-import org.apache.flink.connector.jdbc.testutils.databases.mysql.MySqlDatabase;
+import org.apache.flink.annotation.Internal;
+import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.dialect.JdbcDialectFactory;
 
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-
-/** E2E test for {@link MySqlCatalog}. */
-@Testcontainers
-public class MySqlCatalogITCase extends MySqlCatalogTestBase {
-
-    @Container
-    private static final MySQLContainer<?> CONTAINER = createContainer(MySqlDatabase.MYSQL_8_0);
+/** Factory for {@link MySqlDialect}. */
+@Internal
+public class MySqlDialectFactory implements JdbcDialectFactory {
+    @Override
+    public boolean acceptsURL(String url) {
+        return url.startsWith("jdbc:mysql:");
+    }
 
     @Override
-    protected String getDatabaseUrl() {
-        return CONTAINER.getJdbcUrl().substring(0, CONTAINER.getJdbcUrl().lastIndexOf("/"));
+    public JdbcDialect create() {
+        return new MySqlDialect();
     }
 }

@@ -32,7 +32,8 @@ public class TableField {
     }
 
     public String asString() {
-        String fieldType = (this.dbType != null) ? this.dbType.toString() : this.dataType.toString();
+        String fieldType =
+                (this.dbType != null) ? this.dbType.toString() : this.dataType.toString();
         return String.format("%s %s", this.name, fieldType);
     }
 
@@ -41,6 +42,7 @@ public class TableField {
         return asString();
     }
 
+    /** Field definition for database. */
     public static class DbType {
         private final String type;
         private Boolean nullable = true;

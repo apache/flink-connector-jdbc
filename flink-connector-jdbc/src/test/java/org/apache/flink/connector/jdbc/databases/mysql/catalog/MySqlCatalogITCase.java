@@ -16,23 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.databases.mysql.catalog;
 
-import org.apache.flink.connector.jdbc.testutils.databases.mysql.MySqlDatabase;
+import org.apache.flink.connector.jdbc.databases.mysql.MySqlTestBase;
 
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-
-/** E2E test for {@link MySqlCatalog} with MySql version 5.7. */
-@Testcontainers
-public class MySql57CatalogITCase extends MySqlCatalogTestBase {
-
-    @Container
-    private static final MySQLContainer<?> CONTAINER = createContainer(MySqlDatabase.MYSQL_5_7);
-
-    @Override
-    protected String getDatabaseUrl() {
-        return CONTAINER.getJdbcUrl().substring(0, CONTAINER.getJdbcUrl().lastIndexOf("/"));
-    }
-}
+/** E2E test for {@link MySqlCatalog}. */
+public class MySqlCatalogITCase extends MySqlCatalogTestBase implements MySqlTestBase {}

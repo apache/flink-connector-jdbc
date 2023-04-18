@@ -16,22 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.mysql;
+package org.apache.flink.connector.jdbc.databases.mysql.catalog;
 
-import org.apache.flink.annotation.Internal;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectFactory;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.databases.mysql.MySql57Database;
 
-/** Factory for {@link MySqlDialect}. */
-@Internal
-public class MySqlDialectFactory implements JdbcDialectFactory {
-    @Override
-    public boolean acceptsURL(String url) {
-        return url.startsWith("jdbc:mysql:");
-    }
+import org.junit.jupiter.api.extension.RegisterExtension;
+
+/** E2E test for {@link MySqlCatalog} with MySql version 5.7. */
+public class MySql57CatalogITCase extends MySqlCatalogTestBase {
+    @RegisterExtension private static final MySql57Database DATABASE = new MySql57Database();
 
     @Override
-    public JdbcDialect create() {
-        return new MySqlDialect();
+    public DatabaseMetadata getMetadata() {
+        return MySql57Database.getMetadata();
     }
 }

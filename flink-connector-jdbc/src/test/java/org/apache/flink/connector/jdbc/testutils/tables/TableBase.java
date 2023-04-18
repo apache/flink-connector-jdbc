@@ -7,6 +7,8 @@ import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.functions.JdbcResultSetBuilder;
 import org.apache.flink.connector.jdbc.utils.JdbcTypeUtil;
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
@@ -57,6 +59,12 @@ public abstract class TableBase<T> implements TableManaged {
         return getStreamFieldNames().toArray(String[]::new);
     }
 
+    public DataTypes.Field[] getTableDataFields() {
+        return Arrays.stream(this.fields)
+                .map(field -> DataTypes.FIELD(field.getName(), field.getDataType()))
+                .toArray(DataTypes.Field[]::new);
+    }
+
     public DataType[] getTableDataTypes() {
         return getStreamDataTypes().toArray(DataType[]::new);
     }
@@ -86,7 +94,22 @@ public abstract class TableBase<T> implements TableManaged {
                 .toArray();
     }
 
-    protected String getCreateQuery() {
+    public Schema getTableSchema() {
+        Schema.Builder schema = Schema.newBuilder();
+        Arrays.stream(this.fields)
+                .forEach(field -> schema.column(field.getName(), field.getDataType()));
+
+        String pkFields =
+                Arrays.stream(this.fields)
+                        .filter(TableField::isPkField)
+                        .map(TableField::getName)
+                        .collect(Collectors.joining(", "));
+        schema.primaryKeyNamed("PRIMARY", pkFields);
+
+        return schema.build();
+    }
+
+    public String getCreateQuery() {
         String pkFields =
                 Arrays.stream(this.fields)
                         .filter(TableField::isPkField)
@@ -144,7 +167,7 @@ public abstract class TableBase<T> implements TableManaged {
         return String.format("DELETE FROM %s", name);
     }
 
-    protected String getDropTableQuery() {
+    public String getDropTableQuery() {
         return String.format("DROP TABLE %s", name);
     }
 

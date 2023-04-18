@@ -30,8 +30,8 @@ public abstract class DatabaseExtension
                 ExtensionContext.Store.CloseableResource {
 
     /**
-     * Database Lifecycle for testing.
-     * The goal it's that all database containers are create only one time.
+     * Database Lifecycle for testing. The goal it's that all database containers are create only
+     * one time.
      */
     public enum Lifecycle {
         /** Database will be instantiated only one time. */

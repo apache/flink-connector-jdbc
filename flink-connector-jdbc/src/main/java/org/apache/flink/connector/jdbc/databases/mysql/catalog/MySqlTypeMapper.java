@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.mysql;
+package org.apache.flink.connector.jdbc.databases.mysql.catalog;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeMapper;
@@ -119,7 +119,7 @@ public class MySqlTypeMapper implements JdbcDialectTypeMapper {
                 // BINARY is not supported in MySqlDialect now.
                 // VARBINARY(n) is not supported in MySqlDialect when 'n' is not equals to
                 // Integer.MAX_VALUE. Please see
-                // org.apache.flink.connector.jdbc.dialect.mysql.MySqlDialect#supportedTypes and
+                // org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialect#supportedTypes and
                 // org.apache.flink.connector.jdbc.dialect.AbstractDialect#validate for more
                 // details.
                 return DataTypes.BYTES();

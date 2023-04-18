@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.mysql;
+package org.apache.flink.connector.jdbc.databases.mysql.dialect;
 
 import org.junit.jupiter.api.Test;
 

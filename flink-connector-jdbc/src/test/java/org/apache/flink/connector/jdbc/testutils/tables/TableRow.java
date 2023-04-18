@@ -2,6 +2,7 @@ package org.apache.flink.connector.jdbc.testutils.tables;
 
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.functions.JdbcResultSetBuilder;
+import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;
 
 import java.sql.Connection;
@@ -22,11 +23,12 @@ public class TableRow extends TableBase<Row> {
     protected JdbcResultSetBuilder<Row> getResultSetBuilder() {
         return (rs) -> {
             List<Row> result = new ArrayList<>();
+            DataTypes.Field[] fields = getTableDataFields();
             while (rs.next()) {
-                int fieldsNumber = rs.getMetaData().getColumnCount();
-                Row row = new Row(fieldsNumber);
-                for (int i = 0; i < fieldsNumber; i++) {
-                    row.setField(i, rs.getObject(i + 1));
+                Row row = new Row(fields.length);
+                for (int i = 0; i < fields.length; i++) {
+                    row.setField(
+                            i, rs.getObject(i + 1, fields[i].getDataType().getConversionClass()));
                 }
                 result.add(row);
             }

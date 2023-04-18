@@ -24,12 +24,10 @@ import org.apache.flink.util.FlinkRuntimeException;
 import org.testcontainers.containers.MySQLContainer;
 
 /** A MySql database for testing. */
-public class MySqlDatabase extends DatabaseExtension implements MySqlImages {
+public class MySql57Database extends DatabaseExtension implements MySqlImages {
 
     private static final MySQLContainer<?> CONTAINER =
-            new MySqlContainer(MYSQL_8_0)
-                    .withXa()
-                    .withLockWaitTimeout(50_000L)
+            new MySqlContainer(MYSQL_5_7)
                     .withCommand("--character-set-server=utf8")
                     .withEnv("MYSQL_ROOT_HOST", "%");
 
