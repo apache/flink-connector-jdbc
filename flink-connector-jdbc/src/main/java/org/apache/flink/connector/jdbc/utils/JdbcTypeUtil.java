@@ -26,8 +26,6 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.ObjectArrayTypeInfo;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 
-import org.apache.flink.shaded.guava30.com.google.common.collect.ImmutableMap;
-
 import java.sql.Types;
 import java.util.Collections;
 import java.util.HashMap;
@@ -89,25 +87,28 @@ public class JdbcTypeUtil {
     }
 
     private static final Map<LogicalTypeRoot, Integer> LOGICAL_TYPE_MAPPING =
-            ImmutableMap.<LogicalTypeRoot, Integer>builder()
-                    .put(VARCHAR, Types.VARCHAR)
-                    .put(CHAR, Types.CHAR)
-                    .put(VARBINARY, Types.VARBINARY)
-                    .put(BOOLEAN, Types.BOOLEAN)
-                    .put(BINARY, Types.BINARY)
-                    .put(TINYINT, Types.TINYINT)
-                    .put(SMALLINT, Types.SMALLINT)
-                    .put(INTEGER, Types.INTEGER)
-                    .put(BIGINT, Types.BIGINT)
-                    .put(FLOAT, Types.REAL)
-                    .put(DOUBLE, Types.DOUBLE)
-                    .put(DATE, Types.DATE)
-                    .put(TIMESTAMP_WITHOUT_TIME_ZONE, Types.TIMESTAMP)
-                    .put(TIMESTAMP_WITH_TIME_ZONE, Types.TIMESTAMP_WITH_TIMEZONE)
-                    .put(TIME_WITHOUT_TIME_ZONE, Types.TIME)
-                    .put(DECIMAL, Types.DECIMAL)
-                    .put(ARRAY, Types.ARRAY)
-                    .build();
+            Collections.unmodifiableMap(
+                    new HashMap<LogicalTypeRoot, Integer>() {
+                        {
+                            put(VARCHAR, Types.VARCHAR);
+                            put(CHAR, Types.CHAR);
+                            put(VARBINARY, Types.VARBINARY);
+                            put(BOOLEAN, Types.BOOLEAN);
+                            put(BINARY, Types.BINARY);
+                            put(TINYINT, Types.TINYINT);
+                            put(SMALLINT, Types.SMALLINT);
+                            put(INTEGER, Types.INTEGER);
+                            put(BIGINT, Types.BIGINT);
+                            put(FLOAT, Types.REAL);
+                            put(DOUBLE, Types.DOUBLE);
+                            put(DATE, Types.DATE);
+                            put(TIMESTAMP_WITHOUT_TIME_ZONE, Types.TIMESTAMP);
+                            put(TIMESTAMP_WITH_TIME_ZONE, Types.TIMESTAMP_WITH_TIMEZONE);
+                            put(TIME_WITHOUT_TIME_ZONE, Types.TIME);
+                            put(DECIMAL, Types.DECIMAL);
+                            put(ARRAY, Types.ARRAY);
+                        }
+                    });
 
     private JdbcTypeUtil() {}
 

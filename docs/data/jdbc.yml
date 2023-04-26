@@ -16,16 +16,6 @@
 # limitations under the License.
 ################################################################################
 
-name: CI
-on: [push, pull_request]
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-jobs:
-  compile_and_test:
-    strategy:
-      matrix:
-        flink: [1.17.0, 1.18-SNAPSHOT]
-    uses: apache/flink-connector-shared-utils/.github/workflows/ci.yml@ci_utils
-    with:
-      flink_version: ${{ matrix.flink }}
+variants:
+  - maven: flink-connector-jdbc
+    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-sql-connector-jdbc/$full_version/flink-sql-connector-jdbc-$full_version.jar

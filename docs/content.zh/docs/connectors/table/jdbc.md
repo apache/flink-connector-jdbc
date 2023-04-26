@@ -42,7 +42,7 @@ JDBC 连接器允许使用 JDBC 驱动向任意类型的关系型数据库读取
 依赖
 ------------
 
-{{< sql_download_table "jdbc" >}}
+{{< sql_connector_download_table "jdbc" 3.0.0 >}}
 
 JDBC 连接器不是二进制发行版的一部分，请查阅[这里]({{< ref "docs/dev/configuration/overview" >}})了解如何在集群运行中引用 JDBC 连接器。
 
@@ -52,7 +52,7 @@ JDBC 连接器不是二进制发行版的一部分，请查阅[这里]({{< ref "
 | :-----------| :------------------| :----------------------| :----------------|
 | MySQL       |       `mysql`      | `mysql-connector-java` | [下载](https://repo.maven.apache.org/maven2/mysql/mysql-connector-java/) |
 | Oracle      | `com.oracle.database.jdbc` |        `ojdbc8`        | [下载](https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8)
-| PostgreSQL  |  `org.postgresql`  |      `postgresql`      | [下载](https://jdbc.postgresql.org/download.html) |
+| PostgreSQL  |  `org.postgresql`  |      `postgresql`      | [下载](https://jdbc.postgresql.org/download/) |
 | Derby       | `org.apache.derby` |        `derby`         | [下载](http://db.apache.org/derby/derby_downloads.html) | |
 | SQL Server | `com.microsoft.sqlserver` |        `mssql-jdbc`         | [下载](https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-ver16) |
 | Vertica    | `com.vertica.jdbc`         | `vertica-jdbc`         | [下载](https://mvnrepository.com/artifact/com.vertica.jdbc/vertica-jdbc) |

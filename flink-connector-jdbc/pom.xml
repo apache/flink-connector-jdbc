@@ -40,7 +40,6 @@ under the License.
 		<assertj.version>3.23.1</assertj.version>
 		<postgres.version>42.5.1</postgres.version>
 		<oracle.version>21.8.0.0</oracle.version>
-		<byte-buddy.version>1.12.10</byte-buddy.version>
 	</properties>
 
 	<dependencies>
@@ -214,12 +213,6 @@ under the License.
 
 	<dependencyManagement>
 		<dependencies>
-		<!-- For dependency convergence -->
-			<dependency>
-				<groupId>net.bytebuddy</groupId>
-				<artifactId>byte-buddy</artifactId>
-				<version>${byte-buddy.version}</version>
-			</dependency>
 			<!-- For dependency convergence -->
 			<dependency>
 				<groupId>org.scala-lang</groupId>

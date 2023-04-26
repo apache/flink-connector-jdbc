@@ -104,6 +104,7 @@ public class JdbcExactlyOnceOptions implements Serializable {
     }
 
     /** JDBCExactlyOnceOptionsBuilder. */
+    @PublicEvolving
     public static class JDBCExactlyOnceOptionsBuilder {
         private boolean recoveredAndRollback = DEFAULT_RECOVERED_AND_ROLLBACK;
         private int maxCommitAttempts = DEFAULT_MAX_COMMIT_ATTEMPTS;

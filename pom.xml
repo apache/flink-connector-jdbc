@@ -20,9 +20,9 @@ under the License.
         xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
     <parent>
-        <groupId>io.github.zentol.flink</groupId>
+        <groupId>org.apache.flink</groupId>
         <artifactId>flink-connector-parent</artifactId>
-        <version>1.0</version>
+        <version>1.0.0</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -47,18 +47,16 @@ under the License.
     </modules>
 
     <properties>
-        <flink.version>1.16.1</flink.version>
-        <flink.shaded.version>15.0</flink.shaded.version>
+        <flink.version>1.17.0</flink.version>
 
         <jackson-bom.version>2.13.4.20221013</jackson-bom.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit5.version>5.8.1</junit5.version>
-        <assertj.version>3.21.0</assertj.version>
-        <archunit.version>0.22.0</archunit.version>
+        <junit5.version>5.9.1</junit5.version>
+        <assertj.version>3.23.1</assertj.version>
         <testcontainers.version>1.17.2</testcontainers.version>
         <mockito.version>2.21.0</mockito.version>
 
-        <japicmp.referenceVersion>1.16.0</japicmp.referenceVersion>
+        <japicmp.referenceVersion>3.0.0-1.16</japicmp.referenceVersion>
 
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
@@ -67,11 +65,6 @@ under the License.
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-shaded-force-shading</artifactId>
-            <version>${flink.shaded.version}</version>
-        </dependency>
 
         <!-- Root dependencies for all projects -->
 
@@ -300,26 +293,26 @@ under the License.
                 <version>2.1</version>
             </dependency>
 
+            <!-- For dependency convergence on mockito/powermock mismatch -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.12.10</version>
+            </dependency>
+
+            <!-- For dependency convergence on mockito/powermock mismatch -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>1.12.10</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
                 <version>${testcontainers.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>com.tngtech.archunit</groupId>
-                <artifactId>archunit</artifactId>
-                <version>${archunit.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>com.tngtech.archunit</groupId>
-                <artifactId>archunit-junit5</artifactId>
-                <version>${archunit.version}</version>
-                <scope>test</scope>
             </dependency>
 
         </dependencies>

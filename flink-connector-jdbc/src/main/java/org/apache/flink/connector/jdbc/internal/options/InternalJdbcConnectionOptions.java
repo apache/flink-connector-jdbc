@@ -32,7 +32,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /** Options for the JDBC connector. */
 @Internal
-public class JdbcConnectorOptions extends JdbcConnectionOptions {
+public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
 
     private static final long serialVersionUID = 1L;
 
@@ -40,7 +40,7 @@ public class JdbcConnectorOptions extends JdbcConnectionOptions {
     private final JdbcDialect dialect;
     private final @Nullable Integer parallelism;
 
-    private JdbcConnectorOptions(
+    private InternalJdbcConnectionOptions(
             String dbURL,
             String tableName,
             @Nullable String driverName,
@@ -73,8 +73,8 @@ public class JdbcConnectorOptions extends JdbcConnectionOptions {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof JdbcConnectorOptions) {
-            JdbcConnectorOptions options = (JdbcConnectorOptions) o;
+        if (o instanceof InternalJdbcConnectionOptions) {
+            InternalJdbcConnectionOptions options = (InternalJdbcConnectionOptions) o;
             return Objects.equals(url, options.url)
                     && Objects.equals(tableName, options.tableName)
                     && Objects.equals(driverName, options.driverName)
@@ -103,7 +103,7 @@ public class JdbcConnectorOptions extends JdbcConnectionOptions {
                 connectionCheckTimeoutSeconds);
     }
 
-    /** Builder of {@link JdbcConnectorOptions}. */
+    /** Builder of {@link InternalJdbcConnectionOptions}. */
     public static class Builder {
         private ClassLoader classLoader;
         private String dbURL;
@@ -181,7 +181,7 @@ public class JdbcConnectorOptions extends JdbcConnectionOptions {
             return this;
         }
 
-        public JdbcConnectorOptions build() {
+        public InternalJdbcConnectionOptions build() {
             checkNotNull(dbURL, "No dbURL supplied.");
             checkNotNull(tableName, "No tableName supplied.");
             if (this.dialect == null) {
@@ -197,7 +197,7 @@ public class JdbcConnectorOptions extends JdbcConnectionOptions {
                                 () -> new NullPointerException("No driverName supplied."));
             }
 
-            return new JdbcConnectorOptions(
+            return new InternalJdbcConnectionOptions(
                     dialect.appendDefaultUrlProperties(dbURL),
                     tableName,
                     driverName,

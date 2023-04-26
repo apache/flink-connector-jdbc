@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.internal.options.JdbcConnectorOptions;
+import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcReadOptions;
 import org.apache.flink.table.api.DataTypes;
@@ -72,8 +72,8 @@ class JdbcDynamicTableFactoryTest {
 
         // validation for source
         DynamicTableSource actualSource = createTableSource(SCHEMA, properties);
-        JdbcConnectorOptions options =
-                JdbcConnectorOptions.builder()
+        InternalJdbcConnectionOptions options =
+                InternalJdbcConnectionOptions.builder()
                         .setDBUrl("jdbc:derby:memory:mydb")
                         .setTableName("mytable")
                         .setDriverName("org.apache.derby.jdbc.EmbeddedDriver")
@@ -124,8 +124,8 @@ class JdbcDynamicTableFactoryTest {
 
         DynamicTableSource actual = createTableSource(SCHEMA, properties);
 
-        JdbcConnectorOptions options =
-                JdbcConnectorOptions.builder()
+        InternalJdbcConnectionOptions options =
+                InternalJdbcConnectionOptions.builder()
                         .setDBUrl("jdbc:derby:memory:mydb")
                         .setTableName("mytable")
                         .build();
@@ -161,8 +161,8 @@ class JdbcDynamicTableFactoryTest {
 
         DynamicTableSource actual = createTableSource(SCHEMA, properties);
 
-        JdbcConnectorOptions options =
-                JdbcConnectorOptions.builder()
+        InternalJdbcConnectionOptions options =
+                InternalJdbcConnectionOptions.builder()
                         .setDBUrl("jdbc:derby:memory:mydb")
                         .setTableName("mytable")
                         .build();
@@ -186,8 +186,8 @@ class JdbcDynamicTableFactoryTest {
 
         DynamicTableSource actual = createTableSource(SCHEMA, properties);
 
-        JdbcConnectorOptions options =
-                JdbcConnectorOptions.builder()
+        InternalJdbcConnectionOptions options =
+                InternalJdbcConnectionOptions.builder()
                         .setDBUrl("jdbc:derby:memory:mydb")
                         .setTableName("mytable")
                         .build();
@@ -214,8 +214,8 @@ class JdbcDynamicTableFactoryTest {
 
         DynamicTableSink actual = createTableSink(SCHEMA, properties);
 
-        JdbcConnectorOptions options =
-                JdbcConnectorOptions.builder()
+        InternalJdbcConnectionOptions options =
+                InternalJdbcConnectionOptions.builder()
                         .setDBUrl("jdbc:derby:memory:mydb")
                         .setTableName("mytable")
                         .build();
@@ -247,8 +247,8 @@ class JdbcDynamicTableFactoryTest {
 
         DynamicTableSink actual = createTableSink(SCHEMA, properties);
 
-        JdbcConnectorOptions options =
-                JdbcConnectorOptions.builder()
+        InternalJdbcConnectionOptions options =
+                InternalJdbcConnectionOptions.builder()
                         .setDBUrl("jdbc:derby:memory:mydb")
                         .setTableName("mytable")
                         .setParallelism(2)
@@ -371,8 +371,8 @@ class JdbcDynamicTableFactoryTest {
 
         DynamicTableSource actual = createTableSource(SCHEMA, properties);
 
-        JdbcConnectorOptions options =
-                JdbcConnectorOptions.builder()
+        InternalJdbcConnectionOptions options =
+                InternalJdbcConnectionOptions.builder()
                         .setDBUrl("jdbc:derby:memory:mydb")
                         .setTableName("mytable")
                         .build();

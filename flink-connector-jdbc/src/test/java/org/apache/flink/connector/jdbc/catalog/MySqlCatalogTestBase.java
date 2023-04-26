@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
+import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Schema;
@@ -29,8 +30,6 @@ import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CollectionUtil;
-
-import org.apache.flink.shaded.guava30.com.google.common.collect.Lists;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,7 +55,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test base for {@link MySqlCatalog}. */
-abstract class MySqlCatalogTestBase {
+abstract class MySqlCatalogTestBase implements JdbcITCaseBase {
 
     public static final Logger LOG = LoggerFactory.getLogger(MySqlCatalogTestBase.class);
     protected static final String TEST_CATALOG_NAME = "mysql_catalog";
@@ -123,11 +122,11 @@ abstract class MySqlCatalogTestBase {
                     .column("col_time_p3", DataTypes.TIME(3))
                     .column("col_timestamp_p3", DataTypes.TIMESTAMP(3))
                     .column("col_varbinary", DataTypes.BYTES())
-                    .primaryKeyNamed("PRIMARY", Lists.newArrayList("pid"))
+                    .primaryKeyNamed("PRIMARY", Collections.singletonList("pid"))
                     .build();
 
     protected static final List<Row> TABLE_ROWS =
-            Lists.newArrayList(
+            Arrays.asList(
                     Row.ofKind(
                             RowKind.INSERT,
                             1L,
@@ -380,7 +379,7 @@ abstract class MySqlCatalogTestBase {
                                 .collect());
         assertThat(results)
                 .isEqualTo(
-                        Lists.newArrayList(
+                        Arrays.asList(
                                 Row.ofKind(RowKind.INSERT, 1L), Row.ofKind(RowKind.INSERT, 2L)));
     }
 
@@ -458,6 +457,7 @@ abstract class MySqlCatalogTestBase {
                                                 TEST_TABLE_SINK_FROM_GROUPED_BY))
                                 .execute()
                                 .collect());
-        assertThat(results).isEqualTo(Lists.newArrayList(Row.ofKind(RowKind.INSERT, 2L, -1L)));
+        assertThat(results)
+                .isEqualTo(Collections.singletonList(Row.ofKind(RowKind.INSERT, 2L, -1L)));
     }
 }
