@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.dialect.vertica;
 
 import org.apache.flink.connector.jdbc.databases.vertica.VerticaDatabase;
+import org.apache.flink.connector.jdbc.databases.vertica.VerticaMetadata;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -50,7 +51,7 @@ public class VerticaTableSourceITCase extends AbstractTestBase implements Vertic
 
     @BeforeAll
     static void beforeAll() throws ClassNotFoundException, SQLException {
-        try (Connection conn = VerticaDatabase.getConnection();
+        try (Connection conn = new VerticaMetadata(CONTAINER).getConnection();
                 Statement stat = conn.createStatement()) {
             stat.executeUpdate(
                     "CREATE TABLE "
@@ -91,8 +92,8 @@ public class VerticaTableSourceITCase extends AbstractTestBase implements Vertic
 
     @AfterAll
     static void afterAll() throws Exception {
-        try (Connection conn = VerticaDatabase.getConnection();
-                Statement stat = conn.createStatement()) {
+        try (Connection conn = new VerticaMetadata(CONTAINER).getConnection();
+             Statement stat = conn.createStatement()) {
             stat.executeUpdate("DROP TABLE " + INPUT_TABLE);
         }
     }

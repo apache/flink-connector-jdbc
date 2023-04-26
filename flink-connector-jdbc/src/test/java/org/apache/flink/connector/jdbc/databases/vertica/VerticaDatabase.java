@@ -43,14 +43,4 @@ public interface VerticaDatabase extends DatabaseTest {
     default DatabaseMetadata getMetadata() {
         return new VerticaMetadata(CONTAINER);
     }
-
-    static Connection getConnection() throws SQLException, ClassNotFoundException {
-        VerticaMetadata verticaMetadata = new VerticaMetadata(CONTAINER);
-        Class.forName(verticaMetadata.getDriverClass());
-
-        return DriverManager.getConnection(
-                verticaMetadata.getJdbcUrl(),
-                verticaMetadata.getUsername(),
-                verticaMetadata.getPassword());
-    }
 }

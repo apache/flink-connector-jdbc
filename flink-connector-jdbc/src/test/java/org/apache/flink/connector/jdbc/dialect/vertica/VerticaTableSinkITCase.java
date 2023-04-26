@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.dialect.vertica;
 import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.databases.vertica.VerticaDatabase;
+import org.apache.flink.connector.jdbc.databases.vertica.VerticaMetadata;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -70,8 +71,8 @@ public class VerticaTableSinkITCase extends AbstractTestBase implements VerticaD
 
     @BeforeAll
     static void beforeAll() throws ClassNotFoundException, SQLException {
-        try (Connection conn = VerticaDatabase.getConnection();
-                Statement stat = conn.createStatement()) {
+        try (Connection conn = new VerticaMetadata(CONTAINER).getConnection();
+             Statement stat = conn.createStatement()) {
             stat.executeUpdate(
                     "CREATE TABLE "
                             + BATCH_SINK_TABLE
@@ -97,7 +98,7 @@ public class VerticaTableSinkITCase extends AbstractTestBase implements VerticaD
     @AfterAll
     static void afterAll() throws Exception {
         TestValuesTableFactory.clearAllData();
-        try (Connection conn = VerticaDatabase.getConnection();
+        try (Connection conn = new VerticaMetadata(CONTAINER).getConnection();
                 Statement stat = conn.createStatement()) {
             stat.execute("DROP TABLE " + BATCH_SINK_TABLE);
             stat.execute("DROP TABLE " + APPEND_TABLE);
