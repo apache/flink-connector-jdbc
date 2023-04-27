@@ -70,6 +70,7 @@ class KeyedBatchStatementExecutor<T, K> implements JdbcBatchStatementExecutor<T>
     @Override
     public void executeBatch() throws SQLException {
         if (!batch.isEmpty()) {
+			st.clearParameters();
             for (K entry : batch) {
                 parameterSetter.accept(st, entry);
                 st.addBatch();

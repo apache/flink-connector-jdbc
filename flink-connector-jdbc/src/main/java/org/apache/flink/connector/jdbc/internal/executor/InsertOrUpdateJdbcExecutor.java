@@ -99,6 +99,9 @@ public final class InsertOrUpdateJdbcExecutor<R, K, V> implements JdbcBatchState
     @Override
     public void executeBatch() throws SQLException {
         if (!batch.isEmpty()) {
+			existStatement.clearParameters();
+			updateStatement.clearParameters();
+			insertStatement.clearParameters();
             for (Map.Entry<K, V> entry : batch.entrySet()) {
                 processOneRowInBatch(entry.getKey(), entry.getValue());
             }

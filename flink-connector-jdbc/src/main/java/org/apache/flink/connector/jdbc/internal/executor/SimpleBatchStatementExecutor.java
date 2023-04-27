@@ -66,6 +66,7 @@ class SimpleBatchStatementExecutor<T, V> implements JdbcBatchStatementExecutor<T
     @Override
     public void executeBatch() throws SQLException {
         if (!batch.isEmpty()) {
+			st.clearParameters();
             for (V r : batch) {
                 parameterSetter.accept(st, r);
                 st.addBatch();
