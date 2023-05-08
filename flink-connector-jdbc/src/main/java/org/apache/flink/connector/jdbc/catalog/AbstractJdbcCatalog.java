@@ -518,11 +518,12 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
                 ps.setObject(i + 1, params[i]);
             }
         }
-        ResultSet rs = ps.executeQuery();
-        while (rs.next()) {
-            String columnValue = rs.getString(columnIndex);
-            if (Objects.isNull(filterFunc) || filterFunc.test(columnValue)) {
-                columnValues.add(columnValue);
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                String columnValue = rs.getString(columnIndex);
+                if (Objects.isNull(filterFunc) || filterFunc.test(columnValue)) {
+                    columnValues.add(columnValue);
+                }
             }
         }
         return columnValues;
