@@ -105,7 +105,7 @@ class OracleTableSourceITCase extends AbstractTestBase implements OracleTestBase
     }
 
     @Test
-    void testJdbcSource() throws Exception {
+    void testJdbcSource() {
         tEnv.executeSql(INPUT_TABLE.getCreateQueryForFlink(getMetadata(), INPUT_TABLE_NAME));
         Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_NAME).collect();
         List<String> result =
@@ -123,7 +123,7 @@ class OracleTableSourceITCase extends AbstractTestBase implements OracleTestBase
     }
 
     @Test
-    void testProject() throws Exception {
+    void testProject() {
         tEnv.executeSql(
                 INPUT_TABLE.getCreateQueryForFlink(
                         getMetadata(),
@@ -158,7 +158,7 @@ class OracleTableSourceITCase extends AbstractTestBase implements OracleTestBase
     }
 
     @Test
-    void testLimit() throws Exception {
+    void testLimit() {
         tEnv.executeSql(
                 INPUT_TABLE.getCreateQueryForFlink(
                         getMetadata(),

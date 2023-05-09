@@ -105,7 +105,7 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
     }
 
     @BeforeEach
-    void beforeAll() throws SQLException {
+    void beforeEach() throws SQLException {
         try (Connection conn = getMetadata().getConnection()) {
             inputTable.insertIntoTableValues(conn, getTestData());
         }
@@ -153,7 +153,7 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
     }
 
     @Test
-    public void testLimit() throws Exception {
+    public void testLimit() {
         String testTable = "testTable";
         tEnv.executeSql(
                 inputTable.getCreateQueryForFlink(
@@ -174,7 +174,7 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
     }
 
     @Test
-    public void testFilter() throws Exception {
+    public void testFilter() {
         String testTable = "testTable";
         tEnv.executeSql(inputTable.getCreateQueryForFlink(getMetadata(), testTable));
 
@@ -271,7 +271,7 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
 
     @ParameterizedTest
     @EnumSource(Caching.class)
-    void testLookupJoin(Caching caching) throws Exception {
+    void testLookupJoin(Caching caching) {
         // Create JDBC lookup table
         List<String> cachingOptions = Collections.emptyList();
         if (caching.equals(Caching.ENABLE_CACHE)) {
