@@ -30,7 +30,7 @@ under the License.
 
 添加下面的依赖以便使用该连接器（同时添加 JDBC 驱动）：
 
-{{< connector_artifact flink-connector-jdbc 3.1.0 >}}
+{{< connector_artifact flink-connector-jdbc jdbc >}}
 
 注意该连接器目前还 __不是__ 二进制发行版的一部分，如何在集群中运行请参考 [这里]({{< ref "docs/dev/configuration/overview" >}})。
 
