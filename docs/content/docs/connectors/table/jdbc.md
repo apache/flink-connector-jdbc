@@ -38,7 +38,7 @@ The JDBC sink operate in upsert mode for exchange UPDATE/DELETE messages with th
 Dependencies
 ------------
 
-{{< sql_connector_download_table "jdbc" 3.0.0 >}}
+{{< sql_connector_download_table "jdbc" >}}
 
 The JDBC connector is not part of the binary distribution.
 See how to link with it for cluster execution [here]({{< ref "docs/dev/configuration/overview" >}}).
