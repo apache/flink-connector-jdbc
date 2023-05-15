@@ -35,7 +35,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 @Testcontainers
 public interface CrateDBDatabase extends DatabaseTest {
 
-    String CRATEDB = "crate:5.2.5";
+    String CRATEDB = "crate:5.3.1";
     int CRATEDB_PG_PORT = 5432;
     int CRATEDB_HTTP_PORT = 4200;
 

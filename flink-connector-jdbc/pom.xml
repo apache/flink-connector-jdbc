@@ -82,7 +82,7 @@ under the License.
 		<dependency>
 			<groupId>io.crate</groupId>
 			<artifactId>crate-jdbc</artifactId>
-			<version>2.6.0</version>
+			<version>2.7.0</version>
 			<scope>provided</scope>
 		</dependency>
 
