@@ -10,7 +10,7 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 
-/** clickhouse dialect */
+/** clickhouse dialect. */
 public class ClickHouseDialect extends AbstractDialect {
 
     private static final long serialVersionUID = 1L;

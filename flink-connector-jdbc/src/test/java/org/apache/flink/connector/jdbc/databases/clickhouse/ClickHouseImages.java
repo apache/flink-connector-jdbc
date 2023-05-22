@@ -1,4 +1,4 @@
 package org.apache.flink.connector.jdbc.databases.clickhouse;
 
-/** clickhouse images */
+/** clickhouse images. */
 public interface ClickHouseImages {}
