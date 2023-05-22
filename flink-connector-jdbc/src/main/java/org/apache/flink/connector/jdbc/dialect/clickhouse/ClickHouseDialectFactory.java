@@ -4,7 +4,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectFactory;
 
-/** clickhouse dialect factory */
+/** clickhouse dialect factory. */
 @Internal
 public class ClickHouseDialectFactory implements JdbcDialectFactory {
     @Override

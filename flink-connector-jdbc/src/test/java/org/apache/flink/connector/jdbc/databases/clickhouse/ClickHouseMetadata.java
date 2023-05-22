@@ -6,7 +6,7 @@ import org.testcontainers.containers.ClickHouseContainer;
 
 import javax.sql.XADataSource;
 
-/** clickhouse metadata */
+/** clickhouse metadata. */
 public class ClickHouseMetadata implements DatabaseMetadata {
 
     private final String username;
