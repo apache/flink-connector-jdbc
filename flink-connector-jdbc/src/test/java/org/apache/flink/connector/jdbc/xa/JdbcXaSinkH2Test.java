@@ -18,8 +18,10 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
-import org.apache.flink.connector.jdbc.databases.h2.H2XaDatabase;
-import org.apache.flink.connector.jdbc.databases.h2.xa.H2XaDsWrapper;
+import org.apache.flink.connector.jdbc.databases.h2.H2XaTestBase;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.databases.h2.H2XaDatabase;
+import org.apache.flink.connector.jdbc.testutils.databases.h2.xa.H2XaDsWrapper;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +33,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * transaction is not yet committed). But XA support isn't full, so for some scenarios {@link
  * H2XaDsWrapper wrapper} is used, and for some - Derby.
  */
-class JdbcXaSinkH2Test extends JdbcXaSinkTestBase implements H2XaDatabase {
+class JdbcXaSinkH2Test extends JdbcXaSinkTestBase implements H2XaTestBase {
+
+    @Override
+    public DatabaseMetadata getMetadata() {
+        return H2XaDatabase.getMetadata();
+    }
 
     @Test
     void testIgnoreDuplicatedNotification() throws Exception {
