@@ -18,29 +18,27 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.api.common.state.CheckpointListener;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.JdbcITCase;
 import org.apache.flink.connector.jdbc.JdbcSink;
-import org.apache.flink.connector.jdbc.JdbcTestBase;
-import org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
-import org.apache.flink.runtime.state.CheckpointListener;
+import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
+import org.apache.flink.connector.jdbc.testutils.TableManaged;
+import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.CheckpointingMode;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.test.junit5.MiniClusterExtension;
 import org.apache.flink.util.ExceptionUtils;
-import org.apache.flink.util.function.SerializableSupplier;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -48,15 +46,14 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.XADataSource;
-
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -65,24 +62,20 @@ import static java.util.Collections.singletonList;
 import static org.apache.flink.api.common.restartstrategy.RestartStrategies.fixedDelayRestart;
 import static org.apache.flink.configuration.JobManagerOptions.EXECUTION_FAILOVER_STRATEGY;
 import static org.apache.flink.configuration.TaskManagerOptions.TASK_CANCELLATION_TIMEOUT;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.INPUT_TABLE;
-import static org.apache.flink.connector.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
 import static org.apache.flink.connector.jdbc.xa.JdbcXaFacadeTestHelper.getInsertedIds;
 import static org.apache.flink.streaming.api.environment.ExecutionCheckpointingOptions.CHECKPOINTING_TIMEOUT;
 import static org.apache.flink.util.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** A simple end-to-end test for {@link JdbcXaSinkFunction}. */
-public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
-    private static final Random RANDOM = new Random(System.currentTimeMillis());
+public abstract class JdbcExactlyOnceSinkE2eTest implements DatabaseTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcExactlyOnceSinkE2eTest.class);
 
+    private static final BooksTable OUTPUT_TABLE = new BooksTable("XaTable");
     protected static final int PARALLELISM = 4;
-    protected static final long CHECKPOINT_TIMEOUT_MS = 20_000L;
-    protected static final long TASK_CANCELLATION_TIMEOUT_MS = 20_000L;
-
-    protected abstract SerializableSupplier<XADataSource> getDataSourceSupplier();
+    protected static final long CHECKPOINT_TIMEOUT_MS = 5_000L;
+    protected static final long TASK_CANCELLATION_TIMEOUT_MS = 10_000L;
 
     @RegisterExtension static final MiniClusterExtension MINI_CLUSTER = createCluster();
 
@@ -102,6 +95,11 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
                         .build());
     }
 
+    @Override
+    public List<TableManaged> getManagedTables() {
+        return Collections.singletonList(OUTPUT_TABLE);
+    }
+
     // track active sources for:
     // 1. if any cancels, cancel others ASAP
     // 2. wait for others (to participate in checkpointing)
@@ -113,7 +111,6 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
     private static final Map<Integer, CountDownLatch> inactiveMappers = new ConcurrentHashMap<>();
 
     @AfterEach
-    @Override
     public void after() {
         activeSources.clear();
         inactiveMappers.clear();
@@ -124,35 +121,32 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         long started = System.currentTimeMillis();
         LOG.info("Test insert for {}", getMetadata().getVersion());
         int elementsPerSource = 50;
-        int numElementsPerCheckpoint = 7;
-        int minElementsPerFailure = numElementsPerCheckpoint / 3;
-        int maxElementsPerFailure = numElementsPerCheckpoint * 3;
+        int numElementsPerCheckpoint = 10;
+        int expectedFailures = elementsPerSource / numElementsPerCheckpoint;
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(PARALLELISM);
-        env.setRestartStrategy(fixedDelayRestart(elementsPerSource * 2, Time.milliseconds(100)));
-        env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
+        env.setRestartStrategy(fixedDelayRestart(expectedFailures * 2, Time.milliseconds(100)));
+        env.getConfig().setAutoWatermarkInterval(0L);
         env.enableCheckpointing(50, CheckpointingMode.EXACTLY_ONCE);
-        // timeout checkpoints as some tasks may fail while triggering
-        env.getCheckpointConfig().setCheckpointTimeout(1000);
         // NOTE: keep operator chaining enabled to prevent memory exhaustion by sources while maps
         // are still initializing
         env.addSource(new TestEntrySource(elementsPerSource, numElementsPerCheckpoint))
                 .setParallelism(PARALLELISM)
-                .map(new FailingMapper(minElementsPerFailure, maxElementsPerFailure))
+                .map(new FailingMapper(numElementsPerCheckpoint + (numElementsPerCheckpoint / 2)))
                 .addSink(
                         JdbcSink.exactlyOnceSink(
-                                String.format(INSERT_TEMPLATE, INPUT_TABLE),
-                                JdbcITCase.TEST_ENTRY_JDBC_STATEMENT_BUILDER,
+                                OUTPUT_TABLE.getInsertIntoQuery(),
+                                OUTPUT_TABLE.getStatementBuilder(),
                                 JdbcExecutionOptions.builder().withMaxRetries(0).build(),
                                 JdbcExactlyOnceOptions.builder()
                                         .withTransactionPerConnection(true)
                                         .build(),
-                                this.getDataSourceSupplier()));
+                                getMetadata().getXaSourceSupplier()));
 
         env.execute();
 
-        List<Integer> insertedIds = getInsertedIds(getMetadata(), INPUT_TABLE);
+        List<Integer> insertedIds = getInsertedIds(getMetadata(), OUTPUT_TABLE.getTableName());
         List<Integer> expectedIds =
                 IntStream.range(0, elementsPerSource * PARALLELISM)
                         .boxed()
@@ -160,14 +154,18 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         assertThat(insertedIds)
                 .as(insertedIds.toString())
                 .containsExactlyInAnyOrderElementsOf(expectedIds);
+
         LOG.info(
                 "Test insert for {} finished in {} ms.",
                 getMetadata().getVersion(),
                 System.currentTimeMillis() - started);
     }
 
-    /** {@link SourceFunction} emits {@link TestEntry test entries} and waits for the checkpoint. */
-    private static class TestEntrySource extends RichParallelSourceFunction<TestEntry>
+    /**
+     * {@link SourceFunction} emits {@link BooksTable.BookEntry test entries} and waits for the
+     * checkpoint.
+     */
+    private static class TestEntrySource extends RichParallelSourceFunction<BooksTable.BookEntry>
             implements CheckpointListener, CheckpointedFunction {
         private final int numElements;
         private final int numElementsPerCheckpoint;
@@ -184,14 +182,14 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         }
 
         @Override
-        public void run(SourceContext<TestEntry> ctx) throws Exception {
+        public void run(SourceContext<BooksTable.BookEntry> ctx) throws Exception {
             try {
                 waitForConsumers();
                 for (SourceRange range : ranges.get()) {
                     emitRange(range, ctx);
                 }
             } finally {
-                activeSources.get(getRuntimeContext().getAttemptNumber()).countDown();
+                getActiveSources().countDown();
             }
             waitOtherSources(); // participate in checkpointing
         }
@@ -203,7 +201,7 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
             inactiveMappers.get(getRuntimeContext().getAttemptNumber()).await();
         }
 
-        private void emitRange(SourceRange range, SourceContext<TestEntry> ctx) {
+        private void emitRange(SourceRange range, SourceContext<BooksTable.BookEntry> ctx) {
             for (int i = range.from; i < range.to && running; ) {
                 int count = Math.min(range.to - i, numElementsPerCheckpoint);
                 emit(i, count, range, ctx);
@@ -212,14 +210,17 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         }
 
         private void emit(
-                int start, int count, SourceRange toAdvance, SourceContext<TestEntry> ctx) {
+                int start,
+                int count,
+                SourceRange toAdvance,
+                SourceContext<BooksTable.BookEntry> ctx) {
             synchronized (ctx.getCheckpointLock()) {
                 lastCheckpointId = -1L;
                 lastSnapshotConfirmed = false;
                 for (int j = start; j < start + count && running; j++) {
                     try {
                         ctx.collect(
-                                new TestEntry(
+                                new BooksTable.BookEntry(
                                         j,
                                         Integer.toString(j),
                                         Integer.toString(j),
@@ -277,7 +278,6 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         }
 
         private void sleep(Supplier<Boolean> condition) {
-            long start = System.currentTimeMillis();
             while (condition.get()
                     && running
                     && !Thread.currentThread().isInterrupted()
@@ -292,16 +292,17 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         }
 
         private void waitOtherSources() throws InterruptedException {
-            long start = System.currentTimeMillis();
             while (running && haveActiveSources()) {
-                activeSources
-                        .get(getRuntimeContext().getAttemptNumber())
-                        .await(100, TimeUnit.MILLISECONDS);
+                getActiveSources().await(100, TimeUnit.MILLISECONDS);
             }
         }
 
+        private CountDownLatch getActiveSources() {
+            return activeSources.get(getRuntimeContext().getAttemptNumber());
+        }
+
         private boolean haveActiveSources() {
-            return activeSources.get(getRuntimeContext().getAttemptNumber()).getCount() > 0;
+            return getActiveSources().getCount() > 0;
         }
 
         private static final class SourceRange {
@@ -330,19 +331,17 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
         }
     }
 
-    private static class FailingMapper extends RichMapFunction<TestEntry, TestEntry> {
-        private final int minElementsPerFailure;
-        private final int maxElementsPerFailure;
-        private transient int remaining;
+    private static class FailingMapper
+            extends RichMapFunction<BooksTable.BookEntry, BooksTable.BookEntry> {
+        private final int failingMessage;
+        private transient AtomicInteger counter;
 
-        public FailingMapper(int minElementsPerFailure, int maxElementsPerFailure) {
-            this.minElementsPerFailure = minElementsPerFailure;
-            this.maxElementsPerFailure = maxElementsPerFailure;
+        public FailingMapper(int failingMessage) {
+            this.failingMessage = failingMessage;
         }
 
         @Override
         public void open(Configuration parameters) throws Exception {
-            remaining = minElementsPerFailure + RANDOM.nextInt(maxElementsPerFailure);
             inactiveMappers
                     .computeIfAbsent(
                             getRuntimeContext().getAttemptNumber(),
@@ -350,12 +349,13 @@ public abstract class JdbcExactlyOnceSinkE2eTest extends JdbcTestBase {
                                     new CountDownLatch(
                                             getRuntimeContext().getNumberOfParallelSubtasks()))
                     .countDown();
-            LOG.debug("Mapper will fail after {} records", remaining);
+            counter = new AtomicInteger(failingMessage);
+            LOG.debug("Mapper will fail after {} records.", failingMessage);
         }
 
         @Override
-        public TestEntry map(TestEntry value) throws Exception {
-            if (--remaining <= 0) {
+        public BooksTable.BookEntry map(BooksTable.BookEntry value) throws Exception {
+            if (counter.getAndDecrement() <= 0) {
                 LOG.debug("Mapper failing intentionally.");
                 throw new TestException();
             }

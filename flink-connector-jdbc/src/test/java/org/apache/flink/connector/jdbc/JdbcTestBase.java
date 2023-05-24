@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.jdbc;
 
-import org.apache.flink.connector.jdbc.databases.DatabaseTest;
+import org.apache.flink.connector.jdbc.databases.derby.DerbyTestBase;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
  * Base class for JDBC test using DDL from {@link JdbcTestFixture}. It uses create tables before
  * each test and drops afterwards.
  */
-public abstract class JdbcTestBase implements DatabaseTest {
+public abstract class JdbcTestBase implements DerbyTestBase {
 
     @BeforeEach
     public void before() throws Exception {
@@ -35,7 +35,6 @@ public abstract class JdbcTestBase implements DatabaseTest {
 
     @AfterEach
     public void after() throws Exception {
-        JdbcTestFixture.cleanupData(getMetadata().getJdbcUrl());
         JdbcTestFixture.cleanUpDatabasesStatic(getMetadata());
     }
 }
