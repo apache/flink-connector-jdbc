@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /** JDBC dialect for Oracle. */
-class OracleDialect extends AbstractDialect {
+public class OracleDialect extends AbstractDialect {
 
     private static final long serialVersionUID = 1L;
 
