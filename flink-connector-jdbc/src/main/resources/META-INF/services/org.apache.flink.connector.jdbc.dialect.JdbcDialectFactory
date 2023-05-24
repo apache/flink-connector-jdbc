@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-org.apache.flink.connector.jdbc.dialect.derby.DerbyDialectFactory
-org.apache.flink.connector.jdbc.dialect.mysql.MySqlDialectFactory
-org.apache.flink.connector.jdbc.dialect.psql.PostgresDialectFactory
-org.apache.flink.connector.jdbc.dialect.oracle.OracleDialectFactory
-org.apache.flink.connector.jdbc.dialect.sqlserver.SqlServerDialectFactory
-org.apache.flink.connector.jdbc.dialect.cratedb.CrateDBDialectFactory
+org.apache.flink.connector.jdbc.databases.derby.dialect.DerbyDialectFactory
+org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialectFactory
+org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialectFactory
+org.apache.flink.connector.jdbc.databases.oracle.dialect.OracleDialectFactory
+org.apache.flink.connector.jdbc.databases.sqlserver.dialect.SqlServerDialectFactory
+org.apache.flink.connector.jdbc.databases.cratedb.dialect.CrateDBDialectFactory
