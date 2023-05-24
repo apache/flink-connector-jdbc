@@ -19,7 +19,6 @@ package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.function.FunctionWithException;
@@ -43,6 +42,7 @@ import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.JdbcConnecti
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.INPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
+import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
