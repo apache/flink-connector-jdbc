@@ -29,10 +29,7 @@ import org.apache.flink.table.factories.FactoryUtil;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,15 +38,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Test for {@link JdbcCatalogFactory}. */
 class JdbcCatalogFactoryTest implements PostgresTestBase {
 
-    public static final Logger LOG = LoggerFactory.getLogger(JdbcCatalogFactoryTest.class);
-
     protected static String baseUrl;
     protected static JdbcCatalog catalog;
 
     protected static final String TEST_CATALOG_NAME = "mypg";
 
     @BeforeEach
-    void setup() throws SQLException {
+    void setup() {
         // jdbc:postgresql://localhost:50807/postgres?user=postgres
         String jdbcUrl = getMetadata().getJdbcUrl();
         // jdbc:postgresql://localhost:50807/

@@ -28,8 +28,6 @@ import org.apache.flink.table.types.logical.DecimalType;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -38,8 +36,6 @@ import java.sql.Statement;
 
 /** Test base for {@link PostgresCatalog}. */
 class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
-
-    public static final Logger LOG = LoggerFactory.getLogger(PostgresCatalogTestBase.class);
 
     private static DatabaseMetadata getStaticMetadata() {
         return PostgresDatabase.getMetadata();
