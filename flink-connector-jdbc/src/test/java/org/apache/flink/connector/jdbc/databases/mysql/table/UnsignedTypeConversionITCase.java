@@ -32,8 +32,6 @@ import org.apache.flink.util.CloseableIterator;
 import org.apache.flink.util.CollectionUtil;
 
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -53,8 +51,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class UnsignedTypeConversionITCase extends AbstractTestBase implements MySqlTestBase {
 
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger(UnsignedTypeConversionITCase.class);
     private static final String TABLE_SOURCE = "jdbc_source";
     private static final String TABLE_SINK = "jdbc_sink";
     private static final String TABLE_DATA = "data";

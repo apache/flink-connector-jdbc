@@ -107,7 +107,7 @@ class SqlServerTableSourceITCase extends AbstractTestBase implements SqlServerTe
     }
 
     @Test
-    void testJdbcSource() throws Exception {
+    void testJdbcSource() {
         createFlinkTable();
         Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_NAME).collect();
         List<String> result =
@@ -131,7 +131,7 @@ class SqlServerTableSourceITCase extends AbstractTestBase implements SqlServerTe
     }
 
     @Test
-    void testProject() throws Exception {
+    void testProject() {
         createFlinkTable();
         Iterator<Row> collected =
                 tEnv.executeSql("SELECT id,datetime_col,decimal_col FROM " + INPUT_TABLE_NAME)
@@ -151,7 +151,7 @@ class SqlServerTableSourceITCase extends AbstractTestBase implements SqlServerTe
     }
 
     @Test
-    void testFilter() throws Exception {
+    void testFilter() {
         createFlinkTable();
         Iterator<Row> collected =
                 tEnv.executeSql(
