@@ -26,9 +26,13 @@ import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 
 import org.apache.flink.shaded.guava30.com.google.common.collect.ImmutableList;
 
+import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -83,15 +87,24 @@ public class CrateDBCatalog extends PostgresCatalog {
     // ------ tables ------
 
     @Override
-    protected List<String> getPureTables(String databaseName, String schema) {
-        return extractColumnValuesBySQL(
-                baseUrl + databaseName,
-                "SELECT table_name FROM information_schema.tables "
-                        + "WHERE table_schema = ? "
-                        + "ORDER BY table_type, table_name",
-                1,
-                null,
-                schema);
+    protected List<String> getPureTables(Connection conn, List<String> schemas)
+            throws SQLException {
+        List<String> tables = Lists.newArrayList();
+
+        // position 1 is database name, position 2 is schema name, position 3 is table name
+        try (PreparedStatement ps =
+                conn.prepareStatement(
+                        "SELECT table_name FROM information_schema.tables "
+                                + "WHERE table_schema = ? "
+                                + "ORDER BY table_type, table_name")) {
+            for (String schema : schemas) {
+                // Column index 1 is database name, 2 is schema name, 3 is table name
+                extractColumnValuesByStatement(ps, 1, null, schema).stream()
+                        .map(pureTable -> schema + "." + pureTable)
+                        .forEach(tables::add);
+            }
+            return tables;
+        }
     }
 
     @Override
