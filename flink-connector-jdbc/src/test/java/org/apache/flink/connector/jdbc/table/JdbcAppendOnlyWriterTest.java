@@ -54,7 +54,7 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
     }
 
     @Test
-    void testMaxRetry() throws Exception {
+    void testMaxRetry() {
         assertThatThrownBy(
                         () -> {
                             format =

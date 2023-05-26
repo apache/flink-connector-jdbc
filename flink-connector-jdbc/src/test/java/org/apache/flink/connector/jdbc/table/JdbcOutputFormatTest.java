@@ -76,7 +76,7 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
     private static InternalTypeInfo<RowData> rowDataTypeInfo = InternalTypeInfo.of(rowType);
 
     @AfterEach
-    void tearDown() throws Exception {
+    void tearDown() {
         if (outputFormat != null) {
             outputFormat.close();
         }
