@@ -51,6 +51,8 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -97,11 +99,11 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
                 Row.of(
                         1L,
                         BigDecimal.valueOf(100.1234),
-                        LocalDateTime.parse("2020-01-01T15:35:00.123456")),
+                        truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456"))),
                 Row.of(
                         2L,
                         BigDecimal.valueOf(101.1234),
-                        LocalDateTime.parse("2020-01-01T15:36:01.123456")));
+                        truncateTime(LocalDateTime.parse("2020-01-01T15:36:01.123456"))));
     }
 
     @BeforeEach
@@ -221,7 +223,9 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
         // test TIMESTAMP filter
         assertThat(
                         executeQuery(
-                                "SELECT * FROM FAKE_TABLE WHERE timestamp6_col = TIMESTAMP '2020-01-01 15:35:00.123456'"))
+                                "SELECT * FROM FAKE_TABLE "
+                                        + "WHERE timestamp6_col > TIMESTAMP '2020-01-01 15:35:00'"
+                                        + "  AND timestamp6_col < TIMESTAMP '2020-01-01 15:35:01'"))
                 .containsExactly(onlyRow1);
 
         // test the IN operator
@@ -321,19 +325,19 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
                                     1L,
                                     "Alice",
                                     1L,
-                                    LocalDateTime.parse("2020-01-01T15:35:00.123456"),
+                                    truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456")),
                                     BigDecimal.valueOf(100.1234)),
                             Row.of(
                                     1L,
                                     "Alice",
                                     1L,
-                                    LocalDateTime.parse("2020-01-01T15:35:00.123456"),
+                                    truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456")),
                                     BigDecimal.valueOf(100.1234)),
                             Row.of(
                                     2L,
                                     "Bob",
                                     2L,
-                                    LocalDateTime.parse("2020-01-01T15:36:01.123456"),
+                                    truncateTime(LocalDateTime.parse("2020-01-01T15:36:01.123456")),
                                     BigDecimal.valueOf(101.1234)));
 
             assertThat(collected)
@@ -350,6 +354,14 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
                 LookupCacheManager.keepCacheOnRelease(false);
             }
         }
+    }
+
+    protected TemporalUnit timestampPrecision() {
+        return ChronoUnit.MICROS;
+    }
+
+    private LocalDateTime truncateTime(LocalDateTime value) {
+        return value.truncatedTo(timestampPrecision());
     }
 
     private List<Row> executeQuery(String query) {
@@ -369,7 +381,7 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
                         1L,
                         DecimalData.fromBigDecimal(BigDecimal.valueOf(100.1234), 10, 4),
                         TimestampData.fromLocalDateTime(
-                                LocalDateTime.parse("2020-01-01T15:35:00.123456")));
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456"))));
 
         RowData key2 = GenericRowData.of(2L);
         RowData value2 =
@@ -377,7 +389,7 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
                         2L,
                         DecimalData.fromBigDecimal(BigDecimal.valueOf(101.1234), 10, 4),
                         TimestampData.fromLocalDateTime(
-                                LocalDateTime.parse("2020-01-01T15:36:01.123456")));
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:36:01.123456"))));
 
         RowData key3 = GenericRowData.of(3L);
 
