@@ -53,7 +53,7 @@ under the License.
         <junit4.version>4.13.2</junit4.version>
         <junit5.version>5.9.1</junit5.version>
         <assertj.version>3.23.1</assertj.version>
-        <testcontainers.version>1.17.2</testcontainers.version>
+        <testcontainers.version>1.18.2</testcontainers.version>
         <mockito.version>2.21.0</mockito.version>
 
         <japicmp.referenceVersion>3.0.0-1.16</japicmp.referenceVersion>
@@ -291,6 +291,13 @@ under the License.
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
                 <version>2.1</version>
+            </dependency>
+
+            <!-- For dependency convergence -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.23.0</version>
             </dependency>
 
             <!-- For dependency convergence on mockito/powermock mismatch -->
