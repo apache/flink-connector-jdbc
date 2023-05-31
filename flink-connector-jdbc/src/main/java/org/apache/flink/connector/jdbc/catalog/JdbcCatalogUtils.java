@@ -51,13 +51,11 @@ public class JdbcCatalogUtils {
             String baseUrl) {
         JdbcDialect dialect = JdbcDialectLoader.load(baseUrl, userClassLoader);
 
-        if (dialect
-                instanceof
-                CrateDBDialect) { // Should precede PostgresDialect as it inherits from it
-            return new CrateDBCatalog(
-                    userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
-        } else if (dialect instanceof PostgresDialect) {
+        if (dialect instanceof PostgresDialect) {
             return new PostgresCatalog(
+                    userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+        } else if (dialect instanceof CrateDBDialect) {
+            return new CrateDBCatalog(
                     userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
         } else if (dialect instanceof MySqlDialect) {
             return new MySqlCatalog(
