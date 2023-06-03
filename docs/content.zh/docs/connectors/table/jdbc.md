@@ -48,13 +48,14 @@ JDBC 连接器不是二进制发行版的一部分，请查阅[这里]({{< ref "
 
 在连接到具体数据库时，也需要对应的驱动依赖，目前支持的驱动如下：
 
-| Driver      |      Group Id      |      Artifact Id       |      JAR         |
-| :-----------| :------------------| :----------------------| :----------------|
-| MySQL       |       `mysql`      | `mysql-connector-java` | [下载](https://repo.maven.apache.org/maven2/mysql/mysql-connector-java/) |
-| Oracle      | `com.oracle.database.jdbc` |        `ojdbc8`        | [下载](https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8)
-| PostgreSQL  |  `org.postgresql`  |      `postgresql`      | [下载](https://jdbc.postgresql.org/download/) |
-| Derby       | `org.apache.derby` |        `derby`         | [下载](http://db.apache.org/derby/derby_downloads.html) | |
-| SQL Server | `com.microsoft.sqlserver` |        `mssql-jdbc`         | [下载](https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-ver16) |
+| Driver     | Group Id                   | Artifact Id            |      JAR         |
+|:-----------|:---------------------------|:-----------------------| :----------------|
+| MySQL      | `mysql`                    | `mysql-connector-java` | [下载](https://repo.maven.apache.org/maven2/mysql/mysql-connector-java/) |
+| Oracle     | `com.oracle.database.jdbc` | `ojdbc8`               | [下载](https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8)
+| PostgreSQL | `org.postgresql`           | `postgresql`           | [下载](https://jdbc.postgresql.org/download/) |
+| Derby      | `org.apache.derby`         | `derby`                | [下载](http://db.apache.org/derby/derby_downloads.html) | |
+| SQL Server | `com.microsoft.sqlserver`  | `mssql-jdbc`           | [下载](https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-ver16) |
+| CrateDB    | `io.crate`                 | `crate-jdbc`           | [Download](https://repo1.maven.org/maven2/io/crate/crate-jdbc/) |
 
 当前，JDBC 连接器和驱动不在 Flink 二进制发布包中，请参阅[这里]({{< ref "docs/dev/configuration/overview" >}})了解在集群上执行时何连接它们。
 
@@ -609,7 +610,7 @@ SELECT * FROM given_database.test_table2;
 
 数据类型映射
 ----------------
-Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、Oracle、PostgreSQL、Derby 等。其中，Derby 通常是用于测试目的。下表列出了从关系数据库数据类型到 Flink SQL 数据类型的类型映射，映射表可以使得在 Flink 中定义 JDBC 表更加简单。
+Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、Oracle、PostgreSQL、CrateDB, Derby 等。其中，Derby 通常是用于测试目的。下表列出了从关系数据库数据类型到 Flink SQL 数据类型的类型映射，映射表可以使得在 Flink 中定义 JDBC 表更加简单。
 
 <table class="table table-bordered">
     <thead>
@@ -617,6 +618,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <th class="text-left"><a href="https://dev.mysql.com/doc/refman/8.0/en/data-types.html">MySQL type</a></th>
         <th class="text-left"><a href="https://docs.oracle.com/database/121/SQLRF/sql_elements001.htm#SQLRF30020">Oracle type</a></th>
         <th class="text-left"><a href="https://www.postgresql.org/docs/12/datatype.html">PostgreSQL type</a></th>
+        <th class="text-left"><a href="https://crate.io/docs/crate/reference/en/master/general/ddl/data-types.html">CrateDB type</a></th>
         <th class="text-left"><a href="https://docs.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql?view=sql-server-ver16">SQL Server type</a></th>
         <th class="text-left"><a href="{{< ref "docs/dev/table/types" >}}">Flink SQL type</a></th>
       </tr>
@@ -624,6 +626,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
     <tbody>
     <tr>
       <td><code>TINYINT</code></td>
+      <td></td>
       <td></td>
       <td></td>
       <td><code>TINYINT</code></td>
@@ -639,6 +642,9 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <code>INT2</code><br>
         <code>SMALLSERIAL</code><br>
         <code>SERIAL2</code></td>
+      <td>
+        <code>SMALLINT</code>
+        <code>SHORT</code></td>
       <td><code>SMALLINT</code></td>
       <td><code>SMALLINT</code></td>
     </tr>
@@ -651,6 +657,9 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td>
         <code>INTEGER</code><br>
         <code>SERIAL</code></td>
+      <td>
+        <code>INTEGER</code><br>
+        <code>INT</code></td>
       <td><code>INT</code></td>
       <td><code>INT</code></td>
     </tr>
@@ -662,6 +671,9 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td>
         <code>BIGINT</code><br>
         <code>BIGSERIAL</code></td>
+      <td>
+        <code>BIGINT</code><br>
+        <code>LONG</code></td>
       <td><code>BIGINT</code></td>
       <td><code>BIGINT</code></td>
     </tr>
@@ -670,13 +682,8 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td></td>
       <td></td>
       <td></td>
+      <td></td> 
       <td><code>DECIMAL(20, 0)</code></td>
-    </tr>
-    <tr>
-      <td><code>BIGINT</code></td>
-      <td></td>
-      <td><code>BIGINT</code></td>
-      <td><code>BIGINT</code></td>
     </tr>
     <tr>
       <td><code>FLOAT</code></td>
@@ -685,6 +692,9 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td>
         <code>REAL</code><br>
         <code>FLOAT4</code></td>
+      <td>
+        <code>REAL</code><br>
+        <code>FLOAT</code></td>
       <td><code>REAL</code></td>
       <td><code>FLOAT</code></td>
     </tr>
@@ -695,6 +705,9 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td><code>BINARY_DOUBLE</code></td>
       <td>
         <code>FLOAT8</code><br>
+        <code>DOUBLE PRECISION</code></td>
+      <td>
+        <code>DOUBLE</code><br>
         <code>DOUBLE PRECISION</code></td>
       <td><code>FLOAT</code></td>
       <td><code>DOUBLE</code></td>
@@ -712,6 +725,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td>
         <code>NUMERIC(p, s)</code><br>
         <code>DECIMAL(p, s)</code></td>
+      <td><code>NUMERIC(p, s)</code></td>
       <td><code>DECIMAL(p, s)</code></td>
       <td><code>DECIMAL(p, s)</code></td>
     </tr>
@@ -721,6 +735,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <code>TINYINT(1)</code></td>
       <td></td>
       <td><code>BOOLEAN</code></td>
+      <td><code>BOOLEAN</code></td>
       <td><code>BIT</code></td>
       <td><code>BOOLEAN</code></td>
     </tr>
@@ -728,6 +743,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td><code>DATE</code></td>
       <td><code>DATE</code></td>
       <td><code>DATE</code></td>
+      <td><code>DATE</code> (only in expressions - not stored type)</td>
       <td><code>DATE</code></td>
       <td><code>DATE</code></td>
     </tr>
@@ -735,11 +751,13 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td><code>TIME [(p)]</code></td>
       <td><code>DATE</code></td>
       <td><code>TIME [(p)] [WITHOUT TIMEZONE]</code></td>
+      <td><code>TIME</code> (only in expressions - not stored type)</td>
       <td><code>TIME(0)</code></td>
       <td><code>TIME [(p)] [WITHOUT TIMEZONE]</code></td>
     </tr>
     <tr>
       <td><code>DATETIME [(p)]</code></td>
+      <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
       <td>
@@ -765,6 +783,13 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <code>TEXT</code></td>
       <td>
         <code>CHAR(n)</code><br>
+        <code>CHARACTER(n)</code><br>
+        <code>VARCHAR(n)</code><br>
+        <code>CHARACTER VARYING(n)</code><br>
+        <code>TEXT</code>
+        <code>STRING</code></td>
+      <td>
+        <code>CHAR(n)</code><br>
         <code>NCHAR(n)</code><br>
         <code>VARCHAR(n)</code><br>
         <code>NVARCHAR(n)</code><br>
@@ -781,6 +806,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <code>RAW(s)</code><br>
         <code>BLOB</code></td>
       <td><code>BYTEA</code></td>
+      <td></td> 
       <td>
         <code>BINARY(n)</code><br>
         <code>VARBINARY(n)</code><br></td>
@@ -790,6 +816,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td></td>
       <td></td>
       <td><code>ARRAY</code></td>
+      <td><code>ARRAY</code></td> 
       <td></td>
       <td><code>ARRAY</code></td>
     </tr>

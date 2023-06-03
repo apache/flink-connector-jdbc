@@ -16,37 +16,37 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.postgres.catalog;
+package org.apache.flink.connector.jdbc.databases.cratedb.catalog;
 
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** Test for {@link PostgresTablePath}. */
-class PostgresTablePathTest {
+/** Test for {@link CrateDBTablePath}. */
+class CrateDBTablePathTest {
+
     @Test
     void testToFlinkTableName() {
-        assertThat(PostgresTablePath.toFlinkTableName("my_schema", "my_table"))
+        assertThat(CrateDBTablePath.toFlinkTableName("my_schema", "my_table"))
                 .isEqualTo("my_schema.my_table");
-        assertThat(PostgresTablePath.toFlinkTableName("postgres.my_schema", "my_table"))
-                .isEqualTo("postgres.my_schema.my_table");
-        assertThatThrownBy(() -> PostgresTablePath.toFlinkTableName("", "my_table"))
+        assertThat(CrateDBTablePath.toFlinkTableName("crate.my_schema", "my_table"))
+                .isEqualTo("crate.my_schema.my_table");
+        assertThatThrownBy(() -> CrateDBTablePath.toFlinkTableName("", "my_table"))
                 .isExactlyInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Schema name is not valid. Null or empty is not allowed");
     }
 
     @Test
     void testFromFlinkTableName() {
-        assertThat(PostgresTablePath.fromFlinkTableName("my_schema.my_table"))
-                .isEqualTo(new PostgresTablePath("my_schema", "my_table"));
-        assertThat(PostgresTablePath.fromFlinkTableName("my_table"))
-                .isEqualTo(new PostgresTablePath("public", "my_table"));
-        assertThatThrownBy(() -> PostgresTablePath.fromFlinkTableName("postgres.public.my_table"))
+        assertThat(CrateDBTablePath.fromFlinkTableName("my_schema.my_table"))
+                .isEqualTo(new CrateDBTablePath("my_schema", "my_table"));
+        assertThat(CrateDBTablePath.fromFlinkTableName("my_table"))
+                .isEqualTo(new CrateDBTablePath("doc", "my_table"));
+        assertThatThrownBy(() -> CrateDBTablePath.fromFlinkTableName("crate.doc.my_table"))
                 .isExactlyInstanceOf(IllegalArgumentException.class)
-                .hasMessage(
-                        "Table name 'postgres.public.my_table' is not valid. The parsed length is 3");
-        assertThatThrownBy(() -> PostgresTablePath.fromFlinkTableName(""))
+                .hasMessage("Table name 'crate.doc.my_table' is not valid. The parsed length is 3");
+        assertThatThrownBy(() -> CrateDBTablePath.fromFlinkTableName(""))
                 .isExactlyInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Table name is not valid. Null or empty is not allowed");
     }

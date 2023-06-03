@@ -16,27 +16,20 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.postgres.dialect;
+package org.apache.flink.connector.jdbc.databases.cratedb.catalog;
 
-import org.apache.flink.connector.jdbc.converter.AbstractPostgresCompatibleRowConverter;
-import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
+import org.apache.flink.connector.jdbc.testutils.databases.cratedb.CrateDBDatabase;
 
-import org.postgresql.jdbc.PgArray;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-/**
- * Runtime converter that responsible to convert between JDBC object and Flink internal object for
- * PostgreSQL.
- */
-public class PostgresRowConverter extends AbstractPostgresCompatibleRowConverter<PgArray> {
-
-    private static final long serialVersionUID = 1L;
-
-    public PostgresRowConverter(RowType rowType) {
-        super(rowType);
-    }
+/** Base class for CrateDB testing. */
+@ExtendWith(CrateDBDatabase.class)
+public interface CrateDBTestBase extends DatabaseTest {
 
     @Override
-    public String converterName() {
-        return "PostgreSQL";
+    default DatabaseMetadata getMetadata() {
+        return CrateDBDatabase.getMetadata();
     }
 }

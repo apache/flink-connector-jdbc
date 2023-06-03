@@ -50,8 +50,8 @@ public class PostgresTypeMapper implements JdbcDialectTypeMapper {
     // boolean <=> bool
     // decimal <=> numeric
     private static final String PG_SMALLSERIAL = "smallserial";
-    private static final String PG_SERIAL = "serial";
-    private static final String PG_BIGSERIAL = "bigserial";
+    protected static final String PG_SERIAL = "serial";
+    protected static final String PG_BIGSERIAL = "bigserial";
     private static final String PG_BYTEA = "bytea";
     private static final String PG_BYTEA_ARRAY = "_bytea";
     private static final String PG_SMALLINT = "int2";
@@ -93,6 +93,15 @@ public class PostgresTypeMapper implements JdbcDialectTypeMapper {
         int precision = metadata.getPrecision(colIndex);
         int scale = metadata.getScale(colIndex);
 
+        DataType dataType = getMapping(pgType, precision, scale);
+        if (dataType == null) {
+            throw new UnsupportedOperationException(
+                    String.format("Doesn't support %s type '%s' yet", getDBType(), pgType));
+        }
+        return dataType;
+    }
+
+    protected DataType getMapping(String pgType, int precision, int scale) {
         switch (pgType) {
             case PG_BOOLEAN:
                 return DataTypes.BOOLEAN();
@@ -128,14 +137,13 @@ public class PostgresTypeMapper implements JdbcDialectTypeMapper {
             case PG_NUMERIC:
                 // see SPARK-26538: handle numeric without explicit precision and scale.
                 if (precision > 0) {
-                    return DataTypes.DECIMAL(precision, metadata.getScale(colIndex));
+                    return DataTypes.DECIMAL(precision, scale);
                 }
                 return DataTypes.DECIMAL(DecimalType.MAX_PRECISION, 18);
             case PG_NUMERIC_ARRAY:
                 // see SPARK-26538: handle numeric without explicit precision and scale.
                 if (precision > 0) {
-                    return DataTypes.ARRAY(
-                            DataTypes.DECIMAL(precision, metadata.getScale(colIndex)));
+                    return DataTypes.ARRAY(DataTypes.DECIMAL(precision, scale));
                 }
                 return DataTypes.ARRAY(DataTypes.DECIMAL(DecimalType.MAX_PRECISION, 18));
             case PG_CHAR:
@@ -169,8 +177,11 @@ public class PostgresTypeMapper implements JdbcDialectTypeMapper {
             case PG_DATE_ARRAY:
                 return DataTypes.ARRAY(DataTypes.DATE());
             default:
-                throw new UnsupportedOperationException(
-                        String.format("Doesn't support Postgres type '%s' yet", pgType));
+                return null;
         }
+    }
+
+    protected String getDBType() {
+        return "Postgres";
     }
 }

@@ -70,7 +70,7 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
                 }
             };
 
-    private final JdbcDialectTypeMapper dialectTypeMapper;
+    protected final JdbcDialectTypeMapper dialectTypeMapper;
 
     public PostgresCatalog(
             ClassLoader userClassLoader,
@@ -79,8 +79,26 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
             String username,
             String pwd,
             String baseUrl) {
+        this(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                username,
+                pwd,
+                baseUrl,
+                new PostgresTypeMapper());
+    }
+
+    protected PostgresCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String baseUrl,
+            JdbcDialectTypeMapper dialectTypeMapper) {
         super(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
-        this.dialectTypeMapper = new PostgresTypeMapper();
+        this.dialectTypeMapper = dialectTypeMapper;
     }
 
     // ------ databases ------
@@ -95,7 +113,34 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
                 dbName -> !builtinDatabases.contains(dbName));
     }
 
+    // ------ schemas ------
+
+    protected Set<String> getBuiltinSchemas() {
+        return builtinSchemas;
+    }
+
     // ------ tables ------
+
+    protected List<String> getPureTables(Connection conn, List<String> schemas)
+            throws SQLException {
+        List<String> tables = Lists.newArrayList();
+
+        // position 1 is database name, position 2 is schema name, position 3 is table name
+        try (PreparedStatement ps =
+                conn.prepareStatement(
+                        "SELECT * FROM information_schema.tables "
+                                + "WHERE table_type = 'BASE TABLE' "
+                                + "AND table_schema = ? "
+                                + "ORDER BY table_type, table_name;")) {
+            for (String schema : schemas) {
+                // Column index 1 is database name, 2 is schema name, 3 is table name
+                extractColumnValuesByStatement(ps, 3, null, schema).stream()
+                        .map(pureTable -> schema + "." + pureTable)
+                        .forEach(tables::add);
+            }
+            return tables;
+        }
+    }
 
     @Override
     public List<String> listTables(String databaseName)
@@ -107,8 +152,6 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
             throw new DatabaseNotExistException(getName(), databaseName);
         }
 
-        List<String> tables = Lists.newArrayList();
-
         final String url = baseUrl + databaseName;
         try (Connection conn = DriverManager.getConnection(url, username, pwd)) {
             // get all schemas
@@ -117,28 +160,15 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
                     conn.prepareStatement("SELECT schema_name FROM information_schema.schemata;")) {
                 schemas =
                         extractColumnValuesByStatement(
-                                ps, 1, pgSchema -> !builtinSchemas.contains(pgSchema));
+                                ps, 1, pgSchema -> !getBuiltinSchemas().contains(pgSchema));
             }
 
             // get all tables
-            try (PreparedStatement ps =
-                    conn.prepareStatement(
-                            "SELECT * FROM information_schema.tables "
-                                    + "WHERE table_type = 'BASE TABLE' "
-                                    + "AND table_schema = ? "
-                                    + "ORDER BY table_type, table_name;")) {
-                for (String schema : schemas) {
-                    // Column index 1 is database name, 2 is schema name, 3 is table name
-                    extractColumnValuesByStatement(ps, 3, null, schema).stream()
-                            .map(pureTable -> schema + "." + pureTable)
-                            .forEach(tables::add);
-                }
-            }
+            return getPureTables(conn, schemas);
         } catch (Exception e) {
             throw new CatalogException(
                     String.format("Failed to list tables for database %s", databaseName), e);
         }
-        return tables;
     }
 
     /**
