@@ -55,7 +55,7 @@ JDBC 连接器不是二进制发行版的一部分，请查阅[这里]({{< ref "
 | PostgreSQL | `org.postgresql`           | `postgresql`           | [下载](https://jdbc.postgresql.org/download/) |
 | Derby      | `org.apache.derby`         | `derby`                | [下载](http://db.apache.org/derby/derby_downloads.html) | |
 | SQL Server | `com.microsoft.sqlserver`  | `mssql-jdbc`           | [下载](https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-ver16) |
-| CrateDB    | `io.crate`                 | `crate-jdbc`           | [Download](https://repo1.maven.org/maven2/io/crate/crate-jdbc/) |
+| CrateDB    | `io.crate`                 | `crate-jdbc`           | [下载](https://repo1.maven.org/maven2/io/crate/crate-jdbc/) |
 
 当前，JDBC 连接器和驱动不在 Flink 二进制发布包中，请参阅[这里]({{< ref "docs/dev/configuration/overview" >}})了解在集群上执行时何连接它们。
 
@@ -605,7 +605,41 @@ SELECT * FROM test_table;
 SELECT * FROM mysql_catalog.given_database.test_table2;
 SELECT * FROM given_database.test_table2;
 ```
+<a name="jdbc-catalog-for-cratedb"></a>
 
+### JDBC Catalog for CrateDB
+
+<a name="cratedb-metaspace-mapping"></a>
+
+#### CrateDB 元空间映射
+
+CrateDB 和 PostgreSQL 类似，但它只有一个默认名为 `crate` 的数据库。 此外它有一个额外的命名空间 `schema`，一个 CrateDB 实例可以有多个 schema，其中一个 schema 默认名为"doc"，每个 schema 可以包含多张表。 在 Flink 中，当查询由 CrateDB catalog 注册的表时，用户可以使用 `schema_name.table_name` 或者只有 `table_name`。其中 `schema_name` 是可选的，默认值为 "doc"。
+
+因此，Flink Catalog 和 CrateDB catalog 之间的元空间映射如下：
+  
+| Flink Catalog Metaspace Structure    | CrateDB Metaspace Structure    |
+| :------------------------------------|:-------------------------------|
+| catalog name (defined in Flink only) | N/A                            |
+| database name                        | database name (一直是 `crate`)  |
+| table name                           | [schema_name.]table_name       |
+
+Flink 中的 CrateDB 表的完整路径应该是 ``"<catalog>.<db>.`<schema.table>`"``。如果指定了 schema，请注意转义 `<schema.table>`。
+
+这里提供了一些访问 CrateDB 表的例子：
+
+```sql
+-- 扫描 'doc' schema (即默认 schema)中的 'test_table' 表，schema 名称可以省略
+SELECT * FROM mycatalog.crate.doc.test_table;
+SELECT * FROM crate.doc.test_table;
+SELECT * FROM doc.test_table;
+SELECT * FROM test_table;
+  
+-- 扫描 'custom_schema' schema 中的 'test_table2' 表
+-- 自定义 schema 不能省略，并且必须与表一起转义
+SELECT * FROM mycatalog.crate.`custom_schema.test_table2`
+SELECT * FROM crate.`custom_schema.test_table2`;
+SELECT * FROM `custom_schema.test_table2`;
+```
 <a name="data-type-mapping"></a>
 
 数据类型映射
