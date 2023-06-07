@@ -2,6 +2,7 @@ package org.apache.flink.connector.jdbc.databases.clickhouse.dialect;
 
 import org.apache.flink.connector.jdbc.converter.AbstractJdbcRowConverter;
 import org.apache.flink.table.data.DecimalData;
+import org.apache.flink.table.data.GenericMapData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.logical.DecimalType;
@@ -16,6 +17,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * Runtime converter that responsible to convert between JDBC object and Flink internal object for
@@ -79,8 +81,20 @@ public class ClickHouseRowConvert extends AbstractJdbcRowConverter {
             case TIMESTAMP_WITHOUT_TIME_ZONE:
             case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
                 return val -> TimestampData.fromLocalDateTime((LocalDateTime) val);
+            case MAP:
+                return val -> new GenericMapData((Map<?, ?>) val);
             default:
                 return super.createInternalConverter(type);
+        }
+    }
+
+    @Override
+    protected JdbcSerializationConverter createExternalConverter(LogicalType type) {
+        switch (type.getTypeRoot()) {
+            case MAP:
+                return (val, index, statement) -> statement.setObject(index, val);
+            default:
+                return super.createExternalConverter(type);
         }
     }
 }

@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -38,13 +39,19 @@ class ClickHouseTableSourceITCase extends JdbcDynamicTableSourceITCase
                 field("timestamp6_col", dbType("DateTime(6)"), DataTypes.TIMESTAMP(6)),
                 field("decimal_column", dbType("Decimal(3,1)"), DataTypes.DECIMAL(3, 1)),
                 field("bool_flag", dbType("Bool"), DataTypes.BOOLEAN()),
-                field("message", dbType("String"), DataTypes.VARCHAR(100)));
+                field("message", dbType("String"), DataTypes.VARCHAR(100)),
+                field(
+                        "test_map",
+                        dbType("Map(Int64,Int64)"),
+                        DataTypes.MAP(DataTypes.BIGINT(), DataTypes.BIGINT())));
     }
 
     @Override
     protected List<Row> getTestData() {
         TimeZone timeZone = TimeZone.getTimeZone("GTM+0");
         TimeZone.setDefault(timeZone);
+        HashMap<Long, Long> map = new HashMap<>();
+        map.put(1L, 2L);
         return Arrays.asList(
                 Row.of(
                         1L,
@@ -59,7 +66,8 @@ class ClickHouseTableSourceITCase extends JdbcDynamicTableSourceITCase
                         LocalDateTime.parse("2020-01-01T15:35:00.123456"),
                         BigDecimal.valueOf(-99.9),
                         true,
-                        "this is a test message"),
+                        "this is a test message",
+                        map),
                 Row.of(
                         2L,
                         (byte) 2,
@@ -73,6 +81,7 @@ class ClickHouseTableSourceITCase extends JdbcDynamicTableSourceITCase
                         LocalDateTime.parse("2020-01-01T15:36:01.123456"),
                         BigDecimal.valueOf(99.9),
                         false,
-                        "this is a test message"));
+                        "this is a test message",
+                        map));
     }
 }
