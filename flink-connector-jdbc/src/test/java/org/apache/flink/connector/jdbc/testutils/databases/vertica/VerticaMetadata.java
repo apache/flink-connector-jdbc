@@ -16,9 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.vertica;
+package org.apache.flink.connector.jdbc.testutils.databases.vertica;
 
-import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 
 import org.testcontainers.containers.GenericContainer;
 

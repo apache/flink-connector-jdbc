@@ -16,20 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.vertica.dialect;
+package org.apache.flink.connector.jdbc.databases.vertica.table;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectFactory;
+import org.apache.flink.connector.jdbc.databases.vertica.VerticaTestBase;
+import org.apache.flink.connector.jdbc.databases.vertica.dialect.VerticaDialect;
+import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSourceITCase;
 
-/** Factory for {@link VerticaDialect}. */
-public class VerticaDialectFactory implements JdbcDialectFactory {
-    @Override
-    public boolean acceptsURL(String url) {
-        return url.startsWith("jdbc:vertica:");
-    }
-
-    @Override
-    public JdbcDialect create() {
-        return new VerticaDialect();
-    }
-}
+/** The Table Source ITCase for {@link VerticaDialect}. */
+public class VerticaDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
+        implements VerticaTestBase {}

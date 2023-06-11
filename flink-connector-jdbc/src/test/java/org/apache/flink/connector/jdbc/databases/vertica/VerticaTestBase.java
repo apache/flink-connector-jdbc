@@ -16,20 +16,20 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.vertica.dialect;
+package org.apache.flink.connector.jdbc.databases.vertica;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectFactory;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
+import org.apache.flink.connector.jdbc.testutils.databases.vertica.VerticaDatabase;
 
-/** Factory for {@link VerticaDialect}. */
-public class VerticaDialectFactory implements JdbcDialectFactory {
+import org.junit.jupiter.api.extension.ExtendWith;
+
+/** Base class for Vertica testing. */
+@ExtendWith(VerticaDatabase.class)
+public interface VerticaTestBase extends DatabaseTest {
+
     @Override
-    public boolean acceptsURL(String url) {
-        return url.startsWith("jdbc:vertica:");
-    }
-
-    @Override
-    public JdbcDialect create() {
-        return new VerticaDialect();
+    default DatabaseMetadata getMetadata() {
+        return VerticaDatabase.getMetadata();
     }
 }

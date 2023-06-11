@@ -16,31 +16,45 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.vertica;
+package org.apache.flink.connector.jdbc.testutils.databases.vertica;
 
-import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.databases.DatabaseTest;
+import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.util.FlinkRuntimeException;
 
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 
 /** A Vertica database for testing. */
 @Testcontainers
-public interface VerticaDatabase extends DatabaseTest {
-
-    DockerImageName VERTICA_CE = DockerImageName.parse("vertica/vertica-ce");
+public class VerticaDatabase extends DatabaseExtension implements VerticaImages {
 
     @Container
-    GenericContainer<?> CONTAINER = new GenericContainer<>(VERTICA_CE).withExposedPorts(5433);
+    private static final GenericContainer<?> CONTAINER =
+            new GenericContainer<>(VERTICA_CE).withExposedPorts(5433);
+
+    private static VerticaMetadata metadata;
+
+    public static VerticaMetadata getMetadata() {
+        if (!CONTAINER.isRunning()) {
+            throw new FlinkRuntimeException("Container is stopped.");
+        }
+        if (metadata == null) {
+            metadata = new VerticaMetadata(CONTAINER);
+        }
+        return metadata;
+    }
 
     @Override
-    default DatabaseMetadata getMetadata() {
-        return new VerticaMetadata(CONTAINER);
+    protected DatabaseMetadata startDatabase() throws Exception {
+        CONTAINER.start();
+        return getMetadata();
+    }
+
+    @Override
+    protected void stopDatabase() throws Exception {
+        CONTAINER.stop();
+        metadata = null;
     }
 }
