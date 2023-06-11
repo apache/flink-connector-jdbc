@@ -92,6 +92,14 @@ under the License.
 			</exclusions>
 		</dependency>
 
+		<!-- Vertica -->
+		<dependency>
+			<groupId>com.vertica.jdbc</groupId>
+			<artifactId>vertica-jdbc</artifactId>
+			<version>12.0.3-0</version>
+			<scope>provided</scope>
+		</dependency>
+
 		<!-- Tests -->
 
 		<dependency>

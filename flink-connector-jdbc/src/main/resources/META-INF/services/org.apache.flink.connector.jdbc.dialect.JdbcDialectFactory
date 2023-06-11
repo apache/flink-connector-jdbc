@@ -19,3 +19,4 @@ org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialectFactor
 org.apache.flink.connector.jdbc.databases.oracle.dialect.OracleDialectFactory
 org.apache.flink.connector.jdbc.databases.sqlserver.dialect.SqlServerDialectFactory
 org.apache.flink.connector.jdbc.databases.cratedb.dialect.CrateDBDialectFactory
+org.apache.flink.connector.jdbc.databases.vertica.dialect.VerticaDialectFactory
