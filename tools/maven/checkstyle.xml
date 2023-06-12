@@ -213,16 +213,8 @@ This file is based on the checkstyle file of Apache Beam.
 					  value="autovalue.shaded, avro.shaded, com.google.api.client.repackaged, com.google.appengine.repackaged"/>
 		</module>
 		<module name="IllegalImport">
-			<property name="illegalPkgs" value="org.codehaus.jackson"/>
-			<message key="import.illegal" value="{0}; Use flink-shaded-jackson instead."/>
-		</module>
-		<module name="IllegalImport">
-			<property name="illegalPkgs" value="org.objectweb.asm"/>
-			<message key="import.illegal" value="{0}; Use flink-shaded-asm instead."/>
-		</module>
-		<module name="IllegalImport">
-			<property name="illegalPkgs" value="io.netty"/>
-			<message key="import.illegal" value="{0}; Use flink-shaded-netty instead."/>
+			<property name="illegalPkgs" value="org.apache.flink.shaded"/>
+			<message key="import.illegal" value="{0}; Flink-jdbc-connector should not use flink-shaded."/>
 		</module>
 
 		<module name="RedundantModifier">
