@@ -24,8 +24,6 @@ import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 
-import org.apache.flink.shaded.guava30.com.google.common.collect.ImmutableList;
-
 import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -75,7 +74,7 @@ public class CrateDBCatalog extends PostgresCatalog {
 
     @Override
     public List<String> listDatabases() throws CatalogException {
-        return ImmutableList.of(DEFAULT_DATABASE);
+        return Collections.singletonList(DEFAULT_DATABASE);
     }
 
     // ------ schemas ------
