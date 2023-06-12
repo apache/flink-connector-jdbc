@@ -18,12 +18,13 @@
 
 package org.apache.flink.connector.jdbc.databases.cratedb.catalog;
 
-import org.apache.commons.compress.utils.Lists;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
+
+import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
