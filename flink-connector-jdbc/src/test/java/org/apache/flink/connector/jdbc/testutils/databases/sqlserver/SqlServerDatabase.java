@@ -23,17 +23,23 @@ import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import org.testcontainers.containers.MSSQLServerContainer;
+import org.testcontainers.containers.startupcheck.MinimumDurationRunningStartupCheckStrategy;
 import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.time.Duration;
 
 /** A SqlServer database for testing. */
 public class SqlServerDatabase extends DatabaseExtension implements SqlServerImages {
 
     private static final MSSQLServerContainer<?> CONTAINER =
-            new SqlServerContainer(MSSQL_SERVER_2019).acceptLicense().withXa();
+            new SqlServerContainer(MSSQL_SERVER_2019)
+                    .acceptLicense()
+                    .withXa()
+                    .withStartupCheckStrategy(
+                            new MinimumDurationRunningStartupCheckStrategy(Duration.ofSeconds(5)));
 
     private static SqlServerMetadata metadata;
 
