@@ -21,7 +21,10 @@ import org.testcontainers.utility.DockerImageName;
 
 /** SqlServer docker images. */
 public interface SqlServerImages {
+    // When running MSSQL tests on Mac M1/M2s, use MSSQL_AZURE_SQL_EDGE instead of MSSQL_SERVER_2019
     DockerImageName MSSQL_AZURE_SQL_EDGE =
             DockerImageName.parse("mcr.microsoft.com/azure-sql-edge")
                     .asCompatibleSubstituteFor("mcr.microsoft.com/mssql/server");
+
+    String MSSQL_SERVER_2019 = "mcr.microsoft.com/mssql/server:2019-CU20-ubuntu-20.04";
 }
