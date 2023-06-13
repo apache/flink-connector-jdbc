@@ -26,6 +26,6 @@ jobs:
     strategy:
       matrix:
         flink: [1.17.0, 1.18-SNAPSHOT]
-    uses: apache/flink-connector-shared-utils/.github/workflows/ci.yml@ci_utils
+    uses: martijnvisser/flink-connector-shared-utils/.github/workflows/ci.yml@FLINK-32331-thread-dumps
     with:
       flink_version: ${{ matrix.flink }}
