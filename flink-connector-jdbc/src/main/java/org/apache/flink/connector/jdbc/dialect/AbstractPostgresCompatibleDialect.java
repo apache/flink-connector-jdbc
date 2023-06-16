@@ -69,7 +69,13 @@ public abstract class AbstractPostgresCompatibleDialect extends AbstractDialect 
 
     @Override
     public String quoteIdentifier(String identifier) {
-        return identifier;
+    	if (identifier.contains(".")) {
+    		String[] ids = identifier.split("\\.");
+    		return Arrays.stream(ids)
+			             .map(this::quoteIdentifier)
+			             .collect(Collectors.joining(", "));
+    	}
+        return "\"" + identifier + "\"";
     }
 
     @Override
