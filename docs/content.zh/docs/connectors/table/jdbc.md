@@ -57,7 +57,7 @@ JDBC 连接器不是二进制发行版的一部分，请查阅[这里]({{< ref "
 | SQL Server | `com.microsoft.sqlserver`  | `mssql-jdbc`           | [下载](https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-ver16) |
 | CrateDB    | `io.crate`                 | `crate-jdbc`           | [下载](https://repo1.maven.org/maven2/io/crate/crate-jdbc/) |
 
-当前，JDBC 连接器和驱动不在 Flink 二进制发布包中，请参阅[这里]({{< ref "docs/dev/configuration/overview" >}})了解在集群上执行时何连接它们。
+当前，JDBC 连接器和驱动不在 Flink 二进制发布包中，请参阅[这里]({{< ref "docs/dev/configuration/overview" >}})了解在集群上执行时如何连接它们。
 
 
 <a name="how-to-create-a-jdbc-table"></a>
