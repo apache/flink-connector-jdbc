@@ -55,7 +55,7 @@ A driver dependency is also required to connect to a specified database. Here ar
 | CrateDB    | `io.crate`                 | `crate-jdbc`           | [Download](https://repo1.maven.org/maven2/io/crate/crate-jdbc/)                                                                   |
 | Db2        | `com.ibm.db2.jcc`          | `db2jcc`               | [Download](https://www.ibm.com/support/pages/download-db2-fix-packs-version-db2-linux-unix-and-windows)                           | 
 | Trino      | `io.trino`                 | `trino-jdbc`           | [Download](https://repo1.maven.org/maven2/io/trino/trino-jdbc/)                                                                   |
-
+| Elasticsearch | `org.elasticsearch.plugin` | `x-pack-sql-jdbc`      | [Download](https://www.elastic.co/downloads/jdbc-client) |
 
 JDBC connector and drivers are not part of Flink's binary distribution. See how to link with them for cluster execution [here]({{< ref "docs/dev/configuration/overview" >}}).
 
@@ -647,7 +647,7 @@ SELECT * FROM `custom_schema.test_table2`;
 
 Data Type Mapping
 ----------------
-Flink supports connect to several databases which uses dialect like MySQL, Oracle, PostgreSQL, CrateDB, Derby, SQL Server, Db2. The Derby dialect usually used for testing purpose. The field data type mappings from relational databases data types to Flink SQL data types are listed in the following table, the mapping table can help define JDBC table in Flink easily.
+Flink supports connect to several databases which uses dialect like MySQL, Oracle, PostgreSQL, CrateDB, Derby, SQL Server, Db2, Elasticsearch. The Derby dialect usually used for testing purpose. The field data type mappings from relational databases data types to Flink SQL data types are listed in the following table, the mapping table can help define JDBC table in Flink easily.
 
 <table class="table table-bordered">
     <thead>
@@ -659,6 +659,7 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
         <th class="text-left"><a href="https://docs.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql?view=sql-server-ver16">SQL Server type</a></th>
         <th class="text-left"><a href="https://www.ibm.com/docs/en/db2-for-zos/12?topic=columns-data-types">Db2</a></th>
         <th class="text-left"><a href="https://trino.io/docs/current/language/types.html">Trino type</a></th>
+        <th class="text-left"><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/sql-data-types.html">Elastic SQL type</a></th>
         <th class="text-left"><a href="{{< ref "docs/dev/table/types" >}}">Flink SQL type</a></th>
       </tr>
     </thead>
@@ -671,6 +672,7 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       <td><code>TINYINT</code></td>
       <td></td>
       <td><code>TINYINT</code></td>
+      <td><code>BYTE</code></td>
       <td><code>TINYINT</code></td>
     </tr>
     <tr>
@@ -689,6 +691,7 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       <td><code>SMALLINT</code></td>
       <td><code>SMALLINT</code></td>
       <td><code>SMALLINT</code></td>
+      <td><code>SHORT</code></td>
       <td><code>SMALLINT</code></td>
     </tr>
     <tr>
@@ -704,6 +707,7 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
         <code>INTEGER</code><br>
         <code>INT</code></td>
       <td><code>INT</code></td>
+      <td><code>INTEGER</code></td>
       <td><code>INTEGER</code></td>
       <td><code>INTEGER</code></td>
       <td><code>INT</code></td>
@@ -722,6 +726,9 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       <td><code>BIGINT</code></td>
       <td></td>
       <td><code>BIGINT</code></td>
+      <td>
+        <code>LONG</code><br>
+        <code>UNSIGNED_LONG</code></td>
       <td><code>BIGINT</code></td>
     </tr>
    <tr>
@@ -731,6 +738,7 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       <td></td>
       <td></td> 
       <td></td>
+      <td></td> 
       <td></td>
       <td><code>DECIMAL(20, 0)</code></td>
     </tr>
@@ -747,6 +755,9 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       <td><code>REAL</code></td>
       <td><code>REAL</code></td>
       <td><code>FLOAT</code></td>
+      <td>
+        <code>FLOAT</code><br>
+        <code>HALF_FLOAT</code></td>
       <td><code>FLOAT</code></td>
     </tr>
     <tr>
@@ -762,6 +773,9 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
         <code>DOUBLE PRECISION</code></td>
       <td><code>FLOAT</code></td>
       <td><code>DOUBLE</code></td>
+      <td>
+        <code>DOUBLE</code><br>
+        <code>SCALED_FLOAT</code></td>
       <td><code>DOUBLE</code></td>
     </tr>
     <tr>
@@ -784,6 +798,7 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
         <code>DECIMAL(p, s)</code>
       </td>
       <td><code>DECIMAL(p, s)</code></td>
+      <td></td>
       <td><code>DECIMAL(p, s)</code></td>
     </tr>
     <tr>
@@ -797,6 +812,7 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       <td><code>BOOLEAN</code></td>
       <td></td>
       <td><code>BOOLEAN</code></td>
+      <td><code>BOOLEAN</code></td>
     </tr>
     <tr>
       <td><code>DATE</code></td>
@@ -806,6 +822,7 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       <td><code>DATE</code></td>
       <td><code>DATE</code></td>
       <td><code>DATE</code></td>
+      <td></td>
       <td><code>DATE</code></td>
     </tr>
     <tr>
@@ -816,6 +833,7 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       <td><code>TIME(0)</code></td>
       <td><code>TIME</code></td>
       <td><code>TIME_WITHOUT_TIME_ZONE</code></td>
+      <td></td>
       <td><code>TIME [(p)] [WITHOUT TIMEZONE]</code></td>
     </tr>
     <tr>
@@ -829,6 +847,7 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       </td>
       <td><code>TIMESTAMP [(p)]</code></td>
       <td><code>TIMESTAMP_WITHOUT_TIME_ZONE</code></td>
+      <td><code>DATETIME</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
     </tr>
     <tr>
@@ -868,6 +887,11 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
         <code>CHAR</code>
         <code>VARCHAR</code>
       </td>
+      <td>
+        <code>KEYWORD</code><br>
+        <code>IP</code><br>
+        <code>TEXT</code><br>
+        <code>VERSION</code></td>
       <td><code>STRING</code></td>
     </tr>
     <tr>
@@ -886,6 +910,7 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       </td>
       <td></td>
       <td><code>VARBINARY</code></td>
+      <td><code>BINARY</code></td>
       <td><code>BYTES</code></td>
     </tr>
     <tr>
@@ -893,6 +918,7 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       <td></td>
       <td><code>ARRAY</code></td>
       <td><code>ARRAY</code></td> 
+      <td></td>
       <td></td>
       <td></td>
       <td><code>ARRAY</code></td>
