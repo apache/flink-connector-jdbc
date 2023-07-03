@@ -38,10 +38,12 @@ under the License.
 		<scala.binary.version>2.12</scala.binary.version>
 		<scala-library.version>2.12.7</scala-library.version>
 		<assertj.version>3.23.1</assertj.version>
+		<jackson.version>2.15.2</jackson.version>
 		<postgres.version>42.5.1</postgres.version>
 		<oracle.version>21.8.0.0</oracle.version>
 		<trino.version>418</trino.version>
 		<byte-buddy.version>1.12.10</byte-buddy.version>
+		<elasticsearch.version>8.8.1</elasticsearch.version>
 		<surefire.module.config> <!-- required by
 		Db2ExactlyOnceSinkE2eTest --> --add-opens=java.base/java.util=ALL-UNNAMED <!--
 		SimpleJdbcConnectionProviderDriverClassConcurrentLoadingITCase--> --add-opens=java.base/java.lang=ALL-UNNAMED
@@ -251,25 +253,25 @@ under the License.
 		<dependency>
 			<groupId>org.elasticsearch.plugin</groupId>
 			<artifactId>x-pack-sql-jdbc</artifactId>
-			<version>8.8.1</version>
+			<version>${elasticsearch.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.squareup.okhttp3</groupId>
-			<artifactId>okhttp</artifactId>
-			<version>4.11.0</version>
+			<groupId>org.elasticsearch.client</groupId>
+			<artifactId>elasticsearch-rest-client</artifactId>
+			<version>${elasticsearch.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.15.2</version>
+			<version>${jackson.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.datatype</groupId>
 			<artifactId>jackson-datatype-jsr310</artifactId>
-			<version>2.15.2</version>
+			<version>${jackson.version}</version>
 			<scope>test</scope>
 		</dependency>
 

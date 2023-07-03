@@ -20,13 +20,14 @@ package org.apache.flink.connector.jdbc.testutils.databases.elasticsearch;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import okhttp3.Credentials;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.util.EntityUtils;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.RestClient;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;
@@ -41,10 +42,7 @@ public class ElasticsearchRestClient {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    private final String host;
-    private final int port;
-    private final String username;
-    private final String password;
+    private final RestClient restClient;
 
     public ElasticsearchRestClient(ElasticsearchMetadata metadata) {
         this(metadata.getContainerHost(),
@@ -54,72 +52,48 @@ public class ElasticsearchRestClient {
     }
 
     public ElasticsearchRestClient(String host, int port, String username, String password) {
-        this.host = host;
-        this.port = port;
-        this.username = username;
-        this.password = password;
+        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
+        this.restClient = RestClient.builder(new HttpHost(host, port, "http"))
+                .setHttpClientConfigCallback(builder -> builder.setDefaultCredentialsProvider(credentialsProvider))
+                .build();
     }
 
     public boolean trialEnabled() throws Exception {
-        Request request = requestWithAuthorization()
-                .url(format("http://%s:%d/_license", host, port))
-                .get()
-                .build();
+        Request request = new Request("GET", "/_license");
         ElasticLicenseResponse response = executeRequest(request, ElasticLicenseResponse.class);
         return response != null && response.license.status.equals("active") && response.license.type.equals("trial");
     }
 
     public void enableTrial() throws Exception {
-        Request request = requestWithAuthorization()
-                .url(format("http://%s:%d/_license/start_trial?acknowledge=true", host, port))
-                .post(RequestBody.create(new byte[]{}))
-                .build();
-        executeRequest(request);
+        executeRequest(new Request("POST", "/_license/start_trial?acknowledge=true"));
     }
 
     public void createIndex(String indexName, String indexDefinition) throws Exception {
-        Request request = requestWithAuthorization()
-                .url(format("http://%s:%d/%s/", host, port, indexName))
-                .put(RequestBody.create(indexDefinition, MediaType.get("application/json")))
-                .build();
+        Request request = new Request("PUT", format("/%s/", indexName));
+        request.setJsonEntity(indexDefinition);
         executeRequest(request);
     }
 
     public void deleteIndex(String indexName) throws Exception {
-        Request request = requestWithAuthorization()
-                .url(format("http://%s:%d/%s/", host, port, indexName))
-                .delete()
-                .build();
-        executeRequest(request);
+        executeRequest(new Request("DELETE", format("/%s/", indexName)));
     }
 
     public void addDataBulk(String indexName, String content) throws Exception {
-        Request request = requestWithAuthorization()
-                .url(format("http://%s:%d/%s/_bulk?refresh=true", host, port, indexName))
-                .post(RequestBody.create(content, MediaType.get("application/json")))
-                .build();
+        Request request = new Request("PUT", format("/%s/_bulk?refresh=true", indexName));
+        request.setJsonEntity(content);
         executeRequest(request);
     }
 
     private <T> T executeRequest(Request request, Class<T> outputClass) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-        try (Response response = client.newCall(request).execute()) {
-            ResponseBody body = response.body();
-            Assertions.assertTrue(response.isSuccessful());
-            Assertions.assertNotNull(body);
-            return OBJECT_MAPPER.readValue(body.string(), outputClass);
-        }
+        org.elasticsearch.client.Response response = restClient.performRequest(request);
+        Assertions.assertEquals(200, response.getStatusLine().getStatusCode());
+        return OBJECT_MAPPER.readValue(EntityUtils.toString(response.getEntity()), outputClass);
     }
 
     private void executeRequest(Request request) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-        try (Response response = client.newCall(request).execute()) {
-            Assertions.assertTrue(response.isSuccessful());
-        }
-    }
-
-    private Request.Builder requestWithAuthorization() {
-        return new Request.Builder().addHeader("Authorization", Credentials.basic(username, password));
+        org.elasticsearch.client.Response response = restClient.performRequest(request);
+        Assertions.assertEquals(200, response.getStatusLine().getStatusCode());
     }
 
     private static class ElasticLicenseResponse {
