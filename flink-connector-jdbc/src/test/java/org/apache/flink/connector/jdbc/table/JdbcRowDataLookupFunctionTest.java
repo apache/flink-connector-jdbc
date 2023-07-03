@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test suite for {@link JdbcRowDataLookupFunction}. */
@@ -85,8 +86,8 @@ class JdbcRowDataLookupFunctionTest extends JdbcLookupTestBase {
     private JdbcRowDataLookupFunction buildRowDataLookupFunction(boolean withFailure) {
         InternalJdbcConnectionOptions jdbcOptions =
                 InternalJdbcConnectionOptions.builder()
-                        .setDriverName(getMetadata().getDriverClass())
-                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setDriverName(DERBY_EBOOKSHOP_DB.getDriverClass())
+                        .setDBUrl(DB_URL)
                         .setTableName(LOOKUP_TABLE)
                         .build();
 

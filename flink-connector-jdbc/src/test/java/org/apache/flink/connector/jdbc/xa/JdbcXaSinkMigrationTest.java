@@ -23,16 +23,18 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
 import org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
-import org.apache.flink.connector.jdbc.testutils.databases.derby.DerbyDatabase;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
 import org.apache.flink.streaming.api.operators.StreamSink;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
+import org.apache.flink.testutils.junit.extensions.parameterized.ParameterizedTestExtension;
+import org.apache.flink.testutils.junit.extensions.parameterized.Parameters;
 import org.apache.flink.util.Preconditions;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import javax.transaction.xa.Xid;
 
@@ -48,11 +50,13 @@ import static java.util.Optional.of;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.CP0;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.cleanUpDatabasesStatic;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.initSchema;
+import static org.apache.flink.connector.jdbc.xa.JdbcXaSinkDerbyTest.derbyXaDs;
 import static org.apache.flink.connector.jdbc.xa.JdbcXaSinkTestBase.buildInitCtx;
 import static org.apache.flink.streaming.util.OperatorSnapshotUtil.readStateHandle;
 import static org.apache.flink.streaming.util.OperatorSnapshotUtil.writeStateHandle;
 
 /** Tests state migration for {@link JdbcXaSinkFunction}. */
+@ExtendWith(ParameterizedTestExtension.class)
 public class JdbcXaSinkMigrationTest extends JdbcTestBase {
 
     // write a snapshot:
@@ -61,19 +65,23 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
     // mvn exec:java -Dexec.mainClass="<CLASS_NAME>" -Dexec.args='<VERSION>'
     // -Dexec.classpathScope=test -Dexec.cleanupDaemonThreads=false
     public static void main(String[] args) throws Exception {
-        new DerbyDatabase().startDatabase();
-        JdbcXaSinkMigrationTest test = new JdbcXaSinkMigrationTest();
-        test.writeSnapshot(parseVersionArg(args));
+        writeSnapshot(parseVersionArg(args));
     }
 
+    @Parameters
     public static Collection<FlinkVersion> getReadVersions() {
         return Collections.emptyList();
     }
 
-    @ParameterizedTest
-    @MethodSource("getReadVersions")
+    public JdbcXaSinkMigrationTest(FlinkVersion readVersion) {
+        this.readVersion = readVersion;
+    }
+
+    private final FlinkVersion readVersion;
+
+    @TestTemplate
     @Disabled // as getReadVersions is empty and fails
-    void testCommitFromSnapshot(FlinkVersion readVersion) throws Exception {
+    void testCommitFromSnapshot() throws Exception {
         preparePendingTransaction();
         try (OneInputStreamOperatorTestHarness<TestEntry, Object> harness =
                 createHarness(buildSink())) {
@@ -91,6 +99,11 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
         cancelAllTx();
     }
 
+    @Override
+    public DatabaseMetadata getMetadata() {
+        return JdbcTestFixture.DERBY_EBOOKSHOP_DB;
+    }
+
     private void preparePendingTransaction() throws Exception {
         try (JdbcXaSinkTestHelper sinkHelper =
                 new JdbcXaSinkTestHelper(buildSink(), new XaSinkStateHandlerImpl())) {
@@ -100,7 +113,7 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
         }
     }
 
-    private OperatorSubtaskState captureState() throws Exception {
+    private static OperatorSubtaskState captureState() throws Exception {
         try (JdbcXaSinkTestHelper sinkHelper =
                 new JdbcXaSinkTestHelper(buildSink(), new XaSinkStateHandlerImpl())) {
             try (OneInputStreamOperatorTestHarness<TestEntry, Object> harness =
@@ -128,7 +141,7 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
         };
     }
 
-    private String getSnapshotPath(FlinkVersion version) {
+    private static String getSnapshotPath(FlinkVersion version) {
         return String.format(
                 "src/test/resources/jdbc-exactly-once-sink-migration-%s-snapshot", version);
     }
@@ -151,34 +164,33 @@ public class JdbcXaSinkMigrationTest extends JdbcTestBase {
                                                 + Arrays.toString(FlinkVersion.values())));
     }
 
-    private JdbcXaSinkFunction<TestEntry> buildSink() {
+    private static JdbcXaSinkFunction<TestEntry> buildSink() {
         return JdbcXaSinkTestBase.buildSink(
                 getXidGenerator(),
-                XaFacadeImpl.fromXaDataSource(getMetadata().buildXaDataSource()),
+                XaFacadeImpl.fromXaDataSource(derbyXaDs()),
                 new XaSinkStateHandlerImpl(new XaSinkStateSerializer()),
                 1);
     }
 
-    private void cancelAllTx() throws Exception {
+    private static void cancelAllTx() throws Exception {
         try (JdbcXaFacadeTestHelper xa =
-                new JdbcXaFacadeTestHelper(getMetadata(), JdbcTestFixture.INPUT_TABLE)) {
+                new JdbcXaFacadeTestHelper(
+                        JdbcTestFixture.DERBY_EBOOKSHOP_DB, JdbcTestFixture.INPUT_TABLE)) {
             xa.cancelAllTx();
         }
     }
 
-    private void writeSnapshot(FlinkVersion flinkVersion) throws Exception {
-        String path = getSnapshotPath(flinkVersion);
-
-        //        Files.createFile(Paths.get(path));/
+    private static void writeSnapshot(FlinkVersion v) throws Exception {
+        String path = getSnapshotPath(v);
         Preconditions.checkArgument(
                 !Files.exists(Paths.get(path)),
-                String.format("snapshot for version %s already exist: %s", flinkVersion, path));
-        initSchema(getMetadata());
+                String.format("snapshot for version %s already exist: %s", v, path));
+        initSchema(JdbcTestFixture.DERBY_EBOOKSHOP_DB);
         try {
             writeStateHandle(captureState(), path);
         } finally {
             cancelAllTx();
-            cleanUpDatabasesStatic(getMetadata());
+            cleanUpDatabasesStatic(JdbcTestFixture.DERBY_EBOOKSHOP_DB);
         }
     }
 

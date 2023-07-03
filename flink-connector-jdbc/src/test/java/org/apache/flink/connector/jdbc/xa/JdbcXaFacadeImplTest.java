@@ -19,6 +19,7 @@ package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 
 import org.junit.jupiter.api.Test;
 
@@ -95,5 +96,10 @@ class JdbcXaFacadeImplTest extends JdbcTestBase {
         }
         verify(connection).close();
         verify(xaConnection).close();
+    }
+
+    @Override
+    public DatabaseMetadata getMetadata() {
+        return JdbcTestFixture.DERBY_EBOOKSHOP_DB;
     }
 }

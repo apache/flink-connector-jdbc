@@ -18,22 +18,31 @@
 
 package org.apache.flink.connector.jdbc.table;
 
-import org.apache.flink.connector.jdbc.databases.derby.DerbyTestBase;
+import org.apache.flink.connector.jdbc.JdbcTestFixture;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
+
 /** Base class for JDBC lookup test. */
-class JdbcLookupTestBase implements DerbyTestBase {
+class JdbcLookupTestBase {
+
+    public static final String DB_URL = "jdbc:derby:memory:lookup";
     public static final String LOOKUP_TABLE = "lookup_table";
 
     @BeforeEach
-    void before() throws SQLException {
-        try (Connection conn = getMetadata().getConnection();
+    void before() throws ClassNotFoundException, SQLException {
+        System.setProperty(
+                "derby.stream.error.field", JdbcTestFixture.class.getCanonicalName() + ".DEV_NULL");
+
+        Class.forName(DERBY_EBOOKSHOP_DB.getDriverClass());
+        try (Connection conn = DriverManager.getConnection(DB_URL + ";create=true");
                 Statement stat = conn.createStatement()) {
             stat.executeUpdate(
                     "CREATE TABLE "
@@ -87,7 +96,7 @@ class JdbcLookupTestBase implements DerbyTestBase {
     }
 
     public void insert(String insertQuery) throws SQLException {
-        try (Connection conn = getMetadata().getConnection();
+        try (Connection conn = DriverManager.getConnection(DB_URL + ";create=true");
                 Statement stat = conn.createStatement()) {
             stat.execute(insertQuery);
         }
@@ -95,7 +104,8 @@ class JdbcLookupTestBase implements DerbyTestBase {
 
     @AfterEach
     void clearOutputTable() throws Exception {
-        try (Connection conn = getMetadata().getConnection();
+        Class.forName(DERBY_EBOOKSHOP_DB.getDriverClass());
+        try (Connection conn = DriverManager.getConnection(DB_URL);
                 Statement stat = conn.createStatement()) {
             stat.execute("DROP TABLE " + LOOKUP_TABLE);
         }

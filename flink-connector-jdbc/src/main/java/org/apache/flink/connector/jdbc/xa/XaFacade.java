@@ -72,8 +72,7 @@ public interface XaFacade extends JdbcConnectionProvider, Serializable, AutoClos
     /**
      * Commit previously prepared transaction.
      *
-     * @param ignoreUnknown whether to ignore {@link javax.transaction.xa.XAException#XAER_NOTA
-     *     XAER_NOTA} error.
+     * @param ignoreUnknown whether to ignore {@link XAException#XAER_NOTA XAER_NOTA} error.
      */
     void commit(Xid xid, boolean ignoreUnknown) throws TransientXaException;
 
@@ -95,7 +94,7 @@ public interface XaFacade extends JdbcConnectionProvider, Serializable, AutoClos
      * Thrown by {@link XaFacade} when RM responds with {@link
      * javax.transaction.xa.XAResource#XA_RDONLY XA_RDONLY} indicating that the transaction doesn't
      * include any changes. When such a transaction is committed RM may return an error (usually,
-     * {@link javax.transaction.xa.XAException#XAER_NOTA XAER_NOTA}).
+     * {@link XAException#XAER_NOTA XAER_NOTA}).
      */
     class EmptyXaTransactionException extends FlinkRuntimeException {
         private final Xid xid;

@@ -497,36 +497,29 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
             Predicate<String> filterFunc,
             Object... params) {
 
+        List<String> columnValues = Lists.newArrayList();
+
         try (Connection conn = DriverManager.getConnection(connUrl, username, pwd);
                 PreparedStatement ps = conn.prepareStatement(sql)) {
-            return extractColumnValuesByStatement(ps, columnIndex, filterFunc, params);
-
-        } catch (Exception e) {
-            throw new CatalogException(
-                    String.format(
-                            "The following SQL query could not be executed (%s): %s", connUrl, sql),
-                    e);
-        }
-    }
-
-    protected static List<String> extractColumnValuesByStatement(
-            PreparedStatement ps, int columnIndex, Predicate<String> filterFunc, Object... params)
-            throws SQLException {
-        List<String> columnValues = Lists.newArrayList();
-        if (Objects.nonNull(params) && params.length > 0) {
-            for (int i = 0; i < params.length; i++) {
-                ps.setObject(i + 1, params[i]);
+            if (Objects.nonNull(params) && params.length > 0) {
+                for (int i = 0; i < params.length; i++) {
+                    ps.setObject(i + 1, params[i]);
+                }
             }
-        }
-        try (ResultSet rs = ps.executeQuery()) {
+            ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 String columnValue = rs.getString(columnIndex);
                 if (Objects.isNull(filterFunc) || filterFunc.test(columnValue)) {
                     columnValues.add(columnValue);
                 }
             }
+            return columnValues;
+        } catch (Exception e) {
+            throw new CatalogException(
+                    String.format(
+                            "The following SQL query could not be executed (%s): %s", connUrl, sql),
+                    e);
         }
-        return columnValues;
     }
 
     protected DataType fromJDBCType(ObjectPath tablePath, ResultSetMetaData metadata, int colIndex)

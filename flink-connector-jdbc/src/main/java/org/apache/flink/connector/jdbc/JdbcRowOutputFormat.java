@@ -54,7 +54,7 @@ public class JdbcRowOutputFormat
                 connectionProvider,
                 new JdbcExecutionOptions.Builder().withBatchSize(batchSize).build(),
                 ctx -> createRowExecutor(sql, typesArray, ctx),
-                JdbcOutputFormat.RecordExtractor.identity());
+                RecordExtractor.identity());
     }
 
     private static JdbcBatchStatementExecutor<Row> createRowExecutor(

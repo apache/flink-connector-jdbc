@@ -18,14 +18,10 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
-import org.apache.flink.connector.jdbc.databases.cratedb.catalog.CrateDBCatalog;
-import org.apache.flink.connector.jdbc.databases.cratedb.dialect.CrateDBDialect;
-import org.apache.flink.connector.jdbc.databases.mysql.catalog.MySqlCatalog;
-import org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialect;
-import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog;
-import org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
+import org.apache.flink.connector.jdbc.dialect.mysql.MySqlDialect;
+import org.apache.flink.connector.jdbc.dialect.psql.PostgresDialect;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 
@@ -53,9 +49,6 @@ public class JdbcCatalogUtils {
 
         if (dialect instanceof PostgresDialect) {
             return new PostgresCatalog(
-                    userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
-        } else if (dialect instanceof CrateDBDialect) {
-            return new CrateDBCatalog(
                     userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
         } else if (dialect instanceof MySqlDialect) {
             return new MySqlCatalog(

@@ -22,6 +22,7 @@ import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
+import org.apache.flink.connector.jdbc.databases.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
@@ -36,6 +37,7 @@ import java.sql.Connection;
 import java.sql.Statement;
 
 import static org.apache.flink.connector.jdbc.JdbcDataTestBase.toRow;
+import static org.apache.flink.connector.jdbc.JdbcTestFixture.DERBY_EBOOKSHOP_DB;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
@@ -54,7 +56,7 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
     }
 
     @Test
-    void testMaxRetry() {
+    void testMaxRetry() throws Exception {
         assertThatThrownBy(
                         () -> {
                             format =
@@ -113,5 +115,10 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
                 Statement stat = conn.createStatement()) {
             stat.execute("DELETE FROM " + OUTPUT_TABLE);
         }
+    }
+
+    @Override
+    public DatabaseMetadata getMetadata() {
+        return DERBY_EBOOKSHOP_DB;
     }
 }

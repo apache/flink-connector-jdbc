@@ -31,6 +31,8 @@ import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.TimestampType;
 
+import org.postgresql.util.PGobject;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -173,7 +175,14 @@ public abstract class AbstractJdbcRowConverter implements JdbcRowConverter {
                                 : TimestampData.fromTimestamp((Timestamp) val);
             case CHAR:
             case VARCHAR:
-                return val -> StringData.fromString((String) val);
+                return val -> {
+                    try {
+                        return StringData.fromString(((PGobject) val).getValue());
+
+                    } catch (ClassCastException ex) {
+                        return StringData.fromString((String) val);
+                    }
+                };
             case BINARY:
             case VARBINARY:
                 return val -> val;

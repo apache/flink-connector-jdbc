@@ -211,7 +211,7 @@ public interface FieldNamedPreparedStatement extends AutoCloseable {
      *
      * @see PreparedStatement#setDate(int, Date)
      */
-    void setDate(int fieldIndex, java.sql.Date x) throws SQLException;
+    void setDate(int fieldIndex, Date x) throws SQLException;
 
     /**
      * Sets the designated parameter to the given <code>java.sql.Time</code> value. The driver
@@ -219,7 +219,7 @@ public interface FieldNamedPreparedStatement extends AutoCloseable {
      *
      * @see PreparedStatement#setTime(int, Time)
      */
-    void setTime(int fieldIndex, java.sql.Time x) throws SQLException;
+    void setTime(int fieldIndex, Time x) throws SQLException;
 
     /**
      * Sets the designated parameter to the given <code>java.sql.Timestamp</code> value. The driver
@@ -227,7 +227,7 @@ public interface FieldNamedPreparedStatement extends AutoCloseable {
      *
      * @see PreparedStatement#setTimestamp(int, Timestamp)
      */
-    void setTimestamp(int fieldIndex, java.sql.Timestamp x) throws SQLException;
+    void setTimestamp(int fieldIndex, Timestamp x) throws SQLException;
 
     /**
      * Sets the value of the designated parameter using the given object.

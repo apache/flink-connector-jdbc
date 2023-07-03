@@ -18,9 +18,7 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
-import org.apache.flink.connector.jdbc.databases.h2.H2XaTestBase;
-import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
-import org.apache.flink.connector.jdbc.testutils.databases.h2.H2XaDatabase;
+import org.apache.flink.connector.jdbc.databases.h2.H2XaDatabase;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,12 +26,7 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Tests that data is not inserted ahead of time. */
-class JdbcXaSinkNoInsertionTest extends JdbcXaSinkTestBase implements H2XaTestBase {
-
-    @Override
-    public DatabaseMetadata getMetadata() {
-        return H2XaDatabase.getMetadata();
-    }
+class JdbcXaSinkNoInsertionTest extends JdbcXaSinkTestBase implements H2XaDatabase {
 
     @Test
     void testNoInsertAfterInvoke() throws Exception {

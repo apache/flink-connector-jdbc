@@ -178,6 +178,9 @@ class JdbcFullTest extends JdbcDataTestBase {
         try (Connection conn = getMetadata().getConnection();
                 Statement stat = conn.createStatement()) {
             stat.execute("DELETE FROM " + OUTPUT_TABLE);
+
+            stat.close();
+            conn.close();
         }
     }
 
