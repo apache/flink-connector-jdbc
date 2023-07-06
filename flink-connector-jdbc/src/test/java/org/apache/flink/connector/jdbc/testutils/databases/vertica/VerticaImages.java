@@ -19,7 +19,7 @@ package org.apache.flink.connector.jdbc.testutils.databases.vertica;
 
 import org.testcontainers.utility.DockerImageName;
 
-/** Vertica docker images. */
+/** Vertica Docker images. */
 public interface VerticaImages {
     DockerImageName VERTICA_CE = DockerImageName.parse("vertica/vertica-ce");
 }
