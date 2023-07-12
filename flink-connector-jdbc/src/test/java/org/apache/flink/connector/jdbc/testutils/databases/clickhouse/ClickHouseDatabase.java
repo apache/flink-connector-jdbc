@@ -23,7 +23,7 @@ import org.apache.flink.util.FlinkRuntimeException;
 
 import org.testcontainers.containers.ClickHouseContainer;
 
-/** Clickhouse database for testing. */
+/** A Clickhouse database for testing. */
 public class ClickHouseDatabase extends DatabaseExtension implements ClickHouseImages {
 
     private static final ClickHouseContainer CONTAINER =
