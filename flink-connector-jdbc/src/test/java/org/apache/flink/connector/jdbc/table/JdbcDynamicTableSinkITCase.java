@@ -213,6 +213,9 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
 
     @Test
     void testUpsert() throws Exception {
+        if (!getMetadata().supportUpdate()) {
+            return;
+        }
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.getConfig().enableObjectReuse();
         StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
@@ -322,6 +325,9 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
 
     @Test
     void testReadingFromChangelogSource() throws Exception {
+        if (!getMetadata().supportUpdate()) {
+            return;
+        }
         TableEnvironment tEnv = TableEnvironment.create(EnvironmentSettings.newInstance().build());
         String dataId = TestValuesTableFactory.registerData(TestData.userChangelog());
 

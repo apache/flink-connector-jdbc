@@ -44,6 +44,10 @@ public interface DatabaseMetadata extends Serializable {
 
     String getVersion();
 
+    default boolean supportUpdate() {
+        return true;
+    }
+
     default SerializableSupplier<XADataSource> getXaSourceSupplier() {
         return this::buildXaDataSource;
     }

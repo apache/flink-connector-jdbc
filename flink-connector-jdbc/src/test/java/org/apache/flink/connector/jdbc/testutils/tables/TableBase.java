@@ -69,7 +69,7 @@ public abstract class TableBase<T> implements TableManaged {
         return name;
     }
 
-    private Stream<TableField> getStreamFields() {
+    protected Stream<TableField> getStreamFields() {
         return Arrays.stream(this.fields);
     }
 
@@ -290,5 +290,9 @@ public abstract class TableBase<T> implements TableManaged {
 
     protected <T> T getNullable(ResultSet rs, T value) throws SQLException {
         return rs.wasNull() ? null : value;
+    }
+
+    public TableField[] getFields() {
+        return fields;
     }
 }

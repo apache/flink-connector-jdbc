@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.testutils.tables;
 
+import org.apache.flink.connector.jdbc.databases.clickhouse.table.ClickhouseTableRow;
 import org.apache.flink.table.types.DataType;
 
 /** Table builder. * */
@@ -50,5 +51,9 @@ public final class TableBuilder {
     private static TableField createField(
             String name, TableField.DbType dbType, DataType dataType, boolean pkField) {
         return new TableField(name, dataType, dbType, pkField);
+    }
+
+    public static ClickhouseTableRow ckTableRow(String name, TableField... fields) {
+        return new ClickhouseTableRow(name, fields);
     }
 }
