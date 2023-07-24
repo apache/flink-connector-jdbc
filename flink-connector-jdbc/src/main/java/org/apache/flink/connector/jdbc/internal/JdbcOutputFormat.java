@@ -249,33 +249,36 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
     /** Executes prepared statement and closes all resources of this instance. */
     @Override
     public synchronized void close() {
-        if (!closed) {
-            closed = true;
+        try {
+            if (!closed) {
+                closed = true;
 
-            if (this.scheduledFuture != null) {
-                scheduledFuture.cancel(false);
-                this.scheduler.shutdown();
-            }
+                if (this.scheduledFuture != null) {
+                    scheduledFuture.cancel(false);
+                    this.scheduler.shutdown();
+                }
 
-            if (batchCount > 0) {
+                if (batchCount > 0) {
+                    try {
+                        flush();
+                    } catch (Exception e) {
+                        LOG.warn("Writing records to JDBC failed.", e);
+                        throw new RuntimeException("Writing records to JDBC failed.", e);
+                    }
+                }
+
                 try {
-                    flush();
-                } catch (Exception e) {
-                    LOG.warn("Writing records to JDBC failed.", e);
-                    throw new RuntimeException("Writing records to JDBC failed.", e);
+                    if (jdbcStatementExecutor != null) {
+                        jdbcStatementExecutor.closeStatements();
+                    }
+                } catch (SQLException e) {
+                    LOG.warn("Close JDBC writer failed.", e);
                 }
             }
-
-            try {
-                if (jdbcStatementExecutor != null) {
-                    jdbcStatementExecutor.closeStatements();
-                }
-            } catch (SQLException e) {
-                LOG.warn("Close JDBC writer failed.", e);
-            }
+        } finally {
+            connectionProvider.closeConnection();
+            checkFlushException();
         }
-        connectionProvider.closeConnection();
-        checkFlushException();
     }
 
     public static Builder builder() {
