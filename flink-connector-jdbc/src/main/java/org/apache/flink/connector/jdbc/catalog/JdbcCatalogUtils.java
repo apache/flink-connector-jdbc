@@ -48,8 +48,9 @@ public class JdbcCatalogUtils {
             String defaultDatabase,
             String username,
             String pwd,
-            String baseUrl) {
-        JdbcDialect dialect = JdbcDialectLoader.load(baseUrl, userClassLoader);
+            String baseUrl,
+            String compatibleMode) {
+        JdbcDialect dialect = JdbcDialectLoader.load(baseUrl, compatibleMode, userClassLoader);
 
         if (dialect instanceof PostgresDialect) {
             return new PostgresCatalog(
