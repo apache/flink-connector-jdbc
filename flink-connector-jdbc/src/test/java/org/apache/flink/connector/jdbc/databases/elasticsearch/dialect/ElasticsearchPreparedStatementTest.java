@@ -25,9 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Tests for {@link ElasticsearchPreparedStatementTest}.
- */
+/** Tests for {@link ElasticsearchPreparedStatementTest}. */
 public class ElasticsearchPreparedStatementTest {
 
     private final JdbcDialect dialect =
@@ -35,15 +33,16 @@ public class ElasticsearchPreparedStatementTest {
                     "jdbc:elasticsearch://localhost:9200/test", getClass().getClassLoader());
 
     private final String[] fieldNames =
-            new String[]{"id", "name", "email", "ts", "field1", "field_2", "__field_3__"};
-    private final String[] keyFields = new String[]{"id", "__field_3__"};
+            new String[] {"id", "name", "email", "ts", "field1", "field_2", "__field_3__"};
+    private final String[] keyFields = new String[] {"id", "__field_3__"};
     private final String tableName = "tbl";
 
     @Test
     void testRowExistsStatement() {
         String rowExistStmt = dialect.getRowExistsStatement(tableName, keyFields);
         assertThat(rowExistStmt)
-                .isEqualTo("SELECT 1 FROM \"tbl\" WHERE \"id\" = :id AND \"__field_3__\" = :__field_3__");
+                .isEqualTo(
+                        "SELECT 1 FROM \"tbl\" WHERE \"id\" = :id AND \"__field_3__\" = :__field_3__");
     }
 
     @Test
@@ -55,5 +54,4 @@ public class ElasticsearchPreparedStatementTest {
                                 + "FROM \"tbl\" "
                                 + "WHERE \"id\" = :id AND \"__field_3__\" = :__field_3__");
     }
-
 }

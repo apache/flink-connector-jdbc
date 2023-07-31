@@ -34,19 +34,22 @@ import java.util.Map;
 
 import static java.lang.String.format;
 
-/**
- * Creates content for Elastic Bulk API call.
- */
+/** Creates content for Elastic Bulk API call. */
 public class ElasticsearchBulkBuilder {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    private static final ObjectMapper OBJECT_MAPPER =
+            new ObjectMapper()
+                    .registerModule(new JavaTimeModule())
+                    .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
-    public static String createBulkContent(TableRow schema, List<Row> data) throws JsonProcessingException {
+    public static String createBulkContent(TableRow schema, List<Row> data)
+            throws JsonProcessingException {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < data.size(); ++i) {
-            builder.append(format("{\"create\":{\"_index\":\"%s\",\"_id\":\"%d\"}}\n", schema.getTableName(), i + 1));
+            builder.append(
+                    format(
+                            "{\"create\":{\"_index\":\"%s\",\"_id\":\"%d\"}}\n",
+                            schema.getTableName(), i + 1));
             builder.append(rowToJson(schema, data.get(i))).append('\n');
         }
         return builder.toString();
@@ -71,5 +74,4 @@ public class ElasticsearchBulkBuilder {
             return object;
         }
     }
-
 }

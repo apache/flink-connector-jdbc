@@ -24,9 +24,7 @@ import org.apache.flink.connector.jdbc.testutils.databases.elasticsearch.Elastic
 
 import org.junit.jupiter.api.extension.ExtendWith;
 
-/**
- * Base class for Elasticsearch testing.
- */
+/** Base class for Elasticsearch testing. */
 @ExtendWith(ElasticsearchDatabase.class)
 public interface ElasticsearchTestBase extends DatabaseTest {
 

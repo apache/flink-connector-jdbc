@@ -30,16 +30,15 @@ import java.time.Duration;
 import static org.apache.flink.connector.jdbc.testutils.databases.elasticsearch.ElasticsearchMetadata.PASSWORD;
 import static org.apache.flink.connector.jdbc.testutils.databases.elasticsearch.ElasticsearchMetadata.USERNAME;
 
-/**
- * Elasticsearch database for testing.
- */
+/** Elasticsearch database for testing. */
 public class ElasticsearchDatabase extends DatabaseExtension implements ElasticsearchImages {
 
-    private static final ElasticsearchContainer CONTAINER = new ElasticsearchContainer(ELASTICSEARCH_8)
-            .waitingFor(
-                    Wait.forHttp("/")
-                            .withBasicCredentials(USERNAME, PASSWORD)
-                            .withReadTimeout(Duration.ofMinutes(2)));
+    private static final ElasticsearchContainer CONTAINER =
+            new ElasticsearchContainer(ELASTICSEARCH_8)
+                    .waitingFor(
+                            Wait.forHttp("/")
+                                    .withBasicCredentials(USERNAME, PASSWORD)
+                                    .withReadTimeout(Duration.ofMinutes(2)));
 
     private static ElasticsearchMetadata metadata;
     private static ElasticsearchRestClient client;
@@ -85,5 +84,4 @@ public class ElasticsearchDatabase extends DatabaseExtension implements Elastics
         metadata = null;
         client = null;
     }
-
 }

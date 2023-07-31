@@ -34,18 +34,17 @@ import java.io.IOException;
 
 import static java.lang.String.format;
 
-/**
- * Elasticsearch REST API client.
- */
+/** Elasticsearch REST API client. */
 public class ElasticsearchRestClient {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private static final ObjectMapper OBJECT_MAPPER =
+            new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     private final RestClient restClient;
 
     public ElasticsearchRestClient(ElasticsearchMetadata metadata) {
-        this(metadata.getContainerHost(),
+        this(
+                metadata.getContainerHost(),
                 metadata.getContainerPort(),
                 metadata.getUsername(),
                 metadata.getPassword());
@@ -53,16 +52,22 @@ public class ElasticsearchRestClient {
 
     public ElasticsearchRestClient(String host, int port, String username, String password) {
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));
-        this.restClient = RestClient.builder(new HttpHost(host, port, "http"))
-                .setHttpClientConfigCallback(builder -> builder.setDefaultCredentialsProvider(credentialsProvider))
-                .build();
+        credentialsProvider.setCredentials(
+                AuthScope.ANY, new UsernamePasswordCredentials(username, password));
+        this.restClient =
+                RestClient.builder(new HttpHost(host, port, "http"))
+                        .setHttpClientConfigCallback(
+                                builder ->
+                                        builder.setDefaultCredentialsProvider(credentialsProvider))
+                        .build();
     }
 
     public boolean trialEnabled() throws Exception {
         Request request = new Request("GET", "/_license");
         ElasticLicenseResponse response = executeRequest(request, ElasticLicenseResponse.class);
-        return response != null && response.license.status.equals("active") && response.license.type.equals("trial");
+        return response != null
+                && response.license.status.equals("active")
+                && response.license.type.equals("trial");
     }
 
     public void enableTrial() throws Exception {

@@ -60,10 +60,9 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.fiel
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * The Table Source ITCase for {@link ElasticsearchDialect}.
- */
-public class ElasticsearchDynamicTableSourceITCase extends AbstractTestBase implements ElasticsearchTestBase {
+/** The Table Source ITCase for {@link ElasticsearchDialect}. */
+public class ElasticsearchDynamicTableSourceITCase extends AbstractTestBase
+        implements ElasticsearchTestBase {
 
     private ElasticsearchRestClient client;
     private TableEnvironment tEnv;
@@ -188,52 +187,52 @@ public class ElasticsearchDynamicTableSourceITCase extends AbstractTestBase impl
 
         // test TIMESTAMP filter
         assertThat(
-                executeQuery(
-                        "SELECT * FROM FAKE_TABLE WHERE timestamp6_col = TIMESTAMP '2020-01-01 15:35:00.123456'"))
+                        executeQuery(
+                                "SELECT * FROM FAKE_TABLE WHERE timestamp6_col = TIMESTAMP '2020-01-01 15:35:00.123456'"))
                 .containsExactly(onlyRow1);
 
         // test the IN operator
         assertThat(
-                executeQuery(
-                        "SELECT * FROM FAKE_TABLE WHERE 1 = idx AND double_col IN (100.1234, 101.1234)"))
+                        executeQuery(
+                                "SELECT * FROM FAKE_TABLE WHERE 1 = idx AND double_col IN (100.1234, 101.1234)"))
                 .containsExactly(onlyRow1);
 
         // test mixing AND and OR operator
         assertThat(
-                executeQuery(
-                        "SELECT * FROM FAKE_TABLE WHERE idx = 1 AND double_col = 100.1234 OR double_col = 101.1234"))
+                        executeQuery(
+                                "SELECT * FROM FAKE_TABLE WHERE idx = 1 AND double_col = 100.1234 OR double_col = 101.1234"))
                 .containsExactlyInAnyOrderElementsOf(twoRows);
 
         // test mixing AND/OR with parenthesis, and the swapping the operand of equal expression
         assertThat(
-                executeQuery(
-                        "SELECT * FROM FAKE_TABLE WHERE (2 = idx AND double_col = 100.1234) OR double_col = 101.1234"))
+                        executeQuery(
+                                "SELECT * FROM FAKE_TABLE WHERE (2 = idx AND double_col = 100.1234) OR double_col = 101.1234"))
                 .containsExactly(onlyRow2);
 
         // test Greater than, just to make sure we didnt break anything that we cannot pushdown
         assertThat(
-                executeQuery(
-                        "SELECT * FROM FAKE_TABLE WHERE idx = 2 AND double_col > 100 OR double_col = 101.123"))
+                        executeQuery(
+                                "SELECT * FROM FAKE_TABLE WHERE idx = 2 AND double_col > 100 OR double_col = 101.123"))
                 .containsExactly(onlyRow2);
 
         // One more test of parenthesis
         assertThat(
-                executeQuery(
-                        "SELECT * FROM FAKE_TABLE WHERE 2 = idx AND (double_col = 100.1234 OR double_col = 102.1234)"))
+                        executeQuery(
+                                "SELECT * FROM FAKE_TABLE WHERE 2 = idx AND (double_col = 100.1234 OR double_col = 102.1234)"))
                 .isEmpty();
 
         assertThat(
-                executeQuery(
-                        "SELECT * FROM "
-                                + partitionedTable
-                                + " WHERE id = 2 AND double_col > 100 OR double_col = 101.123"))
+                        executeQuery(
+                                "SELECT * FROM "
+                                        + partitionedTable
+                                        + " WHERE id = 2 AND double_col > 100 OR double_col = 101.123"))
                 .isEmpty();
 
         assertThat(
-                executeQuery(
-                        "SELECT * FROM "
-                                + partitionedTable
-                                + " WHERE 1 = id AND double_col IN (100.1234, 101.1234)"))
+                        executeQuery(
+                                "SELECT * FROM "
+                                        + partitionedTable
+                                        + " WHERE 1 = id AND double_col IN (100.1234, 101.1234)"))
                 .containsExactly(onlyRow1);
     }
 
@@ -403,8 +402,6 @@ public class ElasticsearchDynamicTableSourceITCase extends AbstractTestBase impl
                         -1_223_372_036_854_775_807L,
                         -123.5f,
                         "other-text",
-                        LocalDate.parse("2020-01-02"))
-        );
+                        LocalDate.parse("2020-01-02")));
     }
-
 }

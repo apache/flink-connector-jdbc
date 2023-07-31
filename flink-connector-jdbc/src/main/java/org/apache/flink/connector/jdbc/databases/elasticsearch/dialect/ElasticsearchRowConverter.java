@@ -48,7 +48,8 @@ public class ElasticsearchRowConverter extends AbstractJdbcRowConverter {
             case FLOAT:
                 return val -> val;
             case DATE:
-                return val -> (int) (((Timestamp) val).toLocalDateTime().toLocalDate().toEpochDay());
+                return val ->
+                        (int) (((Timestamp) val).toLocalDateTime().toLocalDate().toEpochDay());
             default:
                 return super.createInternalConverter(type);
         }

@@ -21,9 +21,7 @@ package org.apache.flink.connector.jdbc.databases.elasticsearch.dialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectFactory;
 
-/**
- * Factory for {@link ElasticsearchDialect}.
- */
+/** Factory for {@link ElasticsearchDialect}. */
 public class ElasticsearchDialectFactory implements JdbcDialectFactory {
 
     @Override

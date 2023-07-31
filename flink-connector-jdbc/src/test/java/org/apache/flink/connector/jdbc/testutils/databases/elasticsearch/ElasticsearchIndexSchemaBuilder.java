@@ -59,23 +59,27 @@ import static java.lang.String.format;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 
-/**
- * Creates content for Elastic Index API call.
- */
+/** Creates content for Elastic Index API call. */
 public class ElasticsearchIndexSchemaBuilder {
 
     private static final ElasticsearchDataTypeMapper MAPPER = new ElasticsearchDataTypeMapper();
 
     public static String buildIndexSchema(TableRow tableRow) {
-        String fields = stream(tableRow.getTableDataFields())
-                .map(field -> format("\"%s\": %s", field.getName(), field.getDataType().accept(MAPPER)))
-                .collect(joining(", "));
-        return "{\"settings\": {\"number_of_shards\": 1}, \"mappings\": {\"properties\": {" + fields + "}}}";
+        String fields =
+                stream(tableRow.getTableDataFields())
+                        .map(
+                                field ->
+                                        format(
+                                                "\"%s\": %s",
+                                                field.getName(),
+                                                field.getDataType().accept(MAPPER)))
+                        .collect(joining(", "));
+        return "{\"settings\": {\"number_of_shards\": 1}, \"mappings\": {\"properties\": {"
+                + fields
+                + "}}}";
     }
 
-    /**
-     * Maps Flink types to Elasticsearch types.
-     */
+    /** Maps Flink types to Elasticsearch types. */
     private static class ElasticsearchDataTypeMapper
             implements DataTypeVisitor<String>, LogicalTypeVisitor<String> {
 
@@ -246,5 +250,4 @@ public class ElasticsearchIndexSchemaBuilder {
             return other.accept(this);
         }
     }
-
 }

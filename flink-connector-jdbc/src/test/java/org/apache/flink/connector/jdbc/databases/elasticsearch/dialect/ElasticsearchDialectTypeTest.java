@@ -31,7 +31,8 @@ public class ElasticsearchDialectTypeTest extends JdbcDialectTypeTest {
 
                 // Not valid data
                 createTestItem("CHAR", "The Elasticsearch dialect doesn't support type: CHAR(1)."),
-                createTestItem("BINARY", "The Elasticsearch dialect doesn't support type: BINARY(1)."),
+                createTestItem(
+                        "BINARY", "The Elasticsearch dialect doesn't support type: BINARY(1)."),
                 createTestItem("TIME", "The Elasticsearch dialect doesn't support type: TIME(0)."),
                 createTestItem(
                         "VARBINARY(10)",
@@ -40,5 +41,4 @@ public class ElasticsearchDialectTypeTest extends JdbcDialectTypeTest {
                         "DECIMAL(10, 4)",
                         "The Elasticsearch dialect doesn't support type: DECIMAL(10, 4)."));
     }
-
 }
