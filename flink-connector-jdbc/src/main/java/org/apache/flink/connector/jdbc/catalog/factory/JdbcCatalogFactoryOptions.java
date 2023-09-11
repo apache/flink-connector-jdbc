@@ -43,6 +43,8 @@ public class JdbcCatalogFactoryOptions {
 
     public static final ConfigOption<String> BASE_URL =
             ConfigOptions.key("base-url").stringType().noDefaultValue();
+    public static final ConfigOption<String> EXTRA_URL_PARAM =
+            ConfigOptions.key("extra-url-param").stringType().defaultValue("");
 
     private JdbcCatalogFactoryOptions() {}
 }

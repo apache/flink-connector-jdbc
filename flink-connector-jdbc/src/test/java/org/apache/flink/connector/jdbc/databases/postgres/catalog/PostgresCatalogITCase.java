@@ -20,6 +20,9 @@ package org.apache.flink.connector.jdbc.databases.postgres.catalog;
 
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.TableEnvironment;
+import org.apache.flink.table.catalog.Catalog;
+import org.apache.flink.table.catalog.CatalogBaseTable;
+import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CollectionUtil;
 
@@ -192,5 +195,37 @@ class PostgresCatalogITCase extends PostgresCatalogTestBase {
                                 + "2147483647, "
                                 + "9223372036854775807, "
                                 + "9223372036854775807]]");
+    }
+
+    @Test
+    void testExtraUrlParam() throws Exception {
+        String extraUrlParam = "?socketTimeout=180";
+        String catalogName = "postgre_catalog_extra_param";
+        String baseJdbcUrl =
+                getMetadata()
+                        .getJdbcUrl()
+                        .substring(0, getMetadata().getJdbcUrl().lastIndexOf("/"));
+        Catalog catalog2 =
+                new PostgresCatalog(
+                        Thread.currentThread().getContextClassLoader(),
+                        TEST_CATALOG_NAME,
+                        PostgresCatalog.DEFAULT_DATABASE,
+                        TEST_USERNAME,
+                        TEST_PWD,
+                        baseUrl,
+                        extraUrlParam);
+
+        tEnv.registerCatalog(catalogName, catalog2);
+        tEnv.useCatalog(catalogName);
+
+        Catalog postgresCatalog = tEnv.getCatalog(catalogName).get();
+
+        CatalogBaseTable table =
+                postgresCatalog.getTable(
+                        new ObjectPath(PostgresCatalog.DEFAULT_DATABASE, TABLE_ARRAY_TYPE));
+
+        String url = table.getOptions().get("url");
+        assertThat(url)
+                .isEqualTo(baseJdbcUrl + "/" + PostgresCatalog.DEFAULT_DATABASE + extraUrlParam);
     }
 }

@@ -67,7 +67,18 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
             String username,
             String pwd,
             String baseUrl) {
-        super(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+        this(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl, "");
+    }
+
+    public MySqlCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String baseUrl,
+            String extraUrlParam) {
+        super(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl, extraUrlParam);
 
         String driverVersion =
                 Preconditions.checkNotNull(getDriverVersion(), "Driver version must not be null.");
