@@ -262,7 +262,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
                     flush();
                 } catch (Exception e) {
                     LOG.warn("Writing records to JDBC failed.", e);
-                    throw new RuntimeException("Writing records to JDBC failed.", e);
+                    flushException = e;
                 }
             }
 

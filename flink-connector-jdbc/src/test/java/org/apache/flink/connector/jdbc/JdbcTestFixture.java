@@ -44,6 +44,7 @@ public class JdbcTestFixture implements DerbyTestBase {
     public static final String OUTPUT_TABLE = "newbooks";
     public static final String OUTPUT_TABLE_2 = "newbooks2";
     public static final String OUTPUT_TABLE_3 = "newbooks3";
+    public static final String OUTPUT_TABLE_4 = "newbooks4";
     public static final String WORDS_TABLE = "words";
     public static final String SELECT_ALL_BOOKS = "select * from " + INPUT_TABLE;
     public static final String SELECT_ID_BOOKS = "select id from " + INPUT_TABLE;
@@ -189,6 +190,7 @@ public class JdbcTestFixture implements DerbyTestBase {
             createTable(conn, OUTPUT_TABLE);
             createTable(conn, OUTPUT_TABLE_2);
             createTable(conn, OUTPUT_TABLE_3);
+            createTable(conn, OUTPUT_TABLE_4);
             createWordsTable(conn);
         }
     }
@@ -232,6 +234,7 @@ public class JdbcTestFixture implements DerbyTestBase {
             stat.executeUpdate("DROP TABLE " + OUTPUT_TABLE);
             stat.executeUpdate("DROP TABLE " + OUTPUT_TABLE_2);
             stat.executeUpdate("DROP TABLE " + OUTPUT_TABLE_3);
+            stat.executeUpdate("DROP TABLE " + OUTPUT_TABLE_4);
             stat.executeUpdate("DROP TABLE " + WORDS_TABLE);
         }
     }
