@@ -68,12 +68,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** The ITCase for {@link JdbcDynamicTableSink}. */
 public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implements DatabaseTest {
 
-    private final TableRow upsertOutputTable = createUpsertOutputTable();
-    private final TableRow appendOutputTable = createAppendOutputTable();
-    private final TableRow batchOutputTable = createBatchOutputTable();
-    private final TableRow realOutputTable = createRealOutputTable();
-    private final TableRow checkpointOutputTable = createCheckpointOutputTable();
-    private final TableRow userOutputTable = createUserOutputTable();
+    protected final TableRow upsertOutputTable = createUpsertOutputTable();
+    protected final TableRow appendOutputTable = createAppendOutputTable();
+    protected final TableRow batchOutputTable = createBatchOutputTable();
+    protected final TableRow realOutputTable = createRealOutputTable();
+    protected final TableRow checkpointOutputTable = createCheckpointOutputTable();
+    protected final TableRow userOutputTable = createUserOutputTable();
 
     protected TableRow createUpsertOutputTable() {
         return tableRow(
@@ -212,7 +212,7 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
     }
 
     @Test
-    void testUpsert() throws Exception {
+    protected void testUpsert() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.getConfig().enableObjectReuse();
         StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
@@ -321,7 +321,7 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
     }
 
     @Test
-    void testReadingFromChangelogSource() throws Exception {
+    protected void testReadingFromChangelogSource() throws Exception {
         TableEnvironment tEnv = TableEnvironment.create(EnvironmentSettings.newInstance().build());
         String dataId = TestValuesTableFactory.registerData(TestData.userChangelog());
 
