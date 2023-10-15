@@ -627,7 +627,7 @@ SELECT * FROM given_database.test_table2;
 CrateDB 和 PostgreSQL 类似，但它只有一个默认名为 `crate` 的数据库。 此外它有一个额外的命名空间 `schema`，一个 CrateDB 实例可以有多个 schema，其中一个 schema 默认名为"doc"，每个 schema 可以包含多张表。 在 Flink 中，当查询由 CrateDB catalog 注册的表时，用户可以使用 `schema_name.table_name` 或者只有 `table_name`。其中 `schema_name` 是可选的，默认值为 "doc"。
 
 因此，Flink Catalog 和 CrateDB catalog 之间的元空间映射如下：
-  
+
 | Flink Catalog Metaspace Structure    | CrateDB Metaspace Structure    |
 | :------------------------------------|:-------------------------------|
 | catalog name (defined in Flink only) | N/A                            |
