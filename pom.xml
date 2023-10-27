@@ -47,14 +47,14 @@ under the License.
     </modules>
 
     <properties>
-        <flink.version>1.17.0</flink.version>
+        <flink.version>1.16.2</flink.version>
 
         <jackson-bom.version>2.13.4.20221013</jackson-bom.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit5.version>5.9.1</junit5.version>
-        <assertj.version>3.23.1</assertj.version>
-        <testcontainers.version>1.18.2</testcontainers.version>
-        <mockito.version>2.21.0</mockito.version>
+        <junit5.version>5.10.1</junit5.version>
+        <assertj.version>3.24.2</assertj.version>
+        <testcontainers.version>1.19.3</testcontainers.version>
+        <mockito.version>3.12.4</mockito.version>
 
         <japicmp.referenceVersion>3.0.0-1.16</japicmp.referenceVersion>
 
@@ -301,6 +301,13 @@ under the License.
                 <version>1.23.0</version>
             </dependency>
 
+            <!-- For dependency convergence -->
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>1.1.10.4</version>
+            </dependency>
+
             <!-- For dependency convergence on mockito/powermock mismatch -->
             <dependency>
                 <groupId>net.bytebuddy</groupId>
@@ -313,6 +320,20 @@ under the License.
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy-agent</artifactId>
                 <version>1.12.10</version>
+            </dependency>
+
+            <!-- For dependency convergence on crate-jdbc mismatch -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>31.1-jre</version>
+            </dependency>
+
+            <!-- For dependency convergence on crate-jdbc mismatch -->
+            <dependency>
+                <groupId>org.checkerframework</groupId>
+                <artifactId>checker-qual</artifactId>
+                <version>3.12.0</version>
             </dependency>
 
             <dependency>
