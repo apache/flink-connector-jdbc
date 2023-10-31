@@ -37,7 +37,7 @@ interface XaGroupOps extends Serializable {
 
     GroupXaOperationResult<Xid> failOrRollback(Collection<Xid> xids);
 
-    void recoverAndRollback(RuntimeContext runtimeContext, XidGenerator xidGenerator);
+    void recoverAndRollback(JobSubtask subtask, XidGenerator xidGenerator);
 
     class GroupXaOperationResult<T> {
         private final List<T> succeeded = new ArrayList<>();

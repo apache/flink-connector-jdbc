@@ -29,7 +29,7 @@ import org.apache.flink.connector.jdbc.sink.statement.JdbcQueryStatement;
 import java.io.IOException;
 
 @Internal
-class JdbcWriter<IN> implements SinkWriter<IN> {
+public class JdbcWriter<IN> implements SinkWriter<IN> {
 
     private final JdbcOutputFormat<IN, IN, JdbcBatchStatementExecutor<IN>> jdbcOutput;
 
