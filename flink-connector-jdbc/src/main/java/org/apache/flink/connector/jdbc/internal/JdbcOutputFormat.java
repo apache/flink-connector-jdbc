@@ -153,6 +153,16 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
                                     if (!closed) {
                                         try {
                                             flush();
+                                        } catch (FlushingRuntimeException e) {
+                                            /*
+                                             * We ignore this FlushingRuntimeException, as it is
+                                             * only thrown when flushingException was assigned to,
+                                             * in a former run of this scheduler thread, in the next
+                                             * catch clause. In that case, we already have
+                                             * flushException cached, waiting for the next task
+                                             * manager thread's flush call which would throw a new
+                                             * FlushingRuntimeException causing job failure.
+                                             */
                                         } catch (Exception e) {
                                             flushException = e;
                                         }
@@ -178,7 +188,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
 
     private void checkFlushException() {
         if (flushException != null) {
-            throw new RuntimeException("Writing records to JDBC failed.", flushException);
+            throw new FlushingRuntimeException("Writing records to JDBC failed.", flushException);
         }
     }
 
@@ -414,5 +424,13 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
     @VisibleForTesting
     public Connection getConnection() {
         return connectionProvider.getConnection();
+    }
+
+    static class FlushingRuntimeException extends RuntimeException {
+        private static final long serialVersionUID = -8923632392030344592L;
+
+        FlushingRuntimeException(String msg, Exception cause) {
+            super(msg, cause);
+        }
     }
 }
