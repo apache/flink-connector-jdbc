@@ -45,17 +45,17 @@ See how to link with it for cluster execution [here]({{< ref "docs/dev/configura
 
 A driver dependency is also required to connect to a specified database. Here are drivers currently supported:
 
-| Driver     | Group Id                   | Artifact Id            | JAR                                                                                                                               |
-|:-----------|:---------------------------|:-----------------------|:----------------------------------------------------------------------------------------------------------------------------------|
-| MySQL      | `mysql`                    | `mysql-connector-java` | [Download](https://repo.maven.apache.org/maven2/mysql/mysql-connector-java/)                                                      |
-| Oracle     | `com.oracle.database.jdbc` | `ojdbc8`               | [Download](https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8)                                                    |
-| PostgreSQL | `org.postgresql`           | `postgresql`           | [Download](https://jdbc.postgresql.org/download/)                                                                                 |
-| Derby      | `org.apache.derby`         | `derby`                | [Download](http://db.apache.org/derby/derby_downloads.html)                                                                       |
-| SQL Server | `com.microsoft.sqlserver`  | `mssql-jdbc`           | [Download](https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-ver16) |
-| CrateDB    | `io.crate`                 | `crate-jdbc`           | [Download](https://repo1.maven.org/maven2/io/crate/crate-jdbc/)                                                                   |
-| Db2        | `com.ibm.db2.jcc`          | `db2jcc`               | [Download](https://www.ibm.com/support/pages/download-db2-fix-packs-version-db2-linux-unix-and-windows)                           | 
-| Trino      | `io.trino`                 | `trino-jdbc`           | [Download](https://repo1.maven.org/maven2/io/trino/trino-jdbc/)                                                                   |
-| Elasticsearch | `org.elasticsearch.plugin` | `x-pack-sql-jdbc`      | [Download](https://www.elastic.co/downloads/jdbc-client) |
+| Driver        | Group Id                   | Artifact Id            | JAR                                                                                                                               |
+|:--------------|:---------------------------|:-----------------------|:----------------------------------------------------------------------------------------------------------------------------------|
+| MySQL         | `mysql`                    | `mysql-connector-java` | [Download](https://repo.maven.apache.org/maven2/mysql/mysql-connector-java/)                                                      |
+| Oracle        | `com.oracle.database.jdbc` | `ojdbc8`               | [Download](https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8)                                                    |
+| PostgreSQL    | `org.postgresql`           | `postgresql`           | [Download](https://jdbc.postgresql.org/download/)                                                                                 |
+| Derby         | `org.apache.derby`         | `derby`                | [Download](http://db.apache.org/derby/derby_downloads.html)                                                                       |
+| SQL Server    | `com.microsoft.sqlserver`  | `mssql-jdbc`           | [Download](https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-ver16) |
+| CrateDB       | `io.crate`                 | `crate-jdbc`           | [Download](https://repo1.maven.org/maven2/io/crate/crate-jdbc/)                                                                   |
+| Db2           | `com.ibm.db2.jcc`          | `db2jcc`               | [Download](https://www.ibm.com/support/pages/download-db2-fix-packs-version-db2-linux-unix-and-windows)                           |
+| Trino         | `io.trino`                 | `trino-jdbc`           | [Download](https://repo1.maven.org/maven2/io/trino/trino-jdbc/)                                                                   |
+| Elasticsearch | `org.elasticsearch.plugin` | `x-pack-sql-jdbc`      | [Download](https://www.elastic.co/downloads/jdbc-client)                                                                          |
 
 JDBC connector and drivers are not part of Flink's binary distribution. See how to link with them for cluster execution [here]({{< ref "docs/dev/configuration/overview" >}}).
 
