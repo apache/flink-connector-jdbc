@@ -38,7 +38,8 @@ public class ElasticsearchDatabase extends DatabaseExtension implements Elastics
                     .waitingFor(
                             Wait.forHttp("/")
                                     .withBasicCredentials(USERNAME, PASSWORD)
-                                    .withReadTimeout(Duration.ofMinutes(2)));
+                                    .withReadTimeout(Duration.ofMinutes(2)))
+                                    .withStartupTimeout(Duration.ofMinutes(5));
 
     private static ElasticsearchMetadata metadata;
     private static ElasticsearchRestClient client;
