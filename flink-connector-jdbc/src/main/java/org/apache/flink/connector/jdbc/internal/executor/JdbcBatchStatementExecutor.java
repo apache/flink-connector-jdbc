@@ -45,8 +45,8 @@ public interface JdbcBatchStatementExecutor<T> {
         return new KeyedBatchStatementExecutor<>(sql, keyExtractor, statementBuilder);
     }
 
-    static <T, V> JdbcBatchStatementExecutor<T> simple(
-            String sql, JdbcStatementBuilder<V> paramSetter, Function<T, V> valueTransformer) {
-        return new SimpleBatchStatementExecutor<>(sql, paramSetter, valueTransformer);
+    static <T> JdbcBatchStatementExecutor<T> simple(
+            String sql, JdbcStatementBuilder<T> paramSetter) {
+        return new SimpleBatchStatementExecutor<>(sql, paramSetter);
     }
 }

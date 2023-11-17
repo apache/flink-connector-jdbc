@@ -18,7 +18,9 @@
 
 package org.apache.flink.connector.jdbc.table;
 
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
@@ -379,6 +381,8 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
         GenericJdbcSinkFunction<RowData> sinkFunction =
                 (GenericJdbcSinkFunction<RowData>) sinkProvider.createSinkFunction();
         sinkFunction.setRuntimeContext(new MockStreamingRuntimeContext(true, 1, 0));
+        sinkFunction.setInputType(
+                TypeInformation.of(GenericRowData.class), JdbcTestBase.getExecutionConfig(false));
         sinkFunction.open(new Configuration());
         sinkFunction.invoke(GenericRowData.of(1L), SinkContextUtil.forTimestamp(1));
         sinkFunction.invoke(GenericRowData.of(2L), SinkContextUtil.forTimestamp(1));

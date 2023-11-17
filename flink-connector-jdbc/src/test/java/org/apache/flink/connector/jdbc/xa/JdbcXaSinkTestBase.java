@@ -19,25 +19,8 @@ package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.JobID;
-import org.apache.flink.api.common.accumulators.Accumulator;
-import org.apache.flink.api.common.accumulators.DoubleCounter;
-import org.apache.flink.api.common.accumulators.Histogram;
-import org.apache.flink.api.common.accumulators.IntCounter;
-import org.apache.flink.api.common.accumulators.LongCounter;
-import org.apache.flink.api.common.cache.DistributedCache;
-import org.apache.flink.api.common.externalresource.ExternalResourceInfo;
-import org.apache.flink.api.common.functions.BroadcastVariableInitializer;
 import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.common.state.AggregatingState;
-import org.apache.flink.api.common.state.AggregatingStateDescriptor;
-import org.apache.flink.api.common.state.ListState;
-import org.apache.flink.api.common.state.ListStateDescriptor;
-import org.apache.flink.api.common.state.MapState;
-import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.api.common.state.ReducingState;
-import org.apache.flink.api.common.state.ReducingStateDescriptor;
-import org.apache.flink.api.common.state.ValueState;
-import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -46,7 +29,6 @@ import org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.core.fs.CloseableRegistry;
-import org.apache.flink.metrics.groups.OperatorMetricGroup;
 import org.apache.flink.runtime.state.DefaultOperatorStateBackend;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.StateInitializationContextImpl;
@@ -57,13 +39,10 @@ import org.junit.jupiter.api.BeforeEach;
 
 import javax.transaction.xa.Xid;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.apache.flink.connector.jdbc.JdbcITCase.TEST_ENTRY_JDBC_STATEMENT_BUILDER;
@@ -124,6 +103,7 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
         JdbcXaSinkFunction<TestEntry> sink =
                 buildSink(new SemanticXidGenerator(), xaFacade, state, batchInterval);
         sink.initializeState(buildInitCtx(false));
+        sink.setInputType(TypeInformation.of(TestEntry.class), getExecutionConfig(false));
         sink.open(new Configuration());
         return sink;
     }
@@ -140,12 +120,10 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
                                 .withBatchIntervalMs(batchInterval)
                                 .withMaxRetries(0)
                                 .build(),
-                        ctx ->
+                        () ->
                                 JdbcBatchStatementExecutor.simple(
                                         String.format(INSERT_TEMPLATE, INPUT_TABLE),
-                                        TEST_ENTRY_JDBC_STATEMENT_BUILDER,
-                                        Function.identity()),
-                        JdbcOutputFormat.RecordExtractor.identity());
+                                        TEST_ENTRY_JDBC_STATEMENT_BUILDER));
         JdbcXaSinkFunction<TestEntry> sink =
                 new JdbcXaSinkFunction<>(
                         format,
@@ -159,150 +137,6 @@ abstract class JdbcXaSinkTestBase extends JdbcTestBase {
     }
 
     static final RuntimeContext TEST_RUNTIME_CONTEXT = getRuntimeContext(new JobID());
-
-    static RuntimeContext getRuntimeContext(final JobID jobID) {
-        return new RuntimeContext() {
-
-            @Override
-            public JobID getJobId() {
-                return jobID;
-            }
-
-            @Override
-            public String getTaskName() {
-                return "test";
-            }
-
-            @Override
-            public OperatorMetricGroup getMetricGroup() {
-                return null;
-            }
-
-            @Override
-            public int getNumberOfParallelSubtasks() {
-                return 1;
-            }
-
-            @Override
-            public int getMaxNumberOfParallelSubtasks() {
-                return 1;
-            }
-
-            @Override
-            public int getIndexOfThisSubtask() {
-                return 0;
-            }
-
-            @Override
-            public int getAttemptNumber() {
-                return 0;
-            }
-
-            @Override
-            public String getTaskNameWithSubtasks() {
-                return "test";
-            }
-
-            @Override
-            public ExecutionConfig getExecutionConfig() {
-                return null;
-            }
-
-            @Override
-            public ClassLoader getUserCodeClassLoader() {
-                return null;
-            }
-
-            @Override
-            public <V, A extends Serializable> void addAccumulator(
-                    String name, Accumulator<V, A> accumulator) {}
-
-            @Override
-            public <V, A extends Serializable> Accumulator<V, A> getAccumulator(String name) {
-                return null;
-            }
-
-            @Override
-            public void registerUserCodeClassLoaderReleaseHookIfAbsent(
-                    String releaseHookName, Runnable releaseHook) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public IntCounter getIntCounter(String name) {
-                return null;
-            }
-
-            @Override
-            public LongCounter getLongCounter(String name) {
-                return null;
-            }
-
-            @Override
-            public DoubleCounter getDoubleCounter(String name) {
-                return null;
-            }
-
-            @Override
-            public Histogram getHistogram(String name) {
-                return null;
-            }
-
-            @Override
-            public boolean hasBroadcastVariable(String name) {
-                return false;
-            }
-
-            @Override
-            public <RT> List<RT> getBroadcastVariable(String name) {
-                return null;
-            }
-
-            @Override
-            public <T, C> C getBroadcastVariableWithInitializer(
-                    String name, BroadcastVariableInitializer<T, C> initializer) {
-                return null;
-            }
-
-            @Override
-            public DistributedCache getDistributedCache() {
-                return null;
-            }
-
-            @Override
-            public <T> ValueState<T> getState(ValueStateDescriptor<T> stateProperties) {
-                return null;
-            }
-
-            @Override
-            public <T> ListState<T> getListState(ListStateDescriptor<T> stateProperties) {
-                return null;
-            }
-
-            @Override
-            public <T> ReducingState<T> getReducingState(
-                    ReducingStateDescriptor<T> stateProperties) {
-                return null;
-            }
-
-            @Override
-            public <IN, ACC, OUT> AggregatingState<IN, OUT> getAggregatingState(
-                    AggregatingStateDescriptor<IN, ACC, OUT> stateProperties) {
-                return null;
-            }
-
-            @Override
-            public Set<ExternalResourceInfo> getExternalResourceInfos(String resourceName) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public <UK, UV> MapState<UK, UV> getMapState(
-                    MapStateDescriptor<UK, UV> stateProperties) {
-                return null;
-            }
-        };
-    }
 
     static final SinkFunction.Context TEST_SINK_CONTEXT =
             new SinkFunction.Context() {

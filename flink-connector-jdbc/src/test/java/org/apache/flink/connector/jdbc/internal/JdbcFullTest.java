@@ -18,11 +18,11 @@
 
 package org.apache.flink.connector.jdbc.internal;
 
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.common.io.OutputFormat;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.JdbcInputFormat;
@@ -35,15 +35,15 @@ import org.apache.flink.types.Row;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.function.Function;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
@@ -56,7 +56,6 @@ import static org.apache.flink.connector.jdbc.utils.JdbcUtils.setRecordToStateme
 import static org.apache.flink.util.ExceptionUtils.findThrowable;
 import static org.apache.flink.util.ExceptionUtils.findThrowableWithMessage;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
 
 /** Tests using both {@link JdbcInputFormat} and {@link JdbcOutputFormat}. */
 class JdbcFullTest extends JdbcDataTestBase {
@@ -75,8 +74,8 @@ class JdbcFullTest extends JdbcDataTestBase {
     void testEnrichedClassCastException() {
         String expectedMsg = "field index: 3, field value: 11.11.";
         try {
-            JdbcOutputFormat jdbcOutputFormat =
-                    JdbcOutputFormat.builder()
+            JdbcOutputFormat<Row, Row, ?> jdbcOutputFormat =
+                    RowJdbcOutputFormat.builder()
                             .setOptions(
                                     InternalJdbcConnectionOptions.builder()
                                             .setDBUrl(getMetadata().getJdbcUrl())
@@ -93,15 +92,13 @@ class JdbcFullTest extends JdbcDataTestBase {
                                     })
                             .setKeyFields(null)
                             .build();
-            RuntimeContext context = Mockito.mock(RuntimeContext.class);
-            ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
-            doReturn(config).when(context).getExecutionConfig();
-            doReturn(true).when(config).isObjectReuseEnabled();
-            jdbcOutputFormat.setRuntimeContext(context);
 
-            jdbcOutputFormat.open(1, 1);
+            JdbcOutputSerializer<Row> serializer =
+                    JdbcOutputSerializer.of(getSerializer(TypeInformation.of(Row.class), true));
+            jdbcOutputFormat.open(serializer);
+
             Row inputRow = Row.of(1001, "Java public for dummies", "Tan Ah Teck", "11.11", 11);
-            jdbcOutputFormat.writeRecord(Tuple2.of(true, inputRow));
+            jdbcOutputFormat.writeRecord(inputRow);
             jdbcOutputFormat.close();
         } catch (Exception e) {
             assertThat(findThrowable(e, ClassCastException.class)).isPresent();
@@ -142,11 +139,11 @@ class JdbcFullTest extends JdbcDataTestBase {
                         .withDriverName(getMetadata().getDriverClass())
                         .build();
 
-        JdbcOutputFormat jdbcOutputFormat =
+        JdbcOutputFormat<Row, Row, ?> jdbcOutputFormat =
                 new JdbcOutputFormat<>(
                         new SimpleJdbcConnectionProvider(connectionOptions),
                         JdbcExecutionOptions.defaults(),
-                        ctx ->
+                        () ->
                                 createSimpleRowExecutor(
                                         String.format(INSERT_TEMPLATE, OUTPUT_TABLE),
                                         new int[] {
@@ -155,11 +152,8 @@ class JdbcFullTest extends JdbcDataTestBase {
                                             Types.VARCHAR,
                                             Types.DOUBLE,
                                             Types.INTEGER
-                                        },
-                                        ctx.getExecutionConfig().isObjectReuseEnabled()),
-                        JdbcOutputFormat.RecordExtractor.identity());
-
-        source.output(jdbcOutputFormat);
+                                        }));
+        source.output(new TestOutputFormat(jdbcOutputFormat));
         environment.execute();
 
         try (Connection dbConn = DriverManager.getConnection(getMetadata().getJdbcUrl());
@@ -182,10 +176,37 @@ class JdbcFullTest extends JdbcDataTestBase {
     }
 
     private static JdbcBatchStatementExecutor<Row> createSimpleRowExecutor(
-            String sql, int[] fieldTypes, boolean objectReuse) {
+            String sql, int[] fieldTypes) {
         JdbcStatementBuilder<Row> builder =
                 (st, record) -> setRecordToStatement(st, fieldTypes, record);
-        return JdbcBatchStatementExecutor.simple(
-                sql, builder, objectReuse ? Row::copy : Function.identity());
+        return JdbcBatchStatementExecutor.simple(sql, builder);
+    }
+
+    public static class TestOutputFormat implements OutputFormat<Row>, Serializable {
+        private final JdbcOutputFormat<Row, ?, ?> jdbcOutputFormat;
+
+        public TestOutputFormat(JdbcOutputFormat<Row, ?, ?> jdbcOutputFormat) {
+            this.jdbcOutputFormat = jdbcOutputFormat;
+        }
+
+        @Override
+        public void configure(Configuration configuration) {}
+
+        @Override
+        public void open(int i, int i1) throws IOException {
+            JdbcOutputSerializer<Row> serializer =
+                    JdbcOutputSerializer.of(getSerializer(TypeInformation.of(Row.class), true));
+            this.jdbcOutputFormat.open(serializer);
+        }
+
+        @Override
+        public void writeRecord(Row row) throws IOException {
+            this.jdbcOutputFormat.writeRecord(row);
+        }
+
+        @Override
+        public void close() throws IOException {
+            this.jdbcOutputFormat.close();
+        }
     }
 }
