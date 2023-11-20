@@ -36,10 +36,10 @@ public class ElasticsearchDatabase extends DatabaseExtension implements Elastics
     private static final ElasticsearchContainer CONTAINER =
             new ElasticsearchContainer(ELASTICSEARCH_8)
                     .waitingFor(
-                            Wait.forHttp("/")
+                            Wait.forHttp("/_license")
                                     .withBasicCredentials(USERNAME, PASSWORD)
-                                    .withReadTimeout(Duration.ofMinutes(2)))
-                                    .withStartupTimeout(Duration.ofMinutes(5));
+                                    .withReadTimeout(Duration.ofSeconds(5))
+                                    .withStartupTimeout(Duration.ofMinutes(5)));
 
     private static ElasticsearchMetadata metadata;
     private static ElasticsearchRestClient client;
