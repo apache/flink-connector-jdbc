@@ -15,20 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.sink.statement;
+package org.apache.flink.connector.jdbc.sink;
 
-import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
+import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 
-import java.io.Serializable;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+/** Smoke tests for the {@link JdbcSink} and the underlying classes. */
+public class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
 
-/**
- * Sets {@link PreparedStatement} parameters to use in JDBC Sink based on a specific type of record.
- */
-@PublicEvolving
-public interface JdbcQueryStatement<T> extends Serializable {
-    String query();
-
-    void map(PreparedStatement ps, T data) throws SQLException;
+    @Override
+    protected <T> JdbcSink<T> finishSink(JdbcSinkBuilder<T> builder) {
+        return builder.withExecutionOptions(
+                        JdbcExecutionOptions.builder().withMaxRetries(0).build())
+                .buildExactlyOnce(
+                        JdbcExactlyOnceOptions.defaults(), getMetadata().getXaSourceSupplier());
+    }
 }

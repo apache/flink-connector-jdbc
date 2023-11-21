@@ -72,6 +72,11 @@ under the License.
 
         <!-- Root dependencies for all projects -->
 
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-base</artifactId>
+        </dependency>
+
         <!-- Logging API -->
         <dependency>
             <groupId>org.slf4j</groupId>

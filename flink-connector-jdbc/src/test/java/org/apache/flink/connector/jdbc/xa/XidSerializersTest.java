@@ -42,6 +42,6 @@ class XidSerializersTest extends SerializerTestBase<Xid> {
 
     @Override
     protected Xid[] getTestData() {
-        return new Xid[] {XidImplTest.XID};
+        return new Xid[] {XaXidTest.XID};
     }
 }

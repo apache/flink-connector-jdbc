@@ -66,7 +66,7 @@ class SemanticXidGenerator implements XidGenerator {
 
         writeNumber(subtaskId.getSubtaskId(), Integer.BYTES, gtridBuffer, JobID.SIZE);
         writeNumber(checkpointId, Long.BYTES, gtridBuffer, JobID.SIZE + Integer.BYTES);
-        // relying on arrays copying inside XidImpl constructor
+        // relying on arrays copying inside XaXid constructor
         return new XidImpl(FORMAT_ID, gtridBuffer, bqualBuffer);
     }
 

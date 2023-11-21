@@ -18,7 +18,6 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.connector.jdbc.xa.XaFacade.TransientXaException;
 
 import org.slf4j.Logger;

@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.internal.connection;
+package org.apache.flink.connector.jdbc.datasource.connections;
 
-import org.apache.flink.annotation.Internal;
+import org.apache.flink.annotation.PublicEvolving;
 
 import javax.annotation.Nullable;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 /** JDBC connection provider. */
-@Internal
-public interface JdbcConnectionProvider {
+@PublicEvolving
+public interface JdbcConnectionProvider extends Serializable, AutoCloseable {
     /**
      * Get existing connection.
      *
@@ -64,4 +65,8 @@ public interface JdbcConnectionProvider {
      * @throws ClassNotFoundException driver class not found
      */
     Connection reestablishConnection() throws SQLException, ClassNotFoundException;
+
+    default void close() throws Exception {
+        closeConnection();
+    }
 }

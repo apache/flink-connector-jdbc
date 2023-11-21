@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.sink.statement;
+package org.apache.flink.connector.jdbc.datasource.statements;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
