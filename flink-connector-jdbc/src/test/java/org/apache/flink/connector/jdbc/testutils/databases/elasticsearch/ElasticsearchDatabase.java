@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.testutils.databases.elasticsearch;
 import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.util.FlinkRuntimeException;
+
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
@@ -34,7 +35,8 @@ public class ElasticsearchDatabase extends DatabaseExtension implements Elastics
     private static final ElasticsearchContainer CONTAINER =
             new ElasticsearchContainer(ELASTICSEARCH_8)
                     .waitingFor(
-                            Wait.forLogMessage(".*Node .* is selected as the current health node.*", 1)
+                            Wait.forLogMessage(
+                                            ".*Node .* is selected as the current health node.*", 1)
                                     .withStartupTimeout(Duration.ofMinutes(5)));
 
     private static ElasticsearchMetadata metadata;
