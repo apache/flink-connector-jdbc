@@ -21,14 +21,12 @@ package org.apache.flink.connector.jdbc.testutils.databases.elasticsearch;
 import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.util.FlinkRuntimeException;
-
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 import java.time.Duration;
 
 import static org.apache.flink.connector.jdbc.testutils.databases.elasticsearch.ElasticsearchMetadata.PASSWORD;
-import static org.apache.flink.connector.jdbc.testutils.databases.elasticsearch.ElasticsearchMetadata.USERNAME;
 
 /** Elasticsearch database for testing. */
 public class ElasticsearchDatabase extends DatabaseExtension implements ElasticsearchImages {
@@ -36,9 +34,7 @@ public class ElasticsearchDatabase extends DatabaseExtension implements Elastics
     private static final ElasticsearchContainer CONTAINER =
             new ElasticsearchContainer(ELASTICSEARCH_8)
                     .waitingFor(
-                            Wait.forHttp("/_license")
-                                    .withBasicCredentials(USERNAME, PASSWORD)
-                                    .withReadTimeout(Duration.ofSeconds(5))
+                            Wait.forLogMessage(".*Node .* is selected as the current health node.*", 1)
                                     .withStartupTimeout(Duration.ofMinutes(5)));
 
     private static ElasticsearchMetadata metadata;
