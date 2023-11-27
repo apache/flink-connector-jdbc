@@ -38,7 +38,6 @@ under the License.
 		<scala.binary.version>2.12</scala.binary.version>
 		<scala-library.version>2.12.7</scala-library.version>
 		<assertj.version>3.23.1</assertj.version>
-		<jackson.version>2.15.2</jackson.version>
 		<postgres.version>42.5.1</postgres.version>
 		<oracle.version>21.8.0.0</oracle.version>
 		<trino.version>418</trino.version>
@@ -267,13 +266,13 @@ under the License.
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>${jackson.version}</version>
+			<version>2.13.4.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.datatype</groupId>
 			<artifactId>jackson-datatype-jsr310</artifactId>
-			<version>${jackson.version}</version>
+			<version>2.13.4</version>
 			<scope>test</scope>
 		</dependency>
 
