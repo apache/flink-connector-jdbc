@@ -152,7 +152,7 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
             throw new DatabaseNotExistException(getName(), databaseName);
         }
 
-        final String url = baseUrl + databaseName;
+        final String url = urlFunction.apply(databaseName);
         try (Connection conn = DriverManager.getConnection(url, username, pwd)) {
             // get all schemas
             List<String> schemas;
