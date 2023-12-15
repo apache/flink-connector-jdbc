@@ -32,5 +32,5 @@ jobs:
             jdk: '8, 11, 17'
     uses: apache/flink-connector-shared-utils/.github/workflows/ci.yml@ci_utils
     with:
-      flink_version: ${{ matrix.flink_branches.flink }}
+      flink_version: ${{ matrix.flink }}
       jdk_version: ${{ matrix.jdk }}
