@@ -40,6 +40,11 @@ under the License.
 		<assertj.version>3.23.1</assertj.version>
 		<postgres.version>42.5.1</postgres.version>
 		<oracle.version>21.8.0.0</oracle.version>
+		<byte-buddy.version>1.12.10</byte-buddy.version>
+		<surefire.module.config> <!-- required by
+		Db2ExactlyOnceSinkE2eTest --> --add-opens=java.base/java.util=ALL-UNNAMED <!--
+		SimpleJdbcConnectionProviderDriverClassConcurrentLoadingITCase--> --add-opens=java.base/java.lang=ALL-UNNAMED
+		</surefire.module.config>
 	</properties>
 
 	<dependencies>
