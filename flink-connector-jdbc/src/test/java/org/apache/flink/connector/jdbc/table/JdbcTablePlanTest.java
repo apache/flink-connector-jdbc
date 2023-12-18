@@ -22,16 +22,21 @@ import org.apache.flink.table.api.TableConfig;
 import org.apache.flink.table.planner.utils.StreamTableTestUtil;
 import org.apache.flink.table.planner.utils.TableTestBase;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.rules.TestName;
 
 /** Plan tests for JDBC connector, for example, testing projection push down. */
 public class JdbcTablePlanTest extends TableTestBase {
-    // TODO: Update to junit5 after TableTestBase migrated (maybe copy the class?)
+
     private final StreamTableTestUtil util = streamTestUtil(TableConfig.getDefault());
 
-    @Before
-    public void setup() {
+    private TestInfo testInfo;
+
+    @BeforeEach
+    public void setup(TestInfo testInfo) {
+        this.testInfo = testInfo;
         util.tableEnv()
                 .executeSql(
                         "CREATE TABLE jdbc ("
@@ -63,5 +68,15 @@ public class JdbcTablePlanTest extends TableTestBase {
     public void testFilterPushdown() {
         util.verifyExecPlan(
                 "SELECT id, time_col, real_col FROM jdbc WHERE id = 900001 AND time_col <> TIME '11:11:11' OR double_col >= -1000.23");
+    }
+
+    // A workaround to get the test method name for flink versions not completely migrated to JUnit5
+    public TestName name() {
+        return new TestName() {
+            @Override
+            public String getMethodName() {
+                return testInfo.getTestMethod().get().getName();
+            }
+        };
     }
 }
