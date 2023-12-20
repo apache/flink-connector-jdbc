@@ -70,7 +70,10 @@ public class JdbcTablePlanTest extends TableTestBase {
                 "SELECT id, time_col, real_col FROM jdbc WHERE id = 900001 AND time_col <> TIME '11:11:11' OR double_col >= -1000.23");
     }
 
-    // A workaround to get the test method name for flink versions not completely migrated to JUnit5
+    /**
+     * Get the test method name, in order to adapt to {@link TableTestBase} that has not migrated to
+     * Junit5. Remove it when dropping support of Flink 1.18.
+     */
     public TestName name() {
         return new TestName() {
             @Override
