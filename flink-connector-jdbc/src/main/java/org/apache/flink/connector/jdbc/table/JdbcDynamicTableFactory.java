@@ -37,7 +37,9 @@ import org.apache.flink.table.factories.DynamicTableSinkFactory;
 import org.apache.flink.table.factories.DynamicTableSourceFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.DataType;
+import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.types.logical.VarCharType;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nullable;
@@ -45,6 +47,7 @@ import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -111,14 +114,15 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
 
         helper.validate();
         validateConfigOptions(config, context.getClassLoader());
+        DataType physicalRowDataType = context.getPhysicalRowDataType();
         validateDataTypeWithJdbcDialect(
-                context.getPhysicalRowDataType(), config.get(URL), context.getClassLoader());
+                physicalRowDataType, config.get(URL), context.getClassLoader());
         return new JdbcDynamicTableSource(
                 getJdbcOptions(helper.getOptions(), context.getClassLoader()),
-                getJdbcReadOptions(helper.getOptions()),
+                getJdbcReadOptions(helper.getOptions(), physicalRowDataType),
                 helper.getOptions().get(LookupOptions.MAX_RETRIES),
                 getLookupCache(config),
-                context.getPhysicalRowDataType());
+                physicalRowDataType);
     }
 
     private static void validateDataTypeWithJdbcDialect(
@@ -146,12 +150,17 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         return builder.build();
     }
 
-    private JdbcReadOptions getJdbcReadOptions(ReadableConfig readableConfig) {
+    private JdbcReadOptions getJdbcReadOptions(ReadableConfig readableConfig, DataType physicalRowDataType) {
         final Optional<String> partitionColumnName =
                 readableConfig.getOptional(SCAN_PARTITION_COLUMN);
+        RowType logicalType = (RowType) physicalRowDataType.getLogicalType();
+        Map<String, LogicalType> fieldTypeMap = logicalType.getFields().stream().collect(Collectors.toMap(rowField -> rowField.getName(), rowField -> rowField.getType()));
         final JdbcReadOptions.Builder builder = JdbcReadOptions.builder();
         if (partitionColumnName.isPresent()) {
-            builder.setPartitionColumnName(partitionColumnName.get());
+            String partitionName = partitionColumnName.get();
+            Boolean isPartitionColumnTypeString = fieldTypeMap.get(partitionName) instanceof VarCharType ? true : false;
+            builder.setPartitionColumnName(partitionName);
+            builder.setPartitionColumnTypeString(isPartitionColumnTypeString);
             builder.setPartitionLowerBound(readableConfig.get(SCAN_PARTITION_LOWER_BOUND));
             builder.setPartitionUpperBound(readableConfig.get(SCAN_PARTITION_UPPER_BOUND));
             builder.setNumPartitions(readableConfig.get(SCAN_PARTITION_NUM));
@@ -270,15 +279,15 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         String jdbcUrl = config.get(URL);
         JdbcDialectLoader.load(jdbcUrl, classLoader);
 
-        checkAllOrNone(config, new ConfigOption[] {USERNAME, PASSWORD});
+        checkAllOrNone(config, new ConfigOption[]{USERNAME, PASSWORD});
 
         checkAllOrNone(
                 config,
-                new ConfigOption[] {
-                    SCAN_PARTITION_COLUMN,
-                    SCAN_PARTITION_NUM,
-                    SCAN_PARTITION_LOWER_BOUND,
-                    SCAN_PARTITION_UPPER_BOUND
+                new ConfigOption[]{
+                        SCAN_PARTITION_COLUMN,
+                        SCAN_PARTITION_NUM,
+                        SCAN_PARTITION_LOWER_BOUND,
+                        SCAN_PARTITION_UPPER_BOUND
                 });
 
         if (config.getOptional(SCAN_PARTITION_LOWER_BOUND).isPresent()
@@ -296,7 +305,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
             }
         }
 
-        checkAllOrNone(config, new ConfigOption[] {LOOKUP_CACHE_MAX_ROWS, LOOKUP_CACHE_TTL});
+        checkAllOrNone(config, new ConfigOption[]{LOOKUP_CACHE_MAX_ROWS, LOOKUP_CACHE_TTL});
 
         if (config.get(LOOKUP_MAX_RETRIES) < 0) {
             throw new IllegalArgumentException(

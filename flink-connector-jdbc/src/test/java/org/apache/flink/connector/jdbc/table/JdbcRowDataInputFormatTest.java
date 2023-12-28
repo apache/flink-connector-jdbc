@@ -51,31 +51,16 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** Test suite for {@link JdbcRowDataInputFormat}. */
+/**
+ * Test suite for {@link JdbcRowDataInputFormat}.
+ */
 class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
 
     private JdbcRowDataInputFormat inputFormat;
-    private static String[] fieldNames = new String[] {"id", "title", "author", "price", "qty"};
-    private static DataType[] fieldDataTypes =
-            new DataType[] {
-                DataTypes.INT(),
-                DataTypes.STRING(),
-                DataTypes.STRING(),
-                DataTypes.DOUBLE(),
-                DataTypes.INT()
-            };
-    final JdbcDialect dialect =
-            InternalJdbcConnectionOptions.builder()
-                    .setDBUrl(getMetadata().getJdbcUrl())
-                    .setTableName(INPUT_TABLE)
-                    .build()
-                    .getDialect();
-    final RowType rowType =
-            RowType.of(
-                    Arrays.stream(fieldDataTypes)
-                            .map(DataType::getLogicalType)
-                            .toArray(LogicalType[]::new),
-                    fieldNames);
+    private static final String[] fieldNames = new String[]{"id", "title", "author", "price", "qty"};
+    private static final DataType[] fieldDataTypes = new DataType[]{DataTypes.INT(), DataTypes.STRING(), DataTypes.STRING(), DataTypes.DOUBLE(), DataTypes.INT()};
+    final JdbcDialect dialect = InternalJdbcConnectionOptions.builder().setDBUrl(getMetadata().getJdbcUrl()).setTableName(INPUT_TABLE).build().getDialect();
+    final RowType rowType = RowType.of(Arrays.stream(fieldDataTypes).map(DataType::getLogicalType).toArray(LogicalType[]::new), fieldNames);
 
     @AfterEach
     void tearDown() throws IOException {
@@ -88,134 +73,65 @@ class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
 
     @Test
     void testNoRowConverter() {
-        assertThatThrownBy(
-                        () -> {
-                            inputFormat =
-                                    JdbcRowDataInputFormat.builder()
-                                            .setDrivername(getMetadata().getDriverClass())
-                                            .setDBUrl(getMetadata().getJdbcUrl())
-                                            .setQuery(SELECT_ALL_BOOKS)
-                                            .build();
-                            inputFormat.openInputFormat();
-                        })
-                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> {
+            inputFormat = JdbcRowDataInputFormat.builder().setDrivername(getMetadata().getDriverClass()).setDBUrl(getMetadata().getJdbcUrl()).setQuery(SELECT_ALL_BOOKS).build();
+            inputFormat.openInputFormat();
+        }).isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void testInvalidDriver() {
-        assertThatThrownBy(
-                        () -> {
-                            inputFormat =
-                                    JdbcRowDataInputFormat.builder()
-                                            .setDrivername("org.apache.derby.jdbc.idontexist")
-                                            .setDBUrl(getMetadata().getJdbcUrl())
-                                            .setQuery(SELECT_ALL_BOOKS)
-                                            .setRowConverter(dialect.getRowConverter(rowType))
-                                            .build();
-                            inputFormat.openInputFormat();
-                        })
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> {
+            inputFormat = JdbcRowDataInputFormat.builder().setDrivername("org.apache.derby.jdbc.idontexist").setDBUrl(getMetadata().getJdbcUrl()).setQuery(SELECT_ALL_BOOKS).setRowConverter(dialect.getRowConverter(rowType)).build();
+            inputFormat.openInputFormat();
+        }).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void testInvalidURL() {
-        assertThatThrownBy(
-                        () -> {
-                            inputFormat =
-                                    JdbcRowDataInputFormat.builder()
-                                            .setDrivername(getMetadata().getDriverClass())
-                                            .setDBUrl("jdbc:der:iamanerror:mory:ebookshop")
-                                            .setQuery(SELECT_ALL_BOOKS)
-                                            .setRowConverter(dialect.getRowConverter(rowType))
-                                            .build();
-                            inputFormat.openInputFormat();
-                        })
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> {
+            inputFormat = JdbcRowDataInputFormat.builder().setDrivername(getMetadata().getDriverClass()).setDBUrl("jdbc:der:iamanerror:mory:ebookshop").setQuery(SELECT_ALL_BOOKS).setRowConverter(dialect.getRowConverter(rowType)).build();
+            inputFormat.openInputFormat();
+        }).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void testInvalidQuery() {
-        assertThatThrownBy(
-                        () -> {
-                            inputFormat =
-                                    JdbcRowDataInputFormat.builder()
-                                            .setDrivername(getMetadata().getDriverClass())
-                                            .setDBUrl(getMetadata().getJdbcUrl())
-                                            .setQuery("iamnotsql")
-                                            .setRowConverter(dialect.getRowConverter(rowType))
-                                            .build();
-                            inputFormat.openInputFormat();
-                        })
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> {
+            inputFormat = JdbcRowDataInputFormat.builder().setDrivername(getMetadata().getDriverClass()).setDBUrl(getMetadata().getJdbcUrl()).setQuery("iamnotsql").setRowConverter(dialect.getRowConverter(rowType)).build();
+            inputFormat.openInputFormat();
+        }).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void testNoQuery() {
-        assertThatThrownBy(
-                        () -> {
-                            inputFormat =
-                                    JdbcRowDataInputFormat.builder()
-                                            .setDrivername(getMetadata().getDriverClass())
-                                            .setDBUrl(getMetadata().getJdbcUrl())
-                                            .setRowConverter(dialect.getRowConverter(rowType))
-                                            .build();
-                        })
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("No query supplied");
+        assertThatThrownBy(() -> {
+            inputFormat = JdbcRowDataInputFormat.builder().setDrivername(getMetadata().getDriverClass()).setDBUrl(getMetadata().getJdbcUrl()).setRowConverter(dialect.getRowConverter(rowType)).build();
+        }).isInstanceOf(NullPointerException.class).hasMessage("No query supplied");
     }
 
     @Test
     void testNoUrl() {
-        assertThatThrownBy(
-                        () -> {
-                            inputFormat =
-                                    JdbcRowDataInputFormat.builder()
-                                            .setDrivername(getMetadata().getDriverClass())
-                                            .setQuery(SELECT_ALL_BOOKS)
-                                            .setRowConverter(dialect.getRowConverter(rowType))
-                                            .build();
-                        })
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("jdbc url is empty");
+        assertThatThrownBy(() -> {
+            inputFormat = JdbcRowDataInputFormat.builder().setDrivername(getMetadata().getDriverClass()).setQuery(SELECT_ALL_BOOKS).setRowConverter(dialect.getRowConverter(rowType)).build();
+        }).isInstanceOf(NullPointerException.class).hasMessage("jdbc url is empty");
     }
 
     @Test
     void testInvalidFetchSize() {
-        assertThatThrownBy(
-                        () -> {
-                            inputFormat =
-                                    JdbcRowDataInputFormat.builder()
-                                            .setDrivername(getMetadata().getDriverClass())
-                                            .setDBUrl(getMetadata().getJdbcUrl())
-                                            .setQuery(SELECT_ALL_BOOKS)
-                                            .setFetchSize(-7)
-                                            .build();
-                        })
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> {
+            inputFormat = JdbcRowDataInputFormat.builder().setDrivername(getMetadata().getDriverClass()).setDBUrl(getMetadata().getJdbcUrl()).setQuery(SELECT_ALL_BOOKS).setFetchSize(-7).build();
+        }).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void testValidFetchSizeIntegerMin() {
-        inputFormat =
-                JdbcRowDataInputFormat.builder()
-                        .setDrivername(getMetadata().getDriverClass())
-                        .setDBUrl(getMetadata().getJdbcUrl())
-                        .setQuery(SELECT_ALL_BOOKS)
-                        .setFetchSize(Integer.MIN_VALUE)
-                        .setRowConverter(dialect.getRowConverter(rowType))
-                        .build();
+        inputFormat = JdbcRowDataInputFormat.builder().setDrivername(getMetadata().getDriverClass()).setDBUrl(getMetadata().getJdbcUrl()).setQuery(SELECT_ALL_BOOKS).setFetchSize(Integer.MIN_VALUE).setRowConverter(dialect.getRowConverter(rowType)).build();
     }
 
     @Test
     void testJdbcInputFormatWithoutParallelism() throws IOException {
-        inputFormat =
-                JdbcRowDataInputFormat.builder()
-                        .setDrivername(getMetadata().getDriverClass())
-                        .setDBUrl(getMetadata().getJdbcUrl())
-                        .setQuery(SELECT_ALL_BOOKS)
-                        .setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)
-                        .setRowConverter(dialect.getRowConverter(rowType))
-                        .build();
+        inputFormat = JdbcRowDataInputFormat.builder().setDrivername(getMetadata().getDriverClass()).setDBUrl(getMetadata().getJdbcUrl()).setQuery(SELECT_ALL_BOOKS).setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE).setRowConverter(dialect.getRowConverter(rowType)).build();
         // this query does not exploit parallelism
         assertThat(inputFormat.createInputSplits(1)).hasSize(1);
         inputFormat.openInputFormat();
@@ -239,17 +155,8 @@ class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
         final int fetchSize = 1;
         final long min = TEST_DATA[0].id;
         final long max = TEST_DATA[TEST_DATA.length - fetchSize].id;
-        JdbcParameterValuesProvider pramProvider =
-                new JdbcNumericBetweenParametersProvider(min, max).ofBatchSize(fetchSize);
-        inputFormat =
-                JdbcRowDataInputFormat.builder()
-                        .setDrivername(getMetadata().getDriverClass())
-                        .setDBUrl(getMetadata().getJdbcUrl())
-                        .setQuery(SELECT_ALL_BOOKS_SPLIT_BY_ID)
-                        .setParametersProvider(pramProvider)
-                        .setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)
-                        .setRowConverter(dialect.getRowConverter(rowType))
-                        .build();
+        JdbcParameterValuesProvider pramProvider = new JdbcNumericBetweenParametersProvider(min, max, false).ofBatchSize(fetchSize);
+        inputFormat = JdbcRowDataInputFormat.builder().setDrivername(getMetadata().getDriverClass()).setDBUrl(getMetadata().getJdbcUrl()).setQuery(SELECT_ALL_BOOKS_SPLIT_BY_ID).setParametersProvider(pramProvider).setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE).setRowConverter(dialect.getRowConverter(rowType)).build();
 
         inputFormat.openInputFormat();
         InputSplit[] splits = inputFormat.createInputSplits(1);
@@ -277,17 +184,8 @@ class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
         final long min = TEST_DATA[0].id;
         final long max = TEST_DATA[TEST_DATA.length - 1].id;
         final long fetchSize = max + 1; // generate a single split
-        JdbcParameterValuesProvider pramProvider =
-                new JdbcNumericBetweenParametersProvider(min, max).ofBatchSize(fetchSize);
-        inputFormat =
-                JdbcRowDataInputFormat.builder()
-                        .setDrivername(getMetadata().getDriverClass())
-                        .setDBUrl(getMetadata().getJdbcUrl())
-                        .setQuery(SELECT_ALL_BOOKS_SPLIT_BY_ID)
-                        .setParametersProvider(pramProvider)
-                        .setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)
-                        .setRowConverter(dialect.getRowConverter(rowType))
-                        .build();
+        JdbcParameterValuesProvider pramProvider = new JdbcNumericBetweenParametersProvider(min, max, false).ofBatchSize(fetchSize);
+        inputFormat = JdbcRowDataInputFormat.builder().setDrivername(getMetadata().getDriverClass()).setDBUrl(getMetadata().getJdbcUrl()).setQuery(SELECT_ALL_BOOKS_SPLIT_BY_ID).setParametersProvider(pramProvider).setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE).setRowConverter(dialect.getRowConverter(rowType)).build();
 
         inputFormat.openInputFormat();
         InputSplit[] splits = inputFormat.createInputSplits(1);
@@ -313,19 +211,10 @@ class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
     @Test
     void testJdbcInputFormatWithParallelismAndGenericSplitting() throws IOException {
         Serializable[][] queryParameters = new String[2][1];
-        queryParameters[0] = new String[] {TEST_DATA[3].author};
-        queryParameters[1] = new String[] {TEST_DATA[0].author};
-        JdbcParameterValuesProvider paramProvider =
-                new JdbcGenericParameterValuesProvider(queryParameters);
-        inputFormat =
-                JdbcRowDataInputFormat.builder()
-                        .setDrivername(getMetadata().getDriverClass())
-                        .setDBUrl(getMetadata().getJdbcUrl())
-                        .setQuery(SELECT_ALL_BOOKS_SPLIT_BY_AUTHOR)
-                        .setParametersProvider(paramProvider)
-                        .setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)
-                        .setRowConverter(dialect.getRowConverter(rowType))
-                        .build();
+        queryParameters[0] = new String[]{TEST_DATA[3].author};
+        queryParameters[1] = new String[]{TEST_DATA[0].author};
+        JdbcParameterValuesProvider paramProvider = new JdbcGenericParameterValuesProvider(queryParameters);
+        inputFormat = JdbcRowDataInputFormat.builder().setDrivername(getMetadata().getDriverClass()).setDBUrl(getMetadata().getJdbcUrl()).setQuery(SELECT_ALL_BOOKS_SPLIT_BY_AUTHOR).setParametersProvider(paramProvider).setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE).setRowConverter(dialect.getRowConverter(rowType)).build();
 
         inputFormat.openInputFormat();
         InputSplit[] splits = inputFormat.createInputSplits(1);
@@ -359,14 +248,7 @@ class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
 
     @Test
     void testEmptyResults() throws IOException {
-        inputFormat =
-                JdbcRowDataInputFormat.builder()
-                        .setDrivername(getMetadata().getDriverClass())
-                        .setDBUrl(getMetadata().getJdbcUrl())
-                        .setQuery(SELECT_EMPTY)
-                        .setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)
-                        .setRowConverter(dialect.getRowConverter(rowType))
-                        .build();
+        inputFormat = JdbcRowDataInputFormat.builder().setDrivername(getMetadata().getDriverClass()).setDBUrl(getMetadata().getJdbcUrl()).setQuery(SELECT_EMPTY).setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE).setRowConverter(dialect.getRowConverter(rowType)).build();
 
         try {
             inputFormat.openInputFormat();
@@ -379,15 +261,10 @@ class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
     }
 
     private static void assertEquals(JdbcTestFixture.TestEntry expected, RowData actual) {
-        assertThat(actual.isNullAt(0) ? null : Integer.valueOf(actual.getInt(0)))
-                .isEqualTo(expected.id);
-        assertThat(actual.isNullAt(1) ? null : actual.getString(1).toString())
-                .isEqualTo(expected.title);
-        assertThat(actual.isNullAt(2) ? null : actual.getString(2).toString())
-                .isEqualTo(expected.author);
-        assertThat(actual.isNullAt(3) ? null : Double.valueOf(actual.getDouble(3)))
-                .isEqualTo(expected.price);
-        assertThat(actual.isNullAt(4) ? null : Integer.valueOf(actual.getInt(4)))
-                .isEqualTo(expected.qty);
+        assertThat(actual.isNullAt(0) ? null : Integer.valueOf(actual.getInt(0))).isEqualTo(expected.id);
+        assertThat(actual.isNullAt(1) ? null : actual.getString(1).toString()).isEqualTo(expected.title);
+        assertThat(actual.isNullAt(2) ? null : actual.getString(2).toString()).isEqualTo(expected.author);
+        assertThat(actual.isNullAt(3) ? null : Double.valueOf(actual.getDouble(3))).isEqualTo(expected.price);
+        assertThat(actual.isNullAt(4) ? null : Integer.valueOf(actual.getInt(4))).isEqualTo(expected.qty);
     }
 }

@@ -357,12 +357,58 @@ See [CREATE TABLE DDL]({{< ref "docs/dev/table/sql/create" >}}#create-table) for
 To accelerate reading data in parallel `Source` task instances, Flink provides partitioned scan feature for JDBC table.
 
 All the following scan partition options must all be specified if any of them is specified. They describe how to partition the table when reading in parallel from multiple tasks.
-The `scan.partition.column` must be a numeric, date, or timestamp column from the table in question. Notice that `scan.partition.lower-bound` and `scan.partition.upper-bound` are used to decide the partition stride and filter the rows in table. If it is a batch job, it also doable to get the max and min value first before submitting the flink job.
+The `scan.partition.column` must be a numeric, date, or timestamp or string column from the table in question. Notice that `scan.partition.lower-bound` and `scan.partition.upper-bound` are used to decide the partition stride and filter the rows in table. If it is a batch job, it also doable to get the max and min value first before submitting the flink job.
 
 - `scan.partition.column`: The column name used for partitioning the input.
 - `scan.partition.num`: The number of partitions.
 - `scan.partition.lower-bound`: The smallest value of the first partition.
 - `scan.partition.upper-bound`: The largest value of the last partition.
+
+#### Support String Fragment Reading
+<table class="table table-bordered" style="width: 60%">
+    <thead>
+      <tr>
+        <th class="text-left">Support String Split Database</th>
+        <th class="text-left">Slice Read String Grammar</th>
+       </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>MySQL</td>
+            <td>ABS(MD5(`column`) % `number_of_partitions`)</td>
+        </tr>
+        <tr>
+            <td>Oracle</td>
+            <td>MOD(ORA_HASH(`column`) , `number_of_partitions`)</td>
+        <tr>
+            <td>PostgreSQL</td>
+            <td>(ABS(HASHTEXT(`column`)) % `number_of_partitions`)</td>
+        </tr>
+        <tr>
+            <td>MS SQL Server</td>
+            <td>ABS(HASHBYTES('MD5', `column`) % `number_of_partitions`)</td>
+        </tr>
+</table>
+
+```SQL
+CREATE TABLE my_split_string_read_table (
+    id int,
+    name STRING,
+    age INT,
+    email STRING,
+    PRIMARY KEY (id) NOT ENFORCED
+) WITH (
+      'connector' = 'jdbc',
+      'url' = 'jdbc:mysql://localhost:3306/test',
+      'table-name' = 'mysql_table_name',
+      'username'='root',
+      'password'='12345678',
+      'scan.partition.column'='name',
+      'scan.partition.num'='3', 
+      'scan.partition.lower-bound'='0', -- Obtain ABS(MD5(' name ') % 3) 0,1,2 Full table data partition data 3
+      'scan.partition.upper-bound'='2'
+)
+```
 
 ### Lookup Cache
 

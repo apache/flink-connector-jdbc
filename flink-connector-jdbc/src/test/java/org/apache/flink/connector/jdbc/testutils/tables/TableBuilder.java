@@ -18,13 +18,20 @@
 
 package org.apache.flink.connector.jdbc.testutils.tables;
 
+import org.apache.flink.connector.jdbc.testutils.databases.DbName;
 import org.apache.flink.table.types.DataType;
 
-/** Table builder. * */
+/**
+ * Table builder. *
+ */
 public final class TableBuilder {
 
     public static TableRow tableRow(String name, TableField... fields) {
-        return new TableRow(name, fields);
+        return new TableRow(name, null, fields);
+    }
+
+    public static TableRow tableRow(String name, DbName dbName, TableField... fields) {
+        return new TableRow(name, dbName, fields);
     }
 
     public static TableField field(String name, DataType dataType) {

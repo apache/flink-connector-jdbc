@@ -24,13 +24,15 @@ import java.io.Serializable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Tests for {@link JdbcNumericBetweenParametersProvider}. */
+/**
+ * Tests for {@link JdbcNumericBetweenParametersProvider}.
+ */
 class NumericBetweenParametersProviderTest {
 
     @Test
     void testBatchSizeDivisible() {
         JdbcNumericBetweenParametersProvider provider =
-                new JdbcNumericBetweenParametersProvider(-5, 9).ofBatchSize(3);
+                new JdbcNumericBetweenParametersProvider(-5, 9, false).ofBatchSize(3);
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
@@ -46,15 +48,15 @@ class NumericBetweenParametersProviderTest {
     @Test
     void testBatchSizeNotDivisible() {
         JdbcNumericBetweenParametersProvider provider =
-                new JdbcNumericBetweenParametersProvider(-5, 11).ofBatchSize(4);
+                new JdbcNumericBetweenParametersProvider(-5, 11, false).ofBatchSize(4);
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
-            new long[] {-5, -2},
-            new long[] {-1, 2},
-            new long[] {3, 5},
-            new long[] {6, 8},
-            new long[] {9, 11}
+                new long[]{-5, -2},
+                new long[]{-1, 2},
+                new long[]{3, 5},
+                new long[]{6, 8},
+                new long[]{9, 11}
         };
         check(expected, actual);
     }
@@ -62,25 +64,25 @@ class NumericBetweenParametersProviderTest {
     @Test
     void testBatchSizeTooLarge() {
         JdbcNumericBetweenParametersProvider provider =
-                new JdbcNumericBetweenParametersProvider(0, 2).ofBatchSize(5);
+                new JdbcNumericBetweenParametersProvider(0, 2, false).ofBatchSize(5);
         Serializable[][] actual = provider.getParameterValues();
 
-        long[][] expected = {new long[] {0, 2}};
+        long[][] expected = {new long[]{0, 2}};
         check(expected, actual);
     }
 
     @Test
     void testBatchNumDivisible() {
         JdbcNumericBetweenParametersProvider provider =
-                new JdbcNumericBetweenParametersProvider(-5, 9).ofBatchNum(5);
+                new JdbcNumericBetweenParametersProvider(-5, 9, false).ofBatchNum(5);
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
-            new long[] {-5, -3},
-            new long[] {-2, 0},
-            new long[] {1, 3},
-            new long[] {4, 6},
-            new long[] {7, 9}
+                new long[]{-5, -3},
+                new long[]{-2, 0},
+                new long[]{1, 3},
+                new long[]{4, 6},
+                new long[]{7, 9}
         };
         check(expected, actual);
     }
@@ -88,15 +90,15 @@ class NumericBetweenParametersProviderTest {
     @Test
     void testBatchNumNotDivisible() {
         JdbcNumericBetweenParametersProvider provider =
-                new JdbcNumericBetweenParametersProvider(-5, 11).ofBatchNum(5);
+                new JdbcNumericBetweenParametersProvider(-5, 11, false).ofBatchNum(5);
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
-            new long[] {-5, -2},
-            new long[] {-1, 2},
-            new long[] {3, 5},
-            new long[] {6, 8},
-            new long[] {9, 11}
+                new long[]{-5, -2},
+                new long[]{-1, 2},
+                new long[]{3, 5},
+                new long[]{6, 8},
+                new long[]{9, 11}
         };
         check(expected, actual);
     }
@@ -104,13 +106,13 @@ class NumericBetweenParametersProviderTest {
     @Test
     void testBatchNumTooLarge() {
         JdbcNumericBetweenParametersProvider provider =
-                new JdbcNumericBetweenParametersProvider(0, 2).ofBatchNum(5);
+                new JdbcNumericBetweenParametersProvider(0, 2, false).ofBatchNum(5);
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
-            new long[] {0, 0},
-            new long[] {1, 1},
-            new long[] {2, 2}
+                new long[]{0, 0},
+                new long[]{1, 1},
+                new long[]{2, 2}
         };
         check(expected, actual);
     }

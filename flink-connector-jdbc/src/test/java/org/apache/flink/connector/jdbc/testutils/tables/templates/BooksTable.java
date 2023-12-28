@@ -77,6 +77,7 @@ public class BooksTable extends TableBase<BooksTable.BookEntry> implements Table
     public BooksTable(String name) {
         super(
                 name,
+                null,
                 Arrays.asList(
                                 pkField("id", INT().notNull()),
                                 field("title", VARCHAR(50)),

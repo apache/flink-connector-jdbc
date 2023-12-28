@@ -52,7 +52,9 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Arrays;
 
-/** InputFormat for {@link JdbcDynamicTableSource}. */
+/**
+ * InputFormat for {@link JdbcDynamicTableSource}.
+ */
 @Internal
 public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
         implements ResultTypeQueryable<RowData> {
@@ -60,15 +62,16 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
     private static final long serialVersionUID = 2L;
     private static final Logger LOG = LoggerFactory.getLogger(JdbcRowDataInputFormat.class);
 
-    private JdbcConnectionProvider connectionProvider;
-    private int fetchSize;
-    private Boolean autoCommit;
+    private final JdbcConnectionProvider connectionProvider;
+    private final int fetchSize;
+    private final Boolean autoCommit;
     private Object[][] parameterValues;
-    private String queryTemplate;
-    private int resultSetType;
-    private int resultSetConcurrency;
-    private JdbcRowConverter rowConverter;
-    private TypeInformation<RowData> rowDataTypeInfo;
+    private final boolean isPartitionColumnTypeString;
+    private final String queryTemplate;
+    private final int resultSetType;
+    private final int resultSetConcurrency;
+    private final JdbcRowConverter rowConverter;
+    private final TypeInformation<RowData> rowDataTypeInfo;
 
     private transient PreparedStatement statement;
     private transient ResultSet resultSet;
@@ -79,6 +82,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
             int fetchSize,
             Boolean autoCommit,
             Object[][] parameterValues,
+            boolean isPartitionColumnTypeString,
             String queryTemplate,
             int resultSetType,
             int resultSetConcurrency,
@@ -88,6 +92,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
         this.fetchSize = fetchSize;
         this.autoCommit = autoCommit;
         this.parameterValues = parameterValues;
+        this.isPartitionColumnTypeString = isPartitionColumnTypeString;
         this.queryTemplate = queryTemplate;
         this.resultSetType = resultSetType;
         this.resultSetConcurrency = resultSetConcurrency;
@@ -147,14 +152,15 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
      * fashion</b> otherwise.
      *
      * @param inputSplit which is ignored if this InputFormat is executed as a non-parallel source,
-     *     a "hook" to the query parameters otherwise (using its <i>splitNumber</i>)
+     *                   a "hook" to the query parameters otherwise (using its <i>splitNumber</i>)
      * @throws IOException if there's an error during the execution of the query
      */
     @Override
     public void open(InputSplit inputSplit) throws IOException {
         try {
             if (inputSplit != null && parameterValues != null) {
-                for (int i = 0; i < parameterValues[inputSplit.getSplitNumber()].length; i++) {
+                int parameterLength = isPartitionColumnTypeString ? 1 : parameterValues[inputSplit.getSplitNumber()].length;
+                for (int i = 0; i < parameterLength; i++) {
                     Object param = parameterValues[inputSplit.getSplitNumber()][i];
                     if (param instanceof String) {
                         statement.setString(i + 1, (String) param);
@@ -273,7 +279,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
     @Override
     public InputSplit[] createInputSplits(int minNumSplits) throws IOException {
         if (parameterValues == null) {
-            return new GenericInputSplit[] {new GenericInputSplit(0, 1)};
+            return new GenericInputSplit[]{new GenericInputSplit(0, 1)};
         }
         GenericInputSplit[] ret = new GenericInputSplit[parameterValues.length];
         for (int i = 0; i < ret.length; i++) {
@@ -296,9 +302,11 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
         return new Builder();
     }
 
-    /** Builder for {@link JdbcRowDataInputFormat}. */
+    /**
+     * Builder for {@link JdbcRowDataInputFormat}.
+     */
     public static class Builder {
-        private JdbcConnectionOptions.JdbcConnectionOptionsBuilder connOptionsBuilder;
+        private final JdbcConnectionOptions.JdbcConnectionOptionsBuilder connOptionsBuilder;
         private int fetchSize;
         private Boolean autoCommit;
         private Object[][] parameterValues;
@@ -307,6 +315,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
         private TypeInformation<RowData> rowDataTypeInfo;
         private int resultSetType = ResultSet.TYPE_FORWARD_ONLY;
         private int resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
+        private boolean isPartitionColumnTypeString = false;
 
         public Builder() {
             this.connOptionsBuilder = new JdbcConnectionOptions.JdbcConnectionOptionsBuilder();
@@ -376,6 +385,10 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
             return this;
         }
 
+        public void setPartitionColumnTypeString(boolean partitionColumnTypeString) {
+            isPartitionColumnTypeString = partitionColumnTypeString;
+        }
+
         public JdbcRowDataInputFormat build() {
             if (this.queryTemplate == null) {
                 throw new NullPointerException("No query supplied");
@@ -391,6 +404,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
                     this.fetchSize,
                     this.autoCommit,
                     this.parameterValues,
+                    this.isPartitionColumnTypeString,
                     this.queryTemplate,
                     this.resultSetType,
                     this.resultSetConcurrency,

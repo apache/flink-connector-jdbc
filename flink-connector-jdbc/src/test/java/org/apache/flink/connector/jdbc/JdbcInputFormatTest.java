@@ -44,7 +44,9 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** Tests for the {@link JdbcInputFormat}. */
+/**
+ * Tests for the {@link JdbcInputFormat}.
+ */
 class JdbcInputFormatTest extends JdbcDataTestBase {
 
     private JdbcInputFormat jdbcInputFormat;
@@ -59,17 +61,52 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
+    void testJdbcInputFormatspiltKeyString() throws IOException {
+        final int fetchSize = 1;
+        final long min = TEST_DATA[0].id;
+        final long max = TEST_DATA[TEST_DATA.length - fetchSize].id;
+        JdbcParameterValuesProvider pramProvider =
+                new JdbcNumericBetweenParametersProvider(min, max, true).ofBatchSize(fetchSize);
+        // check string The number of input slices for the scan boundary
+
+        Serializable[][] correctParameters = new Serializable[10][2];
+        correctParameters[0] = new Long[]{min, min};
+        correctParameters[1] = new Long[]{min + 1, min + 1};
+        correctParameters[2] = new Long[]{min + 2, min + 2};
+        correctParameters[3] = new Long[]{min + 3, min + 3};
+        correctParameters[4] = new Long[]{min + 4, min + 4};
+        correctParameters[5] = new Long[]{min + 5, min + 5};
+        correctParameters[6] = new Long[]{min + 6, min + 6};
+        correctParameters[7] = new Long[]{min + 7, min + 7};
+        correctParameters[8] = new Long[]{min + 8, min + 8};
+        correctParameters[9] = new Long[]{min + 9, min + 9};
+
+        assertThat(pramProvider.getParameterValues().length).isEqualTo(max - min + 1);
+        assertThat(pramProvider.getParameterValues()).isEqualTo(correctParameters);
+
+        // Test lower boundary values equal
+        JdbcParameterValuesProvider singleProvider =
+                new JdbcNumericBetweenParametersProvider(1, 1, true).ofBatchSize(fetchSize);
+        // check string The number of input slices for the scan boundary
+
+        Serializable[][] singleCorrectParameters = new Serializable[1][2];
+        singleCorrectParameters[0] = new Long[]{1L, 1L};
+
+        assertThat(singleProvider.getParameterValues()).isEqualTo(singleCorrectParameters);
+    }
+
+    @Test
     void testUntypedRowInfo() {
         assertThatThrownBy(
-                        () -> {
-                            jdbcInputFormat =
-                                    JdbcInputFormat.buildJdbcInputFormat()
-                                            .setDrivername(getMetadata().getDriverClass())
-                                            .setDBUrl(getMetadata().getJdbcUrl())
-                                            .setQuery(SELECT_ALL_BOOKS)
-                                            .finish();
-                            jdbcInputFormat.openInputFormat();
-                        })
+                () -> {
+                    jdbcInputFormat =
+                            JdbcInputFormat.buildJdbcInputFormat()
+                                    .setDrivername(getMetadata().getDriverClass())
+                                    .setDBUrl(getMetadata().getJdbcUrl())
+                                    .setQuery(SELECT_ALL_BOOKS)
+                                    .finish();
+                    jdbcInputFormat.openInputFormat();
+                })
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("No RowTypeInfo supplied");
     }
@@ -77,62 +114,62 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
     @Test
     void testInvalidDriver() {
         assertThatThrownBy(
-                        () -> {
-                            jdbcInputFormat =
-                                    JdbcInputFormat.buildJdbcInputFormat()
-                                            .setDrivername("org.apache.derby.jdbc.idontexist")
-                                            .setDBUrl(getMetadata().getJdbcUrl())
-                                            .setQuery(SELECT_ALL_BOOKS)
-                                            .setRowTypeInfo(ROW_TYPE_INFO)
-                                            .finish();
-                            jdbcInputFormat.openInputFormat();
-                        })
+                () -> {
+                    jdbcInputFormat =
+                            JdbcInputFormat.buildJdbcInputFormat()
+                                    .setDrivername("org.apache.derby.jdbc.idontexist")
+                                    .setDBUrl(getMetadata().getJdbcUrl())
+                                    .setQuery(SELECT_ALL_BOOKS)
+                                    .setRowTypeInfo(ROW_TYPE_INFO)
+                                    .finish();
+                    jdbcInputFormat.openInputFormat();
+                })
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void testInvalidURL() {
         assertThatThrownBy(
-                        () -> {
-                            jdbcInputFormat =
-                                    JdbcInputFormat.buildJdbcInputFormat()
-                                            .setDrivername(getMetadata().getDriverClass())
-                                            .setDBUrl("jdbc:der:iamanerror:mory:ebookshop")
-                                            .setQuery(SELECT_ALL_BOOKS)
-                                            .setRowTypeInfo(ROW_TYPE_INFO)
-                                            .finish();
-                            jdbcInputFormat.openInputFormat();
-                        })
+                () -> {
+                    jdbcInputFormat =
+                            JdbcInputFormat.buildJdbcInputFormat()
+                                    .setDrivername(getMetadata().getDriverClass())
+                                    .setDBUrl("jdbc:der:iamanerror:mory:ebookshop")
+                                    .setQuery(SELECT_ALL_BOOKS)
+                                    .setRowTypeInfo(ROW_TYPE_INFO)
+                                    .finish();
+                    jdbcInputFormat.openInputFormat();
+                })
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void testInvalidQuery() {
         assertThatThrownBy(
-                        () -> {
-                            jdbcInputFormat =
-                                    JdbcInputFormat.buildJdbcInputFormat()
-                                            .setDrivername(getMetadata().getDriverClass())
-                                            .setDBUrl(getMetadata().getJdbcUrl())
-                                            .setQuery("iamnotsql")
-                                            .setRowTypeInfo(ROW_TYPE_INFO)
-                                            .finish();
-                            jdbcInputFormat.openInputFormat();
-                        })
+                () -> {
+                    jdbcInputFormat =
+                            JdbcInputFormat.buildJdbcInputFormat()
+                                    .setDrivername(getMetadata().getDriverClass())
+                                    .setDBUrl(getMetadata().getJdbcUrl())
+                                    .setQuery("iamnotsql")
+                                    .setRowTypeInfo(ROW_TYPE_INFO)
+                                    .finish();
+                    jdbcInputFormat.openInputFormat();
+                })
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void testNoUrl() {
         assertThatThrownBy(
-                        () -> {
-                            jdbcInputFormat =
-                                    JdbcInputFormat.buildJdbcInputFormat()
-                                            .setDrivername(getMetadata().getDriverClass())
-                                            .setQuery(SELECT_ALL_BOOKS)
-                                            .setRowTypeInfo(ROW_TYPE_INFO)
-                                            .finish();
-                        })
+                () -> {
+                    jdbcInputFormat =
+                            JdbcInputFormat.buildJdbcInputFormat()
+                                    .setDrivername(getMetadata().getDriverClass())
+                                    .setQuery(SELECT_ALL_BOOKS)
+                                    .setRowTypeInfo(ROW_TYPE_INFO)
+                                    .finish();
+                })
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("jdbc url is empty");
     }
@@ -140,14 +177,14 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
     @Test
     void testNoQuery() {
         assertThatThrownBy(
-                        () -> {
-                            jdbcInputFormat =
-                                    JdbcInputFormat.buildJdbcInputFormat()
-                                            .setDrivername(getMetadata().getDriverClass())
-                                            .setDBUrl(getMetadata().getJdbcUrl())
-                                            .setRowTypeInfo(ROW_TYPE_INFO)
-                                            .finish();
-                        })
+                () -> {
+                    jdbcInputFormat =
+                            JdbcInputFormat.buildJdbcInputFormat()
+                                    .setDrivername(getMetadata().getDriverClass())
+                                    .setDBUrl(getMetadata().getJdbcUrl())
+                                    .setRowTypeInfo(ROW_TYPE_INFO)
+                                    .finish();
+                })
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("No query supplied");
     }
@@ -155,16 +192,16 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
     @Test
     void testInvalidFetchSize() {
         assertThatThrownBy(
-                        () -> {
-                            jdbcInputFormat =
-                                    JdbcInputFormat.buildJdbcInputFormat()
-                                            .setDrivername(getMetadata().getDriverClass())
-                                            .setDBUrl(getMetadata().getJdbcUrl())
-                                            .setQuery(SELECT_ALL_BOOKS)
-                                            .setRowTypeInfo(ROW_TYPE_INFO)
-                                            .setFetchSize(-7)
-                                            .finish();
-                        })
+                () -> {
+                    jdbcInputFormat =
+                            JdbcInputFormat.buildJdbcInputFormat()
+                                    .setDrivername(getMetadata().getDriverClass())
+                                    .setDBUrl(getMetadata().getJdbcUrl())
+                                    .setQuery(SELECT_ALL_BOOKS)
+                                    .setRowTypeInfo(ROW_TYPE_INFO)
+                                    .setFetchSize(-7)
+                                    .finish();
+                })
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -192,8 +229,8 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         jdbcInputFormat.openInputFormat();
 
         try (Connection dbConn = getMetadata().getConnection();
-                Statement dbStatement = dbConn.createStatement();
-                Statement inputStatement = jdbcInputFormat.getStatement()) {
+             Statement dbStatement = dbConn.createStatement();
+             Statement inputStatement = jdbcInputFormat.getStatement()) {
             assertThat(inputStatement.getFetchSize()).isEqualTo(dbStatement.getFetchSize());
         }
     }
@@ -282,7 +319,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         final long min = TEST_DATA[0].id;
         final long max = TEST_DATA[TEST_DATA.length - fetchSize].id;
         JdbcParameterValuesProvider pramProvider =
-                new JdbcNumericBetweenParametersProvider(min, max).ofBatchSize(fetchSize);
+                new JdbcNumericBetweenParametersProvider(min, max, false).ofBatchSize(fetchSize);
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(getMetadata().getDriverClass())
@@ -320,7 +357,7 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         final long max = TEST_DATA[TEST_DATA.length - 1].id;
         final long fetchSize = max + 1; // generate a single split
         JdbcParameterValuesProvider pramProvider =
-                new JdbcNumericBetweenParametersProvider(min, max).ofBatchSize(fetchSize);
+                new JdbcNumericBetweenParametersProvider(min, max, false).ofBatchSize(fetchSize);
         jdbcInputFormat =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(getMetadata().getDriverClass())
@@ -355,8 +392,8 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
     @Test
     void testJdbcInputFormatWithParallelismAndGenericSplitting() throws IOException {
         Serializable[][] queryParameters = new String[2][1];
-        queryParameters[0] = new String[] {TEST_DATA[3].author};
-        queryParameters[1] = new String[] {TEST_DATA[0].author};
+        queryParameters[0] = new String[]{TEST_DATA[3].author};
+        queryParameters[1] = new String[]{TEST_DATA[0].author};
         JdbcParameterValuesProvider paramProvider =
                 new JdbcGenericParameterValuesProvider(queryParameters);
         jdbcInputFormat =

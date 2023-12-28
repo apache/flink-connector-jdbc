@@ -137,25 +137,36 @@ public class JdbcDynamicTableSource
                         options.getTableName(),
                         DataType.getFieldNames(physicalRowDataType).toArray(new String[0]),
                         new String[0]);
-        final List<String> predicates = new ArrayList<String>();
+        final List<String> predicates = new ArrayList<>();
 
         if (readOptions.getPartitionColumnName().isPresent()) {
             long lowerBound = readOptions.getPartitionLowerBound().get();
             long upperBound = readOptions.getPartitionUpperBound().get();
             int numPartitions = readOptions.getNumPartitions().get();
 
-            Serializable[][] allPushdownParams = replicatePushdownParamsForN(numPartitions);
+            Serializable[][] allPushDownParams = replicatePushdownParamsForN(numPartitions);
+            // Get here whether the type of the external configuration partition key is a string
+            boolean isPartitionColumnTypeString = readOptions.getPartitionColumnTypeString().get().booleanValue();
             JdbcParameterValuesProvider allParams =
                     new CompositeJdbcParameterValuesProvider(
-                            new JdbcNumericBetweenParametersProvider(lowerBound, upperBound)
+                            new JdbcNumericBetweenParametersProvider(lowerBound, upperBound, isPartitionColumnTypeString)
                                     .ofBatchNum(numPartitions),
-                            new JdbcGenericParameterValuesProvider(allPushdownParams));
+                            new JdbcGenericParameterValuesProvider(allPushDownParams), isPartitionColumnTypeString);
 
             builder.setParametersProvider(allParams);
+            // Set partition type
+            builder.setPartitionColumnTypeString(isPartitionColumnTypeString);
 
-            predicates.add(
-                    dialect.quoteIdentifier(readOptions.getPartitionColumnName().get())
-                            + " BETWEEN ? AND ?");
+            String generatePredicates;
+            if (readOptions.getPartitionColumnTypeString().isPresent() && readOptions.getPartitionColumnTypeString().get()) {
+                generatePredicates =
+                        dialect.hashModForField(readOptions.getPartitionColumnName().get(), numPartitions)  + " = ? ";
+            } else {
+                generatePredicates =
+                        dialect.quoteIdentifier(readOptions.getPartitionColumnName().get())
+                                + " BETWEEN ? AND ?";
+            }
+            predicates.add(generatePredicates);
         } else {
             builder.setParametersProvider(
                     new JdbcGenericParameterValuesProvider(replicatePushdownParamsForN(1)));
@@ -182,7 +193,6 @@ public class JdbcDynamicTableSource
         builder.setRowConverter(dialect.getRowConverter(rowType));
         builder.setRowDataTypeInfo(
                 runtimeProviderContext.createTypeInformation(physicalRowDataType));
-
         return InputFormatProvider.of(builder.build());
     }
 
@@ -287,10 +297,10 @@ public class JdbcDynamicTableSource
     }
 
     private Serializable[][] replicatePushdownParamsForN(int n) {
-        Serializable[][] allPushdownParams = new Serializable[n][pushdownParams.length];
+        Serializable[][] allPushDownParams = new Serializable[n][pushdownParams.length];
         for (int i = 0; i < n; i++) {
-            allPushdownParams[i] = this.pushdownParams;
+            allPushDownParams[i] = this.pushdownParams;
         }
-        return allPushdownParams;
+        return allPushDownParams;
     }
 }

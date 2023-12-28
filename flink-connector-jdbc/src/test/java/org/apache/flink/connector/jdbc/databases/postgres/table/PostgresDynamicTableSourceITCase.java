@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.databases.postgres.table;
 import org.apache.flink.connector.jdbc.databases.postgres.PostgresTestBase;
 import org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialect;
 import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSourceITCase;
+import org.apache.flink.connector.jdbc.testutils.databases.DbName;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;
@@ -43,13 +44,15 @@ public class PostgresDynamicTableSourceITCase extends JdbcDynamicTableSourceITCa
     protected TableRow createInputTable() {
         return tableRow(
                 "jdbDynamicTableSource",
+                DbName.POSTGRES_DB,
                 field("id", DataTypes.BIGINT().notNull()),
                 field("decimal_col", DataTypes.DECIMAL(10, 4)),
                 field("timestamp6_col", DataTypes.TIMESTAMP(6)),
                 // other fields
                 field("real_col", dbType("REAL"), DataTypes.FLOAT()),
                 field("double_col", dbType("DOUBLE PRECISION"), DataTypes.DOUBLE()),
-                field("time_col", dbType("TIME"), DataTypes.TIME()));
+                field("time_col", dbType("TIME"), DataTypes.TIME()),
+                field("string_col", DataTypes.VARCHAR(30)));
     }
 
     protected List<Row> getTestData() {
@@ -60,13 +63,13 @@ public class PostgresDynamicTableSourceITCase extends JdbcDynamicTableSourceITCa
                         LocalDateTime.parse("2020-01-01T15:35:00.123456"),
                         1.175E-37F,
                         1.79769E308D,
-                        LocalTime.parse("15:35")),
+                        LocalTime.parse("15:35"), "Leblanc_1"),
                 Row.of(
                         2L,
                         BigDecimal.valueOf(101.1234),
                         LocalDateTime.parse("2020-01-01T15:36:01.123456"),
                         -1.175E-37F,
                         -1.79769E308,
-                        LocalTime.parse("15:36:01")));
+                        LocalTime.parse("15:36:01"), "Wade"));
     }
 }

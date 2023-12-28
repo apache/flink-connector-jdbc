@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.testutils.tables;
 
 import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.databases.DbName;
 import org.apache.flink.connector.jdbc.testutils.functions.JdbcResultSetBuilder;
 import org.apache.flink.connector.jdbc.utils.JdbcTypeUtil;
 import org.apache.flink.table.api.DataTypes;
@@ -40,11 +41,13 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Row table. * */
+/**
+ * Row table. *
+ */
 public class TableRow extends TableBase<Row> {
 
-    protected TableRow(String name, TableField[] fields) {
-        super(name, fields);
+    protected TableRow(String name, DbName dbName, TableField[] fields) {
+        super(name, dbName, fields);
     }
 
     protected JdbcResultSetBuilder<Row> getResultSetBuilder() {

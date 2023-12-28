@@ -32,6 +32,7 @@ import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.apache.flink.connector.jdbc.testutils.databases.DbName.DB2_DB;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbType;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.field;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
@@ -44,6 +45,7 @@ public class Db2DynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
     protected TableRow createInputTable() {
         return tableRow(
                 "jdbDynamicTableSource",
+                DB2_DB,
                 field("id", dbType("BIGINT"), DataTypes.BIGINT().notNull()),
                 field("decimal_col", dbType("NUMERIC(10, 4)"), DataTypes.DECIMAL(10, 4)),
                 field("timestamp6_col", dbType("TIMESTAMP(6)"), DataTypes.TIMESTAMP(6)),

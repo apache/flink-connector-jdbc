@@ -65,6 +65,11 @@ public class TrinoDialect extends AbstractDialect {
     }
 
     @Override
+    public String hashModForField(String fieldName, int numPartitions) {
+        throw new IllegalArgumentException("The Trino database itself is not supported by the hash md5 syntax " + fieldName + "Cannot be read in fragments");
+    }
+
+    @Override
     public String quoteIdentifier(String identifier) {
         return identifier;
     }

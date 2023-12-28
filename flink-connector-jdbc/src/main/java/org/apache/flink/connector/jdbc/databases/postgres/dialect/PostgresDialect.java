@@ -24,7 +24,9 @@ import org.apache.flink.table.types.logical.RowType;
 
 import java.util.Optional;
 
-/** JDBC dialect for PostgreSQL. */
+/**
+ * JDBC dialect for PostgreSQL.
+ */
 @Internal
 public class PostgresDialect extends AbstractPostgresCompatibleDialect {
 
@@ -38,6 +40,11 @@ public class PostgresDialect extends AbstractPostgresCompatibleDialect {
     @Override
     public Optional<String> defaultDriverName() {
         return Optional.of("org.postgresql.Driver");
+    }
+
+    @Override
+    public String hashModForField(String fieldName, int numPartitions) {
+        return "(ABS(HASHTEXT(" + quoteIdentifier(fieldName) + ")) % " + numPartitions + ")";
     }
 
     @Override

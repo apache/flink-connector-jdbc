@@ -346,12 +346,57 @@ ON myTopic.key = MyUserTable.id;
 为了在并行 `Source` task 实例中加速读取数据，Flink 为 JDBC table 提供了分区扫描的特性。
 
 如果下述分区扫描参数中的任一项被指定，则下述所有的分区扫描参数必须都被指定。这些参数描述了在多个 task 并行读取数据时如何对表进行分区。
-`scan.partition.column` 必须是相关表中的数字、日期或时间戳列。注意，`scan.partition.lower-bound` 和 `scan.partition.upper-bound` 用于决定分区的起始位置和过滤表中的数据。如果是批处理作业，也可以在提交 flink 作业之前获取最大值和最小值。
+`scan.partition.column` 必须是相关表中的数字、日期或时间戳列、字符串类型。注意，`scan.partition.lower-bound` 和 `scan.partition.upper-bound` 用于决定分区的起始位置和过滤表中的数据。如果是批处理作业，也可以在提交 flink 作业之前获取最大值和最小值。
 
 - `scan.partition.column`：输入用于进行分区的列名。
 - `scan.partition.num`：分区数。
 - `scan.partition.lower-bound`：第一个分区的最小值。
 - `scan.partition.upper-bound`：最后一个分区的最大值。
+#### 支持字符串分片读取
+<table class="table table-bordered" style="width: 60%">
+    <thead>
+      <tr>
+        <th class="text-left">Support String Split Database</th>
+        <th class="text-left">Slice Read String Grammar</th>
+       </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>MySQL</td>
+            <td>ABS(MD5(`column`) % `number_of_partitions`)</td>
+        </tr>
+        <tr>
+            <td>Oracle</td>
+            <td>MOD(ORA_HASH(`column`) , `number_of_partitions`)</td>
+        <tr>
+            <td>PostgreSQL</td>
+            <td>(ABS(HASHTEXT(`column`)) % `number_of_partitions`)</td>
+        </tr>
+        <tr>
+            <td>MS SQL Server</td>
+            <td>ABS(HASHBYTES('MD5', `column`) % `number_of_partitions`)</td>
+        </tr>
+</table>
+
+```SQL
+CREATE TABLE my_split_string_read_table (
+    id int,
+    name STRING,
+    age INT,
+    email STRING,
+    PRIMARY KEY (id) NOT ENFORCED
+) WITH (
+      'connector' = 'jdbc',
+      'url' = 'jdbc:mysql://localhost:3306/test',
+      'table-name' = 'mysql_table_name',
+      'username'='root',
+      'password'='12345678',
+      'scan.partition.column'='name',
+      'scan.partition.num'='3', 
+      'scan.partition.lower-bound'='0', -- 分别获取到 ABS(MD5(`name`) % 3) 0,1,2 的全表数据分区数据3
+      'scan.partition.upper-bound'='2'
+)
+```
 
 <a name="lookup-cache"></a>
 

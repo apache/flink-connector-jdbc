@@ -23,6 +23,7 @@ import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
+import org.apache.flink.connector.jdbc.testutils.databases.DbName;
 import org.apache.flink.connector.jdbc.testutils.functions.JdbcResultSetBuilder;
 import org.apache.flink.connector.jdbc.utils.JdbcTypeUtil;
 import org.apache.flink.table.api.DataTypes;
@@ -49,17 +50,22 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/** Base table operations. * */
+/**
+ * Base table operations. *
+ */
 public abstract class TableBase<T> implements TableManaged {
 
     private final String name;
+
+    private final DbName dbName;
     private final TableField[] fields;
 
-    protected TableBase(String name, TableField[] fields) {
+    protected TableBase(String name, DbName dbName, TableField[] fields) {
         Preconditions.checkArgument(name != null && !name.isEmpty(), "Table name must be defined");
         Preconditions.checkArgument(
                 fields != null && fields.length != 0, "Table fields must be defined");
         this.name = name;
+        this.dbName = dbName;
         this.fields = fields;
     }
 
@@ -102,6 +108,10 @@ public abstract class TableBase<T> implements TableManaged {
                         .toArray(TypeInformation[]::new);
         String[] fieldsArray = getTableFields();
         return new RowTypeInfo(typesArray, fieldsArray);
+    }
+
+    public DbName getDbName() {
+        return dbName;
     }
 
     public RowType getTableRowType() {
@@ -265,7 +275,7 @@ public abstract class TableBase<T> implements TableManaged {
     protected <T> List<T> executeStatement(
             Connection conn, String sql, JdbcResultSetBuilder<T> rsGetter) throws SQLException {
         try (Statement st = conn.createStatement();
-                ResultSet rs = st.executeQuery(sql)) {
+             ResultSet rs = st.executeQuery(sql)) {
             return rsGetter.accept(rs);
         }
     }

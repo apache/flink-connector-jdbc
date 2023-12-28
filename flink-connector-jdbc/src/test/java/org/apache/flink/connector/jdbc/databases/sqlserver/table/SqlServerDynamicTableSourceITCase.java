@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.databases.sqlserver.table;
 import org.apache.flink.connector.jdbc.databases.sqlserver.SqlServerTestBase;
 import org.apache.flink.connector.jdbc.databases.sqlserver.dialect.SqlServerDialect;
 import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSourceITCase;
+import org.apache.flink.connector.jdbc.testutils.databases.DbName;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;
@@ -39,7 +40,9 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.fiel
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** The Table Source ITCase for {@link SqlServerDialect}. */
+/**
+ * The Table Source ITCase for {@link SqlServerDialect}.
+ */
 public class SqlServerDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
         implements SqlServerTestBase {
 
@@ -47,6 +50,7 @@ public class SqlServerDynamicTableSourceITCase extends JdbcDynamicTableSourceITC
     protected TableRow createInputTable() {
         return tableRow(
                 "jdbDynamicTableSource",
+                DbName.SQL_SERVER_DB,
                 field("id", DataTypes.BIGINT().notNull()),
                 field("decimal_col", DataTypes.DECIMAL(10, 4)),
                 field("timestamp6_col", dbType("DATETIME2"), DataTypes.TIMESTAMP(6)),
@@ -63,7 +67,7 @@ public class SqlServerDynamicTableSourceITCase extends JdbcDynamicTableSourceITC
                 field("datetime2_col", dbType("DATETIME2"), DataTypes.TIMESTAMP()),
                 field("char_col", dbType("CHAR"), DataTypes.STRING()),
                 field("nchar_col", dbType("NCHAR(3)"), DataTypes.STRING()),
-                field("varchar2_col", dbType("VARCHAR(30)"), DataTypes.STRING()),
+                field("string_col", dbType("VARCHAR(30)"), DataTypes.STRING()),
                 field("nvarchar2_col", dbType("NVARCHAR(30)"), DataTypes.STRING()),
                 field("text_col", dbType("TEXT"), DataTypes.STRING()),
                 field("ntext_col", dbType("NTEXT"), DataTypes.STRING()));
@@ -87,7 +91,7 @@ public class SqlServerDynamicTableSourceITCase extends JdbcDynamicTableSourceITC
                         LocalDateTime.parse("2020-01-01T15:35:00.1234567"),
                         "a",
                         "abc",
-                        "abcdef",
+                        "Leblanc_1",
                         "xyz",
                         "Hello World",
                         "World Hello"),
@@ -110,7 +114,7 @@ public class SqlServerDynamicTableSourceITCase extends JdbcDynamicTableSourceITC
                         "abcdef",
                         "xyz",
                         "Hey Leonard",
-                        "World Hello"));
+                        "Wade"));
     }
 
     @Test

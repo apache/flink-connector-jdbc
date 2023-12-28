@@ -57,6 +57,11 @@ public class Db2Dialect extends AbstractDialect {
     }
 
     @Override
+    public String hashModForField(String fieldName, int numPartitions) {
+        throw new IllegalArgumentException("The Db2 database itself is not supported by the hash md5 syntax " + fieldName + "Cannot be read in fragments");
+    }
+
+    @Override
     public String dialectName() {
         return "Db2";
     }

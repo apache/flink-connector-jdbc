@@ -22,11 +22,14 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 
-/** Options for the JDBC scan. */
+/**
+ * Options for the JDBC scan.
+ */
 public class JdbcReadOptions implements Serializable {
 
     private final String query;
     private final String partitionColumnName;
+    private final Boolean isPartitionColumnTypeString;
     private final Long partitionLowerBound;
     private final Long partitionUpperBound;
     private final Integer numPartitions;
@@ -37,6 +40,7 @@ public class JdbcReadOptions implements Serializable {
     private JdbcReadOptions(
             String query,
             String partitionColumnName,
+            Boolean isPartitionColumnTypeString,
             Long partitionLowerBound,
             Long partitionUpperBound,
             Integer numPartitions,
@@ -44,6 +48,7 @@ public class JdbcReadOptions implements Serializable {
             boolean autoCommit) {
         this.query = query;
         this.partitionColumnName = partitionColumnName;
+        this.isPartitionColumnTypeString = isPartitionColumnTypeString;
         this.partitionLowerBound = partitionLowerBound;
         this.partitionUpperBound = partitionUpperBound;
         this.numPartitions = numPartitions;
@@ -58,6 +63,10 @@ public class JdbcReadOptions implements Serializable {
 
     public Optional<String> getPartitionColumnName() {
         return Optional.ofNullable(partitionColumnName);
+    }
+
+    public Optional<Boolean> getPartitionColumnTypeString() {
+        return Optional.ofNullable(isPartitionColumnTypeString);
     }
 
     public Optional<Long> getPartitionLowerBound() {
@@ -100,10 +109,13 @@ public class JdbcReadOptions implements Serializable {
         }
     }
 
-    /** Builder of {@link JdbcReadOptions}. */
+    /**
+     * Builder of {@link JdbcReadOptions}.
+     */
     public static class Builder {
         protected String query;
         protected String partitionColumnName;
+        protected Boolean isPartitionColumnTypeString;
         protected Long partitionLowerBound;
         protected Long partitionUpperBound;
         protected Integer numPartitions;
@@ -111,25 +123,37 @@ public class JdbcReadOptions implements Serializable {
         protected int fetchSize = 0;
         protected boolean autoCommit = true;
 
-        /** optional, SQL query statement for this JDBC source. */
+        /**
+         * optional, SQL query statement for this JDBC source.
+         */
         public Builder setQuery(String query) {
             this.query = query;
             return this;
         }
 
-        /** optional, name of the column used for partitioning the input. */
+        /**
+         * optional, name of the column used for partitioning the input.
+         */
         public Builder setPartitionColumnName(String partitionColumnName) {
             this.partitionColumnName = partitionColumnName;
             return this;
         }
 
-        /** optional, the smallest value of the first partition. */
+        public void setPartitionColumnTypeString(Boolean partitionColumnTypeString) {
+            isPartitionColumnTypeString = partitionColumnTypeString;
+        }
+
+        /**
+         * optional, the smallest value of the first partition.
+         */
         public Builder setPartitionLowerBound(long partitionLowerBound) {
             this.partitionLowerBound = partitionLowerBound;
             return this;
         }
 
-        /** optional, the largest value of the last partition. */
+        /**
+         * optional, the largest value of the last partition.
+         */
         public Builder setPartitionUpperBound(long partitionUpperBound) {
             this.partitionUpperBound = partitionUpperBound;
             return this;
@@ -153,7 +177,9 @@ public class JdbcReadOptions implements Serializable {
             return this;
         }
 
-        /** optional, whether to set auto commit on the JDBC driver. */
+        /**
+         * optional, whether to set auto commit on the JDBC driver.
+         */
         public Builder setAutoCommit(boolean autoCommit) {
             this.autoCommit = autoCommit;
             return this;
@@ -163,6 +189,7 @@ public class JdbcReadOptions implements Serializable {
             return new JdbcReadOptions(
                     query,
                     partitionColumnName,
+                    isPartitionColumnTypeString,
                     partitionLowerBound,
                     partitionUpperBound,
                     numPartitions,
