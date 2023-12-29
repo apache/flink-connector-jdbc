@@ -29,7 +29,7 @@ public enum DbName {
     SQL_SERVER_DB,
     TRINO_DB,
     DB2_DB,
-    DERBY_DB,
+    DERBY_DB
 
 
 }
