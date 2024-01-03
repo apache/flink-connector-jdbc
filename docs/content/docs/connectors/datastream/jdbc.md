@@ -334,3 +334,15 @@ Still not supported in Python API.
 Please also take Oracle connection pooling into account.
 
 Please refer to the `JdbcXaSinkFunction` documentation for more details.
+
+## License of JDBC driver for Elasticsearch
+
+Flink's JDBC connector defines a Maven dependency on the "JDBC driver for Elasticsearch", which is licensed under
+the Elastic License 2.0.
+
+Flink itself neither reuses source code from the "JDBC driver for Elasticsearch"
+nor packages binaries from the "JDBC driver for Elasticsearch".
+
+Users that create and publish derivative work based on Flink's JDBC connector (thereby re-distributing
+the "JDBC driver for Elasticsearch") must be aware that this may be subject to conditions declared in
+the Elastic License 2.0.
