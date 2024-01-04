@@ -37,7 +37,6 @@ JDBC 连接器允许使用 JDBC 驱动向任意类型的关系型数据库读取
 
 如果在 DDL 中定义了主键，JDBC sink 将以 upsert 模式与外部系统交换 UPDATE/DELETE 消息；否则，它将以 append 模式与外部系统交换消息且不支持消费 UPDATE/DELETE 消息。
 
-<a name="dependencies"></a>
 
 依赖
 ------------
@@ -445,7 +444,7 @@ tableExists(ObjectPath tablePath);
 ### JDBC Catalog 的使用
 
 本小节主要描述如果创建并使用 Postgres Catalog 或 MySQL Catalog。
-请参阅 [Dependencies](#dependencies) 部分了解如何配置 JDBC 连接器和相应的驱动。
+请参阅 [依赖](#依赖) 部分了解如何配置 JDBC 连接器和相应的驱动。
 
 JDBC catalog 支持以下参数:
 - `name`：必填，catalog 的名称。
