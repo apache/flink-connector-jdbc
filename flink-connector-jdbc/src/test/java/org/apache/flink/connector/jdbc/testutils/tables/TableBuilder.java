@@ -21,9 +21,7 @@ package org.apache.flink.connector.jdbc.testutils.tables;
 import org.apache.flink.connector.jdbc.testutils.databases.DbName;
 import org.apache.flink.table.types.DataType;
 
-/**
- * Table builder. *
- */
+/** Table builder. * */
 public final class TableBuilder {
 
     public static TableRow tableRow(String name, TableField... fields) {

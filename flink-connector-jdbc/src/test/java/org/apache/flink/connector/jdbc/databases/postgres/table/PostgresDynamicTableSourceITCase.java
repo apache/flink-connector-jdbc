@@ -63,13 +63,15 @@ public class PostgresDynamicTableSourceITCase extends JdbcDynamicTableSourceITCa
                         LocalDateTime.parse("2020-01-01T15:35:00.123456"),
                         1.175E-37F,
                         1.79769E308D,
-                        LocalTime.parse("15:35"), "Leblanc_1"),
+                        LocalTime.parse("15:35"),
+                        "Leblanc_1"),
                 Row.of(
                         2L,
                         BigDecimal.valueOf(101.1234),
                         LocalDateTime.parse("2020-01-01T15:36:01.123456"),
                         -1.175E-37F,
                         -1.79769E308,
-                        LocalTime.parse("15:36:01"), "Wade"));
+                        LocalTime.parse("15:36:01"),
+                        "Wade"));
     }
 }

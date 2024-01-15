@@ -50,9 +50,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * Base table operations. *
- */
+/** Base table operations. * */
 public abstract class TableBase<T> implements TableManaged {
 
     private final String name;
@@ -275,7 +273,7 @@ public abstract class TableBase<T> implements TableManaged {
     protected <T> List<T> executeStatement(
             Connection conn, String sql, JdbcResultSetBuilder<T> rsGetter) throws SQLException {
         try (Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
+                ResultSet rs = st.executeQuery(sql)) {
             return rsGetter.accept(rs);
         }
     }

@@ -38,7 +38,6 @@ import java.io.Serializable;
  * <p>You can take advantage of this class to automatically generate the parameters of the BETWEEN
  * clause, based on the passed constructor parameters.
  */
-
 @Experimental
 public class JdbcNumericBetweenParametersProvider implements JdbcParameterValuesProvider {
 
@@ -53,13 +52,17 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
     /**
      * NumericBetweenParametersProviderJdbc constructor.
      *
-     * @param minVal                      the lower bound of the produced "from" values
-     * @param maxVal                      the upper bound of the produced "to" values
+     * @param minVal the lower bound of the produced "from" values
+     * @param maxVal the upper bound of the produced "to" values
      * @param isPartitionColumnTypeString Whether to use string types as slices to read fields
      */
-    public JdbcNumericBetweenParametersProvider(long minVal, long maxVal, boolean isPartitionColumnTypeString) {
+    public JdbcNumericBetweenParametersProvider(
+            long minVal, long maxVal, boolean isPartitionColumnTypeString) {
         Preconditions.checkArgument(minVal <= maxVal, "minVal must not be larger than maxVal");
-        Preconditions.checkArgument(!isPartitionColumnTypeString || (minVal < Integer.MAX_VALUE && maxVal < Integer.MAX_VALUE), "When using a string as a shard field to set the upper and lower bounds lowerBound, upperBound exceeds the INT storage range, and the current logic uses the hash for each value within each shard boundary value");
+        Preconditions.checkArgument(
+                !isPartitionColumnTypeString
+                        || (minVal < Integer.MAX_VALUE && maxVal < Integer.MAX_VALUE),
+                "When using a string as a shard field to set the upper and lower bounds lowerBound, upperBound exceeds the INT storage range, and the current logic uses the hash for each value within each shard boundary value");
         this.minVal = minVal;
         this.maxVal = maxVal;
         this.isPartitionColumnTypeString = isPartitionColumnTypeString;
@@ -69,8 +72,8 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
      * NumericBetweenParametersProviderJdbc constructor.
      *
      * @param fetchSize the max distance between the produced from/to pairs
-     * @param minVal    the lower bound of the produced "from" values
-     * @param maxVal    the upper bound of the produced "to" values
+     * @param minVal the lower bound of the produced "from" values
+     * @param maxVal the upper bound of the produced "to" values
      */
     public JdbcNumericBetweenParametersProvider(long fetchSize, long minVal, long maxVal) {
         Preconditions.checkArgument(minVal <= maxVal, "minVal must not be larger than maxVal");
@@ -93,7 +96,9 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
 
     public JdbcNumericBetweenParametersProvider ofBatchNum(int batchNum) {
         Preconditions.checkArgument(batchNum > 0, "Batch number must be positive");
-        Preconditions.checkArgument(!isPartitionColumnTypeString || (minVal >= 0), "Ensure that lowerBound is greater than or equal to 0 and lowerBound, upperBound, is less than or equal to the number of partitions");
+        Preconditions.checkArgument(
+                !isPartitionColumnTypeString || (minVal >= 0),
+                "Ensure that lowerBound is greater than or equal to 0 and lowerBound, upperBound, is less than or equal to the number of partitions");
 
         long maxElemCount = (maxVal - minVal) + 1;
         if (batchNum > maxElemCount) {
@@ -106,7 +111,9 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
 
     @Override
     public Serializable[][] getParameterValues() {
-        Preconditions.checkState(batchSize > 0, "Batch size and batch number must be positive. Have you called `ofBatchSize` or `ofBatchNum`?");
+        Preconditions.checkState(
+                batchSize > 0,
+                "Batch size and batch number must be positive. Have you called `ofBatchSize` or `ofBatchNum`?");
         Serializable[][] parameters = new Serializable[batchNum][2];
         long maxElemCount = (maxVal - minVal) + 1;
         long bigBatchNum = maxElemCount - (batchSize - 1) * batchNum;
@@ -114,13 +121,13 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
             long start = minVal;
             for (int i = 0; i < batchNum; i++) {
                 long end = start + batchSize - 1 - (i >= bigBatchNum ? 1 : 0);
-                parameters[i] = new Long[]{start, end};
+                parameters[i] = new Long[] {start, end};
                 start = end + 1;
             }
         } else {
             for (int i = 0; i <= maxVal - minVal; i++) {
                 Long hashValue = minVal + i;
-                parameters[i] = new Long[]{hashValue, hashValue};
+                parameters[i] = new Long[] {hashValue, hashValue};
             }
         }
         return parameters;

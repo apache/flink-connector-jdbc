@@ -52,9 +52,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Arrays;
 
-/**
- * InputFormat for {@link JdbcDynamicTableSource}.
- */
+/** InputFormat for {@link JdbcDynamicTableSource}. */
 @Internal
 public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
         implements ResultTypeQueryable<RowData> {
@@ -152,14 +150,17 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
      * fashion</b> otherwise.
      *
      * @param inputSplit which is ignored if this InputFormat is executed as a non-parallel source,
-     *                   a "hook" to the query parameters otherwise (using its <i>splitNumber</i>)
+     *     a "hook" to the query parameters otherwise (using its <i>splitNumber</i>)
      * @throws IOException if there's an error during the execution of the query
      */
     @Override
     public void open(InputSplit inputSplit) throws IOException {
         try {
             if (inputSplit != null && parameterValues != null) {
-                int parameterLength = isPartitionColumnTypeString ? 1 : parameterValues[inputSplit.getSplitNumber()].length;
+                int parameterLength =
+                        isPartitionColumnTypeString
+                                ? 1
+                                : parameterValues[inputSplit.getSplitNumber()].length;
                 for (int i = 0; i < parameterLength; i++) {
                     Object param = parameterValues[inputSplit.getSplitNumber()][i];
                     if (param instanceof String) {
@@ -279,7 +280,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
     @Override
     public InputSplit[] createInputSplits(int minNumSplits) throws IOException {
         if (parameterValues == null) {
-            return new GenericInputSplit[]{new GenericInputSplit(0, 1)};
+            return new GenericInputSplit[] {new GenericInputSplit(0, 1)};
         }
         GenericInputSplit[] ret = new GenericInputSplit[parameterValues.length];
         for (int i = 0; i < ret.length; i++) {
@@ -302,9 +303,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
         return new Builder();
     }
 
-    /**
-     * Builder for {@link JdbcRowDataInputFormat}.
-     */
+    /** Builder for {@link JdbcRowDataInputFormat}. */
     public static class Builder {
         private final JdbcConnectionOptions.JdbcConnectionOptionsBuilder connOptionsBuilder;
         private int fetchSize;

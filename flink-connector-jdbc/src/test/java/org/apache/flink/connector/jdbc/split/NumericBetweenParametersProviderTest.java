@@ -24,9 +24,7 @@ import java.io.Serializable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Tests for {@link JdbcNumericBetweenParametersProvider}.
- */
+/** Tests for {@link JdbcNumericBetweenParametersProvider}. */
 class NumericBetweenParametersProviderTest {
 
     @Test
@@ -52,11 +50,11 @@ class NumericBetweenParametersProviderTest {
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
-                new long[]{-5, -2},
-                new long[]{-1, 2},
-                new long[]{3, 5},
-                new long[]{6, 8},
-                new long[]{9, 11}
+            new long[] {-5, -2},
+            new long[] {-1, 2},
+            new long[] {3, 5},
+            new long[] {6, 8},
+            new long[] {9, 11}
         };
         check(expected, actual);
     }
@@ -67,7 +65,7 @@ class NumericBetweenParametersProviderTest {
                 new JdbcNumericBetweenParametersProvider(0, 2, false).ofBatchSize(5);
         Serializable[][] actual = provider.getParameterValues();
 
-        long[][] expected = {new long[]{0, 2}};
+        long[][] expected = {new long[] {0, 2}};
         check(expected, actual);
     }
 
@@ -78,11 +76,11 @@ class NumericBetweenParametersProviderTest {
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
-                new long[]{-5, -3},
-                new long[]{-2, 0},
-                new long[]{1, 3},
-                new long[]{4, 6},
-                new long[]{7, 9}
+            new long[] {-5, -3},
+            new long[] {-2, 0},
+            new long[] {1, 3},
+            new long[] {4, 6},
+            new long[] {7, 9}
         };
         check(expected, actual);
     }
@@ -94,11 +92,11 @@ class NumericBetweenParametersProviderTest {
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
-                new long[]{-5, -2},
-                new long[]{-1, 2},
-                new long[]{3, 5},
-                new long[]{6, 8},
-                new long[]{9, 11}
+            new long[] {-5, -2},
+            new long[] {-1, 2},
+            new long[] {3, 5},
+            new long[] {6, 8},
+            new long[] {9, 11}
         };
         check(expected, actual);
     }
@@ -110,9 +108,9 @@ class NumericBetweenParametersProviderTest {
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
-                new long[]{0, 0},
-                new long[]{1, 1},
-                new long[]{2, 2}
+            new long[] {0, 0},
+            new long[] {1, 1},
+            new long[] {2, 2}
         };
         check(expected, actual);
     }

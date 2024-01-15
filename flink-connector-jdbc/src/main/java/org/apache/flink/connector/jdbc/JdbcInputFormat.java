@@ -121,7 +121,7 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
 
     protected boolean hasNext;
     protected Object[][] parameterValues;
-    protected  boolean isPartitionColumnTypeString;
+    protected boolean isPartitionColumnTypeString;
 
     public JdbcInputFormat() {}
 
@@ -191,7 +191,10 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
     public void open(InputSplit inputSplit) throws IOException {
         try {
             if (inputSplit != null && parameterValues != null) {
-                int parameterLength = isPartitionColumnTypeString ? 1 : parameterValues[inputSplit.getSplitNumber()].length;
+                int parameterLength =
+                        isPartitionColumnTypeString
+                                ? 1
+                                : parameterValues[inputSplit.getSplitNumber()].length;
                 for (int i = 0; i < parameterLength; i++) {
                     Object param = parameterValues[inputSplit.getSplitNumber()][i];
                     if (param instanceof String) {
@@ -395,7 +398,8 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
             return this;
         }
 
-        public JdbcInputFormatBuilder setPartitionColumnTypeString(boolean partitionColumnTypeString) {
+        public JdbcInputFormatBuilder setPartitionColumnTypeString(
+                boolean partitionColumnTypeString) {
             format.isPartitionColumnTypeString = partitionColumnTypeString;
             return this;
         }

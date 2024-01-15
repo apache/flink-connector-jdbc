@@ -41,9 +41,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Row table. *
- */
+/** Row table. * */
 public class TableRow extends TableBase<Row> {
 
     protected TableRow(String name, DbName dbName, TableField[] fields) {

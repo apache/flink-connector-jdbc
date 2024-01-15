@@ -24,9 +24,7 @@ import org.apache.flink.table.types.logical.RowType;
 
 import java.util.Optional;
 
-/**
- * JDBC dialect for PostgreSQL.
- */
+/** JDBC dialect for PostgreSQL. */
 @Internal
 public class PostgresDialect extends AbstractPostgresCompatibleDialect {
 

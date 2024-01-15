@@ -40,9 +40,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.fiel
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * The Table Source ITCase for {@link SqlServerDialect}.
- */
+/** The Table Source ITCase for {@link SqlServerDialect}. */
 public class SqlServerDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
         implements SqlServerTestBase {
 

@@ -36,9 +36,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbTy
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.field;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 
-/**
- * The Table Source ITCase for {@link MySqlDialect}.
- */
+/** The Table Source ITCase for {@link MySqlDialect}. */
 public class MySqlDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
         implements MySqlTestBase {
 
@@ -76,6 +74,7 @@ public class MySqlDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
                         -1.175E-37D,
                         -1.79769E308,
                         LocalTime.parse("15:36:01"),
-                        LocalDateTime.parse("2020-01-01T15:36:01.123456"), "Wade"));
+                        LocalDateTime.parse("2020-01-01T15:36:01.123456"),
+                        "Wade"));
     }
 }

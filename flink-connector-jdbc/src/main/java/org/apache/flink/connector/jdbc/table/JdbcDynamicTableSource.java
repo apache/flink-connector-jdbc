@@ -146,21 +146,27 @@ public class JdbcDynamicTableSource
 
             Serializable[][] allPushDownParams = replicatePushdownParamsForN(numPartitions);
             // Get here whether the type of the external configuration partition key is a string
-            boolean isPartitionColumnTypeString = readOptions.getPartitionColumnTypeString().get().booleanValue();
+            boolean isPartitionColumnTypeString =
+                    readOptions.getPartitionColumnTypeString().get().booleanValue();
             JdbcParameterValuesProvider allParams =
                     new CompositeJdbcParameterValuesProvider(
-                            new JdbcNumericBetweenParametersProvider(lowerBound, upperBound, isPartitionColumnTypeString)
+                            new JdbcNumericBetweenParametersProvider(
+                                            lowerBound, upperBound, isPartitionColumnTypeString)
                                     .ofBatchNum(numPartitions),
-                            new JdbcGenericParameterValuesProvider(allPushDownParams), isPartitionColumnTypeString);
+                            new JdbcGenericParameterValuesProvider(allPushDownParams),
+                            isPartitionColumnTypeString);
 
             builder.setParametersProvider(allParams);
             // Set partition type
             builder.setPartitionColumnTypeString(isPartitionColumnTypeString);
 
             String generatePredicates;
-            if (readOptions.getPartitionColumnTypeString().isPresent() && readOptions.getPartitionColumnTypeString().get()) {
+            if (readOptions.getPartitionColumnTypeString().isPresent()
+                    && readOptions.getPartitionColumnTypeString().get()) {
                 generatePredicates =
-                        dialect.hashModForField(readOptions.getPartitionColumnName().get(), numPartitions)  + " = ? ";
+                        dialect.hashModForField(
+                                        readOptions.getPartitionColumnName().get(), numPartitions)
+                                + " = ? ";
             } else {
                 generatePredicates =
                         dialect.quoteIdentifier(readOptions.getPartitionColumnName().get())
