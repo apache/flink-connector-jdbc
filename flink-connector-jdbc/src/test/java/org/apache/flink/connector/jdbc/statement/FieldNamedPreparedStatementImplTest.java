@@ -41,6 +41,10 @@ class FieldNamedPreparedStatementImplTest {
     private final String[] keyFields = new String[] {"id", "__field_3__"};
     private final String tableName = "tbl";
 
+    private final String[] fieldNames2 =
+            new String[] {"id?:", "name:?", "email", "ts", "field1", "field_2", "__field_3__"};
+    private final String[] keyFields2 = new String[] {"id?:", "__field_3__"};
+
     @Test
     void testInsertStatement() {
         String insertStmt = dialect.getInsertIntoStatement(tableName, fieldNames);
@@ -139,6 +143,21 @@ class FieldNamedPreparedStatementImplTest {
         NamedStatementMatcher.parsedSql(
                         "SELECT `id`, `name`, `email`, `ts`, `field1`, `field_2`, `__field_3__` FROM `tbl` "
                                 + "WHERE `id` = ? AND `__field_3__` = ?")
+                .parameter("id", singletonList(1))
+                .parameter("__field_3__", singletonList(2))
+                .matches(selectStmt);
+    }
+
+    @Test
+    void testSelectStatementWithWeirdCharacters() {
+        String selectStmt = dialect.getSelectFromStatement(tableName, fieldNames2, keyFields2);
+        assertThat(selectStmt)
+                .isEqualTo(
+                        "SELECT `id?:`, `name:?`, `email`, `ts`, `field1`, `field_2`, `__field_3__` FROM `tbl` "
+                                + "WHERE `id?:` = :id?: AND `__field_3__` = :__field_3__");
+        NamedStatementMatcher.parsedSql(
+                        "SELECT `id?:`, `name:?`, `email`, `ts`, `field1`, `field_2`, `__field_3__` FROM `tbl` "
+                                + "WHERE `id?:` = ? AND `__field_3__` = ?")
                 .parameter("id", singletonList(1))
                 .parameter("__field_3__", singletonList(2))
                 .matches(selectStmt);

@@ -185,10 +185,10 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
 
     private void establishConnectionAndStatement() throws SQLException, ClassNotFoundException {
         Connection dbConn = connectionProvider.getOrEstablishConnection();
-        final String addtionalPredicates = String.join(" AND ", resolvedPredicates);
+        final String additionalPredicates = " AND " + String.join(" AND ", resolvedPredicates);
         statement =
                 FieldNamedPreparedStatement.prepareStatement(
-                        dbConn, query, keyNames, addtionalPredicates, pushdownParams.length);
+                        dbConn, query, keyNames, additionalPredicates, pushdownParams.length);
     }
 
     @Override

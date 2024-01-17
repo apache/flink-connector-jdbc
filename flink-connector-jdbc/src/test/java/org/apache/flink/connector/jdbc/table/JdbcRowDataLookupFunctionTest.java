@@ -83,6 +83,37 @@ class JdbcRowDataLookupFunctionTest extends JdbcLookupTestBase {
         assertThat(result).isEqualTo(expected);
     }
 
+    @ParameterizedTest(name = "withFailure = {0}")
+    @ValueSource(booleans = {false, true})
+    void testLookupWithPredicates(boolean withFailure) throws Exception {
+        JdbcRowDataLookupFunction lookupFunction =
+                buildRowDataLookupFunctionWithPredicates(withFailure);
+
+        ListOutputCollector collector = new ListOutputCollector();
+        lookupFunction.setCollector(collector);
+
+        lookupFunction.open(null);
+
+        lookupFunction.eval(1, StringData.fromString("1"));
+        if (withFailure) {
+            // Close connection here, and this will be recovered by retry
+            if (lookupFunction.getDbConnection() != null) {
+                lookupFunction.getDbConnection().close();
+            }
+        }
+        lookupFunction.eval(2, StringData.fromString("3"));
+
+        List<String> result =
+                new ArrayList<>(collector.getOutputs())
+                        .stream().map(RowData::toString).sorted().collect(Collectors.toList());
+
+        List<String> expected = new ArrayList<>();
+        expected.add("+I(1,1,11-c1-v1,11-c2-v1)");
+        Collections.sort(expected);
+
+        assertThat(result).isEqualTo(expected);
+    }
+
     private JdbcRowDataLookupFunction buildRowDataLookupFunction(boolean withFailure) {
         InternalJdbcConnectionOptions jdbcOptions =
                 InternalJdbcConnectionOptions.builder()
@@ -107,6 +138,38 @@ class JdbcRowDataLookupFunctionTest extends JdbcLookupTestBase {
                 rowType,
                 Collections.emptyList(),
                 new Serializable[0]);
+    }
+
+    private JdbcRowDataLookupFunction buildRowDataLookupFunctionWithPredicates(
+            boolean withFailure) {
+        InternalJdbcConnectionOptions jdbcOptions =
+                InternalJdbcConnectionOptions.builder()
+                        .setDriverName(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setTableName(LOOKUP_TABLE)
+                        .build();
+
+        RowType rowType =
+                RowType.of(
+                        Arrays.stream(fieldDataTypes)
+                                .map(DataType::getLogicalType)
+                                .toArray(LogicalType[]::new),
+                        fieldNames);
+
+        List<String> resolvedPredicates = new ArrayList<>();
+        resolvedPredicates.add("(comment1 = ?)");
+        Serializable[] pushdownParams = new Serializable[1];
+        pushdownParams[0] = "11-c1-v1";
+
+        return new JdbcRowDataLookupFunction(
+                jdbcOptions,
+                withFailure ? 1 : LookupOptions.MAX_RETRIES.defaultValue(),
+                fieldNames,
+                fieldDataTypes,
+                lookupKeys,
+                rowType,
+                resolvedPredicates,
+                pushdownParams);
     }
 
     private static final class ListOutputCollector implements Collector<RowData> {

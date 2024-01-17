@@ -188,10 +188,6 @@ public class FieldNamedPreparedStatementImpl implements FieldNamedPreparedStatem
         checkNotNull(sql, "sql must not be null.");
         checkNotNull(fieldNames, "fieldNames must not be null.");
 
-        if (sql.contains("?")) {
-            throw new IllegalArgumentException("SQL statement must not contain ? character.");
-        }
-
         sql = sql + additionalPredicates;
 
         HashMap<String, List<Integer>> parameterMap = new HashMap<>();
