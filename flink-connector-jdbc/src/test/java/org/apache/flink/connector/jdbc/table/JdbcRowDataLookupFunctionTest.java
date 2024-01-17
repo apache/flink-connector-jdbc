@@ -31,6 +31,7 @@ import org.apache.flink.util.Collector;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -103,7 +104,9 @@ class JdbcRowDataLookupFunctionTest extends JdbcLookupTestBase {
                 fieldNames,
                 fieldDataTypes,
                 lookupKeys,
-                rowType);
+                rowType,
+                Collections.emptyList(),
+                new Serializable[0]);
     }
 
     private static final class ListOutputCollector implements Collector<RowData> {

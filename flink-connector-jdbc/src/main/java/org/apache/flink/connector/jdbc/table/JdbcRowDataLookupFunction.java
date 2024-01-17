@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -63,6 +64,9 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
     private final JdbcRowConverter jdbcRowConverter;
     private final JdbcRowConverter lookupKeyRowConverter;
 
+    private List<String> resolvedPredicates = new ArrayList<>();
+    private Serializable[] pushdownParams = new Serializable[0];
+
     private transient FieldNamedPreparedStatement statement;
 
     public JdbcRowDataLookupFunction(
@@ -71,7 +75,9 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
             String[] fieldNames,
             DataType[] fieldTypes,
             String[] keyNames,
-            RowType rowType) {
+            RowType rowType,
+            List<String> resolvedPredicates,
+            Serializable[] pushdownParams) {
         checkNotNull(options, "No JdbcOptions supplied.");
         checkNotNull(fieldNames, "No fieldNames supplied.");
         checkNotNull(fieldTypes, "No fieldTypes supplied.");
@@ -103,6 +109,8 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
                                 Arrays.stream(keyTypes)
                                         .map(DataType::getLogicalType)
                                         .toArray(LogicalType[]::new)));
+        this.resolvedPredicates = resolvedPredicates;
+        this.pushdownParams = pushdownParams;
     }
 
     @Override
@@ -116,6 +124,15 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
         }
     }
 
+    private FieldNamedPreparedStatement setPredicateParams(FieldNamedPreparedStatement statement)
+            throws SQLException {
+        for (int i = 0; i < pushdownParams.length; ++i) {
+            statement.setObject(i + keyNames.length, pushdownParams[i]);
+        }
+
+        return statement;
+    }
+
     /**
      * This is a lookup method which is called by Flink framework in runtime.
      *
@@ -127,6 +144,7 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
             try {
                 statement.clearParameters();
                 statement = lookupKeyRowConverter.toExternal(keyRow, statement);
+                statement = setPredicateParams(statement);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     ArrayList<RowData> rows = new ArrayList<>();
                     while (resultSet.next()) {
@@ -167,7 +185,10 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
 
     private void establishConnectionAndStatement() throws SQLException, ClassNotFoundException {
         Connection dbConn = connectionProvider.getOrEstablishConnection();
-        statement = FieldNamedPreparedStatement.prepareStatement(dbConn, query, keyNames);
+        final String addtionalPredicates = String.join(" AND ", resolvedPredicates);
+        statement =
+                FieldNamedPreparedStatement.prepareStatement(
+                        dbConn, query, keyNames, addtionalPredicates, pushdownParams.length);
     }
 
     @Override
