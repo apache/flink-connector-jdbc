@@ -49,8 +49,8 @@ class AbstractJdbcRowConverterTest {
                 };
 
         ResultSet resultSet = Mockito.mock(ResultSet.class);
-        Mockito.when(resultSet.getObject(1)).thenReturn(123);
-        Mockito.when(resultSet.getObject(2))
+        Mockito.when(resultSet.getObject(1, Integer.class)).thenReturn(123);
+        Mockito.when(resultSet.getObject(2, LocalDateTime.class))
                 .thenReturn(LocalDateTime.parse("2021-04-07T00:00:05.999"));
         RowData res = rowConverter.toInternal(resultSet);
 
