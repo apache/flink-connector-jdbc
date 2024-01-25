@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.DRIVER;
+import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.FILTER_HANDLING_POLICY;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.LOOKUP_CACHE_MAX_ROWS;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.LOOKUP_CACHE_MISSING_KEY;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.LOOKUP_CACHE_TTL;
@@ -118,6 +119,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
                 getJdbcReadOptions(helper.getOptions()),
                 helper.getOptions().get(LookupOptions.MAX_RETRIES),
                 getLookupCache(config),
+                helper.getOptions().get(FILTER_HANDLING_POLICY),
                 context.getPhysicalRowDataType());
     }
 
@@ -246,6 +248,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         optionalOptions.add(LookupOptions.PARTIAL_CACHE_MAX_ROWS);
         optionalOptions.add(LookupOptions.PARTIAL_CACHE_CACHE_MISSING_KEY);
         optionalOptions.add(LookupOptions.MAX_RETRIES);
+        optionalOptions.add(FILTER_HANDLING_POLICY);
         return optionalOptions;
     }
 

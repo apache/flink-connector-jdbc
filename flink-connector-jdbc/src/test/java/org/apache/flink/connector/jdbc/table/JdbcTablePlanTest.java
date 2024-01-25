@@ -18,7 +18,10 @@
 
 package org.apache.flink.connector.jdbc.table;
 
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.api.TableConfig;
+import org.apache.flink.table.api.TableDescriptor;
 import org.apache.flink.table.planner.utils.StreamTableTestUtil;
 import org.apache.flink.table.planner.utils.TableTestBase;
 
@@ -26,6 +29,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.rules.TestName;
+
+import java.util.Collections;
+import java.util.Map;
 
 /** Plan tests for JDBC connector, for example, testing projection push down. */
 public class JdbcTablePlanTest extends TableTestBase {
@@ -37,37 +43,60 @@ public class JdbcTablePlanTest extends TableTestBase {
     @BeforeEach
     public void setup(TestInfo testInfo) {
         this.testInfo = testInfo;
-        util.tableEnv()
-                .executeSql(
-                        "CREATE TABLE jdbc ("
-                                + "id BIGINT,"
-                                + "timestamp6_col TIMESTAMP(6),"
-                                + "timestamp9_col TIMESTAMP(9),"
-                                + "time_col TIME,"
-                                + "real_col FLOAT,"
-                                + "double_col DOUBLE,"
-                                + "decimal_col DECIMAL(10, 4)"
-                                + ") WITH ("
-                                + "  'connector'='jdbc',"
-                                + "  'url'='jdbc:derby:memory:test',"
-                                + "  'table-name'='test_table'"
-                                + ")");
     }
 
     @Test
     public void testProjectionPushDown() {
+        createTestTable();
         util.verifyExecPlan("SELECT decimal_col, timestamp9_col, id FROM jdbc");
     }
 
     @Test
     public void testLimitPushDown() {
+        createTestTable();
         util.verifyExecPlan("SELECT id, time_col FROM jdbc LIMIT 3");
     }
 
     @Test
     public void testFilterPushdown() {
+        createTestTable();
         util.verifyExecPlan(
                 "SELECT id, time_col, real_col FROM jdbc WHERE id = 900001 AND time_col <> TIME '11:11:11' OR double_col >= -1000.23");
+    }
+
+    @Test
+    public void testNeverFilterPushdown() {
+        createTestTable(
+                Collections.singletonMap(
+                        JdbcConnectorOptions.FILTER_HANDLING_POLICY.key(),
+                        FilterHandlingPolicy.NEVER.name()));
+        util.verifyExecPlan(
+                "SELECT id, time_col, real_col FROM jdbc WHERE id = 900001 AND time_col <> TIME '11:11:11' OR double_col >= -1000.23");
+    }
+
+    private void createTestTable() {
+        createTestTable(Collections.emptyMap());
+    }
+
+    private void createTestTable(Map<String, String> extraOptions) {
+        TableDescriptor.Builder builder =
+                TableDescriptor.forConnector("jdbc")
+                        .option("url", "jdbc:derby:memory:test")
+                        .option("table-name", "test_table")
+                        .schema(
+                                Schema.newBuilder()
+                                        .column("id", DataTypes.BIGINT())
+                                        .column("timestamp6_col", DataTypes.TIMESTAMP(6))
+                                        .column("timestamp9_col", DataTypes.TIMESTAMP(9))
+                                        .column("time_col", DataTypes.TIME())
+                                        .column("real_col", DataTypes.FLOAT())
+                                        .column("double_col", DataTypes.DOUBLE())
+                                        .column("decimal_col", DataTypes.DECIMAL(10, 4))
+                                        .build());
+
+        extraOptions.forEach(builder::option);
+
+        util.tableEnv().createTable("jdbc", builder.build());
     }
 
     /**

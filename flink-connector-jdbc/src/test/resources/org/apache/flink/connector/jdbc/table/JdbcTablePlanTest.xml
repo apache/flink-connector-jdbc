@@ -68,4 +68,22 @@ TableSourceScan(table=[[default_catalog, default_database, jdbc, filter=[and(OR(
 ]]>
 	</Resource>
   </TestCase>
+  <TestCase name="testNeverFilterPushdown">
+    <Resource name="sql">
+        <![CDATA[SELECT id, time_col, real_col FROM jdbc WHERE id = 900001 AND time_col <> TIME '11:11:11' OR double_col >= -1000.23]]>
+    </Resource>
+    <Resource name="ast">
+        <![CDATA[
+LogicalProject(id=[$0], time_col=[$3], real_col=[$4])
++- LogicalFilter(condition=[OR(AND(=($0, 900001), <>($3, 11:11:11)), >=($5, -1000.23:DECIMAL(6, 2)))])
+   +- LogicalTableScan(table=[[default_catalog, default_database, jdbc]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+        <![CDATA[
+Calc(select=[id, time_col, real_col], where=[(((id = 900001) OR (double_col >= -1000.23)) AND ((time_col <> 11:11:11) OR (double_col >= -1000.23)))])
++- TableSourceScan(table=[[default_catalog, default_database, jdbc, filter=[], project=[id, time_col, real_col, double_col]]], fields=[id, time_col, real_col, double_col])
+]]>
+    </Resource>
+  </TestCase>
 </Root>

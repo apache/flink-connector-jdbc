@@ -175,8 +175,9 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
                 .containsAll(collected);
     }
 
-    @Test
-    public void testFilter() {
+    @ParameterizedTest
+    @EnumSource(FilterHandlingPolicy.class)
+    public void testFilter(FilterHandlingPolicy filterHandlingPolicy) {
         String testTable = "testTable";
         tEnv.executeSql(inputTable.getCreateQueryForFlink(getMetadata(), testTable));
 
@@ -190,7 +191,8 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
                                 "'scan.partition.column'='id'",
                                 "'scan.partition.num'='1'",
                                 "'scan.partition.lower-bound'='1'",
-                                "'scan.partition.upper-bound'='1'")));
+                                "'scan.partition.upper-bound'='1'",
+                                "'filter.handling.policy'='" + filterHandlingPolicy.name() + "'")));
 
         // we create a VIEW here to test column remapping, ie. would filter push down work if we
         // create a view that depends on our source table

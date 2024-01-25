@@ -69,6 +69,7 @@ class JdbcDynamicTableFactoryTest {
         properties.put("username", "user");
         properties.put("password", "pass");
         properties.put("connection.max-retry-timeout", "120s");
+        properties.put("filter.handling.policy", "never");
 
         // validation for source
         DynamicTableSource actualSource = createTableSource(SCHEMA, properties);
@@ -87,6 +88,7 @@ class JdbcDynamicTableFactoryTest {
                         JdbcReadOptions.builder().build(),
                         LookupOptions.MAX_RETRIES.defaultValue(),
                         null,
+                        FilterHandlingPolicy.NEVER,
                         SCHEMA.toPhysicalRowDataType());
         assertThat(actualSource).isEqualTo(expectedSource);
 
@@ -144,6 +146,7 @@ class JdbcDynamicTableFactoryTest {
                         readOptions,
                         LookupOptions.MAX_RETRIES.defaultValue(),
                         null,
+                        JdbcConnectorOptions.FILTER_HANDLING_POLICY.defaultValue(),
                         SCHEMA.toPhysicalRowDataType());
 
         assertThat(actual).isEqualTo(expected);
@@ -172,6 +175,7 @@ class JdbcDynamicTableFactoryTest {
                         JdbcReadOptions.builder().build(),
                         10,
                         DefaultLookupCache.fromConfig(Configuration.fromMap(properties)),
+                        JdbcConnectorOptions.FILTER_HANDLING_POLICY.defaultValue(),
                         SCHEMA.toPhysicalRowDataType());
 
         assertThat(actual).isEqualTo(expected);
@@ -200,6 +204,7 @@ class JdbcDynamicTableFactoryTest {
                                 .maximumSize(1000L)
                                 .expireAfterWrite(Duration.ofSeconds(10))
                                 .build(),
+                        JdbcConnectorOptions.FILTER_HANDLING_POLICY.defaultValue(),
                         SCHEMA.toPhysicalRowDataType());
 
         assertThat(actual).isEqualTo(expected);
@@ -385,6 +390,7 @@ class JdbcDynamicTableFactoryTest {
                                 .maximumSize(1000L)
                                 .expireAfterWrite(Duration.ofSeconds(10))
                                 .build(),
+                        JdbcConnectorOptions.FILTER_HANDLING_POLICY.defaultValue(),
                         SCHEMA.toPhysicalRowDataType());
 
         assertThat(actual).isEqualTo(expected);
