@@ -259,6 +259,18 @@ ON myTopic.key = MyUserTable.id;
       <td>查询数据库失败的最大重试次数。</td>
     </tr>
     <tr>
+      <td><h5>filter.handling.policy</h5></td>
+      <td>可选</td>
+      <td style="word-wrap: break-word;">always</td>
+      <td>枚举值，可选项: always, never</td>
+      <td>过滤器下推策略，支持的策略有:
+          <ul>
+            <li><code>always</code>: 始终将支持的过滤器下推到数据库.</li>
+            <li><code>never</code>: 不将任何过滤器下推到数据库.</li>
+          </ul>
+      </td>
+    </tr>
+    <tr>
       <td><h5>sink.buffer-flush.max-rows</h5></td>
       <td>可选</td>
       <td style="word-wrap: break-word;">100</td>

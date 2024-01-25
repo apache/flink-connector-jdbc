@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.core.table.source;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.jdbc.core.table.FilterHandlingPolicy;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
@@ -195,8 +196,9 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
                 .containsAll(collected);
     }
 
-    @Test
-    public void testFilter() {
+    @ParameterizedTest
+    @EnumSource(FilterHandlingPolicy.class)
+    void testFilter(FilterHandlingPolicy filterHandlingPolicy) {
         String testTable = "testTable";
         tEnv.executeSql(inputTable.getCreateQueryForFlink(getMetadata(), testTable));
 
@@ -210,7 +212,8 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
                                 "'scan.partition.column'='id'",
                                 "'scan.partition.num'='1'",
                                 "'scan.partition.lower-bound'='1'",
-                                "'scan.partition.upper-bound'='1'")));
+                                "'scan.partition.upper-bound'='1'",
+                                "'filter.handling.policy'='" + filterHandlingPolicy.name() + "'")));
 
         // we create a VIEW here to test column remapping, ie. would filter push down work if we
         // create a view that depends on our source table

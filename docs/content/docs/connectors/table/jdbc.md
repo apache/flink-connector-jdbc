@@ -275,6 +275,20 @@ Connector Options
       <td>The max retry times if lookup database failed.</td>
     </tr>
     <tr>
+      <td><h5>filter.handling.policy</h5></td>
+      <td>optional</td>
+      <td>no</td>
+      <td style="word-wrap: break-word;">always</td>
+      <td>Enum Possible values: always, never</td>
+      <td>Fine-grained configuration to control filter push down. 
+          Supported policies are:
+          <ul>
+            <li><code>always</code>: Always push the supported filters to database.</li>
+            <li><code>never</code>: Never push any filters to database.</li>
+          </ul>
+      </td>
+    </tr>
+    <tr>
       <td><h5>sink.buffer-flush.max-rows</h5></td>
       <td>optional</td>
       <td>yes</td>
@@ -305,7 +319,7 @@ Connector Options
       <td style="word-wrap: break-word;">(none)</td>
       <td>Integer</td>
       <td>Defines the parallelism of the JDBC sink operator. By default, the parallelism is determined by the framework using the same parallelism of the upstream chained operator.</td>
-    </tr>          
+    </tr>
     </tbody>
 </table>
 

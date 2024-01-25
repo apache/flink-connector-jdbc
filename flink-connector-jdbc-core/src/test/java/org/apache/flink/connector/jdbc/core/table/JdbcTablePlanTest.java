@@ -54,6 +54,9 @@ class JdbcTablePlanTest extends TableTestBase {
                                 + ")");
         util.tableEnv()
                 .executeSql(
+                        "CREATE TABLE jdbc_never_pushdown WITH ('filter.handling.policy' = 'never') LIKE jdbc;");
+        util.tableEnv()
+                .executeSql(
                         "CREATE TABLE  d ( "
                                 + "ip varchar(20), type int, age int"
                                 + ") WITH ("
@@ -96,6 +99,12 @@ class JdbcTablePlanTest extends TableTestBase {
     void testFilterPushdown() {
         util.verifyExecPlan(
                 "SELECT id, time_col, real_col FROM jdbc WHERE id = 900001 AND time_col <> TIME '11:11:11' OR double_col >= -1000.23");
+    }
+
+    @Test
+    void testNeverFilterPushdown() {
+        util.verifyExecPlan(
+                "SELECT id, time_col, real_col FROM jdbc_never_pushdown WHERE id = 900001 AND time_col <> TIME '11:11:11' OR double_col >= -1000.23");
     }
 
     /**
