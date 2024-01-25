@@ -68,6 +68,24 @@ TableSourceScan(table=[[default_catalog, default_database, jdbc, filter=[and(OR(
 ]]>
         </Resource>
     </TestCase>
+    <TestCase name="testNeverFilterPushdown">
+        <Resource name="sql">
+            <![CDATA[SELECT id, time_col, real_col FROM jdbc_never_pushdown WHERE id = 900001 AND time_col <> TIME '11:11:11' OR double_col >= -1000.23]]>
+        </Resource>
+        <Resource name="ast">
+            <![CDATA[
+LogicalProject(id=[$0], time_col=[$3], real_col=[$4])
++- LogicalFilter(condition=[OR(AND(=($0, 900001), <>($3, 11:11:11)), >=($5, -1000.23:DECIMAL(6, 2)))])
+   +- LogicalTableScan(table=[[default_catalog, default_database, jdbc_never_pushdown]])
+]]>
+        </Resource>
+        <Resource name="optimized exec plan">
+            <![CDATA[
+Calc(select=[id, time_col, real_col], where=[(((id = 900001) OR (double_col >= -1000.23)) AND ((time_col <> 11:11:11) OR (double_col >= -1000.23)))])
++- TableSourceScan(table=[[default_catalog, default_database, jdbc_never_pushdown, filter=[], project=[id, time_col, real_col, double_col]]], fields=[id, time_col, real_col, double_col])
+]]>
+        </Resource>
+    </TestCase>
     <TestCase name="testLookupJoinWithANDAndORFilter">
         <Resource name="sql">
             <![CDATA[SELECT * FROM a LEFT JOIN d FOR SYSTEM_TIME AS OF a.proctime ON ((d.age = 50 AND d.type = 0) OR (d.type = 1 AND d.age = 40)) AND a.ip = d.ip]]>

@@ -179,5 +179,12 @@ public class JdbcConnectorOptions {
                     .defaultValue(3)
                     .withDescription("The max retry times if writing records to database failed.");
 
+    public static final ConfigOption<FilterHandlingPolicy> FILTER_HANDLING_POLICY =
+            ConfigOptions.key("filter.handling.policy")
+                    .enumType(FilterHandlingPolicy.class)
+                    .defaultValue(FilterHandlingPolicy.ALWAYS)
+                    .withDescription(
+                            "Fine-grained configuration to control filter push down for jdbc Table/SQL source.");
+
     protected JdbcConnectorOptions() {}
 }

@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.core.table.source;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.core.table.FilterHandlingPolicy;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcReadOptions;
 import org.apache.flink.connector.jdbc.split.CompositeJdbcParameterValuesProvider;
@@ -53,6 +54,7 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -72,6 +74,7 @@ public class JdbcDynamicTableSource
     private final JdbcReadOptions readOptions;
     private final int lookupMaxRetryTimes;
     @Nullable private final LookupCache cache;
+    private final FilterHandlingPolicy filterHandlingPolicy;
     private DataType physicalRowDataType;
     private final String dialectName;
     private long limit = -1;
@@ -83,11 +86,13 @@ public class JdbcDynamicTableSource
             JdbcReadOptions readOptions,
             int lookupMaxRetryTimes,
             @Nullable LookupCache cache,
+            FilterHandlingPolicy filterHandlingPolicy,
             DataType physicalRowDataType) {
         this.options = options;
         this.readOptions = readOptions;
         this.lookupMaxRetryTimes = lookupMaxRetryTimes;
         this.cache = cache;
+        this.filterHandlingPolicy = filterHandlingPolicy;
         this.physicalRowDataType = physicalRowDataType;
         this.dialectName = options.getDialect().dialectName();
     }
@@ -208,7 +213,12 @@ public class JdbcDynamicTableSource
     public DynamicTableSource copy() {
         JdbcDynamicTableSource newSource =
                 new JdbcDynamicTableSource(
-                        options, readOptions, lookupMaxRetryTimes, cache, physicalRowDataType);
+                        options,
+                        readOptions,
+                        lookupMaxRetryTimes,
+                        cache,
+                        filterHandlingPolicy,
+                        physicalRowDataType);
         newSource.resolvedPredicates = new ArrayList<>(this.resolvedPredicates);
         newSource.pushdownParams = Arrays.copyOf(this.pushdownParams, this.pushdownParams.length);
         return newSource;
@@ -231,6 +241,7 @@ public class JdbcDynamicTableSource
         return Objects.equals(options, that.options)
                 && Objects.equals(readOptions, that.readOptions)
                 && Objects.equals(lookupMaxRetryTimes, that.lookupMaxRetryTimes)
+                && Objects.equals(filterHandlingPolicy, that.filterHandlingPolicy)
                 && Objects.equals(cache, that.cache)
                 && Objects.equals(physicalRowDataType, that.physicalRowDataType)
                 && Objects.equals(dialectName, that.dialectName)
@@ -246,6 +257,7 @@ public class JdbcDynamicTableSource
                 readOptions,
                 lookupMaxRetryTimes,
                 cache,
+                filterHandlingPolicy,
                 physicalRowDataType,
                 dialectName,
                 limit,
@@ -260,22 +272,29 @@ public class JdbcDynamicTableSource
 
     @Override
     public Result applyFilters(List<ResolvedExpression> filters) {
-        List<ResolvedExpression> acceptedFilters = new ArrayList<>();
-        List<ResolvedExpression> remainingFilters = new ArrayList<>();
+        switch (filterHandlingPolicy) {
+            case NEVER:
+                return Result.of(Collections.emptyList(), filters);
+            case ALWAYS:
+            default:
+                List<ResolvedExpression> acceptedFilters = new ArrayList<>();
+                List<ResolvedExpression> remainingFilters = new ArrayList<>();
 
-        for (ResolvedExpression filter : filters) {
-            Optional<ParameterizedPredicate> simplePredicate = parseFilterToPredicate(filter);
-            if (simplePredicate.isPresent()) {
-                acceptedFilters.add(filter);
-                ParameterizedPredicate pred = simplePredicate.get();
-                this.pushdownParams = ArrayUtils.addAll(this.pushdownParams, pred.getParameters());
-                this.resolvedPredicates.add(pred.getPredicate());
-            } else {
-                remainingFilters.add(filter);
-            }
+                for (ResolvedExpression filter : filters) {
+                    Optional<ParameterizedPredicate> simplePredicate =
+                            parseFilterToPredicate(filter);
+                    if (simplePredicate.isPresent()) {
+                        acceptedFilters.add(filter);
+                        ParameterizedPredicate pred = simplePredicate.get();
+                        this.pushdownParams =
+                                ArrayUtils.addAll(this.pushdownParams, pred.getParameters());
+                        this.resolvedPredicates.add(pred.getPredicate());
+                    } else {
+                        remainingFilters.add(filter);
+                    }
+                }
+                return Result.of(acceptedFilters, remainingFilters);
         }
-
-        return Result.of(acceptedFilters, remainingFilters);
     }
 
     private Optional<ParameterizedPredicate> parseFilterToPredicate(ResolvedExpression filter) {
