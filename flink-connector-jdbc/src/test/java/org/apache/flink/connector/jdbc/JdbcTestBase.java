@@ -59,9 +59,13 @@ public abstract class JdbcTestBase implements DerbyTestBase {
         return context;
     }
 
-    public static ExecutionConfig getExecutionConfig(Boolean reused) {
-        ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
-        doReturn(reused).when(config).isObjectReuseEnabled();
+    public static ExecutionConfig getExecutionConfig(boolean reused) {
+        ExecutionConfig config = new ExecutionConfig();
+        if (reused) {
+            config.enableObjectReuse();
+        } else {
+            config.disableObjectReuse();
+        }
         return config;
     }
 
