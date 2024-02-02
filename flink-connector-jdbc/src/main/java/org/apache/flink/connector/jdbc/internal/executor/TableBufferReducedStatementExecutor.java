@@ -86,17 +86,19 @@ public final class TableBufferReducedStatementExecutor
 
     @Override
     public void executeBatch() throws SQLException {
-        for (Map.Entry<RowData, Tuple2<Boolean, RowData>> entry : reduceBuffer.entrySet()) {
-            if (entry.getValue().f0) {
-                upsertExecutor.addToBatch(entry.getValue().f1);
-            } else {
-                // delete by key
-                deleteExecutor.addToBatch(entry.getKey());
+        if (!reduceBuffer.isEmpty()) {
+            for (Map.Entry<RowData, Tuple2<Boolean, RowData>> entry : reduceBuffer.entrySet()) {
+                if (entry.getValue().f0) {
+                    upsertExecutor.addToBatch(entry.getValue().f1);
+                } else {
+                    // delete by key
+                    deleteExecutor.addToBatch(entry.getKey());
+                }
             }
+            upsertExecutor.executeBatch();
+            deleteExecutor.executeBatch();
+            reduceBuffer.clear();
         }
-        upsertExecutor.executeBatch();
-        deleteExecutor.executeBatch();
-        reduceBuffer.clear();
     }
 
     @Override
