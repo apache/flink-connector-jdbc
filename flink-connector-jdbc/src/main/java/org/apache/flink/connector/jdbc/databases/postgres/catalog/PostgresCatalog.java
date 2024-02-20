@@ -86,7 +86,27 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
                 username,
                 pwd,
                 baseUrl,
-                new PostgresTypeMapper());
+                new PostgresTypeMapper(),
+                "");
+    }
+
+    public PostgresCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String baseUrl,
+            String extraUrlParam) {
+        this(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                username,
+                pwd,
+                baseUrl,
+                new PostgresTypeMapper(),
+                extraUrlParam);
     }
 
     protected PostgresCatalog(
@@ -97,7 +117,27 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
             String pwd,
             String baseUrl,
             JdbcDialectTypeMapper dialectTypeMapper) {
-        super(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+        this(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                username,
+                pwd,
+                baseUrl,
+                dialectTypeMapper,
+                "");
+    }
+
+    protected PostgresCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String baseUrl,
+            JdbcDialectTypeMapper dialectTypeMapper,
+            String extraUrlParam) {
+        super(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl, extraUrlParam);
         this.dialectTypeMapper = dialectTypeMapper;
     }
 

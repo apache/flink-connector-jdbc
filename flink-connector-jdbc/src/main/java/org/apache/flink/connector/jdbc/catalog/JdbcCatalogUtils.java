@@ -48,18 +48,31 @@ public class JdbcCatalogUtils {
             String defaultDatabase,
             String username,
             String pwd,
-            String baseUrl) {
+            String baseUrl,
+            String extraUrlParam) {
         JdbcDialect dialect = JdbcDialectLoader.load(baseUrl, userClassLoader);
 
         if (dialect instanceof PostgresDialect) {
             return new PostgresCatalog(
-                    userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+                    userClassLoader,
+                    catalogName,
+                    defaultDatabase,
+                    username,
+                    pwd,
+                    baseUrl,
+                    extraUrlParam);
         } else if (dialect instanceof CrateDBDialect) {
             return new CrateDBCatalog(
                     userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
         } else if (dialect instanceof MySqlDialect) {
             return new MySqlCatalog(
-                    userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+                    userClassLoader,
+                    catalogName,
+                    defaultDatabase,
+                    username,
+                    pwd,
+                    baseUrl,
+                    extraUrlParam);
         } else {
             throw new UnsupportedOperationException(
                     String.format("Catalog for '%s' is not supported yet.", dialect));

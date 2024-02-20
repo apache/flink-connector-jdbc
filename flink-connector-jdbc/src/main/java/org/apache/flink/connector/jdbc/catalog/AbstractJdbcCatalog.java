@@ -92,6 +92,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
     protected final String pwd;
     protected final String baseUrl;
     protected final String defaultUrl;
+    protected final String extraUrlParam;
 
     public AbstractJdbcCatalog(
             ClassLoader userClassLoader,
@@ -99,7 +100,8 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
             String defaultDatabase,
             String username,
             String pwd,
-            String baseUrl) {
+            String baseUrl,
+            String extraUrlParam) {
         super(catalogName, defaultDatabase);
 
         checkNotNull(userClassLoader);
@@ -112,8 +114,13 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
         this.userClassLoader = userClassLoader;
         this.username = username;
         this.pwd = pwd;
+        this.extraUrlParam = extraUrlParam;
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
-        this.defaultUrl = this.baseUrl + defaultDatabase;
+        this.defaultUrl = initDefaultUrl(this.baseUrl, defaultDatabase, extraUrlParam);
+    }
+
+    protected String initDefaultUrl(String baseUrl, String defaultDatabase, String extraUrlParam) {
+        return baseUrl + defaultDatabase + extraUrlParam;
     }
 
     @Override
@@ -246,7 +253,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
         }
 
         String databaseName = tablePath.getDatabaseName();
-        String dbUrl = baseUrl + databaseName;
+        String dbUrl = defaultUrl;
 
         try (Connection conn = DriverManager.getConnection(dbUrl, username, pwd)) {
             DatabaseMetaData metaData = conn.getMetaData();

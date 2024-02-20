@@ -26,6 +26,7 @@ import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.api.TableEnvironment;
+import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
@@ -531,5 +532,35 @@ public abstract class MySqlCatalogTestBase implements JdbcITCaseBase, DatabaseTe
                                 .collect());
         assertThat(results)
                 .isEqualTo(Collections.singletonList(Row.ofKind(RowKind.INSERT, 2L, -1L)));
+    }
+
+    @Test
+    void testExtraUrlParam() throws Exception {
+        String extraUrlParam = "?characterEncoding=utf8";
+        String catalogName = "mysql_catalog_extra_param";
+        String baseJdbcUrl =
+                getMetadata()
+                        .getJdbcUrl()
+                        .substring(0, getMetadata().getJdbcUrl().lastIndexOf("/"));
+        Catalog catalog2 =
+                new MySqlCatalog(
+                        Thread.currentThread().getContextClassLoader(),
+                        TEST_CATALOG_NAME,
+                        TEST_DB,
+                        getMetadata().getUsername(),
+                        getMetadata().getPassword(),
+                        baseJdbcUrl,
+                        extraUrlParam);
+
+        tEnv.registerCatalog(catalogName, catalog2);
+        tEnv.useCatalog(catalogName);
+
+        Catalog mysqlCatalog = tEnv.getCatalog(catalogName).get();
+
+        CatalogBaseTable table =
+                mysqlCatalog.getTable(new ObjectPath(TEST_DB, TABLE_ALL_TYPES.getTableName()));
+
+        String url = table.getOptions().get("url");
+        assertThat(url).isEqualTo(baseJdbcUrl + "/" + TEST_DB + extraUrlParam);
     }
 }
