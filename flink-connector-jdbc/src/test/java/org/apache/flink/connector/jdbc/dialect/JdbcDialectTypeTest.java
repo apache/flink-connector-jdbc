@@ -99,10 +99,10 @@ public class JdbcDialectTypeTest {
         tEnv.executeSql(sqlDDL);
 
         if (testItem.expectError != null) {
-            assertThatThrownBy(() -> tEnv.sqlQuery("SELECT * FROM T"))
+            assertThatThrownBy(() -> tEnv.executeSql("SELECT * FROM T"))
                     .satisfies(anyCauseMatches(testItem.expectError));
         } else {
-            tEnv.sqlQuery("SELECT * FROM T");
+            tEnv.executeSql("SELECT * FROM T");
         }
     }
 
