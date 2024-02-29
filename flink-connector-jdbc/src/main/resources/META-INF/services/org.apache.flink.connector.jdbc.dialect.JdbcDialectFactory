@@ -21,3 +21,4 @@ org.apache.flink.connector.jdbc.databases.sqlserver.dialect.SqlServerDialectFact
 org.apache.flink.connector.jdbc.databases.cratedb.dialect.CrateDBDialectFactory
 org.apache.flink.connector.jdbc.databases.db2.dialect.Db2DialectFactory
 org.apache.flink.connector.jdbc.databases.trino.dialect.TrinoDialectFactory
+org.apache.flink.connector.jdbc.databases.vertica.dialect.VerticaDialectFactory
