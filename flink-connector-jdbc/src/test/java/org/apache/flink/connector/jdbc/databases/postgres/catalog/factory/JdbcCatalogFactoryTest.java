@@ -57,7 +57,8 @@ class JdbcCatalogFactoryTest implements PostgresTestBase {
                         PostgresCatalog.DEFAULT_DATABASE,
                         getMetadata().getUsername(),
                         getMetadata().getPassword(),
-                        baseUrl);
+                        baseUrl,
+                        null);
     }
 
     @Test

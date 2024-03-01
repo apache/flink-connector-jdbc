@@ -109,6 +109,7 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
         private String dbURL;
         private String tableName;
         private String driverName;
+        private String compatibleMode;
         private String username;
         private String password;
         private JdbcDialect dialect;
@@ -161,6 +162,12 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
             return this;
         }
 
+        /** optional, compatible mode. */
+        public Builder setCompatibleMode(String compatibleMode) {
+            this.compatibleMode = compatibleMode;
+            return this;
+        }
+
         /** required, JDBC DB url. */
         public Builder setDBUrl(String dbURL) {
             this.dbURL = dbURL;
@@ -188,7 +195,7 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
                 if (classLoader == null) {
                     classLoader = Thread.currentThread().getContextClassLoader();
                 }
-                this.dialect = JdbcDialectLoader.load(dbURL, classLoader);
+                this.dialect = JdbcDialectLoader.load(dbURL, compatibleMode, classLoader);
             }
             if (this.driverName == null) {
                 Optional<String> optional = dialect.defaultDriverName();

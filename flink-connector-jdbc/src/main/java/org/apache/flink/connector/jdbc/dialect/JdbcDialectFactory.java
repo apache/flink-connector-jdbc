@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.dialect;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.util.StringUtils;
 
 /**
  * A factory to create a specific {@link JdbcDialect}. This factory is used with Java's Service
@@ -46,4 +47,18 @@ public interface JdbcDialectFactory {
 
     /** @return Creates a new instance of the {@link JdbcDialect}. */
     JdbcDialect create();
+
+    /**
+     * Creates a new instance of the {@link JdbcDialect} based on compatible mode.
+     *
+     * @param compatibleMode the compatible mode of database
+     * @return a new instance of {@link JdbcDialect}
+     */
+    default JdbcDialect create(String compatibleMode) {
+        if (StringUtils.isNullOrWhitespaceOnly(compatibleMode)) {
+            return create();
+        }
+        throw new UnsupportedOperationException(
+                "Not supported option 'compatible-mode' with value: " + compatibleMode);
+    }
 }

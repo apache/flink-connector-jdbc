@@ -153,6 +153,41 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
+    void testInvalidCompatibleMode() {
+        assertThatThrownBy(
+                        () -> {
+                            InternalJdbcConnectionOptions jdbcOptions =
+                                    InternalJdbcConnectionOptions.builder()
+                                            .setDriverName(getMetadata().getDriverClass())
+                                            .setDBUrl(getMetadata().getJdbcUrl())
+                                            .setTableName(INPUT_TABLE)
+                                            .setCompatibleMode("invalidCompatibleMode")
+                                            .build();
+                            JdbcDmlOptions dmlOptions =
+                                    JdbcDmlOptions.builder()
+                                            .withTableName(jdbcOptions.getTableName())
+                                            .withDialect(jdbcOptions.getDialect())
+                                            .withFieldNames(fieldNames)
+                                            .build();
+
+                            outputFormat =
+                                    new JdbcOutputFormatBuilder()
+                                            .setJdbcOptions(jdbcOptions)
+                                            .setFieldDataTypes(fieldDataTypes)
+                                            .setJdbcDmlOptions(dmlOptions)
+                                            .setJdbcExecutionOptions(
+                                                    JdbcExecutionOptions.builder().build())
+                                            .build();
+
+                            JdbcOutputSerializer<RowData> serializer =
+                                    JdbcOutputSerializer.of(
+                                            getSerializer(TypeInformation.of(RowData.class), true));
+                            outputFormat.open(serializer);
+                        })
+                .isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    @Test
     void testIncompatibleTypes() {
         assertThatThrownBy(
                         () -> {

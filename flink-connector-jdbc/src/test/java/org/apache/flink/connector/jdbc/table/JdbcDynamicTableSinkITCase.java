@@ -361,8 +361,7 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
                 .containsExactlyInAnyOrderElementsOf(testUserData());
     }
 
-    @Test
-    void testFlushBufferWhenCheckpoint() throws Exception {
+    protected Map<String, String> getOptions() {
         Map<String, String> options = new HashMap<>();
         options.put("connector", "jdbc");
         options.put("url", getMetadata().getJdbcUrl());
@@ -370,10 +369,14 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
         options.put("password", getMetadata().getPassword());
         options.put("table-name", checkpointOutputTable.getTableName());
         options.put("sink.buffer-flush.interval", "0");
+        return options;
+    }
 
+    @Test
+    void testFlushBufferWhenCheckpoint() throws Exception {
         ResolvedSchema schema = checkpointOutputTable.getTableResolvedSchema();
 
-        DynamicTableSink tableSink = createTableSink(schema, options);
+        DynamicTableSink tableSink = createTableSink(schema, getOptions());
 
         SinkRuntimeProviderContext context = new SinkRuntimeProviderContext(false);
         SinkFunctionProvider sinkProvider =
