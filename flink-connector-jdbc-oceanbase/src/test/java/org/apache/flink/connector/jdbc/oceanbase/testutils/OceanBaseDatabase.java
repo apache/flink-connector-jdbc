@@ -27,23 +27,36 @@ import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.oceanbase.OceanBaseCEContainer;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 /** OceanBase database for testing. */
 public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseImages {
 
     private static final Logger LOG = LoggerFactory.getLogger(OceanBaseDatabase.class);
 
+    private static final String ZONE_OFFSET =
+            DateTimeFormatter.ofPattern("xxx")
+                    .format(ZoneId.systemDefault().getRules().getOffset(Instant.now()));
+
     private static final OceanBaseCEContainer CONTAINER =
-            new OceanBaseCEContainer(OCEANBASE_CE_4)
-                    .withEnv("MODE", "slim")
-                    .withEnv("FASTBOOT", "true")
-                    .withEnv("OB_DATAFILE_SIZE", "1G")
-                    .withEnv("OB_LOG_DISK_SIZE", "4G")
+            new OceanBaseContainer(OCEANBASE_CE_4)
+                    .withPassword("123456")
+                    .withUrlParam("useSSL", "false")
+                    .withUrlParam("serverTimezone", ZONE_OFFSET)
+                    .withCopyToContainer(
+                            Transferable.of(
+                                    String.format("SET GLOBAL time_zone = '%s';", ZONE_OFFSET)),
+                            "/root/boot/init.d/init.sql")
+                    .waitingFor(
+                            Wait.forLogMessage(".*boot success!.*", 1)
+                                    .withStartupTimeout(Duration.ofMinutes(2)))
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
     private static OceanBaseMetadata metadata;
@@ -65,17 +78,6 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
 
     @Override
     protected DatabaseResource getResource() {
-        return new DockerResource(CONTAINER) {
-            @Override
-            public void start() {
-                super.start();
-                try (Connection connection = getMetadata().getConnection();
-                        Statement statement = connection.createStatement()) {
-                    statement.execute("SET GLOBAL time_zone = '+00:00'");
-                } catch (SQLException e) {
-                    throw new FlinkRuntimeException(e);
-                }
-            }
-        };
+        return new DockerResource(CONTAINER);
     }
 }

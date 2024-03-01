@@ -16,58 +16,56 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.mysql.database.catalog;
+package org.apache.flink.connector.jdbc.oceanbase.database.catalog;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.core.database.catalog.AbstractJdbcCatalog;
 import org.apache.flink.connector.jdbc.core.database.catalog.JdbcCatalogTypeMapper;
+import org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions;
 import org.apache.flink.table.catalog.ObjectPath;
+import org.apache.flink.table.catalog.UniqueConstraint;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.util.Preconditions;
-import org.apache.flink.util.TemporaryClassLoaderContext;
 
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 
-/** Catalog for MySQL. */
+/** Catalog for OceanBase. */
 @Internal
-public class MySqlCatalog extends AbstractJdbcCatalog {
-
-    private static final Logger LOG = LoggerFactory.getLogger(MySqlCatalog.class);
-
-    private final JdbcCatalogTypeMapper dialectTypeMapper;
+public class OceanBaseCatalog extends AbstractJdbcCatalog {
 
     private static final Set<String> builtinDatabases =
             new HashSet<String>() {
                 {
+                    add("__public");
                     add("information_schema");
                     add("mysql");
-                    add("performance_schema");
-                    add("sys");
+                    add("oceanbase");
+                    add("LBACSYS");
+                    add("ORAAUDITOR");
                 }
             };
 
-    @VisibleForTesting
-    public MySqlCatalog(
+    private final String compatibleMode;
+    private final JdbcCatalogTypeMapper dialectTypeMapper;
+
+    public OceanBaseCatalog(
             ClassLoader userClassLoader,
             String catalogName,
+            String compatibleMode,
             String defaultDatabase,
             String username,
             String pwd,
@@ -75,38 +73,37 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
         this(
                 userClassLoader,
                 catalogName,
+                compatibleMode,
                 defaultDatabase,
                 baseUrl,
                 getBriefAuthProperties(username, pwd));
     }
 
-    public MySqlCatalog(
+    public OceanBaseCatalog(
             ClassLoader userClassLoader,
             String catalogName,
+            String compatibleMode,
             String defaultDatabase,
             String baseUrl,
             Properties connectionProperties) {
         super(userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
+        this.compatibleMode = compatibleMode;
+        this.dialectTypeMapper = new OceanBaseTypeMapper(compatibleMode);
+    }
 
-        String driverVersion =
-                Preconditions.checkNotNull(getDriverVersion(), "Driver version must not be null.");
-        String databaseVersion =
-                Preconditions.checkNotNull(
-                        getDatabaseVersion(), "Database version must not be null.");
-        LOG.info("Driver version: {}, database version: {}", driverVersion, databaseVersion);
-        this.dialectTypeMapper = new MySqlTypeMapper(databaseVersion, driverVersion);
+    private boolean isMySQLMode() {
+        return "mysql".equalsIgnoreCase(compatibleMode);
     }
 
     @Override
     public List<String> listDatabases() throws CatalogException {
+        String query =
+                isMySQLMode()
+                        ? "SELECT `SCHEMA_NAME` FROM `INFORMATION_SCHEMA`.`SCHEMATA`"
+                        : "SELECT USERNAME FROM ALL_USERS";
         return extractColumnValuesBySQL(
-                defaultUrl,
-                "SELECT `SCHEMA_NAME` FROM `INFORMATION_SCHEMA`.`SCHEMATA`;",
-                1,
-                dbName -> !builtinDatabases.contains(dbName));
+                defaultUrl, query, 1, dbName -> !builtinDatabases.contains(dbName));
     }
-
-    // ------ tables ------
 
     @Override
     public List<String> listTables(String databaseName)
@@ -116,21 +113,24 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
         if (!databaseExists(databaseName)) {
             throw new DatabaseNotExistException(getName(), databaseName);
         }
-
-        return extractColumnValuesBySQL(
-                getDatabaseUrl(databaseName),
-                "SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_SCHEMA = ?",
-                1,
-                null,
-                databaseName);
+        String sql =
+                isMySQLMode()
+                        ? "SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_SCHEMA = ?"
+                        : "SELECT TABLE_NAME FROM ALL_TABLES WHERE OWNER = ?";
+        return extractColumnValuesBySQL(defaultUrl, sql, 1, null, databaseName);
     }
 
     @Override
     public boolean tableExists(ObjectPath tablePath) throws CatalogException {
+        String query =
+                isMySQLMode()
+                        ? "SELECT TABLE_NAME FROM information_schema.`TABLES` "
+                                + "WHERE TABLE_SCHEMA = ? and TABLE_NAME = ?"
+                        : "SELECT TABLE_NAME FROM ALL_TABLES "
+                                + "WHERE OWNER = ? and TABLE_NAME = ?";
         return !extractColumnValuesBySQL(
-                        baseUrl,
-                        "SELECT TABLE_NAME FROM information_schema.`TABLES` "
-                                + "WHERE TABLE_SCHEMA=? and TABLE_NAME=?",
+                        defaultUrl,
+                        query,
                         1,
                         null,
                         tablePath.getDatabaseName(),
@@ -138,35 +138,25 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
                 .isEmpty();
     }
 
-    private String getDatabaseVersion() {
-        try (TemporaryClassLoaderContext ignored =
-                TemporaryClassLoaderContext.of(userClassLoader)) {
-            try (Connection conn = DriverManager.getConnection(defaultUrl, connectionProperties)) {
-                return conn.getMetaData().getDatabaseProductVersion();
-            } catch (Exception e) {
-                throw new CatalogException(
-                        String.format("Failed in getting MySQL version by %s.", defaultUrl), e);
-            }
+    @Override
+    protected Optional<UniqueConstraint> getPrimaryKey(
+            DatabaseMetaData metaData, String database, String schema, String table)
+            throws SQLException {
+        if (isMySQLMode()) {
+            return super.getPrimaryKey(metaData, database, null, table);
+        } else {
+            return super.getPrimaryKey(metaData, null, database, table);
         }
     }
 
-    private String getDriverVersion() {
-        try (TemporaryClassLoaderContext ignored =
-                TemporaryClassLoaderContext.of(userClassLoader)) {
-            try (Connection conn = DriverManager.getConnection(defaultUrl, connectionProperties)) {
-                String driverVersion = conn.getMetaData().getDriverVersion();
-                Pattern regexp = Pattern.compile("\\d+?\\.\\d+?\\.\\d+");
-                Matcher matcher = regexp.matcher(driverVersion);
-                return matcher.find() ? matcher.group(0) : null;
-            } catch (Exception e) {
-                throw new CatalogException(
-                        String.format("Failed in getting MySQL driver version by %s.", defaultUrl),
-                        e);
-            }
-        }
+    @Override
+    protected Map<String, String> getOptions(ObjectPath tablePath) {
+        Map<String, String> options = super.getOptions(tablePath);
+        options.put(JdbcConnectorOptions.COMPATIBLE_MODE.key(), compatibleMode);
+        return options;
     }
 
-    /** Converts MySQL type to Flink {@link DataType}. */
+    /** Converts OceanBase type to Flink {@link DataType}. */
     @Override
     protected DataType fromJDBCType(ObjectPath tablePath, ResultSetMetaData metadata, int colIndex)
             throws SQLException {
@@ -180,7 +170,7 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
 
     @Override
     protected String getSchemaName(ObjectPath tablePath) {
-        return tablePath.getDatabaseName();
+        return null;
     }
 
     @Override

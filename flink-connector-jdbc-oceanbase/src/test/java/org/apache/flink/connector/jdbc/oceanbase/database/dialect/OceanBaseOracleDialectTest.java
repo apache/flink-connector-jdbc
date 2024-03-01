@@ -20,6 +20,8 @@ package org.apache.flink.connector.jdbc.oceanbase.database.dialect;
 
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectTest;
 import org.apache.flink.connector.jdbc.oceanbase.OceanBaseOracleTestBase;
+import org.apache.flink.connector.jdbc.oceanbase.testutils.OceanBaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 
 import java.util.Arrays;
 import java.util.List;
@@ -36,6 +38,20 @@ class OceanBaseOracleDialectTest extends JdbcDialectTest implements OceanBaseOra
                         + "  'table-name'='myTable',"
                         + "  'compatible-mode'='oracle'"
                         + ")";
+    }
+
+    @Override
+    public DatabaseMetadata getMetadata() {
+        OceanBaseMetadata metadata =
+                (OceanBaseMetadata) OceanBaseOracleTestBase.super.getMetadata();
+        return metadata.getJdbcUrl() != null
+                ? metadata
+                : new OceanBaseMetadata(
+                        "user",
+                        "password",
+                        "jdbc:oceanbase://host:port/schema",
+                        "com.oceanbase.jdbc.Driver",
+                        "test");
     }
 
     @Override

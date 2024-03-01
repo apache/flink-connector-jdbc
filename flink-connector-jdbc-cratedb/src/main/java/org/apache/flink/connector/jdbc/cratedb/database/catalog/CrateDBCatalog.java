@@ -134,7 +134,8 @@ public class CrateDBCatalog extends PostgresCatalog {
         }
 
         String searchPath =
-                extractColumnValuesBySQL(baseUrl + DEFAULT_DATABASE, "show search_path", 1, null)
+                extractColumnValuesBySQL(
+                                getDatabaseUrl(DEFAULT_DATABASE), "show search_path", 1, null)
                         .get(0);
         String[] schemas = searchPath.split("\\s*,\\s*");
 
