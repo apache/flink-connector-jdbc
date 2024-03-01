@@ -28,11 +28,18 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import java.sql.Connection;
 import java.sql.Statement;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 /** OceanBase database for testing. */
 public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseImages {
 
     private static final Logger LOG = LoggerFactory.getLogger(OceanBaseDatabase.class);
+
+    private static final String ZONE_OFFSET =
+            DateTimeFormatter.ofPattern("xxx")
+                    .format(ZoneId.systemDefault().getRules().getOffset(Instant.now()));
 
     private static final OceanBaseContainer CONTAINER =
             new OceanBaseContainer(OCEANBASE_CE_4)
@@ -40,7 +47,10 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
                     .withEnv("FASTBOOT", "true")
                     .withEnv("OB_DATAFILE_SIZE", "1G")
                     .withEnv("OB_LOG_DISK_SIZE", "4G")
+                    .withUrlParam("serverTimezone", ZONE_OFFSET)
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
+
+    private static final String PASSWORD = "1234567";
 
     private static OceanBaseMetadata metadata;
 
@@ -49,7 +59,13 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
             throw new FlinkRuntimeException("Container is stopped.");
         }
         if (metadata == null) {
-            metadata = new OceanBaseMetadata(CONTAINER);
+            metadata =
+                    new OceanBaseMetadata(
+                            CONTAINER.getUsername(),
+                            PASSWORD,
+                            CONTAINER.getJdbcUrl(),
+                            CONTAINER.getDriverClassName(),
+                            CONTAINER.getDockerImageName());
         }
         return metadata;
     }
@@ -57,9 +73,10 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
     @Override
     protected DatabaseMetadata startDatabase() throws Exception {
         CONTAINER.start();
-        try (Connection connection = getMetadata().getConnection();
+        try (Connection connection = CONTAINER.createConnection("");
                 Statement statement = connection.createStatement()) {
-            statement.execute("SET GLOBAL time_zone = '+00:00'");
+            statement.execute(String.format("SET GLOBAL time_zone = '%s'", ZONE_OFFSET));
+            statement.execute(String.format("ALTER USER root IDENTIFIED BY '%s'", PASSWORD));
         }
         return getMetadata();
     }

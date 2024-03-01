@@ -31,14 +31,6 @@ public class OceanBaseMetadata implements DatabaseMetadata {
     private final String driver;
     private final String version;
 
-    public OceanBaseMetadata(OceanBaseContainer container) {
-        this.username = container.getUsername();
-        this.password = container.getPassword();
-        this.url = container.getJdbcUrl();
-        this.driver = container.getDriverClassName();
-        this.version = container.getDockerImageName();
-    }
-
     public OceanBaseMetadata(
             String username, String password, String url, String driver, String version) {
         this.username = username;

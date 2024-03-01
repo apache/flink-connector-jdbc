@@ -69,7 +69,10 @@ public class OceanBaseRowConverter extends AbstractJdbcRowConverter {
             case SMALLINT:
                 return val -> val instanceof Number ? ((Number) val).shortValue() : val;
             case INTEGER:
-                return val -> val instanceof Number ? ((Number) val).intValue() : val;
+                return val ->
+                        val instanceof Number
+                                ? ((Number) val).intValue()
+                                : val instanceof Date ? ((Date) val).toLocalDate().getYear() : val;
             case BIGINT:
                 return val -> val instanceof Number ? ((Number) val).longValue() : val;
             case DECIMAL:

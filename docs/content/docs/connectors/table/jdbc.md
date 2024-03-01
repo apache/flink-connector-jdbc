@@ -441,10 +441,9 @@ JDBC Catalog
 
 The `JdbcCatalog` enables users to connect Flink to relational databases over JDBC protocol.
 
-Currently, there are two JDBC catalog implementations, Postgres Catalog and MySQL Catalog. They support the following catalog methods. Other methods are currently not supported.
+Currently, there are following JDBC catalog implementations: Postgres Catalog, MySQL Catalog, CrateDB Catalog and OceanBase Catalog. They support the following catalog methods. Other methods are currently not supported.
 
 ```java
-// The supported methods by Postgres & MySQL Catalog.
 databaseExists(String databaseName);
 listDatabases();
 getDatabase(String databaseName);
@@ -457,17 +456,19 @@ Other `Catalog` methods are currently not supported.
 
 ### Usage of JDBC Catalog
 
-The section mainly describes how to create and use a Postgres Catalog or MySQL Catalog.
+The section mainly describes how to create and use a Jdbc Catalog.
 Please refer to [Dependencies](#dependencies) section for how to setup a JDBC connector and the corresponding driver.
 
 The JDBC catalog supports the following options:
 - `name`: required, name of the catalog.
 - `default-database`: required, default database to connect to.
-- `username`: required, username of Postgres/MySQL account.
+- `username`: required, username of database account.
 - `password`: required, password of the account.
 - `base-url`: required (should not contain the database name)
   - for Postgres Catalog this should be `"jdbc:postgresql://<ip>:<port>"`
   - for MySQL Catalog this should be `"jdbc:mysql://<ip>:<port>"`
+  - for OceanBase Catalog this should be `jdbc:oceanbase://<ip>:<port>`
+- `compatible-mode`: optional, the compatible mode of database.
 
 {{< tabs "10bd8bfb-674c-46aa-8a36-385537df5791" >}}
 {{< tab "SQL" >}}
@@ -652,6 +653,37 @@ SELECT * FROM test_table;
 SELECT * FROM mycatalog.crate.`custom_schema.test_table2`
 SELECT * FROM crate.`custom_schema.test_table2`;
 SELECT * FROM `custom_schema.test_table2`;
+```
+
+### JDBC Catalog for OceanBase
+
+#### OceanBase Metaspace Mapping
+
+OceanBase database supports multiple tenant management, and each tenant can work at MySQL compatible mode or Oracle compatible mode. On MySQL mode of OceanBase, there are databases and tables but no schema in one tenant, these objects just like databases and tables in the MySQL database. On Oracle mode of OceanBase, there are schemas and tables but no database in one tenant, these objects just like schemas and tables in the Oracle database.
+
+In Flink, when querying tables registered by OceanBase Catalog, users can use either `database.table_name` or just `table_name` on OceanBase MySQL mode, or use either `schema.table_name` or just `table_name` on OceanBase Oracle mode.
+
+Therefore, the metaspace mapping between Flink Catalog and OceanBase is as following:
+
+| Flink Catalog Metaspace Structure    | OceanBase Metaspace Structure (MySQL Mode) | OceanBase Metaspace Structure (Oracle Mode) |
+|:-------------------------------------|:-------------------------------------------|---------------------------------------------|
+| catalog name (defined in Flink only) | N/A                                        | N/A                                         |
+| database name                        | database name                              | schema name                                 |
+| table name                           | table name                                 | table name                                  |
+
+The full path of OceanBase table in Flink should be "`<catalog>`.`<db or schema>`.`<table>`".
+
+Here are some examples to access OceanBase tables:
+
+```sql
+-- scan table 'test_table', the default database or schema is 'mydb'.
+SELECT * FROM mysql_catalog.mydb.test_table;
+SELECT * FROM mydb.test_table;
+SELECT * FROM test_table;
+
+-- scan table 'test_table' with the given database or schema.
+SELECT * FROM mysql_catalog.given_database.test_table2;
+SELECT * FROM given_database.test_table2;
 ```
 
 Data Type Mapping
