@@ -53,6 +53,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.COMPATIBLE_MODE;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.DRIVER;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.LOOKUP_CACHE_MAX_ROWS;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.LOOKUP_CACHE_MISSING_KEY;
@@ -92,7 +93,10 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         helper.validate();
         validateConfigOptions(config, context.getClassLoader());
         validateDataTypeWithJdbcDialect(
-                context.getPhysicalRowDataType(), config.get(URL), context.getClassLoader());
+                context.getPhysicalRowDataType(),
+                config.get(URL),
+                config.get(COMPATIBLE_MODE),
+                context.getClassLoader());
         InternalJdbcConnectionOptions jdbcOptions =
                 getJdbcOptions(config, context.getClassLoader());
 
@@ -116,6 +120,10 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         validateConfigOptions(config, context.getClassLoader());
         DataType physicalRowDataType = context.getPhysicalRowDataType();
         validateDataTypeWithJdbcDialect(
+                context.getPhysicalRowDataType(),
+                config.get(URL),
+                config.get(COMPATIBLE_MODE),
+                context.getClassLoader());
                 physicalRowDataType, config.get(URL), context.getClassLoader());
         return new JdbcDynamicTableSource(
                 getJdbcOptions(helper.getOptions(), context.getClassLoader()),
@@ -126,8 +134,8 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
     }
 
     private static void validateDataTypeWithJdbcDialect(
-            DataType dataType, String url, ClassLoader classLoader) {
-        final JdbcDialect dialect = JdbcDialectLoader.load(url, classLoader);
+            DataType dataType, String url, String compatibleMode, ClassLoader classLoader) {
+        final JdbcDialect dialect = JdbcDialectLoader.load(url, compatibleMode, classLoader);
         dialect.validate((RowType) dataType.getLogicalType());
     }
 
@@ -139,7 +147,9 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
                         .setClassLoader(classLoader)
                         .setDBUrl(url)
                         .setTableName(readableConfig.get(TABLE_NAME))
-                        .setDialect(JdbcDialectLoader.load(url, classLoader))
+                        .setDialect(
+                                JdbcDialectLoader.load(
+                                        url, readableConfig.get(COMPATIBLE_MODE), classLoader))
                         .setParallelism(readableConfig.getOptional(SINK_PARALLELISM).orElse(null))
                         .setConnectionCheckTimeoutSeconds(
                                 (int) readableConfig.get(MAX_RETRY_TIMEOUT).getSeconds());
@@ -147,6 +157,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         readableConfig.getOptional(DRIVER).ifPresent(builder::setDriverName);
         readableConfig.getOptional(USERNAME).ifPresent(builder::setUsername);
         readableConfig.getOptional(PASSWORD).ifPresent(builder::setPassword);
+        readableConfig.getOptional(COMPATIBLE_MODE).ifPresent(builder::setCompatibleMode);
         return builder.build();
     }
 
@@ -239,6 +250,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
     public Set<ConfigOption<?>> optionalOptions() {
         Set<ConfigOption<?>> optionalOptions = new HashSet<>();
         optionalOptions.add(DRIVER);
+        optionalOptions.add(COMPATIBLE_MODE);
         optionalOptions.add(USERNAME);
         optionalOptions.add(PASSWORD);
         optionalOptions.add(SCAN_PARTITION_COLUMN);
@@ -273,6 +285,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
                         USERNAME,
                         PASSWORD,
                         DRIVER,
+                        COMPATIBLE_MODE,
                         SINK_BUFFER_FLUSH_MAX_ROWS,
                         SINK_BUFFER_FLUSH_INTERVAL,
                         SINK_MAX_RETRIES,
@@ -284,7 +297,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
 
     private void validateConfigOptions(ReadableConfig config, ClassLoader classLoader) {
         String jdbcUrl = config.get(URL);
-        JdbcDialectLoader.load(jdbcUrl, classLoader);
+        JdbcDialectLoader.load(jdbcUrl, config.get(COMPATIBLE_MODE), classLoader);
 
         checkAllOrNone(config, new ConfigOption[] {USERNAME, PASSWORD});
 
