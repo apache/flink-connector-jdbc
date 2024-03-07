@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.cratedb;
+package org.apache.flink.connector.jdbc.databases.cratedb.dialect;
 
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
 
