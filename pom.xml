@@ -22,7 +22,7 @@ under the License.
     <parent>
         <groupId>org.apache.flink</groupId>
         <artifactId>flink-connector-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -66,6 +66,7 @@ under the License.
         <!-- These 2 properties should be removed together with upgrade of flink-connector-parent to 1.1.x -->
         <flink.surefire.baseArgLine>-XX:+UseG1GC -Xms256m -XX:+IgnoreUnrecognizedVMOptions ${surefire.module.config}</flink.surefire.baseArgLine>
         <surefire.module.config/>
+        <spotless.skip>false</spotless.skip>
     </properties>
 
     <dependencies>
@@ -426,5 +427,32 @@ under the License.
                 <artifactId>directory-maven-plugin</artifactId>
             </plugin>
         </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <configuration>
+                        <skip>${spotless.skip}</skip>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>java21</id>
+            <activation>
+                <jdk>[21,)</jdk>
+            </activation>
+            <properties>
+                <!-- Current google format does not run on Java 21.
+                     Don't upgrade it in this profile because it formats code differently.
+                     Re-evaluate once support for Java 8 is dropped. -->
+                <spotless.skip>true</spotless.skip>
+            </properties>
+        </profile>
+    </profiles>
 </project>
