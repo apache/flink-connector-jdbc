@@ -20,8 +20,7 @@ package org.apache.flink.connector.jdbc.datasource.connections.xa;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.EmptyTransactionXaException;
-import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.XaErrorMessage;
-import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.XaException;
+import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.XaError;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
@@ -263,7 +262,7 @@ public class SimpleXaConnectionProvider implements XaConnectionProvider {
         try {
             return cmd.execute();
         } catch (XAException e) {
-            if (XaException.isHeurErrorCode(e.errorCode)) {
+            if (XaError.isHeurErrorCode(e.errorCode)) {
                 cmd.getXid().ifPresent(this::forget);
             }
             return cmd.recover(e);
@@ -275,15 +274,15 @@ public class SimpleXaConnectionProvider implements XaConnectionProvider {
     }
 
     private static FlinkRuntimeException wrapException(String action, Xid xid, Exception ex) {
-        return XaException.wrapException(action, xid, ex);
+        return XaError.wrapException(action, xid, ex);
     }
 
     private Optional<String> buildCommitErrorDesc(XAException err, boolean ignoreUnknown) {
-        return XaErrorMessage.buildCommitErrorDesc(err, ignoreUnknown);
+        return XaError.buildCommitErrorDesc(err, ignoreUnknown);
     }
 
     private Optional<String> buildRollbackErrorDesc(XAException err) {
-        return XaErrorMessage.buildRollbackErrorDesc(err);
+        return XaError.buildRollbackErrorDesc(err);
     }
 
     private static String formatErrorMessage(String action, Xid xid, String... more) {
@@ -292,6 +291,6 @@ public class SimpleXaConnectionProvider implements XaConnectionProvider {
 
     private static String formatErrorMessage(
             String action, Xid xid, Integer errorCode, String... more) {
-        return XaErrorMessage.errorMessage(action, xid, errorCode, more);
+        return XaError.errorMessage(action, xid, errorCode, more);
     }
 }

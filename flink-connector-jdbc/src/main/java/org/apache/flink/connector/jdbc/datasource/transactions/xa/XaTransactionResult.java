@@ -1,5 +1,6 @@
 package org.apache.flink.connector.jdbc.datasource.transactions.xa;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.TransientXaException;
 import org.apache.flink.util.FlinkRuntimeException;
 
@@ -7,7 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** @param <T> */
+/** The result of the XA transaction. */
+@Internal
 public class XaTransactionResult<T> {
     private final List<T> succeeded = new ArrayList<>();
     private final List<T> failed = new ArrayList<>();

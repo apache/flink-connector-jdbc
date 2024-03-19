@@ -30,5 +30,5 @@ import java.sql.SQLException;
 public interface JdbcQueryStatement<T> extends Serializable {
     String query();
 
-    void map(PreparedStatement ps, T data) throws SQLException;
+    void statement(PreparedStatement ps, T record) throws SQLException;
 }

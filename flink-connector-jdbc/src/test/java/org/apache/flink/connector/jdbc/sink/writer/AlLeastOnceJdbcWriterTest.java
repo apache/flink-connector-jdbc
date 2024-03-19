@@ -15,7 +15,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** */
+/** Smoke tests for the {@link JdbcWriter} with AtLeastOnce semantics and the underlying classes. */
 class AlLeastOnceJdbcWriterTest extends BaseJdbcWriterTest {
 
     @Override

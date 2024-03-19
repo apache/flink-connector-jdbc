@@ -1,7 +1,6 @@
 package org.apache.flink.connector.jdbc.datasource.connections.xa;
 
-import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.XaErrorMessage;
-import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.XaException;
+import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.XaError;
 import org.apache.flink.util.function.ThrowingRunnable;
 
 import org.slf4j.Logger;
@@ -45,7 +44,7 @@ class XaCommand<T> {
                 xid,
                 runnable,
                 e -> {
-                    throw XaException.wrapException(action, xid, e);
+                    throw XaError.wrapException(action, xid, e);
                 });
     }
 
@@ -60,14 +59,14 @@ class XaCommand<T> {
                 runnable,
                 e ->
                         LOG.warn(
-                                XaErrorMessage.errorMessage(
+                                XaError.errorMessage(
                                         action,
                                         xid,
                                         e.errorCode,
                                         err2msg.apply(e)
                                                 .orElseThrow(
                                                         () ->
-                                                                XaException.wrapException(
+                                                                XaError.wrapException(
                                                                         action, xid, e)))));
     }
 
@@ -107,6 +106,6 @@ class XaCommand<T> {
     public T recover(XAException e) {
         return this.recover
                 .apply(e)
-                .orElseThrow(() -> XaException.wrapException(this.name, this.xid, e));
+                .orElseThrow(() -> XaError.wrapException(this.name, this.xid, e));
     }
 }

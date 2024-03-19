@@ -9,7 +9,7 @@ import javax.transaction.xa.Xid;
 import java.io.Serializable;
 import java.util.Optional;
 
-/** */
+/** A pair of Xid and transaction that can be committed. */
 @Internal
 public class JdbcCommitable implements Serializable {
 

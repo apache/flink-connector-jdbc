@@ -1,12 +1,14 @@
 package org.apache.flink.connector.jdbc.xa;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.connector.sink2.Sink;
 
 import java.io.Serializable;
 
-/** */
-public class JobSubtask implements Serializable {
+/** Job identifier. */
+@Internal
+class JobSubtask implements Serializable {
 
     private final byte[] jobId;
     private final int subtaskId;

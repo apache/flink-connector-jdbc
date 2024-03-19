@@ -14,7 +14,7 @@ import org.apache.flink.util.FlinkRuntimeException;
 import java.io.IOException;
 import java.util.Collection;
 
-/** */
+/** The responsible for committing the {@link JdbcCommitable}. */
 @Internal
 public class JdbcCommitter implements Committer<JdbcCommitable> {
 

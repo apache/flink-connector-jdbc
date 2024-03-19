@@ -1,5 +1,6 @@
 package org.apache.flink.connector.jdbc.datasource.transactions.xa;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.XaConnectionProvider;
@@ -24,7 +25,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-/** */
+/** Class that manages all relevant XA operations. */
+@Internal
 public class XaTransaction implements Serializable, AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(XaTransaction.class);

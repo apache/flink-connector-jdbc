@@ -40,7 +40,7 @@ public class SimpleJdbcQueryStatement<IN> implements JdbcQueryStatement<IN> {
     }
 
     @Override
-    public void map(PreparedStatement ps, IN data) throws SQLException {
+    public void statement(PreparedStatement ps, IN data) throws SQLException {
         statement.accept(ps, data);
     }
 }

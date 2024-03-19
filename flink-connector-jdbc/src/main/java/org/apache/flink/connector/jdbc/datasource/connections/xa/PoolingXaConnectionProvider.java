@@ -51,11 +51,12 @@ import static org.apache.flink.util.Preconditions.checkState;
 public class PoolingXaConnectionProvider implements XaConnectionProvider {
     private static final long serialVersionUID = 1L;
 
-    /** */
-    public interface FacadeSupplier extends Serializable, Supplier<XaConnectionProvider> {}
+    /** A supplier of connection provider. */
+    public interface ConnectionProviderSupplier
+            extends Serializable, Supplier<XaConnectionProvider> {}
 
     private static final Logger LOG = LoggerFactory.getLogger(PoolingXaConnectionProvider.class);
-    private final FacadeSupplier facadeSupplier;
+    private final ConnectionProviderSupplier providerSupplier;
     private transient XaConnectionProvider active;
     private transient Map<Xid, XaConnectionProvider> mappedToXids;
     private transient Deque<XaConnectionProvider> pooled;
@@ -65,12 +66,12 @@ public class PoolingXaConnectionProvider implements XaConnectionProvider {
         return from(() -> SimpleXaConnectionProvider.from(dataSourceSupplier, timeoutSec));
     }
 
-    public static PoolingXaConnectionProvider from(FacadeSupplier facadeSupplier) {
+    public static PoolingXaConnectionProvider from(ConnectionProviderSupplier facadeSupplier) {
         return new PoolingXaConnectionProvider(facadeSupplier);
     }
 
-    private PoolingXaConnectionProvider(FacadeSupplier facadeSupplier) {
-        this.facadeSupplier = facadeSupplier;
+    private PoolingXaConnectionProvider(ConnectionProviderSupplier facadeSupplier) {
+        this.providerSupplier = facadeSupplier;
     }
 
     @Override
@@ -89,7 +90,7 @@ public class PoolingXaConnectionProvider implements XaConnectionProvider {
     public void start(Xid xid) throws Exception {
         checkState(active == null);
         if (pooled.isEmpty()) {
-            active = facadeSupplier.get();
+            active = providerSupplier.get();
             active.open();
         } else {
             active = pooled.poll();
@@ -194,7 +195,7 @@ public class PoolingXaConnectionProvider implements XaConnectionProvider {
     private XaConnectionProvider peekPooled() {
         XaConnectionProvider xaFacade = pooled.peek();
         if (xaFacade == null) {
-            xaFacade = facadeSupplier.get();
+            xaFacade = providerSupplier.get();
             try {
                 xaFacade.open();
             } catch (Exception e) {

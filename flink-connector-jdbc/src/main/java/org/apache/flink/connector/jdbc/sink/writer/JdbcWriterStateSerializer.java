@@ -44,13 +44,12 @@ public class JdbcWriterStateSerializer implements SimpleVersionedSerializer<Jdbc
 
     @Override
     public JdbcWriterState deserialize(int version, byte[] serialized) throws IOException {
-        final DataInputDeserializer in = new DataInputDeserializer(serialized);
-
         if (version == getVersion()) {
+            final DataInputDeserializer in = new DataInputDeserializer(serialized);
             return deserializeV2(in);
         }
 
-        LOG.error("Unknown version of state: " + version);
+        LOG.error("Unknown version of state: {}", version);
         return JdbcWriterState.empty();
     }
 

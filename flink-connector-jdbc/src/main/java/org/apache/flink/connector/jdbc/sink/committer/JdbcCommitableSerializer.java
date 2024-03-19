@@ -11,7 +11,7 @@ import javax.transaction.xa.Xid;
 
 import java.io.IOException;
 
-/** */
+/** {@link JdbcCommitable} serializer. */
 @Internal
 public class JdbcCommitableSerializer implements SimpleVersionedSerializer<JdbcCommitable> {
 

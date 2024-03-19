@@ -1,5 +1,6 @@
 package org.apache.flink.connector.jdbc.datasource.transactions.xa.domain;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import static org.apache.flink.util.StringUtils.byteToHexString;
 
 /** A simple {@link Xid} implementation. */
+@Internal
 public class TransactionId implements Xid, Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -99,7 +101,7 @@ public class TransactionId implements Xid, Serializable {
             int attempts = in.readInt();
             return restore(jobIdBytes, subtaskId, numberOfSubtasks, checkpoint, attempts);
         } catch (IOException e) {
-            throw new FlinkRuntimeException(e.getLocalizedMessage());
+            throw new FlinkRuntimeException(e);
         }
     }
 
@@ -158,7 +160,7 @@ public class TransactionId implements Xid, Serializable {
             out.writeInt(subtaskId);
             return out.getSharedBuffer();
         } catch (IOException e) {
-            throw new FlinkRuntimeException(e.getLocalizedMessage());
+            throw new FlinkRuntimeException(e);
         }
     }
 
@@ -172,7 +174,7 @@ public class TransactionId implements Xid, Serializable {
             out.writeLong(checkpointId);
             return out.getSharedBuffer();
         } catch (IOException e) {
-            throw new FlinkRuntimeException(e.getLocalizedMessage());
+            throw new FlinkRuntimeException(e);
         }
     }
 
@@ -186,7 +188,7 @@ public class TransactionId implements Xid, Serializable {
             out.writeInt(attempts);
             return out.getSharedBuffer();
         } catch (IOException e) {
-            throw new FlinkRuntimeException(e.getLocalizedMessage());
+            throw new FlinkRuntimeException(e);
         }
     }
 

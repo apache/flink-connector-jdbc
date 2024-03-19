@@ -16,7 +16,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** */
+/** Smoke tests for the {@link JdbcWriter} with ExactlyOnce semantics and the underlying classes. */
 class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
 
     @Override

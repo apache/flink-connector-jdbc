@@ -10,6 +10,7 @@ import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/** Smoke test for {@link JdbcWriterStateSerializer}. */
 class JdbcWriterStateSerializerTest {
 
     @Test

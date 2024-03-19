@@ -49,7 +49,10 @@ import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 import static org.apache.flink.util.Preconditions.checkState;
 
-/** @param <IN> */
+/**
+ * Jdbc writer that allow at-least-once (non-XA operation) and exactly-once (XA operation)
+ * semantics.
+ */
 @Internal
 public class JdbcWriter<IN>
         implements StatefulSink.StatefulSinkWriter<IN, JdbcWriterState>,
@@ -59,8 +62,6 @@ public class JdbcWriter<IN>
 
     private final DeliveryGuarantee deliveryGuarantee;
     private final JdbcOutputFormat<IN, IN, JdbcBatchStatementExecutor<IN>> jdbcOutput;
-
-    private final TransactionId transactionId;
 
     private XaTransaction jdbcTransaction;
     private long lastCheckpointId;
@@ -81,11 +82,7 @@ public class JdbcWriter<IN>
                 checkNotNull(deliveryGuarantee, "deliveryGuarantee must be defined");
 
         checkNotNull(initContext, "initContext must be defined");
-        this.transactionId =
-                TransactionId.create(
-                        initContext.getJobId().getBytes(),
-                        initContext.getSubtaskId(),
-                        initContext.getNumberOfParallelSubtasks());
+
         pendingRecords = false;
         this.lastCheckpointId =
                 initContext
@@ -107,6 +104,12 @@ public class JdbcWriter<IN>
             JdbcWriterState state =
                     recoveredState.stream().findFirst().orElse(JdbcWriterState.empty());
 
+            TransactionId transactionId =
+                    TransactionId.create(
+                            initContext.getJobId().getBytes(),
+                            initContext.getSubtaskId(),
+                            initContext.getNumberOfParallelSubtasks());
+
             this.jdbcTransaction =
                     new XaTransaction(
                             exactlyOnceOptions,
@@ -124,7 +127,7 @@ public class JdbcWriter<IN>
                         executionOptions,
                         () ->
                                 JdbcBatchStatementExecutor.simple(
-                                        queryStatement.query(), queryStatement::map));
+                                        queryStatement.query(), queryStatement::statement));
         this.jdbcOutput.open(outputSerializer);
     }
 

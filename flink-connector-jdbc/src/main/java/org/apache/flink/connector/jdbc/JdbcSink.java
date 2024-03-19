@@ -108,7 +108,7 @@ public class JdbcSink {
                 exactlyOnceOptions);
     }
 
-    public static <IN> JdbcSinkBuilder<IN> newSink() {
+    public static <IN> JdbcSinkBuilder<IN> builder() {
         return org.apache.flink.connector.jdbc.sink.JdbcSink.builder();
     }
 
