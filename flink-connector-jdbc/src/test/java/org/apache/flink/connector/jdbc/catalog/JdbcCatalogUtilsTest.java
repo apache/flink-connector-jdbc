@@ -27,9 +27,12 @@ class JdbcCatalogUtilsTest {
 
     @Test
     void testJdbcUrl() {
-        JdbcCatalogUtils.validateJdbcUrl("jdbc:postgresql://localhost:5432/");
+        JdbcCatalogUtils.validateJdbcUrl("jdbc:postgresql://localhost:5432/", null);
 
-        JdbcCatalogUtils.validateJdbcUrl("jdbc:postgresql://localhost:5432");
+        JdbcCatalogUtils.validateJdbcUrl("jdbc:postgresql://localhost:5432", null);
+        JdbcCatalogUtils.validateJdbcUrl(
+                "jdbc:postgres://demo-postgresql.example.com:18025/defaultdb?sslmode=require",
+                "defaultdb");
     }
 
     @Test
@@ -37,7 +40,7 @@ class JdbcCatalogUtilsTest {
         assertThatThrownBy(
                         () ->
                                 JdbcCatalogUtils.validateJdbcUrl(
-                                        "jdbc:postgresql://localhost:5432/db"))
+                                        "jdbc:postgresql://localhost:5432/db", null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

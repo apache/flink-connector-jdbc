@@ -27,18 +27,30 @@ import org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialec
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
 
+import java.util.Objects;
+
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /** Utils for {@link JdbcCatalog}. */
 public class JdbcCatalogUtils {
     /**
-     * URL has to be without database, like "jdbc:postgresql://localhost:5432/" or
-     * "jdbc:postgresql://localhost:5432" rather than "jdbc:postgresql://localhost:5432/db".
+     * URL has to be either without database, like "jdbc:postgresql://localhost:5432/" or
+     * "jdbc:postgresql://localhost:5432" rather than "jdbc:postgresql://localhost:5432/db" or with
+     * same database name as at @param databaseName.
      */
-    public static void validateJdbcUrl(String url) {
-        String[] parts = url.trim().split("\\/+");
-
-        checkArgument(parts.length == 2);
+    public static void validateJdbcUrl(String url, String databaseName) {
+        String trimmedUrl = url.trim();
+        String[] parts = trimmedUrl.split("\\/+", 3);
+        int questionMark = trimmedUrl.indexOf('?');
+        if (questionMark == -1) {
+            checkArgument(parts.length == 2 || parts.length == 3 && parts[2].isEmpty());
+        } else {
+            checkArgument(parts.length > 2);
+            questionMark = parts[2].indexOf('?');
+            checkArgument(
+                    questionMark > -1
+                            && Objects.equals(parts[2].substring(0, questionMark), databaseName));
+        }
     }
 
     /** Create catalog instance from given information. */

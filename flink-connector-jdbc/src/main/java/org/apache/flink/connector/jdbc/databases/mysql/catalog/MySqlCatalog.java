@@ -99,7 +99,7 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
         }
 
         return extractColumnValuesBySQL(
-                baseUrl + databaseName,
+                urlFunction.apply(databaseName),
                 "SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_SCHEMA = ?",
                 1,
                 null,
