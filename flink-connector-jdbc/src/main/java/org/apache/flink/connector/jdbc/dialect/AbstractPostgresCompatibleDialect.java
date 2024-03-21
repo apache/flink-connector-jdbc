@@ -56,6 +56,7 @@ public abstract class AbstractPostgresCompatibleDialect extends AbstractDialect 
                         .collect(Collectors.joining(", "));
         String updateClause =
                 Arrays.stream(fieldNames)
+                        .filter(f -> !Arrays.asList(uniqueKeyFields).contains(f))
                         .map(f -> quoteIdentifier(f) + "=EXCLUDED." + quoteIdentifier(f))
                         .collect(Collectors.joining(", "));
         return Optional.of(
