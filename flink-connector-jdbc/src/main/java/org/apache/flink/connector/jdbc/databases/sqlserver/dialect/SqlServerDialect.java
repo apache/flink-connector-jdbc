@@ -24,6 +24,8 @@ import org.apache.flink.connector.jdbc.dialect.AbstractDialect;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -64,7 +66,7 @@ public class SqlServerDialect extends AbstractDialect {
 
     @Override
     public String quoteIdentifier(String identifier) {
-        return identifier;
+        return "[" + identifier + "]";
     }
 
     @Override
@@ -108,21 +110,22 @@ public class SqlServerDialect extends AbstractDialect {
                 Arrays.stream(fieldNames)
                         .map(f -> "[SOURCE]." + quoteIdentifier(f))
                         .collect(Collectors.joining(", "));
-        return Optional.of(
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(
                 String.format(
-                        "MERGE INTO %s AS [TARGET]"
-                                + " USING (%s) AS [SOURCE]"
-                                + " ON (%s)"
-                                + " WHEN MATCHED THEN"
-                                + " UPDATE SET %s"
-                                + " WHEN NOT MATCHED THEN"
-                                + " INSERT (%s) VALUES (%s);",
-                        quoteIdentifier(tableName),
-                        usingClause,
-                        onConditions,
-                        updateSetClause,
-                        fieldsProjection,
-                        insertValues));
+                        "MERGE INTO %s AS [TARGET] USING (%s) AS [SOURCE] ON (%s)",
+                        quoteIdentifier(tableName), usingClause, onConditions));
+        if (StringUtils.isNotEmpty(updateSetClause)) {
+            sb.append(String.format(" WHEN MATCHED THEN UPDATE SET %s", updateSetClause));
+        }
+
+        sb.append(
+                String.format(
+                        " WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);",
+                        fieldsProjection, insertValues));
+
+        return Optional.of(sb.toString());
     }
 
     @Override
