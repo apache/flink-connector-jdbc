@@ -18,6 +18,8 @@
 package org.apache.flink.connector.jdbc.internal.connection;
 
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
+import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.fakedb.FakeDBUtils;
 import org.apache.flink.connector.jdbc.fakedb.driver.FakeConnection;
 import org.apache.flink.connector.jdbc.fakedb.driver.FakeConnection1;

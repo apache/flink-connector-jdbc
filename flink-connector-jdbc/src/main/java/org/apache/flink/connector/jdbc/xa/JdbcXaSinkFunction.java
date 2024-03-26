@@ -238,7 +238,7 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
             // should be rolled back. However, rolling back ALL transactions can cause data loss. So
             // each subtask first commits transactions from its state and then rolls back discovered
             // transactions if they belong to it.
-            xaGroupOps.recoverAndRollback(getRuntimeContext(), xidGenerator);
+            xaGroupOps.recoverAndRollback(JobSubtask.of(getRuntimeContext()), xidGenerator);
         }
         beginTx(0L);
         // open format only after starting the transaction so it gets a ready to  use connection
@@ -310,7 +310,7 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
     /** @param checkpointId to associate with the new transaction. */
     private void beginTx(long checkpointId) throws Exception {
         Preconditions.checkState(currentXid == null, "currentXid not null");
-        currentXid = xidGenerator.generateXid(getRuntimeContext(), checkpointId);
+        currentXid = xidGenerator.generateXid(JobSubtask.of(getRuntimeContext()), checkpointId);
         hangingXids.offerLast(currentXid);
         xaFacade.start(currentXid);
         if (checkpointId > 0) {
