@@ -41,7 +41,7 @@ class SqlServerPreparedStatementTest {
         String insertStmt = dialect.getInsertIntoStatement(tableName, fieldNames);
         assertThat(insertStmt)
                 .isEqualTo(
-                        "INSERT INTO tbl(id, name, email, ts, field1, field_2, __field_3__) "
+                        "INSERT INTO [tbl]([id], [name], [email], [ts], [field1], [field_2], [__field_3__]) "
                                 + "VALUES (:id, :name, :email, :ts, :field1, :field_2, :__field_3__)");
     }
 
@@ -49,14 +49,14 @@ class SqlServerPreparedStatementTest {
     void testDeleteStatement() {
         String deleteStmt = dialect.getDeleteStatement(tableName, keyFields);
         assertThat(deleteStmt)
-                .isEqualTo("DELETE FROM tbl WHERE id = :id AND __field_3__ = :__field_3__");
+                .isEqualTo("DELETE FROM [tbl] WHERE [id] = :id AND [__field_3__] = :__field_3__");
     }
 
     @Test
     void testRowExistsStatement() {
         String rowExistStmt = dialect.getRowExistsStatement(tableName, keyFields);
         assertThat(rowExistStmt)
-                .isEqualTo("SELECT 1 FROM tbl WHERE id = :id AND __field_3__ = :__field_3__");
+                .isEqualTo("SELECT 1 FROM [tbl] WHERE [id] = :id AND [__field_3__] = :__field_3__");
     }
 
     @Test
@@ -64,9 +64,9 @@ class SqlServerPreparedStatementTest {
         String updateStmt = dialect.getUpdateStatement(tableName, fieldNames, keyFields);
         assertThat(updateStmt)
                 .isEqualTo(
-                        "UPDATE tbl SET id = :id, name = :name, email = :email, ts = :ts, "
-                                + "field1 = :field1, field_2 = :field_2, __field_3__ = :__field_3__ "
-                                + "WHERE id = :id AND __field_3__ = :__field_3__");
+                        "UPDATE [tbl] SET [id] = :id, [name] = :name, [email] = :email, [ts] = :ts, "
+                                + "[field1] = :field1, [field_2] = :field_2, [__field_3__] = :__field_3__ "
+                                + "WHERE [id] = :id AND [__field_3__] = :__field_3__");
     }
 
     @Test
@@ -74,13 +74,13 @@ class SqlServerPreparedStatementTest {
         String upsertStmt = dialect.getUpsertStatement(tableName, fieldNames, keyFields).get();
         assertThat(upsertStmt)
                 .isEqualTo(
-                        "MERGE INTO tbl AS [TARGET]"
-                                + " USING (SELECT :id id, :name name, :email email, :ts ts, :field1 field1, :field_2 field_2, :__field_3__ __field_3__) AS [SOURCE]"
-                                + " ON ([TARGET].id=[SOURCE].id AND [TARGET].__field_3__=[SOURCE].__field_3__)"
-                                + " WHEN MATCHED THEN UPDATE SET [TARGET].name=[SOURCE].name, [TARGET].email=[SOURCE].email,"
-                                + " [TARGET].ts=[SOURCE].ts, [TARGET].field1=[SOURCE].field1, [TARGET].field_2=[SOURCE].field_2"
-                                + " WHEN NOT MATCHED THEN INSERT (id, name, email, ts, field1, field_2, __field_3__)"
-                                + " VALUES ([SOURCE].id, [SOURCE].name, [SOURCE].email, [SOURCE].ts, [SOURCE].field1, [SOURCE].field_2, [SOURCE].__field_3__);");
+                        "MERGE INTO [tbl] AS [TARGET]"
+                                + " USING (SELECT :id [id], :name [name], :email [email], :ts [ts], :field1 [field1], :field_2 [field_2], :__field_3__ [__field_3__]) AS [SOURCE]"
+                                + " ON ([TARGET].[id]=[SOURCE].[id] AND [TARGET].[__field_3__]=[SOURCE].[__field_3__])"
+                                + " WHEN MATCHED THEN UPDATE SET [TARGET].[name]=[SOURCE].[name], [TARGET].[email]=[SOURCE].[email],"
+                                + " [TARGET].[ts]=[SOURCE].[ts], [TARGET].[field1]=[SOURCE].[field1], [TARGET].[field_2]=[SOURCE].[field_2]"
+                                + " WHEN NOT MATCHED THEN INSERT ([id], [name], [email], [ts], [field1], [field_2], [__field_3__])"
+                                + " VALUES ([SOURCE].[id], [SOURCE].[name], [SOURCE].[email], [SOURCE].[ts], [SOURCE].[field1], [SOURCE].[field_2], [SOURCE].[__field_3__]);");
     }
 
     @Test
@@ -88,7 +88,7 @@ class SqlServerPreparedStatementTest {
         String selectStmt = dialect.getSelectFromStatement(tableName, fieldNames, keyFields);
         assertThat(selectStmt)
                 .isEqualTo(
-                        "SELECT id, name, email, ts, field1, field_2, __field_3__ FROM tbl "
-                                + "WHERE id = :id AND __field_3__ = :__field_3__");
+                        "SELECT [id], [name], [email], [ts], [field1], [field_2], [__field_3__] FROM [tbl] "
+                                + "WHERE [id] = :id AND [__field_3__] = :__field_3__");
     }
 }

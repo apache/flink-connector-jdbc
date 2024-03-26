@@ -168,4 +168,14 @@ public class JdbcUtils {
         }
         return pkRow;
     }
+
+    public static String handleDoubleQuotes(String identifier) {
+        String[] split = identifier.split("\\.");
+        StringBuilder builder = new StringBuilder();
+        for (String s : split) {
+            builder.append("\"").append(s).append("\"");
+            builder.append(".");
+        }
+        return builder.deleteCharAt(builder.length() - 1).toString();
+    }
 }
