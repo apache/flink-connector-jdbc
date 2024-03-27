@@ -55,8 +55,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
 
     private JdbcRowDataInputFormat inputFormat;
-    private static String[] fieldNames = new String[] {"id", "title", "author", "price", "qty"};
-    private static DataType[] fieldDataTypes =
+    private static final String[] fieldNames =
+            new String[] {"id", "title", "author", "price", "qty"};
+    private static final DataType[] fieldDataTypes =
             new DataType[] {
                 DataTypes.INT(),
                 DataTypes.STRING(),
@@ -240,7 +241,7 @@ class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
         final long min = TEST_DATA[0].id;
         final long max = TEST_DATA[TEST_DATA.length - fetchSize].id;
         JdbcParameterValuesProvider pramProvider =
-                new JdbcNumericBetweenParametersProvider(min, max).ofBatchSize(fetchSize);
+                new JdbcNumericBetweenParametersProvider(min, max, false).ofBatchSize(fetchSize);
         inputFormat =
                 JdbcRowDataInputFormat.builder()
                         .setDrivername(getMetadata().getDriverClass())
@@ -278,7 +279,7 @@ class JdbcRowDataInputFormatTest extends JdbcDataTestBase {
         final long max = TEST_DATA[TEST_DATA.length - 1].id;
         final long fetchSize = max + 1; // generate a single split
         JdbcParameterValuesProvider pramProvider =
-                new JdbcNumericBetweenParametersProvider(min, max).ofBatchSize(fetchSize);
+                new JdbcNumericBetweenParametersProvider(min, max, false).ofBatchSize(fetchSize);
         inputFormat =
                 JdbcRowDataInputFormat.builder()
                         .setDrivername(getMetadata().getDriverClass())

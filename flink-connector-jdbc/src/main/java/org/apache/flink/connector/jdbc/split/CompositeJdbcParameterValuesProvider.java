@@ -30,9 +30,12 @@ public class CompositeJdbcParameterValuesProvider implements JdbcParameterValues
     JdbcParameterValuesProvider b;
 
     public CompositeJdbcParameterValuesProvider(
-            JdbcParameterValuesProvider a, JdbcParameterValuesProvider b) {
+            JdbcParameterValuesProvider a,
+            JdbcParameterValuesProvider b,
+            boolean isPartitionColumnTypeString) {
         Preconditions.checkArgument(
-                a.getParameterValues().length == b.getParameterValues().length,
+                isPartitionColumnTypeString
+                        || a.getParameterValues().length == b.getParameterValues().length,
                 "Both JdbcParameterValuesProvider should have the same length.");
         this.a = a;
         this.b = b;

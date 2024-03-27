@@ -64,6 +64,62 @@ JdbcSink.sink(
 {{< /tab >}}
 {{< /tabs >}}
 
+
+#### 分片读取 字符串列 目前只支持 部分数据库
+<table class="table table-bordered" style="width: 60%">
+    <thead>
+      <tr>
+        <th class="text-left">Support String Split Database</th>
+        <th class="text-left">Slice Read String Grammar</th>
+       </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>MySQL</td>
+            <td>ABS(MD5(`column`) % `number_of_partitions`)</td>
+        </tr>
+        <tr>
+            <td>Oracle</td>
+            <td>MOD(ORA_HASH(`column`) , `number_of_partitions`)</td>
+        <tr>
+            <td>PostgreSQL</td>
+            <td>(ABS(HASHTEXT(`column`)) % `number_of_partitions`)</td>
+        </tr>
+        <tr>
+            <td>MS SQL Server</td>
+            <td>ABS(HASHBYTES('MD5', `column`) % `number_of_partitions`)</td>
+        </tr>
+</table>
+
+<a name="jdbc-catalog"></a>
+### Supports Fragment Read String
+
+```java
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        Serializable[][] queryParameters = new Long[3][1];
+        queryParameters[0] = new Long[]{0L};
+        queryParameters[1] = new Long[]{1L};
+        queryParameters[2] = new Long[]{2L};
+
+        TypeInformation<?>[] fieldTypes = new TypeInformation<?>[]{
+                BasicTypeInfo.INT_TYPE_INFO,
+                BasicTypeInfo.STRING_TYPE_INFO,
+                BasicTypeInfo.INT_TYPE_INFO,
+                BasicTypeInfo.STRING_TYPE_INFO};
+        RowTypeInfo rowTypeInfo = new RowTypeInfo(fieldTypes);
+
+        JdbcInputFormat jdbcInputFormat = JdbcInputFormat.buildJdbcInputFormat()
+                .setDrivername("com.mysql.cj.jdbc.Driver")
+                .setDBUrl("jdbc:mysql://localhost:3306/test")
+                .setUsername("root")
+                .setPassword("12345678")
+                .setPartitionColumnTypeString(true) // When reading string partitioning key must be set to true
+                .setQuery("select * from  fake_source_sink where ABS(MD5( `name`) % 2 ) = ?") // Modify SQL syntax for different databases
+        .setRowTypeInfo(rowTypeInfo).setParametersProvider(new JdbcGenericParameterValuesProvider(queryParameters)).finish();
+       DataStreamSource<Row> input = env.createInput(jdbcInputFormat);
+       env.execute();
+```
+
 ### SQL DML statement and JDBC statement builder
 
 The sink builds one [JDBC prepared statement](https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/PreparedStatement.html) from a user-provider SQL string, e.g.:

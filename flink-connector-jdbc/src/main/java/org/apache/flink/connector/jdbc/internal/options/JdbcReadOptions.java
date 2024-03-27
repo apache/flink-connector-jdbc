@@ -27,6 +27,7 @@ public class JdbcReadOptions implements Serializable {
 
     private final String query;
     private final String partitionColumnName;
+    private final Boolean isPartitionColumnTypeString;
     private final Long partitionLowerBound;
     private final Long partitionUpperBound;
     private final Integer numPartitions;
@@ -37,6 +38,7 @@ public class JdbcReadOptions implements Serializable {
     private JdbcReadOptions(
             String query,
             String partitionColumnName,
+            Boolean isPartitionColumnTypeString,
             Long partitionLowerBound,
             Long partitionUpperBound,
             Integer numPartitions,
@@ -44,6 +46,7 @@ public class JdbcReadOptions implements Serializable {
             boolean autoCommit) {
         this.query = query;
         this.partitionColumnName = partitionColumnName;
+        this.isPartitionColumnTypeString = isPartitionColumnTypeString;
         this.partitionLowerBound = partitionLowerBound;
         this.partitionUpperBound = partitionUpperBound;
         this.numPartitions = numPartitions;
@@ -58,6 +61,10 @@ public class JdbcReadOptions implements Serializable {
 
     public Optional<String> getPartitionColumnName() {
         return Optional.ofNullable(partitionColumnName);
+    }
+
+    public Optional<Boolean> getPartitionColumnTypeString() {
+        return Optional.ofNullable(isPartitionColumnTypeString);
     }
 
     public Optional<Long> getPartitionLowerBound() {
@@ -104,6 +111,7 @@ public class JdbcReadOptions implements Serializable {
     public static class Builder {
         protected String query;
         protected String partitionColumnName;
+        protected Boolean isPartitionColumnTypeString;
         protected Long partitionLowerBound;
         protected Long partitionUpperBound;
         protected Integer numPartitions;
@@ -121,6 +129,10 @@ public class JdbcReadOptions implements Serializable {
         public Builder setPartitionColumnName(String partitionColumnName) {
             this.partitionColumnName = partitionColumnName;
             return this;
+        }
+
+        public void setPartitionColumnTypeString(Boolean partitionColumnTypeString) {
+            isPartitionColumnTypeString = partitionColumnTypeString;
         }
 
         /** optional, the smallest value of the first partition. */
@@ -163,6 +175,7 @@ public class JdbcReadOptions implements Serializable {
             return new JdbcReadOptions(
                     query,
                     partitionColumnName,
+                    isPartitionColumnTypeString,
                     partitionLowerBound,
                     partitionUpperBound,
                     numPartitions,

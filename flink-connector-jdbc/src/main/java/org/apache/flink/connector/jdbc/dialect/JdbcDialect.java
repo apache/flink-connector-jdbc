@@ -85,6 +85,17 @@ public interface JdbcDialect extends Serializable {
     String quoteIdentifier(String identifier);
 
     /**
+     * Computes the Hash value of the string.
+     *
+     * @param fieldName jdbc partition reads column names.
+     * @param numPartitions Set the number of partitions to be read.
+     * @return the quoted identifier.
+     */
+    default String hashModForField(String fieldName, int numPartitions) {
+        return " ABS(MD5(" + quoteIdentifier(fieldName) + ") % " + numPartitions + ")";
+    }
+
+    /**
      * Constructs the dialects upsert statement if supported; such as MySQL's {@code DUPLICATE KEY
      * UPDATE}, or PostgreSQL's {@code ON CONFLICT... DO UPDATE SET..}. If supported, the returned
      * string will be used as a {@link java.sql.PreparedStatement}. Fields in the statement must be
