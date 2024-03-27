@@ -433,10 +433,9 @@ JDBC Catalog
 
 `JdbcCatalog` 允许用户通过 JDBC 协议将 Flink 连接到关系数据库。
 
-目前，JDBC Catalog 有两个实现，即 Postgres Catalog 和 MySQL Catalog。目前支持如下 catalog 方法。其他方法目前尚不支持。
+目前，JDBC Catalog 有这几个实现：Postgres Catalog、MySQL Catalog、CrateDB Catalog 和 OceanBase Catalog。目前支持如下 catalog 方法。其他方法目前尚不支持。
 
 ```java
-// Postgres Catalog & MySQL Catalog 支持的方法
 databaseExists(String databaseName);
 listDatabases();
 getDatabase(String databaseName);
@@ -451,17 +450,19 @@ tableExists(ObjectPath tablePath);
 
 ### JDBC Catalog 的使用
 
-本小节主要描述如果创建并使用 Postgres Catalog 或 MySQL Catalog。
+本小节主要描述如何创建并使用 Jdbc Catalog。
 请参阅 [Dependencies](#dependencies) 部分了解如何配置 JDBC 连接器和相应的驱动。
 
 JDBC catalog 支持以下参数:
 - `name`：必填，catalog 的名称。
 - `default-database`：必填，默认要连接的数据库。
-- `username`：必填，Postgres/MySQL 账户的用户名。
+- `username`：必填，数据库账户的用户名。
 - `password`：必填，账户的密码。
 - `base-url`：必填，（不应该包含数据库名）
   - 对于 Postgres Catalog `base-url` 应为 `"jdbc:postgresql://<ip>:<port>"` 的格式。
   - 对于 MySQL Catalog `base-url` 应为 `"jdbc:mysql://<ip>:<port>"` 的格式。
+  - 对于 OceanBase Catalog `base-url` 应为 `"jdbc:oceanbase://<ip>:<port>"` 的格式。
+- `compatible-mode`: 选填，数据库的兼容模式。
 
 {{< tabs "10bd8bfb-674c-46aa-8a36-385537df5791" >}}
 {{< tab "SQL" >}}
@@ -657,6 +658,42 @@ SELECT * FROM mycatalog.crate.`custom_schema.test_table2`
 SELECT * FROM crate.`custom_schema.test_table2`;
 SELECT * FROM `custom_schema.test_table2`;
 ```
+
+<a name="jdbc-catalog-for-oceanbase"></a>
+
+### JDBC Catalog for OceanBase
+
+<a name="oceanbase-metaspace-mapping"></a>
+
+#### OceanBase 元空间映射
+
+OceanBase 数据库支持多租户管理，每个租户可以工作在 MySQL 兼容模式或 Oracle 兼容模式。在 OceanBase 的 MySQL 模式上，一个租户中有数据库和表，就像 MySQL 数据库中的数据库和表一样，但没有 schema。在 OceanBase 的 Oracle 模式下，一个租户中有 schema 和表，就像 Oracle 数据库中的 schema 和表一样，但没有数据库。
+
+在 Flink 中，查询 OceanBase Catalog 注册的表时，OceanBase MySQL 模式下可以使用 `database.table_name` 或只使用 `table_name`，OceanBase Oracle 模式下可以使用 `schema.table_name` 或只使用 `table_name`。
+
+因此，Flink Catalog 和 OceanBase catalog 之间的元空间映射如下：
+
+| Flink Catalog Metaspace Structure    | OceanBase Metaspace Structure (MySQL Mode) | OceanBase Metaspace Structure (Oracle Mode) |
+|:-------------------------------------|:-------------------------------------------|---------------------------------------------|
+| catalog name (defined in Flink only) | N/A                                        | N/A                                         |
+| database name                        | database name                              | schema name                                 |
+| table name                           | table name                                 | table name                                  |
+
+Flink 中的 OceanBase 表的完整路径应该是 ``"`<catalog>`.`<db or schema>`.`<table>`"``。
+
+这里提供了一些访问 OceanBase 表的例子：
+
+```sql
+-- 扫描 默认数据库 'mydb' 中的 'test_table' 表
+SELECT * FROM mysql_catalog.mydb.test_table;
+SELECT * FROM mydb.test_table;
+SELECT * FROM test_table;
+
+-- 扫描 'given_database' 数据库中的 'test_table2' 表，
+SELECT * FROM mysql_catalog.given_database.test_table2;
+SELECT * FROM given_database.test_table2;
+```
+
 <a name="data-type-mapping"></a>
 
 数据类型映射

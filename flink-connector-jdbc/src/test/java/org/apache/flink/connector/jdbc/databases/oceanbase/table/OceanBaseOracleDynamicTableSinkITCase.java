@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.flink.connector.jdbc.databases.oceanbase.OceanBaseOracleTestBase.tableRow;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbType;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.field;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.pkField;

@@ -31,7 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(OceanBaseTestDatabase.class)
 public interface OceanBaseOracleTestBase extends DatabaseTest {
 
-    default TableRow tableRow(String name, TableField... fields) {
+    static TableRow tableRow(String name, TableField... fields) {
         return new OceanBaseTableRow("oracle", name, fields);
     }
 
