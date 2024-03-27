@@ -30,6 +30,8 @@ jobs:
             jdk: '8, 11, 17'
           - flink: 1.19-SNAPSHOT
             jdk: '8, 11, 17, 21'
+          - flink: 1.20-SNAPSHOT
+            jdk: '8, 11, 17, 21'
 
     uses: apache/flink-connector-shared-utils/.github/workflows/ci.yml@ci_utils
     with:

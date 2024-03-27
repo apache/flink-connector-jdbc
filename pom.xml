@@ -27,7 +27,6 @@ under the License.
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.apache.flink</groupId>
     <artifactId>flink-connector-jdbc-parent</artifactId>
     <version>3.2-SNAPSHOT</version>
     <name>Flink : Connectors : JDBC : Parent</name>
