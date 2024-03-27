@@ -16,29 +16,42 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.split;
+package org.apache.flink.connector.jdbc.source.reader.extractor;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.connector.jdbc.JdbcInputFormat;
+import org.apache.flink.types.Row;
 
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
- * This splits generator actually does nothing but wrapping the query parameters computed by the
- * user before creating the {@link JdbcInputFormat} instance.
+ * The Extractor to extract the data from {@link ResultSet}.
+ *
+ * @param <T> The target data type.
  */
 @PublicEvolving
-public class JdbcGenericParameterValuesProvider implements JdbcParameterValuesProvider {
+public interface ResultExtractor<T> extends Serializable {
 
-    private final Serializable[][] parameters;
+    /**
+     * Extract the data from the current point line of the result.
+     *
+     * @param resultSet Result set queried from a sql.
+     * @return The data object filled by the current line of the resultSet.
+     * @throws SQLException SQL exception.
+     */
+    T extract(ResultSet resultSet) throws SQLException;
 
-    public JdbcGenericParameterValuesProvider(Serializable[][] parameters) {
-        this.parameters = parameters;
+    /**
+     * The identifier of the extractor.
+     *
+     * @return identifier in {@link String} type.
+     */
+    default String identifier() {
+        return this.getClass().getSimpleName();
     }
 
-    @Override
-    public Serializable[][] getParameterValues() {
-        // do nothing...precomputed externally
-        return parameters;
+    static ResultExtractor<Row> ofRowResultExtractor() {
+        return new RowResultExtractor();
     }
 }

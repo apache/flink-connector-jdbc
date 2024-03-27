@@ -17,6 +17,7 @@
 
 package org.apache.flink.connector.jdbc;
 
+import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.testutils.databases.derby.DerbyMetadata;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
@@ -33,6 +34,17 @@ import java.sql.SQLException;
  * and inserts data before each test.
  */
 public abstract class JdbcDataTestBase extends JdbcTestBase {
+
+    protected final ResultExtractor<JdbcTestFixture.TestEntry> extractor =
+            resultSet ->
+                    new JdbcTestFixture.TestEntry(
+                            resultSet.getInt("id"),
+                            resultSet.getString("title"),
+                            resultSet.getString("author"),
+                            // Avoid the 'null -> 0.0d' bug on calling 'getDouble'
+                            (Double) resultSet.getObject("price"),
+                            resultSet.getInt("qty"));
+
     @BeforeEach
     void initData() throws SQLException {
         JdbcTestFixture.initData(getMetadata());

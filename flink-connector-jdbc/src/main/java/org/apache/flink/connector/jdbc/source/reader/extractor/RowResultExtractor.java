@@ -16,21 +16,24 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.split;
+package org.apache.flink.connector.jdbc.source.reader.extractor;
 
-import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.connector.jdbc.JdbcInputFormat;
+import org.apache.flink.types.Row;
+import org.apache.flink.util.Preconditions;
 
-import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
-/**
- * This interface is used by the {@link JdbcInputFormat} to compute the list of parallel query to
- * run (i.e. splits). Each query will be parameterized using a row of the matrix provided by each
- * {@link JdbcParameterValuesProvider} implementation.
- */
-@PublicEvolving
-public interface JdbcParameterValuesProvider extends Serializable {
-
-    /** Returns the necessary parameters array to use for query in parallel a table. */
-    Serializable[][] getParameterValues();
+/** The extractor is used to extract the data from {@link ResultSet} into a {@link Row} object. */
+public class RowResultExtractor implements ResultExtractor<Row> {
+    @Override
+    public Row extract(ResultSet resultSet) throws SQLException {
+        int arity = resultSet.getMetaData().getColumnCount();
+        Row row = new Row(arity);
+        Preconditions.checkArgument(!resultSet.isClosed());
+        for (int index = 0; index < row.getArity(); index++) {
+            row.setField(index, resultSet.getObject(index + 1));
+        }
+        return row;
+    }
 }

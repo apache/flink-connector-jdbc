@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.jdbc.datasource.connections;
 
-import org.apache.flink.annotation.Internal;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.util.Preconditions;
 
@@ -36,7 +36,7 @@ import java.util.Properties;
 
 /** Simple JDBC connection provider. */
 @NotThreadSafe
-@Internal
+@PublicEvolving
 public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimpleJdbcConnectionProvider.class);
@@ -105,7 +105,7 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
 
     @Override
     public Connection getOrEstablishConnection() throws SQLException, ClassNotFoundException {
-        if (connection != null) {
+        if (isConnectionValid()) {
             return connection;
         }
         if (jdbcOptions.getDriverName() == null) {
