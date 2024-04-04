@@ -20,5 +20,5 @@ package org.apache.flink.connector.jdbc.testutils.databases.elasticsearch;
 /** Elasticsearch docker images. */
 public interface ElasticsearchImages {
 
-    String ELASTICSEARCH_8 = "docker.elastic.co/elasticsearch/elasticsearch:8.11.1";
+    String ELASTICSEARCH_8 = "docker.elastic.co/elasticsearch/elasticsearch:8.13.1";
 }

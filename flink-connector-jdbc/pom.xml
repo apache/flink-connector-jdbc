@@ -42,7 +42,7 @@ under the License.
 		<oracle.version>21.8.0.0</oracle.version>
 		<trino.version>418</trino.version>
 		<byte-buddy.version>1.12.10</byte-buddy.version>
-		<elasticsearch.version>8.11.1</elasticsearch.version>
+		<elasticsearch.version>8.13.1</elasticsearch.version>
 		<surefire.module.config> <!-- required by
 		Db2ExactlyOnceSinkE2eTest --> --add-opens=java.base/java.util=ALL-UNNAMED <!--
 		SimpleJdbcConnectionProviderDriverClassConcurrentLoadingITCase--> --add-opens=java.base/java.lang=ALL-UNNAMED
