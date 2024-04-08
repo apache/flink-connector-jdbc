@@ -99,7 +99,11 @@ import java.util.Arrays;
  * @see JdbcParameterValuesProvider
  * @see PreparedStatement
  * @see DriverManager
+ * @deprecated Please use {@link org.apache.flink.connector.jdbc.source.JdbcSource} instead. The
+ *     builder utils and parameters passing could be view {@link
+ *     org.apache.flink.connector.jdbc.source.JdbcSourceBuilder}.
  */
+@Deprecated
 @Experimental
 public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
         implements ResultTypeQueryable<Row> {

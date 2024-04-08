@@ -18,7 +18,6 @@
 
 package org.apache.flink.connector.jdbc.split;
 
-import org.apache.flink.annotation.Experimental;
 import org.apache.flink.util.Preconditions;
 
 import java.io.Serializable;
@@ -38,7 +37,6 @@ import java.io.Serializable;
  * <p>You can take advantage of this class to automatically generate the parameters of the BETWEEN
  * clause, based on the passed constructor parameters.
  */
-@Experimental
 public class JdbcNumericBetweenParametersProvider implements JdbcParameterValuesProvider {
 
     private final long minVal;
@@ -114,5 +112,20 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
             start = end + 1;
         }
         return parameters;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        JdbcNumericBetweenParametersProvider that = (JdbcNumericBetweenParametersProvider) o;
+        return minVal == that.minVal
+                && maxVal == that.maxVal
+                && batchSize == that.batchSize
+                && batchNum == that.batchNum;
     }
 }
