@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.split;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.JdbcInputFormat;
 
 import java.io.Serializable;
@@ -28,8 +28,8 @@ import java.io.Serializable;
  * run (i.e. splits). Each query will be parameterized using a row of the matrix provided by each
  * {@link JdbcParameterValuesProvider} implementation.
  */
-@Experimental
-public interface JdbcParameterValuesProvider {
+@PublicEvolving
+public interface JdbcParameterValuesProvider extends Serializable {
 
     /** Returns the necessary parameters array to use for query in parallel a table. */
     Serializable[][] getParameterValues();

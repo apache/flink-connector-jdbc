@@ -69,7 +69,18 @@ public interface FieldNamedPreparedStatement extends AutoCloseable {
      */
     static FieldNamedPreparedStatement prepareStatement(
             Connection connection, String sql, String[] fieldNames) throws SQLException {
-        return FieldNamedPreparedStatementImpl.prepareStatement(connection, sql, fieldNames);
+        return FieldNamedPreparedStatementImpl.prepareStatement(connection, sql, fieldNames, "", 0);
+    }
+
+    static FieldNamedPreparedStatement prepareStatement(
+            Connection connection,
+            String sql,
+            String[] fieldNames,
+            String additionalPredicates,
+            int numberOfDynamicParams)
+            throws SQLException {
+        return FieldNamedPreparedStatementImpl.prepareStatement(
+                connection, sql, fieldNames, additionalPredicates, numberOfDynamicParams);
     }
 
     /**

@@ -110,7 +110,9 @@ public class JdbcDynamicTableSource
                         DataType.getFieldNames(physicalRowDataType).toArray(new String[0]),
                         DataType.getFieldDataTypes(physicalRowDataType).toArray(new DataType[0]),
                         keyNames,
-                        rowType);
+                        rowType,
+                        resolvedPredicates,
+                        pushdownParams);
         if (cache != null) {
             return PartialCachingLookupProvider.of(lookupFunction, cache);
         } else {

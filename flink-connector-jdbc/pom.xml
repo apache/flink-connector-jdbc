@@ -49,6 +49,16 @@ under the License.
 	</properties>
 
 	<dependencies>
+
+		<!-- Connectors -->
+
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-connector-base</artifactId>
+			<version>${flink.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
 		<!-- Table ecosystem -->
 
 		<!-- Projects depending on this project won't depend on flink-table-*. -->
@@ -169,7 +179,22 @@ under the License.
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Test dependencies -->
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-connector-base</artifactId>
+			<version>${flink.version}</version>
+			<scope>test</scope>
+			<type>test-jar</type>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-connector-test-utils</artifactId>
+			<version>${flink.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Assertions test dependencies -->
 
 		<dependency>
 			<groupId>org.assertj</groupId>
@@ -239,6 +264,14 @@ under the License.
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>trino</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- OceanBase tests -->
+		<dependency>
+			<groupId>com.oceanbase</groupId>
+			<artifactId>oceanbase-client</artifactId>
+			<version>2.4.8</version>
 			<scope>test</scope>
 		</dependency>
 

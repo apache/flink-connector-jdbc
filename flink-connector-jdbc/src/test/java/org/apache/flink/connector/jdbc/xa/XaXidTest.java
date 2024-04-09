@@ -26,7 +26,7 @@ import static javax.transaction.xa.Xid.MAXGTRIDSIZE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link XidImpl}. */
-class XidImplTest {
+class XaXidTest {
     static final XidImpl XID = new XidImpl(1, randomBytes(MAXGTRIDSIZE), randomBytes(MAXBQUALSIZE));
 
     @Test

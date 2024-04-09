@@ -23,6 +23,7 @@ import org.apache.flink.connector.jdbc.databases.derby.DerbyTestBase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -42,23 +43,68 @@ class JdbcLookupTestBase implements DerbyTestBase {
                             + "id1 INT NOT NULL DEFAULT 0,"
                             + "id2 VARCHAR(20) NOT NULL,"
                             + "comment1 VARCHAR(1000),"
-                            + "comment2 VARCHAR(1000))");
+                            + "comment2 VARCHAR(1000),"
+                            + "decimal_col DECIMAL(10, 4),"
+                            + "double_col DOUBLE,"
+                            + "real_col FLOAT"
+                            + ")");
 
             Object[][] data =
                     new Object[][] {
-                        new Object[] {1, "1", "11-c1-v1", "11-c2-v1"},
-                        new Object[] {1, "1", "11-c1-v2", "11-c2-v2"},
-                        new Object[] {2, "3", null, "23-c2"},
-                        new Object[] {2, "5", "25-c1", "25-c2"},
-                        new Object[] {3, "8", "38-c1", "38-c2"}
+                        new Object[] {
+                            1,
+                            "1",
+                            "11-c1-v1",
+                            "11-c2-v1",
+                            BigDecimal.valueOf(100.1011),
+                            new Double(1.1),
+                            new Float(2.2)
+                        },
+                        new Object[] {
+                            1,
+                            "1",
+                            "11-c1-v2",
+                            "11-c2-v2",
+                            BigDecimal.valueOf(100.2022),
+                            new Double(2.2),
+                            new Float(2.2)
+                        },
+                        new Object[] {
+                            2,
+                            "3",
+                            null,
+                            "23-c2",
+                            BigDecimal.valueOf(100.1011),
+                            new Double(1.1),
+                            new Float(1.1)
+                        },
+                        new Object[] {
+                            2,
+                            "5",
+                            "25-c1",
+                            "25-c2",
+                            BigDecimal.valueOf(100.1011),
+                            new Double(1.1),
+                            new Float(1.1)
+                        },
+                        new Object[] {
+                            1,
+                            "8",
+                            "11-c1-v1",
+                            "11-c2-v1",
+                            BigDecimal.valueOf(100.1011),
+                            new Double(1.1),
+                            new Float(3.3)
+                        }
                     };
-            boolean[] surroundedByQuotes = new boolean[] {false, true, true, true};
+            boolean[] surroundedByQuotes =
+                    new boolean[] {false, true, true, true, false, false, false};
 
             StringBuilder sqlQueryBuilder =
                     new StringBuilder(
                             "INSERT INTO "
                                     + LOOKUP_TABLE
-                                    + " (id1, id2, comment1, comment2) VALUES ");
+                                    + " (id1, id2, comment1, comment2, decimal_col, double_col, real_col) VALUES ");
             for (int i = 0; i < data.length; i++) {
                 sqlQueryBuilder.append("(");
                 for (int j = 0; j < data[i].length; j++) {

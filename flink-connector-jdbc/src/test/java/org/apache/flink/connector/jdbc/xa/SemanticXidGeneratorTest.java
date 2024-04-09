@@ -18,6 +18,7 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.api.common.functions.RuntimeContext;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +39,9 @@ class SemanticXidGeneratorTest {
     void testXidsUniqueAmongCheckpoints() {
         SemanticXidGenerator xidGenerator = new SemanticXidGenerator();
         xidGenerator.open();
-        checkUniqueness(checkpoint -> xidGenerator.generateXid(TEST_RUNTIME_CONTEXT, checkpoint));
+        checkUniqueness(
+                checkpoint ->
+                        xidGenerator.generateXid(JobSubtask.of(TEST_RUNTIME_CONTEXT), checkpoint));
     }
 
     @Test
@@ -48,8 +51,8 @@ class SemanticXidGeneratorTest {
         checkUniqueness(
                 unused -> {
                     generator.open();
-                    return generator.generateXid(
-                            JdbcXaSinkTestBase.getRuntimeContext(new JobID()), checkpointId);
+                    RuntimeContext context = JdbcXaSinkTestBase.getRuntimeContext(new JobID());
+                    return generator.generateXid(JobSubtask.of(context), checkpointId);
                 });
     }
 

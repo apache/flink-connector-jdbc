@@ -21,7 +21,7 @@ package org.apache.flink.connector.jdbc.internal;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.internal.connection.JdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 import org.apache.flink.util.function.SerializableSupplier;
@@ -133,7 +133,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
         return exec;
     }
 
-    private void checkFlushException() {
+    public void checkFlushException() {
         if (flushException != null) {
             throw new RuntimeException("Writing records to JDBC failed.", flushException);
         }

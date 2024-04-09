@@ -19,9 +19,9 @@
 package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.annotation.Experimental;
+import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
-import org.apache.flink.connector.jdbc.internal.connection.JdbcConnectionProvider;
-import org.apache.flink.connector.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.types.Row;
 

@@ -22,7 +22,7 @@ under the License.
     <parent>
         <groupId>org.apache.flink</groupId>
         <artifactId>flink-connector-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -47,7 +47,7 @@ under the License.
     </modules>
 
     <properties>
-        <flink.version>1.16.2</flink.version>
+        <flink.version>1.18.0</flink.version>
 
         <jackson-bom.version>2.13.4.20221013</jackson-bom.version>
         <junit4.version>4.13.2</junit4.version>
@@ -66,11 +66,17 @@ under the License.
         <!-- These 2 properties should be removed together with upgrade of flink-connector-parent to 1.1.x -->
         <flink.surefire.baseArgLine>-XX:+UseG1GC -Xms256m -XX:+IgnoreUnrecognizedVMOptions ${surefire.module.config}</flink.surefire.baseArgLine>
         <surefire.module.config/>
+        <spotless.skip>false</spotless.skip>
     </properties>
 
     <dependencies>
 
         <!-- Root dependencies for all projects -->
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-base</artifactId>
+        </dependency>
 
         <!-- Logging API -->
         <dependency>
@@ -168,6 +174,12 @@ under the License.
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
+                <artifactId>flink-connector-base</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
                 <artifactId>flink-test-utils</artifactId>
                 <version>${flink.version}</version>
                 <scope>test</scope>
@@ -213,7 +225,7 @@ under the License.
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>1.15</version>
+                <version>1.16.1</version>
             </dependency>
 
             <dependency>
@@ -301,7 +313,14 @@ under the License.
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.24.0</version>
+                <version>1.26.1</version>
+            </dependency>
+
+            <!-- For dependency convergence -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.14.0</version>
             </dependency>
 
             <!-- For dependency convergence -->
@@ -415,5 +434,32 @@ under the License.
                 <artifactId>directory-maven-plugin</artifactId>
             </plugin>
         </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <configuration>
+                        <skip>${spotless.skip}</skip>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>java21</id>
+            <activation>
+                <jdk>[21,)</jdk>
+            </activation>
+            <properties>
+                <!-- Current google format does not run on Java 21.
+                     Don't upgrade it in this profile because it formats code differently.
+                     Re-evaluate once support for Java 8 is dropped. -->
+                <spotless.skip>true</spotless.skip>
+            </properties>
+        </profile>
+    </profiles>
 </project>

@@ -76,6 +76,26 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
                             .setConfiguration(new Configuration())
                             .build());
 
+    public static final String CREATE_TABLE_WITH_NAME_STATEMENT =
+            "CREATE TABLE value_source ( "
+                    + " `id` BIGINT, "
+                    + " `name` STRING, "
+                    + " `proctime` AS PROCTIME()"
+                    + ") WITH ("
+                    + " 'connector' = 'values', "
+                    + " 'data-id' = '%s'"
+                    + ")";
+    public static final String CREATE_TABLE_WITH_NAME_AND_NICKNAME_STATEMENT =
+            "CREATE TABLE value_source ( "
+                    + " `id` BIGINT, "
+                    + " `name` STRING, "
+                    + " `nickname` STRING, "
+                    + " `proctime` AS PROCTIME()"
+                    + ") WITH ("
+                    + " 'connector' = 'values', "
+                    + " 'data-id' = '%s'"
+                    + ")";
+
     private final TableRow inputTable = createInputTable();
 
     public static StreamExecutionEnvironment env;
@@ -276,105 +296,31 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
     @ParameterizedTest
     @EnumSource(Caching.class)
     void testLookupJoin(Caching caching) {
-        // Create JDBC lookup table
-        List<String> cachingOptions = Collections.emptyList();
-        if (caching.equals(Caching.ENABLE_CACHE)) {
-            cachingOptions =
-                    Arrays.asList(
-                            "'lookup.cache.max-rows' = '100'", "'lookup.cache.ttl' = '10min'");
-        }
-        tEnv.executeSql(
-                inputTable.getCreateQueryForFlink(getMetadata(), "jdbc_lookup", cachingOptions));
 
-        // Create and prepare a value source
-        String dataId =
-                TestValuesTableFactory.registerData(
-                        Arrays.asList(
-                                Row.of(1L, "Alice"),
-                                Row.of(1L, "Alice"),
-                                Row.of(2L, "Bob"),
-                                Row.of(3L, "Charlie")));
-        tEnv.executeSql(
-                String.format(
-                        "CREATE TABLE value_source ( "
-                                + " `id` BIGINT, "
-                                + " `name` STRING, "
-                                + " `proctime` AS PROCTIME()"
-                                + ") WITH ("
-                                + " 'connector' = 'values', "
-                                + " 'data-id' = '%s'"
-                                + ")",
-                        dataId));
+        String selectStatement =
+                "SELECT S.id, S.name, D.id, D.timestamp6_col, D.decimal_col FROM value_source"
+                        + " AS S JOIN jdbc_lookup for system_time as of S.proctime AS D ON S.id = D.id";
+        List<Row> expectedResultSetRows =
+                Arrays.asList(
+                        Row.of(
+                                1L,
+                                "Alice",
+                                1L,
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456")),
+                                BigDecimal.valueOf(100.1234)),
+                        Row.of(
+                                1L,
+                                "Alice",
+                                1L,
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456")),
+                                BigDecimal.valueOf(100.1234)),
+                        Row.of(
+                                2L,
+                                "Bob",
+                                2L,
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:36:01.123456")),
+                                BigDecimal.valueOf(101.1234)));
 
-        if (caching == Caching.ENABLE_CACHE) {
-            LookupCacheManager.keepCacheOnRelease(true);
-        }
-
-        // Execute lookup join
-        try {
-            List<Row> collected =
-                    executeQuery(
-                            "SELECT S.id, S.name, D.id, D.timestamp6_col, D.decimal_col FROM value_source"
-                                    + " AS S JOIN jdbc_lookup for system_time as of S.proctime AS D ON S.id = D.id");
-
-            assertThat(collected).hasSize(3);
-
-            List<Row> expected =
-                    Arrays.asList(
-                            Row.of(
-                                    1L,
-                                    "Alice",
-                                    1L,
-                                    truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456")),
-                                    BigDecimal.valueOf(100.1234)),
-                            Row.of(
-                                    1L,
-                                    "Alice",
-                                    1L,
-                                    truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456")),
-                                    BigDecimal.valueOf(100.1234)),
-                            Row.of(
-                                    2L,
-                                    "Bob",
-                                    2L,
-                                    truncateTime(LocalDateTime.parse("2020-01-01T15:36:01.123456")),
-                                    BigDecimal.valueOf(101.1234)));
-
-            assertThat(collected)
-                    .as("The actual output is not a subset of the expected set")
-                    .containsAll(expected);
-
-            if (caching == Caching.ENABLE_CACHE) {
-                validateCachedValues();
-            }
-        } finally {
-            if (caching == Caching.ENABLE_CACHE) {
-                LookupCacheManager.getInstance().checkAllReleased();
-                LookupCacheManager.getInstance().clear();
-                LookupCacheManager.keepCacheOnRelease(false);
-            }
-        }
-    }
-
-    protected TemporalUnit timestampPrecision() {
-        return ChronoUnit.MICROS;
-    }
-
-    private LocalDateTime truncateTime(LocalDateTime value) {
-        return value.truncatedTo(timestampPrecision());
-    }
-
-    private List<Row> executeQuery(String query) {
-        return CollectionUtil.iteratorToList(tEnv.executeSql(query).collect());
-    }
-
-    private void validateCachedValues() {
-        // Validate cache
-        Map<String, LookupCacheManager.RefCountedCache> managedCaches =
-                LookupCacheManager.getInstance().getManagedCaches();
-        assertThat(managedCaches).as("There should be only 1 shared cache registered").hasSize(1);
-        LookupCache cache = managedCaches.get(managedCaches.keySet().iterator().next()).getCache();
-        // jdbc does support project push down, the cached row has been projected
         RowData key1 = GenericRowData.of(1L);
         RowData value1 =
                 GenericRowData.of(
@@ -393,12 +339,268 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
 
         RowData key3 = GenericRowData.of(3L);
 
-        Map<RowData, Collection<RowData>> expectedEntries = new HashMap<>();
-        expectedEntries.put(key1, Collections.singletonList(value1));
-        expectedEntries.put(key2, Collections.singletonList(value2));
-        expectedEntries.put(key3, Collections.emptyList());
+        Map<RowData, Collection<RowData>> expectedCachedEntries = new HashMap<>();
+        expectedCachedEntries.put(key1, Collections.singletonList(value1));
+        expectedCachedEntries.put(key2, Collections.singletonList(value2));
+        expectedCachedEntries.put(key3, Collections.emptyList());
 
-        LookupCacheAssert.assertThat(cache).containsExactlyEntriesOf(expectedEntries);
+        lookupTableTest(
+                caching,
+                sampleTableData(),
+                CREATE_TABLE_WITH_NAME_STATEMENT,
+                selectStatement,
+                expectedResultSetRows,
+                expectedCachedEntries);
+    }
+
+    private void lookupTableTest(
+            Caching caching,
+            Collection<Row> dataToRegister,
+            String createTableStatement,
+            String selectStatement,
+            List<Row> expectedResultSetRows,
+            Map<RowData, Collection<RowData>> expectedCachedEntries) {
+        // Create JDBC lookup table
+        List<String> cachingOptions = Collections.emptyList();
+        if (caching == Caching.ENABLE_CACHE) {
+            cachingOptions =
+                    Arrays.asList(
+                            "'lookup.cache.max-rows' = '100'", "'lookup.cache.ttl' = '10min'");
+        }
+        tEnv.executeSql(
+                inputTable.getCreateQueryForFlink(getMetadata(), "jdbc_lookup", cachingOptions));
+
+        // Create and prepare a value source
+        String dataId = TestValuesTableFactory.registerData(dataToRegister);
+        tEnv.executeSql(String.format(createTableStatement, dataId));
+
+        if (caching == Caching.ENABLE_CACHE) {
+            LookupCacheManager.keepCacheOnRelease(true);
+        }
+
+        // Execute lookup join
+        try {
+            List<Row> collected = executeQuery(selectStatement);
+            int expectedSize = expectedResultSetRows.size();
+
+            // check we go the expected number of rows
+            assertThat(collected)
+                    .as("Actual output is not size " + expectedSize)
+                    .hasSize(expectedSize)
+                    .as("The actual output is not a subset of the expected set")
+                    .containsAll(expectedResultSetRows);
+
+            if (caching == Caching.ENABLE_CACHE) {
+                validateCachedValues(expectedCachedEntries);
+            }
+        } finally {
+            if (caching == Caching.ENABLE_CACHE) {
+                LookupCacheManager.getInstance().checkAllReleased();
+                LookupCacheManager.getInstance().clear();
+                LookupCacheManager.keepCacheOnRelease(false);
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(Caching.class)
+    void testLookupJoinWithFilter(Caching caching) {
+        List<Row> expectedResultSetRows =
+                Arrays.asList(
+                        Row.of(
+                                2L,
+                                "Bob",
+                                2L,
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:36:01.123456")),
+                                BigDecimal.valueOf(101.1234)));
+
+        RowData key2 = GenericRowData.of(2L);
+        RowData value2 =
+                GenericRowData.of(
+                        2L,
+                        DecimalData.fromBigDecimal(BigDecimal.valueOf(101.1234), 10, 4),
+                        TimestampData.fromLocalDateTime(
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:36:01.123456"))));
+
+        Map<RowData, Collection<RowData>> expectedCachedEntries = new HashMap<>();
+        expectedCachedEntries.put(key2, Collections.singletonList(value2));
+
+        lookupTableTest(
+                caching,
+                sampleTableData(),
+                CREATE_TABLE_WITH_NAME_STATEMENT,
+                "SELECT S.id, S.name, D.id, D.timestamp6_col, D.decimal_col FROM value_source"
+                        + " AS S JOIN jdbc_lookup for system_time as of S.proctime AS D ON "
+                        + "S.id = D.id AND S.name = \'Bob\'",
+                expectedResultSetRows,
+                expectedCachedEntries);
+    }
+
+    private static List<Row> sampleTableData() {
+        return Arrays.asList(
+                Row.of(1L, "Alice"), Row.of(1L, "Alice"), Row.of(2L, "Bob"), Row.of(3L, "Charlie"));
+    }
+
+    private static List<Row> sampleTableDataWithNickNames() {
+        return Arrays.asList(
+                Row.of(1L, "Alice", "ABC"),
+                Row.of(1L, "Alice", "ADD"),
+                Row.of(2L, "Bob", "BGH"),
+                Row.of(3L, "Charlie", "CHJ"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(Caching.class)
+    void testLookupJoinWithMultipleFilters(Caching caching) {
+
+        List<Row> expectedResultSetRows =
+                Arrays.asList(
+                        Row.of(
+                                1L,
+                                "Alice",
+                                "ADD",
+                                1L,
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456")),
+                                BigDecimal.valueOf(100.1234)));
+
+        RowData key1 = GenericRowData.of(1L);
+        RowData value1 =
+                GenericRowData.of(
+                        1L,
+                        DecimalData.fromBigDecimal(BigDecimal.valueOf(100.1234), 10, 4),
+                        TimestampData.fromLocalDateTime(
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456"))));
+
+        Map<RowData, Collection<RowData>> expectedCachedEntries = new HashMap<>();
+        expectedCachedEntries.put(key1, Collections.singletonList(value1));
+
+        lookupTableTest(
+                caching,
+                sampleTableDataWithNickNames(),
+                CREATE_TABLE_WITH_NAME_AND_NICKNAME_STATEMENT,
+                "SELECT S.id, S.name, S.nickname, D.id, D.timestamp6_col, D.decimal_col FROM value_source"
+                        + " AS S JOIN jdbc_lookup for system_time as of S.proctime AS D ON "
+                        + "S.id = D.id AND S.name = 'Alice' AND S.nickname = 'ADD'",
+                expectedResultSetRows,
+                expectedCachedEntries);
+    }
+
+    @ParameterizedTest
+    @EnumSource(Caching.class)
+    void testLookupJoinWithLikeFilter(Caching caching) {
+
+        List<Row> expectedResultSetRows =
+                Arrays.asList(
+                        Row.of(
+                                1L,
+                                "Alice",
+                                "ABC",
+                                1L,
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456")),
+                                BigDecimal.valueOf(100.1234)));
+
+        RowData key1 = GenericRowData.of(1L);
+        RowData value1 =
+                GenericRowData.of(
+                        1L,
+                        DecimalData.fromBigDecimal(BigDecimal.valueOf(100.1234), 10, 4),
+                        TimestampData.fromLocalDateTime(
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456"))));
+
+        Map<RowData, Collection<RowData>> expectedCachedEntries = new HashMap<>();
+        expectedCachedEntries.put(key1, Collections.singletonList(value1));
+
+        lookupTableTest(
+                caching,
+                Arrays.asList(
+                        Row.of(1L, "Alice", "ABC"),
+                        Row.of(1L, "Alice", "ADD"),
+                        Row.of(2L, "Bob", "BGH"),
+                        Row.of(3L, "Charlie", "CHJ")),
+                CREATE_TABLE_WITH_NAME_AND_NICKNAME_STATEMENT,
+                "SELECT S.id, S.name, S.nickname, D.id, D.timestamp6_col, D.decimal_col FROM value_source"
+                        + " AS S JOIN jdbc_lookup for system_time as of S.proctime AS D ON "
+                        + "S.id = D.id AND S.name LIKE 'Al%' AND S.nickname = 'ABC' ",
+                expectedResultSetRows,
+                expectedCachedEntries);
+    }
+
+    @ParameterizedTest
+    @EnumSource(Caching.class)
+    void testLookupJoinWithORFilter(Caching caching) {
+
+        List<Row> expectedResultSetRows =
+                Arrays.asList(
+                        Row.of(
+                                1L,
+                                "Alice",
+                                "ABC",
+                                1L,
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456")),
+                                BigDecimal.valueOf(100.1234)),
+                        Row.of(
+                                2L,
+                                "Bob",
+                                "BGH",
+                                2L,
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:36:01.123456")),
+                                BigDecimal.valueOf(101.1234)));
+
+        RowData key1 = GenericRowData.of(1L);
+        RowData value1 =
+                GenericRowData.of(
+                        1L,
+                        DecimalData.fromBigDecimal(BigDecimal.valueOf(100.1234), 10, 4),
+                        TimestampData.fromLocalDateTime(
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:35:00.123456"))));
+
+        RowData key2 = GenericRowData.of(2L);
+        RowData value2 =
+                GenericRowData.of(
+                        2L,
+                        DecimalData.fromBigDecimal(BigDecimal.valueOf(101.1234), 10, 4),
+                        TimestampData.fromLocalDateTime(
+                                truncateTime(LocalDateTime.parse("2020-01-01T15:36:01.123456"))));
+
+        Map<RowData, Collection<RowData>> expectedCachedEntries = new HashMap<>();
+        expectedCachedEntries.put(key1, Collections.singletonList(value1));
+        expectedCachedEntries.put(key2, Collections.singletonList(value2));
+
+        lookupTableTest(
+                caching,
+                Arrays.asList(
+                        Row.of(1L, "Alice", "ABC"),
+                        Row.of(1L, "Alice", "ADD"),
+                        Row.of(2L, "Bob", "BGH"),
+                        Row.of(3L, "Charlie", "CHJ")),
+                CREATE_TABLE_WITH_NAME_AND_NICKNAME_STATEMENT,
+                "SELECT S.id, S.name, S.nickname, D.id, D.timestamp6_col, D.decimal_col FROM value_source"
+                        + " AS S JOIN jdbc_lookup for system_time as of S.proctime AS D ON "
+                        + "S.id = D.id AND (S.name = \'Bob\' OR S.nickname = \'ABC\')",
+                expectedResultSetRows,
+                expectedCachedEntries);
+    }
+
+    protected TemporalUnit timestampPrecision() {
+        return ChronoUnit.MICROS;
+    }
+
+    private LocalDateTime truncateTime(LocalDateTime value) {
+        return value.truncatedTo(timestampPrecision());
+    }
+
+    private List<Row> executeQuery(String query) {
+        return CollectionUtil.iteratorToList(tEnv.executeSql(query).collect());
+    }
+
+    private void validateCachedValues(Map<RowData, Collection<RowData>> expectedCachedEntries) {
+        // Validate cache
+        Map<String, LookupCacheManager.RefCountedCache> managedCaches =
+                LookupCacheManager.getInstance().getManagedCaches();
+        assertThat(managedCaches).as("There should be only 1 shared cache registered").hasSize(1);
+        LookupCache cache = managedCaches.get(managedCaches.keySet().iterator().next()).getCache();
+        // jdbc does support project push down, the cached row has been projected
+        LookupCacheAssert.assertThat(cache).containsExactlyEntriesOf(expectedCachedEntries);
     }
 
     private enum Caching {
