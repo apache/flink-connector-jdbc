@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.internal.connection;
+package org.apache.flink.connector.jdbc.datasource.connections;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.util.Preconditions;
 
@@ -35,6 +36,7 @@ import java.util.Properties;
 
 /** Simple JDBC connection provider. */
 @NotThreadSafe
+@PublicEvolving
 public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimpleJdbcConnectionProvider.class);
@@ -73,8 +75,7 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
                 && connection.isValid(jdbcOptions.getConnectionCheckTimeoutSeconds());
     }
 
-    private static Driver loadDriver(String driverName)
-            throws SQLException, ClassNotFoundException {
+    private Driver loadDriver(String driverName) throws SQLException, ClassNotFoundException {
         Preconditions.checkNotNull(driverName);
         Enumeration<Driver> drivers = DriverManager.getDrivers();
         while (drivers.hasMoreElements()) {
@@ -104,7 +105,7 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
 
     @Override
     public Connection getOrEstablishConnection() throws SQLException, ClassNotFoundException {
-        if (connection != null) {
+        if (isConnectionValid()) {
             return connection;
         }
         if (jdbcOptions.getDriverName() == null) {

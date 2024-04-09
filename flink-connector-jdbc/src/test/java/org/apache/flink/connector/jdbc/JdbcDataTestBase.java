@@ -17,34 +17,49 @@
 
 package org.apache.flink.connector.jdbc;
 
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
+import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.testutils.databases.derby.DerbyMetadata;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.types.Row;
+import org.apache.flink.types.RowKind;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.mockito.Mockito;
 
 import java.sql.SQLException;
-
-import static org.mockito.Mockito.doReturn;
 
 /**
  * Base class for JDBC test using data from {@link JdbcTestFixture}. It uses {@link DerbyMetadata}
  * and inserts data before each test.
  */
 public abstract class JdbcDataTestBase extends JdbcTestBase {
+
+    protected final ResultExtractor<JdbcTestFixture.TestEntry> extractor =
+            resultSet ->
+                    new JdbcTestFixture.TestEntry(
+                            resultSet.getInt("id"),
+                            resultSet.getString("title"),
+                            resultSet.getString("author"),
+                            // Avoid the 'null -> 0.0d' bug on calling 'getDouble'
+                            (Double) resultSet.getObject("price"),
+                            resultSet.getInt("qty"));
+
     @BeforeEach
     void initData() throws SQLException {
         JdbcTestFixture.initData(getMetadata());
     }
 
     public static Row toRow(JdbcTestFixture.TestEntry entry) {
-        Row row = new Row(5);
+        return toRow(RowKind.INSERT, entry);
+    }
+
+    public static Row toRowDelete(JdbcTestFixture.TestEntry entry) {
+        return toRow(RowKind.DELETE, entry);
+    }
+
+    private static Row toRow(RowKind rowKind, JdbcTestFixture.TestEntry entry) {
+        Row row = new Row(rowKind, 5);
         row.setField(0, entry.id);
         row.setField(1, entry.title);
         row.setField(2, entry.author);
@@ -64,13 +79,5 @@ public abstract class JdbcDataTestBase extends JdbcTestBase {
             }
         }
         return row;
-    }
-
-    public static void setRuntimeContext(JdbcOutputFormat format, Boolean reused) {
-        RuntimeContext context = Mockito.mock(RuntimeContext.class);
-        ExecutionConfig config = Mockito.mock(ExecutionConfig.class);
-        doReturn(config).when(context).getExecutionConfig();
-        doReturn(reused).when(config).isObjectReuseEnabled();
-        format.setRuntimeContext(context);
     }
 }

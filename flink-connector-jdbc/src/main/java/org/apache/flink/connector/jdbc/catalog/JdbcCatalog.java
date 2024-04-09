@@ -40,7 +40,7 @@ public class JdbcCatalog extends AbstractJdbcCatalog {
      * Creates a JdbcCatalog.
      *
      * @deprecated please use {@link JdbcCatalog#JdbcCatalog(ClassLoader, String, String, String,
-     *     String, String)} instead.
+     *     String, String, String)} instead.
      */
     public JdbcCatalog(
             String catalogName,
@@ -54,7 +54,8 @@ public class JdbcCatalog extends AbstractJdbcCatalog {
                 defaultDatabase,
                 username,
                 pwd,
-                baseUrl);
+                baseUrl,
+                null);
     }
 
     /**
@@ -66,6 +67,7 @@ public class JdbcCatalog extends AbstractJdbcCatalog {
      * @param username the username used to connect the database
      * @param pwd the password used to connect the database
      * @param baseUrl the base URL of the database, e.g. jdbc:mysql://localhost:3306
+     * @param compatibleMode the compatible mode of the database
      */
     public JdbcCatalog(
             ClassLoader userClassLoader,
@@ -73,12 +75,19 @@ public class JdbcCatalog extends AbstractJdbcCatalog {
             String defaultDatabase,
             String username,
             String pwd,
-            String baseUrl) {
+            String baseUrl,
+            String compatibleMode) {
         super(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
 
         internal =
                 JdbcCatalogUtils.createCatalog(
-                        userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+                        userClassLoader,
+                        catalogName,
+                        defaultDatabase,
+                        username,
+                        pwd,
+                        baseUrl,
+                        compatibleMode);
     }
 
     // ------ databases -----

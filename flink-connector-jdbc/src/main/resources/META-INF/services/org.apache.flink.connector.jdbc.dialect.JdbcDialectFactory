@@ -15,7 +15,10 @@
 
 org.apache.flink.connector.jdbc.databases.derby.dialect.DerbyDialectFactory
 org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialectFactory
+org.apache.flink.connector.jdbc.databases.oceanbase.dialect.OceanBaseDialectFactory
 org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialectFactory
 org.apache.flink.connector.jdbc.databases.oracle.dialect.OracleDialectFactory
 org.apache.flink.connector.jdbc.databases.sqlserver.dialect.SqlServerDialectFactory
 org.apache.flink.connector.jdbc.databases.cratedb.dialect.CrateDBDialectFactory
+org.apache.flink.connector.jdbc.databases.db2.dialect.Db2DialectFactory
+org.apache.flink.connector.jdbc.databases.trino.dialect.TrinoDialectFactory

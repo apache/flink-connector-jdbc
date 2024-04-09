@@ -18,7 +18,6 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import javax.transaction.xa.Xid;
@@ -37,7 +36,7 @@ interface XaGroupOps extends Serializable {
 
     GroupXaOperationResult<Xid> failOrRollback(Collection<Xid> xids);
 
-    void recoverAndRollback(RuntimeContext runtimeContext, XidGenerator xidGenerator);
+    void recoverAndRollback(JobSubtask subtask, XidGenerator xidGenerator);
 
     class GroupXaOperationResult<T> {
         private final List<T> succeeded = new ArrayList<>();

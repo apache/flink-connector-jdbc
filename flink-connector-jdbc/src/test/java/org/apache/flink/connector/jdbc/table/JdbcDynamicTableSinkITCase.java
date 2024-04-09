@@ -18,7 +18,9 @@
 
 package org.apache.flink.connector.jdbc.table;
 
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
@@ -68,12 +70,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** The ITCase for {@link JdbcDynamicTableSink}. */
 public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implements DatabaseTest {
 
-    private final TableRow upsertOutputTable = createUpsertOutputTable();
-    private final TableRow appendOutputTable = createAppendOutputTable();
-    private final TableRow batchOutputTable = createBatchOutputTable();
-    private final TableRow realOutputTable = createRealOutputTable();
-    private final TableRow checkpointOutputTable = createCheckpointOutputTable();
-    private final TableRow userOutputTable = createUserOutputTable();
+    protected final TableRow upsertOutputTable = createUpsertOutputTable();
+    protected final TableRow appendOutputTable = createAppendOutputTable();
+    protected final TableRow batchOutputTable = createBatchOutputTable();
+    protected final TableRow realOutputTable = createRealOutputTable();
+    protected final TableRow checkpointOutputTable = createCheckpointOutputTable();
+    protected final TableRow userOutputTable = createUserOutputTable();
 
     protected TableRow createUpsertOutputTable() {
         return tableRow(
@@ -212,7 +214,7 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
     }
 
     @Test
-    void testUpsert() throws Exception {
+    protected void testUpsert() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.getConfig().enableObjectReuse();
         StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
@@ -321,7 +323,7 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
     }
 
     @Test
-    void testReadingFromChangelogSource() throws Exception {
+    protected void testReadingFromChangelogSource() throws Exception {
         TableEnvironment tEnv = TableEnvironment.create(EnvironmentSettings.newInstance().build());
         String dataId = TestValuesTableFactory.registerData(TestData.userChangelog());
 
@@ -359,8 +361,7 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
                 .containsExactlyInAnyOrderElementsOf(testUserData());
     }
 
-    @Test
-    void testFlushBufferWhenCheckpoint() throws Exception {
+    protected Map<String, String> getOptions() {
         Map<String, String> options = new HashMap<>();
         options.put("connector", "jdbc");
         options.put("url", getMetadata().getJdbcUrl());
@@ -368,10 +369,14 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
         options.put("password", getMetadata().getPassword());
         options.put("table-name", checkpointOutputTable.getTableName());
         options.put("sink.buffer-flush.interval", "0");
+        return options;
+    }
 
+    @Test
+    void testFlushBufferWhenCheckpoint() throws Exception {
         ResolvedSchema schema = checkpointOutputTable.getTableResolvedSchema();
 
-        DynamicTableSink tableSink = createTableSink(schema, options);
+        DynamicTableSink tableSink = createTableSink(schema, getOptions());
 
         SinkRuntimeProviderContext context = new SinkRuntimeProviderContext(false);
         SinkFunctionProvider sinkProvider =
@@ -379,6 +384,8 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
         GenericJdbcSinkFunction<RowData> sinkFunction =
                 (GenericJdbcSinkFunction<RowData>) sinkProvider.createSinkFunction();
         sinkFunction.setRuntimeContext(new MockStreamingRuntimeContext(true, 1, 0));
+        sinkFunction.setInputType(
+                TypeInformation.of(GenericRowData.class), JdbcTestBase.getExecutionConfig(false));
         sinkFunction.open(new Configuration());
         sinkFunction.invoke(GenericRowData.of(1L), SinkContextUtil.forTimestamp(1));
         sinkFunction.invoke(GenericRowData.of(2L), SinkContextUtil.forTimestamp(1));

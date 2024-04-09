@@ -18,18 +18,19 @@
 package org.apache.flink.connector.jdbc.internal;
 
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.internal.connection.JdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.executor.InsertOrUpdateJdbcExecutor;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatementImpl;
 import org.apache.flink.types.Row;
+import org.apache.flink.types.RowKind;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -41,8 +42,7 @@ import static org.apache.flink.connector.jdbc.utils.JdbcUtils.getPrimaryKey;
 import static org.apache.flink.connector.jdbc.utils.JdbcUtils.setRecordToStatement;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
-class TableJdbcUpsertOutputFormat
-        extends JdbcOutputFormat<Tuple2<Boolean, Row>, Row, JdbcBatchStatementExecutor<Row>> {
+class TableJdbcUpsertOutputFormat extends RowJdbcOutputFormat<Row> {
     private static final Logger LOG = LoggerFactory.getLogger(TableJdbcUpsertOutputFormat.class);
 
     private JdbcBatchStatementExecutor<Row> deleteExecutor;
@@ -56,8 +56,8 @@ class TableJdbcUpsertOutputFormat
         this(
                 connectionProvider,
                 batchOptions,
-                ctx -> createUpsertRowExecutor(dmlOptions, ctx),
-                ctx -> createDeleteExecutor(dmlOptions, ctx));
+                () -> createUpsertRowExecutor(dmlOptions),
+                () -> createDeleteExecutor(dmlOptions));
     }
 
     @VisibleForTesting
@@ -67,14 +67,14 @@ class TableJdbcUpsertOutputFormat
             StatementExecutorFactory<JdbcBatchStatementExecutor<Row>> statementExecutorFactory,
             StatementExecutorFactory<JdbcBatchStatementExecutor<Row>>
                     deleteStatementExecutorFactory) {
-        super(connectionProvider, batchOptions, statementExecutorFactory, tuple2 -> tuple2.f1);
+        super(connectionProvider, batchOptions, statementExecutorFactory);
         this.deleteStatementExecutorFactory = deleteStatementExecutorFactory;
     }
 
     @Override
-    public void open(int taskNumber, int numTasks) throws IOException {
-        super.open(taskNumber, numTasks);
-        deleteExecutor = deleteStatementExecutorFactory.apply(getRuntimeContext());
+    public void open(@Nonnull JdbcOutputSerializer<Row> serializer) throws IOException {
+        super.open(serializer);
+        deleteExecutor = deleteStatementExecutorFactory.get();
         try {
             deleteExecutor.prepareStatements(connectionProvider.getConnection());
         } catch (SQLException e) {
@@ -82,8 +82,7 @@ class TableJdbcUpsertOutputFormat
         }
     }
 
-    private static JdbcBatchStatementExecutor<Row> createDeleteExecutor(
-            JdbcDmlOptions dmlOptions, RuntimeContext ctx) {
+    private static JdbcBatchStatementExecutor<Row> createDeleteExecutor(JdbcDmlOptions dmlOptions) {
         int[] pkFields =
                 Arrays.stream(dmlOptions.getFieldNames())
                         .mapToInt(Arrays.asList(dmlOptions.getFieldNames())::indexOf)
@@ -103,8 +102,8 @@ class TableJdbcUpsertOutputFormat
     }
 
     @Override
-    protected void addToBatch(Tuple2<Boolean, Row> original, Row extracted) throws SQLException {
-        if (original.f0) {
+    protected void addToBatch(Row original, Row extracted) throws SQLException {
+        if (original.getKind() != RowKind.DELETE) {
             super.addToBatch(original, extracted);
         } else {
             deleteExecutor.addToBatch(extracted);
@@ -149,8 +148,7 @@ class TableJdbcUpsertOutputFormat
                                 st, pkTypes, createRowKeyExtractor(pkFields).apply(record)));
     }
 
-    private static JdbcBatchStatementExecutor<Row> createUpsertRowExecutor(
-            JdbcDmlOptions opt, RuntimeContext ctx) {
+    private static JdbcBatchStatementExecutor<Row> createUpsertRowExecutor(JdbcDmlOptions opt) {
         checkArgument(opt.getKeyFields().isPresent());
 
         int[] pkFields =
@@ -165,12 +163,7 @@ class TableJdbcUpsertOutputFormat
         return opt.getDialect()
                 .getUpsertStatement(
                         opt.getTableName(), opt.getFieldNames(), opt.getKeyFields().get())
-                .map(
-                        sql ->
-                                createSimpleRowExecutor(
-                                        parseNamedStatement(sql),
-                                        opt.getFieldTypes(),
-                                        ctx.getExecutionConfig().isObjectReuseEnabled()))
+                .map(sql -> createSimpleRowExecutor(parseNamedStatement(sql), opt.getFieldTypes()))
                 .orElseGet(
                         () ->
                                 new InsertOrUpdateJdbcExecutor<>(
@@ -194,9 +187,7 @@ class TableJdbcUpsertOutputFormat
                                         createRowJdbcStatementBuilder(opt.getFieldTypes()),
                                         createRowJdbcStatementBuilder(opt.getFieldTypes()),
                                         createRowKeyExtractor(pkFields),
-                                        ctx.getExecutionConfig().isObjectReuseEnabled()
-                                                ? Row::copy
-                                                : Function.identity()));
+                                        Function.identity()));
     }
 
     private static String parseNamedStatement(String statement) {

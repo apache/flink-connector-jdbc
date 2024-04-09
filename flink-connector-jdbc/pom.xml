@@ -38,11 +38,27 @@ under the License.
 		<scala.binary.version>2.12</scala.binary.version>
 		<scala-library.version>2.12.7</scala-library.version>
 		<assertj.version>3.23.1</assertj.version>
-		<postgres.version>42.5.1</postgres.version>
+		<postgres.version>42.7.3</postgres.version>
 		<oracle.version>21.8.0.0</oracle.version>
+		<trino.version>418</trino.version>
+		<byte-buddy.version>1.12.10</byte-buddy.version>
+		<surefire.module.config> <!-- required by
+		Db2ExactlyOnceSinkE2eTest --> --add-opens=java.base/java.util=ALL-UNNAMED <!--
+		SimpleJdbcConnectionProviderDriverClassConcurrentLoadingITCase--> --add-opens=java.base/java.lang=ALL-UNNAMED
+		</surefire.module.config>
 	</properties>
 
 	<dependencies>
+
+		<!-- Connectors -->
+
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-connector-base</artifactId>
+			<version>${flink.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
 		<!-- Table ecosystem -->
 
 		<!-- Projects depending on this project won't depend on flink-table-*. -->
@@ -70,6 +86,14 @@ under the License.
 			<scope>provided</scope>
 		</dependency>
 
+		<!-- Trino -->
+		<dependency>
+			<groupId>io.trino</groupId>
+			<artifactId>trino-jdbc</artifactId>
+			<version>${trino.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
 		<!-- SQL Server -->
 		<dependency>
 			<groupId>com.microsoft.sqlserver</groupId>
@@ -90,6 +114,14 @@ under the License.
 					<artifactId>jna</artifactId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+
+		<!-- Db2 -->
+		<dependency>
+			<groupId>com.ibm.db2.jcc</groupId>
+			<artifactId>db2jcc</artifactId>
+			<version>db2jcc4</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<!-- Tests -->
@@ -147,7 +179,22 @@ under the License.
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Test dependencies -->
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-connector-base</artifactId>
+			<version>${flink.version}</version>
+			<scope>test</scope>
+			<type>test-jar</type>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-connector-test-utils</artifactId>
+			<version>${flink.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Assertions test dependencies -->
 
 		<dependency>
 			<groupId>org.assertj</groupId>
@@ -202,17 +249,39 @@ under the License.
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<version>2.1.210</version>
+			<version>2.2.224</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Db2 test -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>db2</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Trino test -->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>trino</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- OceanBase tests -->
+		<dependency>
+			<groupId>com.oceanbase</groupId>
+			<artifactId>oceanbase-client</artifactId>
+			<version>2.4.8</version>
 			<scope>test</scope>
 		</dependency>
 
 		<!-- ArchUit test dependencies -->
-
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-architecture-tests-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
 	</dependencies>
 
 	<dependencyManagement>

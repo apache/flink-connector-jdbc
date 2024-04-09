@@ -21,9 +21,9 @@ package org.apache.flink.connector.jdbc.table;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
+import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.internal.connection.JdbcConnectionProvider;
-import org.apache.flink.connector.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatement;
 import org.apache.flink.table.data.RowData;
@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,6 +46,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
@@ -63,6 +65,9 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
     private final JdbcRowConverter jdbcRowConverter;
     private final JdbcRowConverter lookupKeyRowConverter;
 
+    private final List<String> resolvedPredicates;
+    private final Serializable[] pushdownParams;
+
     private transient FieldNamedPreparedStatement statement;
 
     public JdbcRowDataLookupFunction(
@@ -71,11 +76,15 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
             String[] fieldNames,
             DataType[] fieldTypes,
             String[] keyNames,
-            RowType rowType) {
+            RowType rowType,
+            List<String> resolvedPredicates,
+            Serializable[] pushdownParams) {
         checkNotNull(options, "No JdbcOptions supplied.");
         checkNotNull(fieldNames, "No fieldNames supplied.");
         checkNotNull(fieldTypes, "No fieldTypes supplied.");
         checkNotNull(keyNames, "No keyNames supplied.");
+        checkNotNull(resolvedPredicates, "No resolvedPredicates supplied.");
+        checkNotNull(pushdownParams, "No pushdownParams supplied.");
         this.connectionProvider = new SimpleJdbcConnectionProvider(options);
         this.keyNames = keyNames;
         List<String> nameList = Arrays.asList(fieldNames);
@@ -103,6 +112,8 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
                                 Arrays.stream(keyTypes)
                                         .map(DataType::getLogicalType)
                                         .toArray(LogicalType[]::new)));
+        this.resolvedPredicates = resolvedPredicates;
+        this.pushdownParams = pushdownParams;
     }
 
     @Override
@@ -116,6 +127,15 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
         }
     }
 
+    private FieldNamedPreparedStatement setPredicateParams(FieldNamedPreparedStatement statement)
+            throws SQLException {
+        for (int i = 0; i < pushdownParams.length; ++i) {
+            statement.setObject(i + keyNames.length, pushdownParams[i]);
+        }
+
+        return statement;
+    }
+
     /**
      * This is a lookup method which is called by Flink framework in runtime.
      *
@@ -127,6 +147,7 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
             try {
                 statement.clearParameters();
                 statement = lookupKeyRowConverter.toExternal(keyRow, statement);
+                statement = setPredicateParams(statement);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     ArrayList<RowData> rows = new ArrayList<>();
                     while (resultSet.next()) {
@@ -167,7 +188,21 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
 
     private void establishConnectionAndStatement() throws SQLException, ClassNotFoundException {
         Connection dbConn = connectionProvider.getOrEstablishConnection();
-        statement = FieldNamedPreparedStatement.prepareStatement(dbConn, query, keyNames);
+        String additionalPredicates = "";
+        if (!resolvedPredicates.isEmpty()) {
+            String joinedConditions =
+                    resolvedPredicates.stream()
+                            .map(pred -> String.format("(%s)", pred))
+                            .collect(Collectors.joining(" AND "));
+            if (keyNames.length == 0) {
+                additionalPredicates = " WHERE " + joinedConditions;
+            } else {
+                additionalPredicates = " AND " + joinedConditions;
+            }
+        }
+        statement =
+                FieldNamedPreparedStatement.prepareStatement(
+                        dbConn, query, keyNames, additionalPredicates, pushdownParams.length);
     }
 
     @Override

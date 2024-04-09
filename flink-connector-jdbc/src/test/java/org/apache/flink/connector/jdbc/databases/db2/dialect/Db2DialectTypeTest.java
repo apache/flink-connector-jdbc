@@ -16,19 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect.cratedb;
+package org.apache.flink.connector.jdbc.databases.db2.dialect;
 
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
 
 import java.util.Arrays;
 import java.util.List;
 
-/** The CrateDB params for {@link JdbcDialectTypeTest}. */
-public class CrateDBDialectTypeTest extends JdbcDialectTypeTest {
+/** The Db2 params for {@link JdbcDialectTypeTest}. */
+public class Db2DialectTypeTest extends JdbcDialectTypeTest {
 
     @Override
     protected String testDialect() {
-        return "crate";
+        return "db2";
     }
 
     @Override
@@ -44,18 +44,15 @@ public class CrateDBDialectTypeTest extends JdbcDialectTypeTest {
                 createTestItem("FLOAT"),
                 createTestItem("DOUBLE"),
                 createTestItem("DECIMAL(10, 4)"),
-                createTestItem("DECIMAL(38, 18)"),
+                createTestItem("DECIMAL(31, 18)"),
                 createTestItem("DATE"),
                 createTestItem("TIME"),
                 createTestItem("TIMESTAMP(3)"),
                 createTestItem("TIMESTAMP WITHOUT TIME ZONE"),
-                createTestItem("ARRAY<INTEGER>"),
 
                 // Not valid data
-                createTestItem("BINARY", "The CrateDB dialect doesn't support type: BINARY(1)."),
+                createTestItem("BINARY", "The Db2 dialect doesn't support type: BINARY(1)."),
                 createTestItem(
-                        "TIMESTAMP(9) WITHOUT TIME ZONE",
-                        "The precision of field 'f0' is out of the TIMESTAMP precision range [1, 6] supported by CrateDB dialect."),
-                createTestItem("TIMESTAMP_LTZ(3)", "Unsupported type:TIMESTAMP_LTZ(3)"));
+                        "VARBINARY(10)", "The Db2 dialect doesn't support type: VARBINARY(10)."));
     }
 }

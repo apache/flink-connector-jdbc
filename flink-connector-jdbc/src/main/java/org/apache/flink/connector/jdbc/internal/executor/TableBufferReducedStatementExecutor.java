@@ -38,19 +38,16 @@ public final class TableBufferReducedStatementExecutor
     private final JdbcBatchStatementExecutor<RowData> upsertExecutor;
     private final JdbcBatchStatementExecutor<RowData> deleteExecutor;
     private final Function<RowData, RowData> keyExtractor;
-    private final Function<RowData, RowData> valueTransform;
     // the mapping is [KEY, <+/-, VALUE>]
     private final Map<RowData, Tuple2<Boolean, RowData>> reduceBuffer = new HashMap<>();
 
     public TableBufferReducedStatementExecutor(
             JdbcBatchStatementExecutor<RowData> upsertExecutor,
             JdbcBatchStatementExecutor<RowData> deleteExecutor,
-            Function<RowData, RowData> keyExtractor,
-            Function<RowData, RowData> valueTransform) {
+            Function<RowData, RowData> keyExtractor) {
         this.upsertExecutor = upsertExecutor;
         this.deleteExecutor = deleteExecutor;
         this.keyExtractor = keyExtractor;
-        this.valueTransform = valueTransform;
     }
 
     @Override
@@ -63,8 +60,7 @@ public final class TableBufferReducedStatementExecutor
     public void addToBatch(RowData record) throws SQLException {
         RowData key = keyExtractor.apply(record);
         boolean flag = changeFlag(record.getRowKind());
-        RowData value = valueTransform.apply(record); // copy or not
-        reduceBuffer.put(key, Tuple2.of(flag, value));
+        reduceBuffer.put(key, Tuple2.of(flag, record));
     }
 
     /**
@@ -90,17 +86,19 @@ public final class TableBufferReducedStatementExecutor
 
     @Override
     public void executeBatch() throws SQLException {
-        for (Map.Entry<RowData, Tuple2<Boolean, RowData>> entry : reduceBuffer.entrySet()) {
-            if (entry.getValue().f0) {
-                upsertExecutor.addToBatch(entry.getValue().f1);
-            } else {
-                // delete by key
-                deleteExecutor.addToBatch(entry.getKey());
+        if (!reduceBuffer.isEmpty()) {
+            for (Map.Entry<RowData, Tuple2<Boolean, RowData>> entry : reduceBuffer.entrySet()) {
+                if (entry.getValue().f0) {
+                    upsertExecutor.addToBatch(entry.getValue().f1);
+                } else {
+                    // delete by key
+                    deleteExecutor.addToBatch(entry.getKey());
+                }
             }
+            upsertExecutor.executeBatch();
+            deleteExecutor.executeBatch();
+            reduceBuffer.clear();
         }
-        upsertExecutor.executeBatch();
-        deleteExecutor.executeBatch();
-        reduceBuffer.clear();
     }
 
     @Override

@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class JdbcDialectTypeTest {
 
-    private static final String DDL_FORMAT =
+    protected String ddlFormat =
             "CREATE TABLE T (f0 %s)"
                     + " WITH ("
                     + "  'connector'='jdbc',"
@@ -91,7 +91,7 @@ public class JdbcDialectTypeTest {
     @ParameterizedTest
     @MethodSource("testData")
     void testDataTypeValidate(TestItem testItem) {
-        String sqlDDL = String.format(DDL_FORMAT, testItem.dataTypeExpr, testItem.dialect);
+        String sqlDDL = String.format(ddlFormat, testItem.dataTypeExpr, testItem.dialect);
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);
@@ -99,10 +99,10 @@ public class JdbcDialectTypeTest {
         tEnv.executeSql(sqlDDL);
 
         if (testItem.expectError != null) {
-            assertThatThrownBy(() -> tEnv.sqlQuery("SELECT * FROM T"))
+            assertThatThrownBy(() -> tEnv.executeSql("SELECT * FROM T"))
                     .satisfies(anyCauseMatches(testItem.expectError));
         } else {
-            tEnv.sqlQuery("SELECT * FROM T");
+            tEnv.executeSql("SELECT * FROM T");
         }
     }
 

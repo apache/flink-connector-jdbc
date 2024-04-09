@@ -18,7 +18,6 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.api.common.functions.RuntimeContext;
 
 import javax.transaction.xa.Xid;
 
@@ -39,15 +38,15 @@ public interface XidGenerator extends Serializable, AutoCloseable {
      *   <li>SHOULD override {@link Object#hashCode hashCode} and {@link Object#equals equals}
      * </ul>
      *
-     * @param runtimeContext can be used for example to derive global transaction id
+     * @param subtask can be used for example to derive global transaction id
      * @param checkpointId can be used for example to derive global transaction id
      */
-    Xid generateXid(RuntimeContext runtimeContext, long checkpointId);
+    Xid generateXid(JobSubtask subtask, long checkpointId);
 
     default void open() {}
 
     /** @return true if the provided transaction belongs to this subtask */
-    boolean belongsToSubtask(Xid xid, RuntimeContext ctx);
+    boolean belongsToSubtask(Xid xid, JobSubtask subtask);
 
     @Override
     default void close() {}

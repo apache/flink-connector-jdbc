@@ -62,6 +62,12 @@ public class JdbcConnectorOptions {
                             "The class name of the JDBC driver to use to connect to this URL. "
                                     + "If not set, it will automatically be derived from the URL.");
 
+    public static final ConfigOption<String> COMPATIBLE_MODE =
+            ConfigOptions.key("compatible-mode")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The compatible mode of database.");
+
     public static final ConfigOption<Duration> MAX_RETRY_TIMEOUT =
             ConfigOptions.key("connection.max-retry-timeout")
                     .durationType()

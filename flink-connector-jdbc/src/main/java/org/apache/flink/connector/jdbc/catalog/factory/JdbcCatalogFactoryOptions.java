@@ -44,5 +44,8 @@ public class JdbcCatalogFactoryOptions {
     public static final ConfigOption<String> BASE_URL =
             ConfigOptions.key("base-url").stringType().noDefaultValue();
 
+    public static final ConfigOption<String> COMPATIBLE_MODE =
+            ConfigOptions.key("compatible-mode").stringType().noDefaultValue();
+
     private JdbcCatalogFactoryOptions() {}
 }
