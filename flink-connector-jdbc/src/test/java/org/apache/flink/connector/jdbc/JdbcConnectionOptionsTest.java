@@ -21,6 +21,9 @@ import org.apache.flink.connector.jdbc.fakedb.FakeDBUtils;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Properties;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Tests for {@link JdbcConnectionOptions}. */
@@ -57,5 +60,45 @@ class JdbcConnectionOptionsTest {
                                         .withConnectionCheckTimeoutSeconds(0)
                                         .build())
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void testConnectionProperties() {
+        // test for null connection properties
+        JdbcConnectionOptions options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .build();
+        assertThat(options.getProperties()).isEmpty();
+        options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .withProperties(null)
+                        .build();
+        assertThat(options.getProperties()).isEmpty();
+
+        // test for empty connection properties
+        options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .withProperties(new Properties())
+                        .build();
+        assertThat(options.getProperties()).isEmpty();
+        // test for useful connection properties
+        Properties properties = new Properties();
+        properties.put("keyA", "valueA");
+        options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .withProperties(properties)
+                        .build();
+        assertThat(options.getProperties()).hasSize(1);
+        options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .withUsername("user")
+                        .withProperties(properties)
+                        .build();
+        assertThat(options.getProperties()).hasSize(2);
     }
 }

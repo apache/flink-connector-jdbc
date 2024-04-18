@@ -33,9 +33,12 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.PASSWORD_KEY;
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.USER_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -179,5 +182,88 @@ class SimpleJdbcConnectionProviderTest {
 
         assertThat(connection1.isClosed()).isTrue();
         assertThat(connection2).isNotSameAs(connection1);
+    }
+
+    @Test
+    void testConnectionProperties() throws Exception {
+        SimpleJdbcConnectionProvider provider;
+        JdbcConnectionOptions options;
+        Properties properties = null;
+
+        // test for null connection properties
+        options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .withDriverName(FakeDBUtils.DRIVER1_CLASS_NAME)
+                        .build();
+        provider = new SimpleJdbcConnectionProvider(options);
+        assertThat(provider.getProperties()).isEmpty();
+        provider.close();
+
+        options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .withDriverName(FakeDBUtils.DRIVER1_CLASS_NAME)
+                        .withProperties(null)
+                        .build();
+        provider = new SimpleJdbcConnectionProvider(options);
+        assertThat(provider.getProperties()).isEmpty();
+        provider.close();
+
+        // test for empty connection properties
+        options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .withDriverName(FakeDBUtils.DRIVER1_CLASS_NAME)
+                        .withProperties(new Properties())
+                        .build();
+        provider = new SimpleJdbcConnectionProvider(options);
+        assertThat(provider.getProperties()).isEmpty();
+        provider.close();
+
+        // test for useful connection properties
+        properties = new Properties();
+        properties.put("ka", "va");
+        options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .withDriverName(FakeDBUtils.DRIVER1_CLASS_NAME)
+                        .withProperties(properties)
+                        .build();
+        provider = new SimpleJdbcConnectionProvider(options);
+        assertThat(provider.getProperties()).hasSize(1);
+        provider.close();
+
+        // test for username & password overridable with connection properties
+        properties = new Properties();
+        properties.put("ka", "va");
+        options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .withDriverName(FakeDBUtils.DRIVER1_CLASS_NAME)
+                        .withProperties(properties)
+                        .withUsername("user")
+                        .build();
+        provider = new SimpleJdbcConnectionProvider(options);
+        assertThat(provider.getProperties()).hasSize(2);
+        assertThat(provider.getProperties()).hasFieldOrPropertyWithValue("user", "user");
+        provider.close();
+
+        properties = new Properties();
+        properties.put("ka", "va");
+        properties.put(USER_KEY, "userA");
+        properties.put(PASSWORD_KEY, "password");
+        options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .withDriverName(FakeDBUtils.DRIVER1_CLASS_NAME)
+                        .withProperties(properties)
+                        .withUsername("user")
+                        .build();
+        provider = new SimpleJdbcConnectionProvider(options);
+        assertThat(provider.getProperties()).hasSize(3);
+        assertThat(provider.getProperties()).hasFieldOrPropertyWithValue(USER_KEY, "user");
+        assertThat(provider.getProperties()).hasFieldOrPropertyWithValue(PASSWORD_KEY, "password");
+        provider.close();
     }
 }
