@@ -27,6 +27,9 @@ import org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialec
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
 
+import java.util.Properties;
+
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /** Utils for {@link JdbcCatalog}. */
@@ -41,6 +44,7 @@ public class JdbcCatalogUtils {
         checkArgument(parts.length == 2);
     }
 
+    @Deprecated
     /** Create catalog instance from given information. */
     public static AbstractJdbcCatalog createCatalog(
             ClassLoader userClassLoader,
@@ -50,17 +54,34 @@ public class JdbcCatalogUtils {
             String pwd,
             String baseUrl,
             String compatibleMode) {
+        return createCatalog(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                baseUrl,
+                compatibleMode,
+                getBriefAuthProperties(username, pwd));
+    }
+
+    /** Create catalog instance from given information. */
+    public static AbstractJdbcCatalog createCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String baseUrl,
+            String compatibleMode,
+            Properties connectionProperties) {
         JdbcDialect dialect = JdbcDialectLoader.load(baseUrl, compatibleMode, userClassLoader);
 
         if (dialect instanceof PostgresDialect) {
             return new PostgresCatalog(
-                    userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+                    userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
         } else if (dialect instanceof CrateDBDialect) {
             return new CrateDBCatalog(
-                    userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+                    userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
         } else if (dialect instanceof MySqlDialect) {
             return new MySqlCatalog(
-                    userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+                    userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
         } else {
             throw new UnsupportedOperationException(
                     String.format("Catalog for '%s' is not supported yet.", dialect));

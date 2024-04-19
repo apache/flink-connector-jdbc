@@ -35,6 +35,7 @@ import static org.apache.flink.connector.jdbc.catalog.factory.JdbcCatalogFactory
 import static org.apache.flink.connector.jdbc.catalog.factory.JdbcCatalogFactoryOptions.DEFAULT_DATABASE;
 import static org.apache.flink.connector.jdbc.catalog.factory.JdbcCatalogFactoryOptions.PASSWORD;
 import static org.apache.flink.connector.jdbc.catalog.factory.JdbcCatalogFactoryOptions.USERNAME;
+import static org.apache.flink.connector.jdbc.utils.JdbcUtils.getConnectionProperties;
 import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 
 /** Factory for {@link JdbcCatalog}. */
@@ -75,9 +76,8 @@ public class JdbcCatalogFactory implements CatalogFactory {
                 context.getClassLoader(),
                 context.getName(),
                 helper.getOptions().get(DEFAULT_DATABASE),
-                helper.getOptions().get(USERNAME),
-                helper.getOptions().get(PASSWORD),
                 helper.getOptions().get(BASE_URL),
-                helper.getOptions().get(COMPATIBLE_MODE));
+                helper.getOptions().get(COMPATIBLE_MODE),
+                getConnectionProperties(helper.getOptions()));
     }
 }
