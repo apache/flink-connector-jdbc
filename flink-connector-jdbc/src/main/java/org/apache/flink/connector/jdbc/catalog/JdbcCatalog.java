@@ -29,6 +29,9 @@ import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 
 import java.util.List;
+import java.util.Properties;
+
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 
 /** Catalogs for relational databases via JDBC. */
 @PublicEvolving
@@ -36,11 +39,12 @@ public class JdbcCatalog extends AbstractJdbcCatalog {
 
     private final AbstractJdbcCatalog internal;
 
+    @Deprecated
     /**
      * Creates a JdbcCatalog.
      *
      * @deprecated please use {@link JdbcCatalog#JdbcCatalog(ClassLoader, String, String, String,
-     *     String, String, String)} instead.
+     *     String, Properties)} instead.
      */
     public JdbcCatalog(
             String catalogName,
@@ -52,12 +56,12 @@ public class JdbcCatalog extends AbstractJdbcCatalog {
                 Thread.currentThread().getContextClassLoader(),
                 catalogName,
                 defaultDatabase,
-                username,
-                pwd,
                 baseUrl,
-                null);
+                null,
+                getBriefAuthProperties(username, pwd));
     }
 
+    @VisibleForTesting
     /**
      * Creates a JdbcCatalog.
      *
@@ -77,17 +81,42 @@ public class JdbcCatalog extends AbstractJdbcCatalog {
             String pwd,
             String baseUrl,
             String compatibleMode) {
-        super(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+        this(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                baseUrl,
+                compatibleMode,
+                getBriefAuthProperties(username, pwd));
+    }
+
+    /**
+     * Creates a JdbcCatalog.
+     *
+     * @param userClassLoader the classloader used to load JDBC driver
+     * @param catalogName the registered catalog name
+     * @param defaultDatabase the default database name
+     * @param connectProperties the properties used to connect the database
+     * @param baseUrl the base URL of the database, e.g. jdbc:mysql://localhost:3306
+     * @param compatibleMode the compatible mode of the database
+     */
+    public JdbcCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String baseUrl,
+            String compatibleMode,
+            Properties connectProperties) {
+        super(userClassLoader, catalogName, defaultDatabase, baseUrl, connectProperties);
 
         internal =
                 JdbcCatalogUtils.createCatalog(
                         userClassLoader,
                         catalogName,
                         defaultDatabase,
-                        username,
-                        pwd,
                         baseUrl,
-                        compatibleMode);
+                        compatibleMode,
+                        connectProperties);
     }
 
     // ------ databases -----

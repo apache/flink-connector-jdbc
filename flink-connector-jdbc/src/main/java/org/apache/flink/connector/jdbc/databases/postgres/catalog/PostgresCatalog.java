@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.databases.postgres.catalog;
 
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.catalog.AbstractJdbcCatalog;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeMapper;
 import org.apache.flink.table.catalog.ObjectPath;
@@ -39,7 +40,10 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
+
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 
 /** Catalog for PostgreSQL. */
 @Internal
@@ -72,6 +76,7 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
 
     protected final JdbcDialectTypeMapper dialectTypeMapper;
 
+    @VisibleForTesting
     public PostgresCatalog(
             ClassLoader userClassLoader,
             String catalogName,
@@ -83,12 +88,26 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
                 userClassLoader,
                 catalogName,
                 defaultDatabase,
-                username,
-                pwd,
                 baseUrl,
-                new PostgresTypeMapper());
+                getBriefAuthProperties(username, pwd));
     }
 
+    public PostgresCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String baseUrl,
+            Properties connectProperties) {
+        this(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                baseUrl,
+                new PostgresTypeMapper(),
+                connectProperties);
+    }
+
+    @Deprecated
     protected PostgresCatalog(
             ClassLoader userClassLoader,
             String catalogName,
@@ -97,7 +116,23 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
             String pwd,
             String baseUrl,
             JdbcDialectTypeMapper dialectTypeMapper) {
-        super(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+        this(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                baseUrl,
+                dialectTypeMapper,
+                getBriefAuthProperties(username, pwd));
+    }
+
+    protected PostgresCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String baseUrl,
+            JdbcDialectTypeMapper dialectTypeMapper,
+            Properties connectProperties) {
+        super(userClassLoader, catalogName, defaultDatabase, baseUrl, connectProperties);
         this.dialectTypeMapper = dialectTypeMapper;
     }
 
@@ -153,7 +188,7 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
         }
 
         final String url = baseUrl + databaseName;
-        try (Connection conn = DriverManager.getConnection(url, username, pwd)) {
+        try (Connection conn = DriverManager.getConnection(url, connectionProperties)) {
             // get all schemas
             List<String> schemas;
             try (PreparedStatement ps =

@@ -22,6 +22,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.connector.jdbc.catalog.JdbcCatalog;
+import org.apache.flink.connector.jdbc.table.JdbcConnectorOptions;
 import org.apache.flink.table.catalog.CommonCatalogOptions;
 
 /** {@link ConfigOption}s for {@link JdbcCatalog}. */
@@ -35,11 +36,9 @@ public class JdbcCatalogFactoryOptions {
                     .stringType()
                     .noDefaultValue();
 
-    public static final ConfigOption<String> USERNAME =
-            ConfigOptions.key("username").stringType().noDefaultValue();
+    public static final ConfigOption<String> USERNAME = JdbcConnectorOptions.USERNAME;
 
-    public static final ConfigOption<String> PASSWORD =
-            ConfigOptions.key("password").stringType().noDefaultValue();
+    public static final ConfigOption<String> PASSWORD = JdbcConnectorOptions.PASSWORD;
 
     public static final ConfigOption<String> BASE_URL =
             ConfigOptions.key("base-url").stringType().noDefaultValue();

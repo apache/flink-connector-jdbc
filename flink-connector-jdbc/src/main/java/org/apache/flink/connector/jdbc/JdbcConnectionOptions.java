@@ -81,6 +81,18 @@ public class JdbcConnectionOptions implements Serializable {
         return properties;
     }
 
+    @Nonnull
+    public static Properties getBriefAuthProperties(String user, String password) {
+        final Properties result = new Properties();
+        if (Objects.nonNull(user)) {
+            result.put(USER_KEY, user);
+        }
+        if (Objects.nonNull(password)) {
+            result.put(PASSWORD_KEY, password);
+        }
+        return result;
+    }
+
     /** Builder for {@link JdbcConnectionOptions}. */
     public static class JdbcConnectionOptionsBuilder {
         private String url;

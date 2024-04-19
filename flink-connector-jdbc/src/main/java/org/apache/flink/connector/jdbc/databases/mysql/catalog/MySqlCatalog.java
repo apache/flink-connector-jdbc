@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.databases.mysql.catalog;
 
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.catalog.AbstractJdbcCatalog;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeMapper;
 import org.apache.flink.table.catalog.ObjectPath;
@@ -38,9 +39,12 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 
 /** Catalog for MySQL. */
 @Internal
@@ -60,6 +64,7 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
                 }
             };
 
+    @VisibleForTesting
     public MySqlCatalog(
             ClassLoader userClassLoader,
             String catalogName,
@@ -67,7 +72,21 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
             String username,
             String pwd,
             String baseUrl) {
-        super(userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+        this(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                baseUrl,
+                getBriefAuthProperties(username, pwd));
+    }
+
+    public MySqlCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String baseUrl,
+            Properties connectionProperties) {
+        super(userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
 
         String driverVersion =
                 Preconditions.checkNotNull(getDriverVersion(), "Driver version must not be null.");
@@ -122,7 +141,7 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
     private String getDatabaseVersion() {
         try (TemporaryClassLoaderContext ignored =
                 TemporaryClassLoaderContext.of(userClassLoader)) {
-            try (Connection conn = DriverManager.getConnection(defaultUrl, username, pwd)) {
+            try (Connection conn = DriverManager.getConnection(defaultUrl, connectionProperties)) {
                 return conn.getMetaData().getDatabaseProductVersion();
             } catch (Exception e) {
                 throw new CatalogException(
@@ -134,7 +153,7 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
     private String getDriverVersion() {
         try (TemporaryClassLoaderContext ignored =
                 TemporaryClassLoaderContext.of(userClassLoader)) {
-            try (Connection conn = DriverManager.getConnection(defaultUrl, username, pwd)) {
+            try (Connection conn = DriverManager.getConnection(defaultUrl, connectionProperties)) {
                 String driverVersion = conn.getMetaData().getDriverVersion();
                 Pattern regexp = Pattern.compile("\\d+?\\.\\d+?\\.\\d+");
                 Matcher matcher = regexp.matcher(driverVersion);

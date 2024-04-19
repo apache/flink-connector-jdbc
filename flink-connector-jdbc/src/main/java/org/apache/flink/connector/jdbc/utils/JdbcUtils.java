@@ -18,18 +18,46 @@
 
 package org.apache.flink.connector.jdbc.utils;
 
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.types.Row;
+import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
+import static org.apache.flink.connector.jdbc.catalog.factory.JdbcCatalogFactoryOptions.PASSWORD;
+import static org.apache.flink.connector.jdbc.catalog.factory.JdbcCatalogFactoryOptions.USERNAME;
 
 /** Utils for jdbc connectors. */
 public class JdbcUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcUtils.class);
+
+    public static final String PROPERTIES_PREFIX = "connection-properties.";
+
+    public static Properties getConnectionProperties(ReadableConfig config) {
+        final Properties result =
+                getBriefAuthProperties(config.get(USERNAME), config.get(PASSWORD));
+        Preconditions.checkArgument(config instanceof Configuration);
+        Map<String, String> configMap = ((Configuration) config).toMap();
+        configMap.forEach(
+                (k, v) -> {
+                    if (Objects.nonNull(k)
+                            && Objects.nonNull(v)
+                            && k.startsWith(PROPERTIES_PREFIX)) {
+                        result.setProperty(k.substring(PROPERTIES_PREFIX.length()), v);
+                    }
+                });
+        return result;
+    }
 
     /**
      * Adds a record to the prepared statement.
