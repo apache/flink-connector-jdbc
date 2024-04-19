@@ -21,8 +21,7 @@ import org.apache.flink.connector.jdbc.fakedb.FakeDBUtils;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Properties;
-
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.USER_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -63,42 +62,29 @@ class JdbcConnectionOptionsTest {
     }
 
     @Test
-    void testConnectionProperties() {
+    void testConnectionProperty() {
         // test for null connection properties
         JdbcConnectionOptions options =
                 new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
                         .withUrl(FakeDBUtils.TEST_DB_URL)
                         .build();
         assertThat(options.getProperties()).isEmpty();
-        options =
-                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-                        .withUrl(FakeDBUtils.TEST_DB_URL)
-                        .withProperties(null)
-                        .build();
-        assertThat(options.getProperties()).isEmpty();
 
-        // test for empty connection properties
-        options =
-                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-                        .withUrl(FakeDBUtils.TEST_DB_URL)
-                        .withProperties(new Properties())
-                        .build();
-        assertThat(options.getProperties()).isEmpty();
         // test for useful connection properties
-        Properties properties = new Properties();
-        properties.put("keyA", "valueA");
         options =
                 new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
                         .withUrl(FakeDBUtils.TEST_DB_URL)
-                        .withProperties(properties)
+                        .withProperty("keyA", "valueA")
                         .build();
         assertThat(options.getProperties()).hasSize(1);
+
         options =
                 new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
                         .withUrl(FakeDBUtils.TEST_DB_URL)
                         .withUsername("user")
-                        .withProperties(properties)
+                        .withProperty("keyA", "valueA")
                         .build();
         assertThat(options.getProperties()).hasSize(2);
+        assertThat(options.getProperties()).hasFieldOrPropertyWithValue(USER_KEY, "user");
     }
 }

@@ -98,13 +98,6 @@ public class JdbcConnectionOptions implements Serializable {
             return this;
         }
 
-        public JdbcConnectionOptionsBuilder withProperties(Properties properties) {
-            if (Objects.nonNull(properties)) {
-                this.properties.putAll(properties);
-            }
-            return this;
-        }
-
         public JdbcConnectionOptionsBuilder withProperty(String propKey, String propVal) {
             Preconditions.checkNotNull(propKey, "Connection property key mustn't be null");
             Preconditions.checkNotNull(propVal, "Connection property value mustn't be null");

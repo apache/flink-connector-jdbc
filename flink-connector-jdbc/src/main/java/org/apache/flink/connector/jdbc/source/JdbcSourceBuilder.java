@@ -39,7 +39,6 @@ import javax.annotation.Nonnull;
 
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.util.Properties;
 
 import static org.apache.flink.connector.jdbc.source.JdbcSourceOptions.AUTO_COMMIT;
 import static org.apache.flink.connector.jdbc.source.JdbcSourceOptions.READER_FETCH_BATCH_SIZE;
@@ -180,11 +179,6 @@ public class JdbcSourceBuilder<OUT> {
     }
 
     // ------ Optional ------------------------------------------------------------------
-
-    public JdbcSourceBuilder<OUT> setConnectionProperties(Properties connectionProperties) {
-        connOptionsBuilder.withProperties(connectionProperties);
-        return this;
-    }
 
     public JdbcSourceBuilder<OUT> setConnectionProperty(String propKey, String propVal) {
         Preconditions.checkNotNull(propKey, "Connection property key mustn't be null");

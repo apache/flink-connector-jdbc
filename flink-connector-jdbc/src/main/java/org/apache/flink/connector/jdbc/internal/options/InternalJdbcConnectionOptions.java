@@ -191,13 +191,6 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
             return this;
         }
 
-        public Builder setProperties(Properties properties) {
-            if (Objects.nonNull(properties)) {
-                this.properties.putAll(properties);
-            }
-            return this;
-        }
-
         public Builder setProperty(String propKey, String propVal) {
             Preconditions.checkNotNull(propKey, "Connection property key mustn't be null");
             Preconditions.checkNotNull(propVal, "Connection property value mustn't be null");
