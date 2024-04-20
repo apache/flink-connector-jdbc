@@ -47,7 +47,9 @@ public class JdbcConnectionOptions implements Serializable {
             @Nullable String driverName,
             int connectionCheckTimeoutSeconds,
             @Nonnull Properties properties) {
-        Preconditions.checkArgument(connectionCheckTimeoutSeconds > 0);
+        Preconditions.checkArgument(
+                connectionCheckTimeoutSeconds > 0,
+                "Connection check timeout seconds shouldn't be smaller than 1");
         this.url = Preconditions.checkNotNull(url, "jdbc url is empty");
         this.driverName = driverName;
         this.connectionCheckTimeoutSeconds = connectionCheckTimeoutSeconds;
