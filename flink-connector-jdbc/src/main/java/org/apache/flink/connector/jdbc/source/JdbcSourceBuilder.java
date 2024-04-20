@@ -143,9 +143,6 @@ public class JdbcSourceBuilder<OUT> {
     }
 
     public JdbcSourceBuilder<OUT> setUsername(String username) {
-        Preconditions.checkArgument(
-                !StringUtils.isNullOrWhitespaceOnly(username),
-                "It's required to set the 'username'.");
         connOptionsBuilder.withUsername(username);
         return this;
     }
@@ -179,6 +176,12 @@ public class JdbcSourceBuilder<OUT> {
     }
 
     // ------ Optional ------------------------------------------------------------------
+
+    public JdbcSourceBuilder<OUT> setConnectionCheckTimeoutSeconds(
+            int connectionCheckTimeoutSeconds) {
+        connOptionsBuilder.withConnectionCheckTimeoutSeconds(connectionCheckTimeoutSeconds);
+        return this;
+    }
 
     public JdbcSourceBuilder<OUT> setConnectionProperty(String propKey, String propVal) {
         Preconditions.checkNotNull(propKey, "Connection property key mustn't be null");

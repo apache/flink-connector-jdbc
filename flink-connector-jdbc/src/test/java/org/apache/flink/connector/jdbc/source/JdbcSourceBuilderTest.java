@@ -116,8 +116,6 @@ class JdbcSourceBuilderTest {
     void testSetConnectionInfo() {
         assertThatThrownBy(() -> JdbcSource.builder().setDriverName(""))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> JdbcSource.builder().setUsername(""))
-                .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> JdbcSource.builder().setDBUrl(""))
                 .isInstanceOf(IllegalArgumentException.class);
     }
