@@ -180,6 +180,13 @@ public class JdbcSourceBuilder<OUT> {
 
     // ------ Optional ------------------------------------------------------------------
 
+    public JdbcSourceBuilder<OUT> setConnectionProperty(String propKey, String propVal) {
+        Preconditions.checkNotNull(propKey, "Connection property key mustn't be null");
+        Preconditions.checkNotNull(propVal, "Connection property value mustn't be null");
+        connOptionsBuilder.withProperty(propKey, propVal);
+        return this;
+    }
+
     public JdbcSourceBuilder<OUT> setJdbcParameterValuesProvider(
             @Nonnull JdbcParameterValuesProvider parameterValuesProvider) {
         this.jdbcParameterValuesProvider = Preconditions.checkNotNull(parameterValuesProvider);
