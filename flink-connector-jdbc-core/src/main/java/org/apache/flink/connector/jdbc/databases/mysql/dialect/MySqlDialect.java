@@ -19,8 +19,8 @@
 package org.apache.flink.connector.jdbc.databases.mysql.dialect;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
-import org.apache.flink.connector.jdbc.dialect.AbstractDialect;
+import org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialect;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 
@@ -51,8 +51,8 @@ public class MySqlDialect extends AbstractDialect {
     private static final String REWRITE_BATCHED_STATEMENTS = "rewriteBatchedStatements";
 
     @Override
-    public JdbcRowConverter getRowConverter(RowType rowType) {
-        return new MySQLRowConverter(rowType);
+    public JdbcDialectConverter getRowConverter(RowType rowType) {
+        return new MySQLDialectConverter(rowType);
     }
 
     @Override

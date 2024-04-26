@@ -34,8 +34,8 @@ public class CrateDBDialect extends AbstractPostgresCompatibleDialect {
     }
 
     @Override
-    public CrateDBRowConverter getRowConverter(RowType rowType) {
-        return new CrateDBRowConverter(rowType);
+    public CrateDBDialectConverter getRowConverter(RowType rowType) {
+        return new CrateDBDialectConverter(rowType);
     }
 
     @Override

@@ -18,8 +18,8 @@
 
 package org.apache.flink.connector.jdbc.databases.oracle.dialect;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
+import org.apache.flink.connector.jdbc.core.table.JdbcFactoryLoader;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatementImpl;
 
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OraclePreparedStatementTest {
 
     private final JdbcDialect dialect =
-            JdbcDialectLoader.load(
+            JdbcFactoryLoader.loadDialect(
                     "jdbc:oracle://localhost:3306/test", getClass().getClassLoader());
     private final String[] fieldNames =
             new String[] {"id", "name", "email", "ts", "field1", "field_2", "__field_3__"};

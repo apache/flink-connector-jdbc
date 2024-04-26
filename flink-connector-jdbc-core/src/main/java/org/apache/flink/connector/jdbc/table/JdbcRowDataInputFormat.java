@@ -27,7 +27,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
-import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
@@ -67,7 +67,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
     private String queryTemplate;
     private int resultSetType;
     private int resultSetConcurrency;
-    private JdbcRowConverter rowConverter;
+    private JdbcDialectConverter rowConverter;
     private TypeInformation<RowData> rowDataTypeInfo;
 
     private transient PreparedStatement statement;
@@ -82,7 +82,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
             String queryTemplate,
             int resultSetType,
             int resultSetConcurrency,
-            JdbcRowConverter rowConverter,
+            JdbcDialectConverter rowConverter,
             TypeInformation<RowData> rowDataTypeInfo) {
         this.connectionProvider = connectionProvider;
         this.fetchSize = fetchSize;
@@ -303,7 +303,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
         private Boolean autoCommit;
         private Object[][] parameterValues;
         private String queryTemplate;
-        private JdbcRowConverter rowConverter;
+        private JdbcDialectConverter rowConverter;
         private TypeInformation<RowData> rowDataTypeInfo;
         private int resultSetType = ResultSet.TYPE_FORWARD_ONLY;
         private int resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
@@ -347,7 +347,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
             return this;
         }
 
-        public Builder setRowConverter(JdbcRowConverter rowConverter) {
+        public Builder setRowConverter(JdbcDialectConverter rowConverter) {
             this.rowConverter = rowConverter;
             return this;
         }

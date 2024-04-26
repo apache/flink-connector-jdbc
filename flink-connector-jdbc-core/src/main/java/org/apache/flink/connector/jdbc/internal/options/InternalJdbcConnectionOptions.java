@@ -20,8 +20,8 @@ package org.apache.flink.connector.jdbc.internal.options;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
+import org.apache.flink.connector.jdbc.core.table.JdbcFactoryLoader;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -179,7 +179,7 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
 
         /**
          * optional, Handle the SQL dialect of jdbc driver. If not set, it will be infer by {@link
-         * JdbcDialectLoader#load} from DB url.
+         * JdbcFactoryLoader#load} from DB url.
          */
         public Builder setDialect(JdbcDialect dialect) {
             this.dialect = dialect;
@@ -205,7 +205,7 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
                 if (classLoader == null) {
                     classLoader = Thread.currentThread().getContextClassLoader();
                 }
-                this.dialect = JdbcDialectLoader.load(dbURL, compatibleMode, classLoader);
+                this.dialect = JdbcFactoryLoader.loadDialect(dbURL, classLoader, compatibleMode);
             }
             if (this.driverName == null) {
                 Optional<String> optional = dialect.defaultDriverName();

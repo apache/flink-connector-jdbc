@@ -19,9 +19,9 @@
 package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.internal.executor.TableBufferReducedStatementExecutor;
@@ -174,7 +174,7 @@ public class JdbcOutputFormatBuilder implements Serializable {
 
     private static JdbcBatchStatementExecutor<RowData> createSimpleRowExecutor(
             JdbcDialect dialect, String[] fieldNames, LogicalType[] fieldTypes, final String sql) {
-        final JdbcRowConverter rowConverter = dialect.getRowConverter(RowType.of(fieldTypes));
+        final JdbcDialectConverter rowConverter = dialect.getRowConverter(RowType.of(fieldTypes));
         return new TableSimpleStatementExecutor(
                 connection ->
                         FieldNamedPreparedStatement.prepareStatement(connection, sql, fieldNames),
