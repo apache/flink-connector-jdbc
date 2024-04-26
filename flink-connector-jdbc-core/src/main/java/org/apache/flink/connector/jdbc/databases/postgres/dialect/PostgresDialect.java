@@ -31,8 +31,8 @@ public class PostgresDialect extends AbstractPostgresCompatibleDialect {
     private static final long serialVersionUID = 1L;
 
     @Override
-    public PostgresRowConverter getRowConverter(RowType rowType) {
-        return new PostgresRowConverter(rowType);
+    public PostgresDialectConverter getRowConverter(RowType rowType) {
+        return new PostgresDialectConverter(rowType);
     }
 
     @Override

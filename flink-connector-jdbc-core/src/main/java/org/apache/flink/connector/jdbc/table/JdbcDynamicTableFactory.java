@@ -23,8 +23,8 @@ import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
+import org.apache.flink.connector.jdbc.core.table.JdbcFactoryLoader;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcReadOptions;
@@ -131,7 +131,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
 
     private static void validateDataTypeWithJdbcDialect(
             DataType dataType, String url, String compatibleMode, ClassLoader classLoader) {
-        final JdbcDialect dialect = JdbcDialectLoader.load(url, compatibleMode, classLoader);
+        final JdbcDialect dialect = JdbcFactoryLoader.loadDialect(url, classLoader, compatibleMode);
         dialect.validate((RowType) dataType.getLogicalType());
     }
 
@@ -144,8 +144,8 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
                         .setDBUrl(url)
                         .setTableName(readableConfig.get(TABLE_NAME))
                         .setDialect(
-                                JdbcDialectLoader.load(
-                                        url, readableConfig.get(COMPATIBLE_MODE), classLoader))
+                                JdbcFactoryLoader.loadDialect(
+                                        url, classLoader, readableConfig.get(COMPATIBLE_MODE)))
                         .setParallelism(readableConfig.getOptional(SINK_PARALLELISM).orElse(null))
                         .setConnectionCheckTimeoutSeconds(
                                 (int) readableConfig.get(MAX_RETRY_TIMEOUT).getSeconds());
@@ -283,7 +283,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
 
     private void validateConfigOptions(ReadableConfig config, ClassLoader classLoader) {
         String jdbcUrl = config.get(URL);
-        JdbcDialectLoader.load(jdbcUrl, config.get(COMPATIBLE_MODE), classLoader);
+        JdbcFactoryLoader.loadDialect(jdbcUrl, classLoader, config.get(COMPATIBLE_MODE));
 
         checkAllOrNone(config, new ConfigOption[] {USERNAME, PASSWORD});
 

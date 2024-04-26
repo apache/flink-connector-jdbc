@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.dialect;
 
+import org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialect;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 
 import java.util.Arrays;

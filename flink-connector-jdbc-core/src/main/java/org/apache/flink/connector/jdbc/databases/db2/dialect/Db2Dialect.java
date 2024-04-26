@@ -18,8 +18,8 @@
 
 package org.apache.flink.connector.jdbc.databases.db2.dialect;
 
-import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
-import org.apache.flink.connector.jdbc.dialect.AbstractDialect;
+import org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialect;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 
@@ -42,8 +42,8 @@ public class Db2Dialect extends AbstractDialect {
     private static final int MIN_DECIMAL_PRECISION = 1;
 
     @Override
-    public JdbcRowConverter getRowConverter(RowType rowType) {
-        return new Db2RowConverter(rowType);
+    public JdbcDialectConverter getRowConverter(RowType rowType) {
+        return new Db2DialectConverter(rowType);
     }
 
     @Override

@@ -19,8 +19,8 @@
 package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.connector.jdbc.JdbcTestBase;
-import org.apache.flink.connector.jdbc.databases.derby.dialect.DerbyDialectFactory;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.databases.derby.dialect.DerbyFactory;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableException;
@@ -221,7 +221,7 @@ class JdbcFilterPushdownPreparedStatementVisitorTest {
             Serializable[] expectedParams) {
         List<ResolvedExpression> resolved = resolveSQLFilterToExpression(inputExpr, schema);
         assertThat(resolved.size()).isEqualTo(1);
-        JdbcDialect dialect = new DerbyDialectFactory().create();
+        JdbcDialect dialect = new DerbyFactory().createDialect();
         JdbcFilterPushdownPreparedStatementVisitor visitor =
                 new JdbcFilterPushdownPreparedStatementVisitor(dialect::quoteIdentifier);
         ParameterizedPredicate pred = resolved.get(0).accept(visitor).get();

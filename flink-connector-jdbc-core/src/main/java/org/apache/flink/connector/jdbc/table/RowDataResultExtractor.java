@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.table;
 
-import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
 import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.Preconditions;
@@ -29,14 +29,14 @@ import java.sql.SQLException;
 /** The result extractor for {@link RowData}. */
 public class RowDataResultExtractor implements ResultExtractor<RowData> {
 
-    private final JdbcRowConverter jdbcRowConverter;
+    private final JdbcDialectConverter jdbcDialectConverter;
 
-    public RowDataResultExtractor(JdbcRowConverter jdbcRowConverter) {
-        this.jdbcRowConverter = Preconditions.checkNotNull(jdbcRowConverter);
+    public RowDataResultExtractor(JdbcDialectConverter jdbcDialectConverter) {
+        this.jdbcDialectConverter = Preconditions.checkNotNull(jdbcDialectConverter);
     }
 
     @Override
     public RowData extract(ResultSet resultSet) throws SQLException {
-        return jdbcRowConverter.toInternal(resultSet);
+        return jdbcDialectConverter.toInternal(resultSet);
     }
 }

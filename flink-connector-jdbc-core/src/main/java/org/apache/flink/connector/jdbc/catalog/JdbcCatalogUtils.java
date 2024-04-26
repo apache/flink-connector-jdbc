@@ -18,14 +18,14 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
+import org.apache.flink.connector.jdbc.core.table.JdbcFactoryLoader;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.databases.cratedb.catalog.CrateDBCatalog;
 import org.apache.flink.connector.jdbc.databases.cratedb.dialect.CrateDBDialect;
 import org.apache.flink.connector.jdbc.databases.mysql.catalog.MySqlCatalog;
 import org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialect;
 import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog;
 import org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialect;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
 
 import java.util.Properties;
 
@@ -71,7 +71,9 @@ public class JdbcCatalogUtils {
             String baseUrl,
             String compatibleMode,
             Properties connectionProperties) {
-        JdbcDialect dialect = JdbcDialectLoader.load(baseUrl, compatibleMode, userClassLoader);
+
+        JdbcDialect dialect =
+                JdbcFactoryLoader.loadDialect(baseUrl, userClassLoader, compatibleMode);
 
         if (dialect instanceof PostgresDialect) {
             return new PostgresCatalog(
