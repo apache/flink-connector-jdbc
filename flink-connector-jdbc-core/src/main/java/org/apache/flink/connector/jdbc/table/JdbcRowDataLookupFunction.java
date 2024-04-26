@@ -20,10 +20,10 @@ package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatement;
 import org.apache.flink.table.data.RowData;
@@ -62,8 +62,8 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
     private final JdbcConnectionProvider connectionProvider;
     private final String[] keyNames;
     private final int maxRetryTimes;
-    private final JdbcRowConverter jdbcRowConverter;
-    private final JdbcRowConverter lookupKeyRowConverter;
+    private final JdbcDialectConverter jdbcDialectConverter;
+    private final JdbcDialectConverter lookupKeyRowConverter;
 
     private final List<String> resolvedPredicates;
     private final Serializable[] pushdownParams;
@@ -105,7 +105,7 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
                 options.getDialect()
                         .getSelectFromStatement(options.getTableName(), fieldNames, keyNames);
         JdbcDialect jdbcDialect = options.getDialect();
-        this.jdbcRowConverter = jdbcDialect.getRowConverter(rowType);
+        this.jdbcDialectConverter = jdbcDialect.getRowConverter(rowType);
         this.lookupKeyRowConverter =
                 jdbcDialect.getRowConverter(
                         RowType.of(
@@ -151,7 +151,7 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
                 try (ResultSet resultSet = statement.executeQuery()) {
                     ArrayList<RowData> rows = new ArrayList<>();
                     while (resultSet.next()) {
-                        RowData row = jdbcRowConverter.toInternal(resultSet);
+                        RowData row = jdbcDialectConverter.toInternal(resultSet);
                         rows.add(row);
                     }
                     rows.trimToSize();

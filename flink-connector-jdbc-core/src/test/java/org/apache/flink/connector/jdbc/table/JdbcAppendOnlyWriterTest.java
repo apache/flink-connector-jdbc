@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
+import org.apache.flink.connector.jdbc.core.table.JdbcFactoryLoader;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
 import org.apache.flink.connector.jdbc.internal.RowJdbcOutputFormat;
@@ -62,7 +62,7 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
                                                     InternalJdbcConnectionOptions.builder()
                                                             .setDBUrl(getMetadata().getJdbcUrl())
                                                             .setDialect(
-                                                                    JdbcDialectLoader.load(
+                                                                    JdbcFactoryLoader.loadDialect(
                                                                             getMetadata()
                                                                                     .getJdbcUrl(),
                                                                             getClass()

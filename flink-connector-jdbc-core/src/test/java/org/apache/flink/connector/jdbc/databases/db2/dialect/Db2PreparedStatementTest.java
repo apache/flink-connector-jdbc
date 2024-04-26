@@ -18,8 +18,8 @@
 
 package org.apache.flink.connector.jdbc.databases.db2.dialect;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
+import org.apache.flink.connector.jdbc.core.table.JdbcFactoryLoader;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +29,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class Db2PreparedStatementTest {
 
     private final JdbcDialect dialect =
-            JdbcDialectLoader.load("jdbc:db2://localhost:3306/test", getClass().getClassLoader());
+            JdbcFactoryLoader.loadDialect(
+                    "jdbc:db2://localhost:3306/test", getClass().getClassLoader());
     private final String[] fieldNames =
             new String[] {"id", "name", "email", "ts", "field1", "field_2", "__field_3__"};
     private final String[] keyFields = new String[] {"id", "__field_3__"};

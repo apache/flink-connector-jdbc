@@ -120,7 +120,8 @@ public class MySqlTypeMapper implements JdbcDialectTypeMapper {
                 // VARBINARY(n) is not supported in MySqlDialect when 'n' is not equals to
                 // Integer.MAX_VALUE. Please see
                 // org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialect#supportedTypes and
-                // org.apache.flink.connector.jdbc.dialect.AbstractDialect#validate for more
+                // org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialect#validate for
+                // more
                 // details.
                 return DataTypes.BYTES();
             case MYSQL_TINYINT:

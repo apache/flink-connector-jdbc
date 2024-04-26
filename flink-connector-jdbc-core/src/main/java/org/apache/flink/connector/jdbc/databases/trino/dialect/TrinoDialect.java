@@ -19,8 +19,8 @@
 package org.apache.flink.connector.jdbc.databases.trino.dialect;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
-import org.apache.flink.connector.jdbc.dialect.AbstractDialect;
+import org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialect;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 
@@ -45,8 +45,8 @@ public class TrinoDialect extends AbstractDialect {
     private static final int MIN_DECIMAL_PRECISION = 1;
 
     @Override
-    public JdbcRowConverter getRowConverter(RowType rowType) {
-        return new TrinoRowConverter(rowType);
+    public JdbcDialectConverter getRowConverter(RowType rowType) {
+        return new TrinoDialectConverter(rowType);
     }
 
     @Override

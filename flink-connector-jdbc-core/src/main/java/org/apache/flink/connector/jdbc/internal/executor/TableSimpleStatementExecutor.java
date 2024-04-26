@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.internal.executor;
 
-import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatement;
 import org.apache.flink.connector.jdbc.statement.StatementFactory;
 import org.apache.flink.table.data.RowData;
@@ -35,7 +35,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 public final class TableSimpleStatementExecutor implements JdbcBatchStatementExecutor<RowData> {
 
     private final StatementFactory stmtFactory;
-    private final JdbcRowConverter converter;
+    private final JdbcDialectConverter converter;
 
     private transient FieldNamedPreparedStatement st;
 
@@ -43,7 +43,8 @@ public final class TableSimpleStatementExecutor implements JdbcBatchStatementExe
      * Keep in mind object reuse: if it's on then key extractor may be required to return new
      * object.
      */
-    public TableSimpleStatementExecutor(StatementFactory stmtFactory, JdbcRowConverter converter) {
+    public TableSimpleStatementExecutor(
+            StatementFactory stmtFactory, JdbcDialectConverter converter) {
         this.stmtFactory = checkNotNull(stmtFactory);
         this.converter = checkNotNull(converter);
     }

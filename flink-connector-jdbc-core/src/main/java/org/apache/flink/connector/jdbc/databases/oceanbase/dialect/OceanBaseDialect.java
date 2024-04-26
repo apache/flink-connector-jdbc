@@ -19,10 +19,10 @@
 package org.apache.flink.connector.jdbc.databases.oceanbase.dialect;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
+import org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialect;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
 import org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialect;
 import org.apache.flink.connector.jdbc.databases.oracle.dialect.OracleDialect;
-import org.apache.flink.connector.jdbc.dialect.AbstractDialect;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 
@@ -84,8 +84,8 @@ public class OceanBaseDialect extends AbstractDialect {
     }
 
     @Override
-    public JdbcRowConverter getRowConverter(RowType rowType) {
-        return new OceanBaseRowConverter(rowType);
+    public JdbcDialectConverter getRowConverter(RowType rowType) {
+        return new OceanBaseDialectConverter(rowType);
     }
 
     @Override

@@ -18,7 +18,7 @@
 package org.apache.flink.connector.jdbc.internal.executor;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatement;
 import org.apache.flink.connector.jdbc.statement.StatementFactory;
 import org.apache.flink.table.data.RowData;
@@ -43,9 +43,9 @@ public final class TableInsertOrUpdateStatementExecutor
     private final StatementFactory insertStmtFactory;
     private final StatementFactory updateStmtFactory;
 
-    private final JdbcRowConverter existSetter;
-    private final JdbcRowConverter insertSetter;
-    private final JdbcRowConverter updateSetter;
+    private final JdbcDialectConverter existSetter;
+    private final JdbcDialectConverter insertSetter;
+    private final JdbcDialectConverter updateSetter;
 
     private final Function<RowData, RowData> keyExtractor;
 
@@ -57,9 +57,9 @@ public final class TableInsertOrUpdateStatementExecutor
             StatementFactory existStmtFactory,
             StatementFactory insertStmtFactory,
             StatementFactory updateStmtFactory,
-            JdbcRowConverter existSetter,
-            JdbcRowConverter insertSetter,
-            JdbcRowConverter updateSetter,
+            JdbcDialectConverter existSetter,
+            JdbcDialectConverter insertSetter,
+            JdbcDialectConverter updateSetter,
             Function<RowData, RowData> keyExtractor) {
         this.existStmtFactory = checkNotNull(existStmtFactory);
         this.insertStmtFactory = checkNotNull(insertStmtFactory);
