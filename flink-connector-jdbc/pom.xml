@@ -38,7 +38,7 @@ under the License.
 		<scala.binary.version>2.12</scala.binary.version>
 		<scala-library.version>2.12.7</scala-library.version>
 		<assertj.version>3.23.1</assertj.version>
-		<postgres.version>42.5.1</postgres.version>
+		<postgres.version>42.7.3</postgres.version>
 		<oracle.version>21.8.0.0</oracle.version>
 		<trino.version>418</trino.version>
 		<byte-buddy.version>1.12.10</byte-buddy.version>

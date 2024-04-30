@@ -24,6 +24,7 @@ import org.apache.flink.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import java.io.Serializable;
@@ -69,6 +70,12 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
         return connection;
     }
 
+    @Nonnull
+    @Override
+    public Properties getProperties() {
+        return jdbcOptions.getProperties();
+    }
+
     @Override
     public boolean isConnectionValid() throws SQLException {
         return connection != null
@@ -109,17 +116,10 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
             return connection;
         }
         if (jdbcOptions.getDriverName() == null) {
-            connection =
-                    DriverManager.getConnection(
-                            jdbcOptions.getDbURL(),
-                            jdbcOptions.getUsername().orElse(null),
-                            jdbcOptions.getPassword().orElse(null));
+            connection = DriverManager.getConnection(jdbcOptions.getDbURL(), getProperties());
         } else {
             Driver driver = getLoadedDriver();
-            Properties info = new Properties();
-            jdbcOptions.getUsername().ifPresent(user -> info.setProperty("user", user));
-            jdbcOptions.getPassword().ifPresent(password -> info.setProperty("password", password));
-            connection = driver.connect(jdbcOptions.getDbURL(), info);
+            connection = driver.connect(jdbcOptions.getDbURL(), getProperties());
             if (connection == null) {
                 // Throw same exception as DriverManager.getConnection when no driver found to match
                 // caller expectation.
