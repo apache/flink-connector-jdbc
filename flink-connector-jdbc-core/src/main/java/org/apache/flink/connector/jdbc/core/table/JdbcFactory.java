@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.core.table;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalog;
 import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
 import org.apache.flink.util.StringUtils;
 
@@ -63,11 +64,26 @@ public interface JdbcFactory {
                 "Not supported option 'compatible-mode' with value: " + compatibleMode);
     }
 
-    //    JdbcCatalog createCatalog(
-    //            ClassLoader classLoader,
-    //            String catalogName,
-    //            String defaultDatabase,
-    //            String username,
-    //            String pwd,
-    //            String baseUrl);
+    JdbcCatalog createCatalog(
+            ClassLoader classLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String baseUrl);
+
+    default JdbcCatalog createCatalog(
+            ClassLoader classLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String baseUrl,
+            String compatibleMode) {
+        if (StringUtils.isNullOrWhitespaceOnly(compatibleMode)) {
+            return createCatalog(classLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+        }
+        throw new UnsupportedOperationException(
+                "Not supported option 'compatible-mode' with value: " + compatibleMode);
+    }
 }

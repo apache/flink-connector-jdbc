@@ -16,19 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.postgres.dialect;
+package org.apache.flink.connector.jdbc.databases.oceanbase.dialect;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest;
 
 import java.util.Arrays;
 import java.util.List;
 
-/** The PostgresSql params for {@link JdbcDialectTypeTest}. */
-public class PostgresDialectTypeTest extends JdbcDialectTypeTest {
+/** The OceanBase Oracle mode params for {@link JdbcDialectTest}. */
+public class OceanBaseOracleDialectTest extends JdbcDialectTest {
+
+    public OceanBaseOracleDialectTest() {
+        ddlFormat =
+                "CREATE TABLE T (f0 %s)"
+                        + " WITH ("
+                        + "  'connector'='jdbc',"
+                        + "  'url'='jdbc:%s:memory:test',"
+                        + "  'table-name'='myTable',"
+                        + "  'compatible-mode'='oracle'"
+                        + ")";
+    }
 
     @Override
     protected String testDialect() {
-        return "postgresql";
+        return "oceanbase";
     }
 
     @Override
@@ -50,16 +61,11 @@ public class PostgresDialectTypeTest extends JdbcDialectTypeTest {
                 createTestItem("TIMESTAMP(3)"),
                 createTestItem("TIMESTAMP WITHOUT TIME ZONE"),
                 createTestItem("VARBINARY"),
-                createTestItem("ARRAY<INTEGER>"),
 
                 // Not valid data
-                createTestItem("BINARY", "The PostgreSQL dialect doesn't support type: BINARY(1)."),
+                createTestItem("BINARY", "The OceanBase dialect doesn't support type: BINARY(1)."),
                 createTestItem(
                         "VARBINARY(10)",
-                        "The PostgreSQL dialect doesn't support type: VARBINARY(10)."),
-                createTestItem(
-                        "TIMESTAMP(9) WITHOUT TIME ZONE",
-                        "The precision of field 'f0' is out of the TIMESTAMP precision range [1, 6] supported by PostgreSQL dialect."),
-                createTestItem("TIMESTAMP_LTZ(3)", "Unsupported type:TIMESTAMP_LTZ(3)"));
+                        "The OceanBase dialect doesn't support type: VARBINARY(10)."));
     }
 }

@@ -16,30 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.oceanbase.dialect;
+package org.apache.flink.connector.jdbc.databases.oracle.dialect;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest;
 
 import java.util.Arrays;
 import java.util.List;
 
-/** The OceanBase MySql mode params for {@link JdbcDialectTypeTest}. */
-public class OceanBaseMysqlDialectTypeTest extends JdbcDialectTypeTest {
-
-    public OceanBaseMysqlDialectTypeTest() {
-        ddlFormat =
-                "CREATE TABLE T (f0 %s)"
-                        + " WITH ("
-                        + "  'connector'='jdbc',"
-                        + "  'url'='jdbc:%s:memory:test',"
-                        + "  'table-name'='myTable',"
-                        + "  'compatible-mode'='mysql'"
-                        + ")";
-    }
+/** The Oracle params for {@link JdbcDialectTest}. */
+public class OracleDialectTest extends JdbcDialectTest {
 
     @Override
     protected String testDialect() {
-        return "oceanbase";
+        return "oracle";
     }
 
     @Override
@@ -63,15 +52,9 @@ public class OceanBaseMysqlDialectTypeTest extends JdbcDialectTypeTest {
                 createTestItem("VARBINARY"),
 
                 // Not valid data
-                createTestItem("BINARY", "The OceanBase dialect doesn't support type: BINARY(1)."),
+                createTestItem("BINARY", "The Oracle dialect doesn't support type: BINARY(1)."),
                 createTestItem(
                         "VARBINARY(10)",
-                        "The OceanBase dialect doesn't support type: VARBINARY(10)."),
-                createTestItem(
-                        "TIMESTAMP(9) WITHOUT TIME ZONE",
-                        "The precision of field 'f0' is out of the TIMESTAMP precision range [0, 6] supported by OceanBase dialect."),
-                createTestItem(
-                        "TIMESTAMP_LTZ(3)",
-                        "The OceanBase dialect doesn't support type: TIMESTAMP_LTZ(3)."));
+                        "The Oracle dialect doesn't support type: VARBINARY(10)."));
     }
 }

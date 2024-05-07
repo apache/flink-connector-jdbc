@@ -16,19 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.converter;
-
-import org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialectConverter;
-import org.apache.flink.table.types.logical.RowType;
+package org.apache.flink.connector.jdbc.dialect;
 
 /**
- * Base class for all converters that convert between JDBC object and Flink internal object.
+ * Tests for all DataTypes and Dialects of JDBC connector.
  *
- * @deprecated use AbstractDialectConverter
+ * @deprecated use org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest
  */
 @Deprecated
-public abstract class AbstractJdbcRowConverter extends AbstractDialectConverter {
-    public AbstractJdbcRowConverter(RowType rowType) {
-        super(rowType);
-    }
-}
+public class JdbcDialectTypeTest
+        extends org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest {}

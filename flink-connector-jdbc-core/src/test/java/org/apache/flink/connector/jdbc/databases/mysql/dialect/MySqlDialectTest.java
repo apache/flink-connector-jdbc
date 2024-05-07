@@ -18,12 +18,54 @@
 
 package org.apache.flink.connector.jdbc.databases.mysql.dialect;
 
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest;
+
 import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Tests for {@link MySqlDialect}. */
-class MySqlDialectTest {
+/** The MySql params for {@link JdbcDialectTest}. */
+public class MySqlDialectTest extends JdbcDialectTest {
+
+    @Override
+    protected String testDialect() {
+        return "mysql";
+    }
+
+    @Override
+    protected List<TestItem> testData() {
+        return Arrays.asList(
+                createTestItem("CHAR"),
+                createTestItem("VARCHAR"),
+                createTestItem("BOOLEAN"),
+                createTestItem("TINYINT"),
+                createTestItem("SMALLINT"),
+                createTestItem("INTEGER"),
+                createTestItem("BIGINT"),
+                createTestItem("FLOAT"),
+                createTestItem("DOUBLE"),
+                createTestItem("DECIMAL(10, 4)"),
+                createTestItem("DECIMAL(38, 18)"),
+                createTestItem("DATE"),
+                createTestItem("TIME"),
+                createTestItem("TIMESTAMP(3)"),
+                createTestItem("TIMESTAMP WITHOUT TIME ZONE"),
+                createTestItem("VARBINARY"),
+
+                // Not valid data
+                createTestItem("BINARY", "The MySQL dialect doesn't support type: BINARY(1)."),
+                createTestItem(
+                        "VARBINARY(10)", "The MySQL dialect doesn't support type: VARBINARY(10)."),
+                createTestItem(
+                        "TIMESTAMP(9) WITHOUT TIME ZONE",
+                        "The precision of field 'f0' is out of the TIMESTAMP precision range [0, 6] supported by MySQL dialect."),
+                createTestItem(
+                        "TIMESTAMP_LTZ(3)",
+                        "The MySQL dialect doesn't support type: TIMESTAMP_LTZ(3)."));
+    }
 
     @Test
     void testAppendDefaultUrlProperties() {

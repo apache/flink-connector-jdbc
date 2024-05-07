@@ -16,46 +16,43 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.cratedb.dialect;
+package org.apache.flink.connector.jdbc.databases.trino.dialect;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest;
 
 import java.util.Arrays;
 import java.util.List;
 
-/** The CrateDB params for {@link JdbcDialectTypeTest}. */
-public class CrateDBDialectTypeTest extends JdbcDialectTypeTest {
+/** The Oracle params for {@link JdbcDialectTest}. */
+class TrinoDialectTest extends JdbcDialectTest {
 
     @Override
     protected String testDialect() {
-        return "crate";
+        return "trino";
     }
 
     @Override
     protected List<TestItem> testData() {
         return Arrays.asList(
-                createTestItem("CHAR"),
-                createTestItem("VARCHAR"),
                 createTestItem("BOOLEAN"),
                 createTestItem("TINYINT"),
                 createTestItem("SMALLINT"),
                 createTestItem("INTEGER"),
                 createTestItem("BIGINT"),
-                createTestItem("FLOAT"),
                 createTestItem("DOUBLE"),
+                createTestItem("FLOAT"),
                 createTestItem("DECIMAL(10, 4)"),
                 createTestItem("DECIMAL(38, 18)"),
+                createTestItem("VARCHAR"),
+                createTestItem("CHAR"),
+                createTestItem("VARBINARY"),
                 createTestItem("DATE"),
                 createTestItem("TIME"),
                 createTestItem("TIMESTAMP(3)"),
                 createTestItem("TIMESTAMP WITHOUT TIME ZONE"),
-                createTestItem("ARRAY<INTEGER>"),
+                createTestItem("TIMESTAMP(9) WITHOUT TIME ZONE"),
 
                 // Not valid data
-                createTestItem("BINARY", "The CrateDB dialect doesn't support type: BINARY(1)."),
-                createTestItem(
-                        "TIMESTAMP(9) WITHOUT TIME ZONE",
-                        "The precision of field 'f0' is out of the TIMESTAMP precision range [1, 6] supported by CrateDB dialect."),
                 createTestItem("TIMESTAMP_LTZ(3)", "Unsupported type:TIMESTAMP_LTZ(3)"));
     }
 }

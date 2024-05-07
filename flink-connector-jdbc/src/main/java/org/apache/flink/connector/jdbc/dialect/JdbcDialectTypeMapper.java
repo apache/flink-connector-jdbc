@@ -18,15 +18,12 @@
 
 package org.apache.flink.connector.jdbc.dialect;
 
-import org.apache.flink.table.catalog.ObjectPath;
-import org.apache.flink.table.types.DataType;
+import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalogTypeMapper;
 
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-
-/** Separate the jdbc meta-information type to flink table type into the interface. */
-public interface JdbcDialectTypeMapper {
-
-    DataType mapping(ObjectPath tablePath, ResultSetMetaData metadata, int colIndex)
-            throws SQLException;
-}
+/**
+ * Separate the jdbc meta-information type to flink table type into the interface.
+ *
+ * @deprecated use JdbcCatalogTypeMapper
+ */
+@Deprecated
+public interface JdbcDialectTypeMapper extends JdbcCatalogTypeMapper {}

@@ -18,9 +18,10 @@
 
 package org.apache.flink.connector.jdbc.databases.postgres.catalog.factory;
 
-import org.apache.flink.connector.jdbc.catalog.JdbcCatalog;
-import org.apache.flink.connector.jdbc.catalog.factory.JdbcCatalogFactory;
-import org.apache.flink.connector.jdbc.catalog.factory.JdbcCatalogFactoryOptions;
+import org.apache.flink.connector.jdbc.core.table.JdbcFactoryLoader;
+import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalog;
+import org.apache.flink.connector.jdbc.core.table.catalog.factory.JdbcCatalogFactory;
+import org.apache.flink.connector.jdbc.core.table.catalog.factory.JdbcCatalogFactoryOptions;
 import org.apache.flink.connector.jdbc.databases.postgres.PostgresTestBase;
 import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog;
 import org.apache.flink.table.catalog.Catalog;
@@ -51,7 +52,7 @@ class JdbcCatalogFactoryTest implements PostgresTestBase {
         baseUrl = jdbcUrl.substring(0, jdbcUrl.lastIndexOf("/"));
 
         catalog =
-                new JdbcCatalog(
+                JdbcFactoryLoader.loadCatalog(
                         Thread.currentThread().getContextClassLoader(),
                         TEST_CATALOG_NAME,
                         PostgresCatalog.DEFAULT_DATABASE,
@@ -80,14 +81,10 @@ class JdbcCatalogFactoryTest implements PostgresTestBase {
 
         checkEquals(catalog, (JdbcCatalog) actualCatalog);
 
-        assertThat(((JdbcCatalog) actualCatalog).getInternal()).isInstanceOf(PostgresCatalog.class);
+        assertThat((JdbcCatalog) actualCatalog).isInstanceOf(PostgresCatalog.class);
     }
 
     private static void checkEquals(JdbcCatalog c1, JdbcCatalog c2) {
-        assertThat(c2.getName()).isEqualTo(c1.getName());
-        assertThat(c2.getDefaultDatabase()).isEqualTo(c1.getDefaultDatabase());
-        assertThat(c2.getUsername()).isEqualTo(c1.getUsername());
-        assertThat(c2.getPassword()).isEqualTo(c1.getPassword());
-        assertThat(c2.getBaseUrl()).isEqualTo(c1.getBaseUrl());
+        assertThat(c2).isEqualTo(c1);
     }
 }

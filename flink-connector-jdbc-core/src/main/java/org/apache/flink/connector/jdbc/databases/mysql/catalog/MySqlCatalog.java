@@ -20,8 +20,8 @@ package org.apache.flink.connector.jdbc.databases.mysql.catalog;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.connector.jdbc.catalog.AbstractJdbcCatalog;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeMapper;
+import org.apache.flink.connector.jdbc.core.table.catalog.AbstractJdbcCatalog;
+import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalogTypeMapper;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
@@ -52,7 +52,7 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
 
     private static final Logger LOG = LoggerFactory.getLogger(MySqlCatalog.class);
 
-    private final JdbcDialectTypeMapper dialectTypeMapper;
+    private final JdbcCatalogTypeMapper dialectTypeMapper;
 
     private static final Set<String> builtinDatabases =
             new HashSet<String>() {

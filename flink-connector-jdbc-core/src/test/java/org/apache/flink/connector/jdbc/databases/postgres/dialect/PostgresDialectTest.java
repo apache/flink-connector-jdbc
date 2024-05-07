@@ -16,43 +16,50 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.trino.dialect;
+package org.apache.flink.connector.jdbc.databases.postgres.dialect;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest;
 
 import java.util.Arrays;
 import java.util.List;
 
-/** The Oracle params for {@link JdbcDialectTypeTest}. */
-class TrinoDialectTypeTest extends JdbcDialectTypeTest {
+/** The PostgresSql params for {@link JdbcDialectTest}. */
+public class PostgresDialectTest extends JdbcDialectTest {
 
     @Override
     protected String testDialect() {
-        return "trino";
+        return "postgresql";
     }
 
     @Override
     protected List<TestItem> testData() {
         return Arrays.asList(
+                createTestItem("CHAR"),
+                createTestItem("VARCHAR"),
                 createTestItem("BOOLEAN"),
                 createTestItem("TINYINT"),
                 createTestItem("SMALLINT"),
                 createTestItem("INTEGER"),
                 createTestItem("BIGINT"),
-                createTestItem("DOUBLE"),
                 createTestItem("FLOAT"),
+                createTestItem("DOUBLE"),
                 createTestItem("DECIMAL(10, 4)"),
                 createTestItem("DECIMAL(38, 18)"),
-                createTestItem("VARCHAR"),
-                createTestItem("CHAR"),
-                createTestItem("VARBINARY"),
                 createTestItem("DATE"),
                 createTestItem("TIME"),
                 createTestItem("TIMESTAMP(3)"),
                 createTestItem("TIMESTAMP WITHOUT TIME ZONE"),
-                createTestItem("TIMESTAMP(9) WITHOUT TIME ZONE"),
+                createTestItem("VARBINARY"),
+                createTestItem("ARRAY<INTEGER>"),
 
                 // Not valid data
+                createTestItem("BINARY", "The PostgreSQL dialect doesn't support type: BINARY(1)."),
+                createTestItem(
+                        "VARBINARY(10)",
+                        "The PostgreSQL dialect doesn't support type: VARBINARY(10)."),
+                createTestItem(
+                        "TIMESTAMP(9) WITHOUT TIME ZONE",
+                        "The precision of field 'f0' is out of the TIMESTAMP precision range [1, 6] supported by PostgreSQL dialect."),
                 createTestItem("TIMESTAMP_LTZ(3)", "Unsupported type:TIMESTAMP_LTZ(3)"));
     }
 }

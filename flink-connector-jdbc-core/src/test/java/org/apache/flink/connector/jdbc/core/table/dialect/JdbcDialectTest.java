@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.dialect;
+package org.apache.flink.connector.jdbc.core.table.dialect;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Tests for all DataTypes and Dialects of JDBC connector. */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class JdbcDialectTypeTest {
+public class JdbcDialectTest {
 
     protected String ddlFormat =
             "CREATE TABLE T (f0 %s)"

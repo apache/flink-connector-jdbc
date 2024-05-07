@@ -16,30 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.oceanbase.dialect;
+package org.apache.flink.connector.jdbc.databases.db2.dialect;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest;
 
 import java.util.Arrays;
 import java.util.List;
 
-/** The OceanBase Oracle mode params for {@link JdbcDialectTypeTest}. */
-public class OceanBaseOracleDialectTypeTest extends JdbcDialectTypeTest {
-
-    public OceanBaseOracleDialectTypeTest() {
-        ddlFormat =
-                "CREATE TABLE T (f0 %s)"
-                        + " WITH ("
-                        + "  'connector'='jdbc',"
-                        + "  'url'='jdbc:%s:memory:test',"
-                        + "  'table-name'='myTable',"
-                        + "  'compatible-mode'='oracle'"
-                        + ")";
-    }
+/** The Db2 params for {@link JdbcDialectTest}. */
+public class Db2DialectTest extends JdbcDialectTest {
 
     @Override
     protected String testDialect() {
-        return "oceanbase";
+        return "db2";
     }
 
     @Override
@@ -55,17 +44,15 @@ public class OceanBaseOracleDialectTypeTest extends JdbcDialectTypeTest {
                 createTestItem("FLOAT"),
                 createTestItem("DOUBLE"),
                 createTestItem("DECIMAL(10, 4)"),
-                createTestItem("DECIMAL(38, 18)"),
+                createTestItem("DECIMAL(31, 18)"),
                 createTestItem("DATE"),
                 createTestItem("TIME"),
                 createTestItem("TIMESTAMP(3)"),
                 createTestItem("TIMESTAMP WITHOUT TIME ZONE"),
-                createTestItem("VARBINARY"),
 
                 // Not valid data
-                createTestItem("BINARY", "The OceanBase dialect doesn't support type: BINARY(1)."),
+                createTestItem("BINARY", "The Db2 dialect doesn't support type: BINARY(1)."),
                 createTestItem(
-                        "VARBINARY(10)",
-                        "The OceanBase dialect doesn't support type: VARBINARY(10)."));
+                        "VARBINARY(10)", "The Db2 dialect doesn't support type: VARBINARY(10)."));
     }
 }
