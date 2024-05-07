@@ -49,6 +49,8 @@ under the License.
 
     <properties>
         <flink.version>1.18.0</flink.version>
+        <scala.binary.version>2.12</scala.binary.version>
+        <scala-library.version>2.12.7</scala-library.version>
 
         <jackson-bom.version>2.13.4.20221013</jackson-bom.version>
         <junit4.version>4.13.2</junit4.version>
@@ -171,6 +173,13 @@ under the License.
     <dependencyManagement>
 
         <dependencies>
+            <!-- For dependency convergence -->
+            <dependency>
+                <groupId>org.scala-lang</groupId>
+                <artifactId>scala-library</artifactId>
+                <version>${scala-library.version}</version>
+            </dependency>
+
             <!-- Flink dependencies -->
 
             <dependency>

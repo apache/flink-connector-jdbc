@@ -33,8 +33,8 @@ import java.util.Objects;
 import java.util.Properties;
 
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
-import static org.apache.flink.connector.jdbc.catalog.factory.JdbcCatalogFactoryOptions.PASSWORD;
-import static org.apache.flink.connector.jdbc.catalog.factory.JdbcCatalogFactoryOptions.USERNAME;
+import static org.apache.flink.connector.jdbc.core.table.catalog.factory.JdbcCatalogFactoryOptions.PASSWORD;
+import static org.apache.flink.connector.jdbc.core.table.catalog.factory.JdbcCatalogFactoryOptions.USERNAME;
 
 /** Utils for jdbc connectors. */
 public class JdbcUtils {

@@ -16,30 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.oceanbase.dialect;
+package org.apache.flink.connector.jdbc.databases.oracle.dialect;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest;
 
 import java.util.Arrays;
 import java.util.List;
 
-/** The OceanBase Oracle mode params for {@link JdbcDialectTypeTest}. */
-class OceanBaseOracleDialectTypeTest extends JdbcDialectTypeTest {
-
-    public OceanBaseOracleDialectTypeTest() {
-        ddlFormat =
-                "CREATE TABLE T (f0 %s)"
-                        + " WITH ("
-                        + "  'connector'='jdbc',"
-                        + "  'url'='jdbc:%s:memory:test',"
-                        + "  'table-name'='myTable',"
-                        + "  'compatible-mode'='oracle'"
-                        + ")";
-    }
+/** The Oracle params for {@link JdbcDialectTest}. */
+class OracleDialectTest extends JdbcDialectTest {
 
     @Override
     protected String testDialect() {
-        return "oceanbase";
+        return "oracle";
     }
 
     @Override
@@ -63,9 +52,9 @@ class OceanBaseOracleDialectTypeTest extends JdbcDialectTypeTest {
                 createTestItem("VARBINARY"),
 
                 // Not valid data
-                createTestItem("BINARY", "The OceanBase dialect doesn't support type: BINARY(1)."),
+                createTestItem("BINARY", "The Oracle dialect doesn't support type: BINARY(1)."),
                 createTestItem(
                         "VARBINARY(10)",
-                        "The OceanBase dialect doesn't support type: VARBINARY(10)."));
+                        "The Oracle dialect doesn't support type: VARBINARY(10)."));
     }
 }

@@ -16,10 +16,8 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.converter;
+package org.apache.flink.connector.jdbc.core.table.dialect;
 
-import org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialectConverter;
-import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.IntType;
 import org.apache.flink.table.types.logical.RowType;
@@ -34,7 +32,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link AbstractDialectConverter}. */
-class AbstractDialectConverterTest {
+class JdbcDialectConverterTest {
 
     @Test
     void testExternalLocalDateTimeToTimestamp() throws Exception {

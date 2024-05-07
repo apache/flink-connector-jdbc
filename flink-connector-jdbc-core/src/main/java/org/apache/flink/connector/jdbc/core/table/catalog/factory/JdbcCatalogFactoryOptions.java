@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.catalog.factory;
+package org.apache.flink.connector.jdbc.core.table.catalog.factory;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
-import org.apache.flink.connector.jdbc.catalog.JdbcCatalog;
+import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalog;
 import org.apache.flink.connector.jdbc.table.JdbcConnectorOptions;
 import org.apache.flink.table.catalog.CommonCatalogOptions;
 

@@ -16,19 +16,27 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.converter;
+package org.apache.flink.connector.jdbc.core.table.catalog;
 
-import org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialectConverter;
-import org.apache.flink.table.types.logical.RowType;
+import org.junit.jupiter.api.Test;
 
-/**
- * Base class for all converters that convert between JDBC object and Flink internal object.
- *
- * @deprecated use AbstractDialectConverter
- */
-@Deprecated
-public abstract class AbstractJdbcRowConverter extends AbstractDialectConverter {
-    public AbstractJdbcRowConverter(RowType rowType) {
-        super(rowType);
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+/** Test for {@link AbstractJdbcCatalog}. */
+class AbstractJdbcCatalogTest {
+
+    @Test
+    void testJdbcUrl() {
+        AbstractJdbcCatalog.validateJdbcUrl("jdbc:dialect://localhost:1234/");
+        AbstractJdbcCatalog.validateJdbcUrl("jdbc:dialect://localhost:1234");
+    }
+
+    @Test
+    void testInvalidJdbcUrl() {
+        assertThatThrownBy(
+                        () ->
+                                AbstractJdbcCatalog.validateJdbcUrl(
+                                        "jdbc:dialect://localhost:1234/db"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

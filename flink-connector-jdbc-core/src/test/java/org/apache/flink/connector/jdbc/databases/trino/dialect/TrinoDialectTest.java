@@ -18,13 +18,13 @@
 
 package org.apache.flink.connector.jdbc.databases.trino.dialect;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest;
 
 import java.util.Arrays;
 import java.util.List;
 
-/** The Oracle params for {@link JdbcDialectTypeTest}. */
-class TrinoDialectTypeTest extends JdbcDialectTypeTest {
+/** The Oracle params for {@link JdbcDialectTest}. */
+class TrinoDialectTest extends JdbcDialectTest {
 
     @Override
     protected String testDialect() {

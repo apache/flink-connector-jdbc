@@ -20,7 +20,9 @@ package org.apache.flink.connector.jdbc.databases.cratedb.dialect;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.core.table.JdbcFactory;
+import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalog;
 import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.databases.cratedb.catalog.CrateDBCatalog;
 
 /** Factory for {@link CrateDBDialect}. */
 @Internal
@@ -33,5 +35,17 @@ public class CrateDBFactory implements JdbcFactory {
     @Override
     public JdbcDialect createDialect() {
         return new CrateDBDialect();
+    }
+
+    @Override
+    public JdbcCatalog createCatalog(
+            ClassLoader classLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String baseUrl) {
+        return new CrateDBCatalog(
+                classLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
     }
 }

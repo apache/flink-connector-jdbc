@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.core.table.catalog;
 
 import org.apache.flink.connector.jdbc.table.JdbcDynamicTableFactory;
 import org.apache.flink.table.api.Schema;
@@ -87,7 +87,7 @@ import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /** Abstract catalog for any JDBC catalogs. */
-public abstract class AbstractJdbcCatalog extends AbstractCatalog {
+public abstract class AbstractJdbcCatalog extends AbstractCatalog implements JdbcCatalog {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractJdbcCatalog.class);
 
@@ -123,7 +123,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
         checkNotNull(userClassLoader);
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(baseUrl));
 
-        JdbcCatalogUtils.validateJdbcUrl(baseUrl);
+        validateJdbcUrl(baseUrl);
 
         this.userClassLoader = userClassLoader;
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
@@ -564,5 +564,36 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
 
     protected String getSchemaTableName(ObjectPath tablePath) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * URL has to be without database, like "jdbc:dialect://localhost:1234/" or
+     * "jdbc:dialect://localhost:1234" rather than "jdbc:dialect://localhost:1234/db".
+     */
+    protected static void validateJdbcUrl(String url) {
+        String[] parts = url.trim().split("\\/+");
+
+        checkArgument(parts.length == 2);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof AbstractJdbcCatalog)) {
+            return false;
+        }
+        AbstractJdbcCatalog that = (AbstractJdbcCatalog) o;
+        return Objects.equals(getName(), that.getName())
+                && Objects.equals(getDefaultDatabase(), that.getDefaultDatabase())
+                && Objects.equals(connectionProperties, that.connectionProperties)
+                && Objects.equals(baseUrl, that.baseUrl);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                getName(), getDefaultDatabase(), userClassLoader, connectionProperties, baseUrl);
     }
 }

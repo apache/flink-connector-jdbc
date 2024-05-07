@@ -16,30 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.oceanbase.dialect;
+package org.apache.flink.connector.jdbc.databases.db2.dialect;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest;
 
 import java.util.Arrays;
 import java.util.List;
 
-/** The OceanBase MySql mode params for {@link JdbcDialectTypeTest}. */
-class OceanBaseMysqlDialectTypeTest extends JdbcDialectTypeTest {
-
-    public OceanBaseMysqlDialectTypeTest() {
-        ddlFormat =
-                "CREATE TABLE T (f0 %s)"
-                        + " WITH ("
-                        + "  'connector'='jdbc',"
-                        + "  'url'='jdbc:%s:memory:test',"
-                        + "  'table-name'='myTable',"
-                        + "  'compatible-mode'='mysql'"
-                        + ")";
-    }
+/** The Db2 params for {@link JdbcDialectTest}. */
+class Db2DialectTest extends JdbcDialectTest {
 
     @Override
     protected String testDialect() {
-        return "oceanbase";
+        return "db2";
     }
 
     @Override
@@ -55,23 +44,15 @@ class OceanBaseMysqlDialectTypeTest extends JdbcDialectTypeTest {
                 createTestItem("FLOAT"),
                 createTestItem("DOUBLE"),
                 createTestItem("DECIMAL(10, 4)"),
-                createTestItem("DECIMAL(38, 18)"),
+                createTestItem("DECIMAL(31, 18)"),
                 createTestItem("DATE"),
                 createTestItem("TIME"),
                 createTestItem("TIMESTAMP(3)"),
                 createTestItem("TIMESTAMP WITHOUT TIME ZONE"),
-                createTestItem("VARBINARY"),
 
                 // Not valid data
-                createTestItem("BINARY", "The OceanBase dialect doesn't support type: BINARY(1)."),
+                createTestItem("BINARY", "The Db2 dialect doesn't support type: BINARY(1)."),
                 createTestItem(
-                        "VARBINARY(10)",
-                        "The OceanBase dialect doesn't support type: VARBINARY(10)."),
-                createTestItem(
-                        "TIMESTAMP(9) WITHOUT TIME ZONE",
-                        "The precision of field 'f0' is out of the TIMESTAMP precision range [0, 6] supported by OceanBase dialect."),
-                createTestItem(
-                        "TIMESTAMP_LTZ(3)",
-                        "The OceanBase dialect doesn't support type: TIMESTAMP_LTZ(3)."));
+                        "VARBINARY(10)", "The Db2 dialect doesn't support type: VARBINARY(10)."));
     }
 }

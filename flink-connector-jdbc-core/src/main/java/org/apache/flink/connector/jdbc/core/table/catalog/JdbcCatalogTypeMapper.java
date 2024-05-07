@@ -16,19 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.converter;
+package org.apache.flink.connector.jdbc.core.table.catalog;
 
-import org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialectConverter;
-import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.table.catalog.ObjectPath;
+import org.apache.flink.table.types.DataType;
 
-/**
- * Base class for all converters that convert between JDBC object and Flink internal object.
- *
- * @deprecated use AbstractDialectConverter
- */
-@Deprecated
-public abstract class AbstractJdbcRowConverter extends AbstractDialectConverter {
-    public AbstractJdbcRowConverter(RowType rowType) {
-        super(rowType);
-    }
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+
+/** Separate the jdbc meta-information type to flink table type into the interface. */
+@PublicEvolving
+public interface JdbcCatalogTypeMapper {
+
+    DataType mapping(ObjectPath tablePath, ResultSetMetaData metadata, int colIndex)
+            throws SQLException;
 }

@@ -19,7 +19,7 @@
 package org.apache.flink.connector.jdbc.databases.postgres.catalog;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeMapper;
+import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalogTypeMapper;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.types.DataType;
@@ -33,7 +33,7 @@ import java.sql.SQLException;
 
 /** PostgresTypeMapper util class. */
 @Internal
-public class PostgresTypeMapper implements JdbcDialectTypeMapper {
+public class PostgresTypeMapper implements JdbcCatalogTypeMapper {
 
     private static final Logger LOG = LoggerFactory.getLogger(PostgresTypeMapper.class);
 
