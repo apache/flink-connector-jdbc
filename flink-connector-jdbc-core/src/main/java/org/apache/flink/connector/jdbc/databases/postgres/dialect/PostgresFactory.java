@@ -20,7 +20,9 @@ package org.apache.flink.connector.jdbc.databases.postgres.dialect;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.core.table.JdbcFactory;
+import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalog;
 import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog;
 
 /** Factory for {@link PostgresDialect}. */
 @Internal
@@ -33,5 +35,17 @@ public class PostgresFactory implements JdbcFactory {
     @Override
     public JdbcDialect createDialect() {
         return new PostgresDialect();
+    }
+
+    @Override
+    public JdbcCatalog createCatalog(
+            ClassLoader classLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String baseUrl) {
+        return new PostgresCatalog(
+                classLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
     }
 }

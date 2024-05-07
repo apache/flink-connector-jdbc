@@ -16,19 +16,19 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.databases.cratedb.dialect;
+package org.apache.flink.connector.jdbc.databases.postgres.dialect;
 
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeTest;
+import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest;
 
 import java.util.Arrays;
 import java.util.List;
 
-/** The CrateDB params for {@link JdbcDialectTypeTest}. */
-class CrateDBDialectTypeTest extends JdbcDialectTypeTest {
+/** The PostgresSql params for {@link JdbcDialectTest}. */
+class PostgresDialectTest extends JdbcDialectTest {
 
     @Override
     protected String testDialect() {
-        return "crate";
+        return "postgresql";
     }
 
     @Override
@@ -49,13 +49,17 @@ class CrateDBDialectTypeTest extends JdbcDialectTypeTest {
                 createTestItem("TIME"),
                 createTestItem("TIMESTAMP(3)"),
                 createTestItem("TIMESTAMP WITHOUT TIME ZONE"),
+                createTestItem("VARBINARY"),
                 createTestItem("ARRAY<INTEGER>"),
 
                 // Not valid data
-                createTestItem("BINARY", "The CrateDB dialect doesn't support type: BINARY(1)."),
+                createTestItem("BINARY", "The PostgreSQL dialect doesn't support type: BINARY(1)."),
+                createTestItem(
+                        "VARBINARY(10)",
+                        "The PostgreSQL dialect doesn't support type: VARBINARY(10)."),
                 createTestItem(
                         "TIMESTAMP(9) WITHOUT TIME ZONE",
-                        "The precision of field 'f0' is out of the TIMESTAMP precision range [1, 6] supported by CrateDB dialect."),
+                        "The precision of field 'f0' is out of the TIMESTAMP precision range [1, 6] supported by PostgreSQL dialect."),
                 createTestItem("TIMESTAMP_LTZ(3)", "Unsupported type:TIMESTAMP_LTZ(3)"));
     }
 }

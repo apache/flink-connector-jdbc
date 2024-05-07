@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.core.table;
 
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalog;
 import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
 
 import org.slf4j.Logger;
@@ -57,37 +58,34 @@ public final class JdbcFactoryLoader {
         return load(url, classLoader).createDialect(compatibleMode);
     }
 
-    //    public static JdbcCatalog loadCatalog(
-    //            ClassLoader classLoader,
-    //            String catalogName,
-    //            String defaultDatabase,
-    //            String username,
-    //            String pwd,
-    //            String baseUrl) {
-    //        return load(baseUrl, classLoader)
-    //                .createCatalog(
-    //                        classLoader, catalogName, defaultDatabase, username, pwd, baseUrl,
-    // null);
-    //    }
-    //
-    //    public static JdbcCatalog loadCatalog(
-    //            ClassLoader classLoader,
-    //            String catalogName,
-    //            String defaultDatabase,
-    //            String username,
-    //            String pwd,
-    //            String baseUrl,
-    //            String compatibleMode) {
-    //        return load(baseUrl, classLoader)
-    //                .createCatalog(
-    //                        classLoader,
-    //                        catalogName,
-    //                        defaultDatabase,
-    //                        username,
-    //                        pwd,
-    //                        baseUrl,
-    //                        compatibleMode);
-    //    }
+    public static JdbcCatalog loadCatalog(
+            ClassLoader classLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String baseUrl) {
+        return loadCatalog(classLoader, catalogName, defaultDatabase, username, pwd, baseUrl, null);
+    }
+
+    public static JdbcCatalog loadCatalog(
+            ClassLoader classLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String baseUrl,
+            String compatibleMode) {
+        return load(baseUrl, classLoader)
+                .createCatalog(
+                        classLoader,
+                        catalogName,
+                        defaultDatabase,
+                        username,
+                        pwd,
+                        baseUrl,
+                        compatibleMode);
+    }
 
     private static JdbcFactory load(String url, ClassLoader classLoader) {
         List<JdbcFactory> foundFactories = discoverFactories(classLoader);

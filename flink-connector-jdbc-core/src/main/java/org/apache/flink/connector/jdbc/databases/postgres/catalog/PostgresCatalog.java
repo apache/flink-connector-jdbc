@@ -20,8 +20,8 @@ package org.apache.flink.connector.jdbc.databases.postgres.catalog;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.connector.jdbc.catalog.AbstractJdbcCatalog;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeMapper;
+import org.apache.flink.connector.jdbc.core.table.catalog.AbstractJdbcCatalog;
+import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalogTypeMapper;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
@@ -74,7 +74,7 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
                 }
             };
 
-    protected final JdbcDialectTypeMapper dialectTypeMapper;
+    protected final JdbcCatalogTypeMapper dialectTypeMapper;
 
     @VisibleForTesting
     public PostgresCatalog(
@@ -115,7 +115,7 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
             String username,
             String pwd,
             String baseUrl,
-            JdbcDialectTypeMapper dialectTypeMapper) {
+            JdbcCatalogTypeMapper dialectTypeMapper) {
         this(
                 userClassLoader,
                 catalogName,
@@ -130,7 +130,7 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
             String catalogName,
             String defaultDatabase,
             String baseUrl,
-            JdbcDialectTypeMapper dialectTypeMapper,
+            JdbcCatalogTypeMapper dialectTypeMapper,
             Properties connectProperties) {
         super(userClassLoader, catalogName, defaultDatabase, baseUrl, connectProperties);
         this.dialectTypeMapper = dialectTypeMapper;

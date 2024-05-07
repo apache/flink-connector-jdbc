@@ -19,7 +19,7 @@
 package org.apache.flink.connector.jdbc.databases.mysql.catalog;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeMapper;
+import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalogTypeMapper;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
@@ -34,7 +34,7 @@ import java.sql.SQLException;
 
 /** MySQLTypeMapper util class. */
 @Internal
-public class MySqlTypeMapper implements JdbcDialectTypeMapper {
+public class MySqlTypeMapper implements JdbcCatalogTypeMapper {
 
     private static final Logger LOG = LoggerFactory.getLogger(MySqlTypeMapper.class);
 

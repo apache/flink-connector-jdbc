@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.databases.trino.dialect;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.core.table.JdbcFactory;
+import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalog;
 import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
 
 /** Factory for {@link TrinoDialect}. */
@@ -33,5 +34,16 @@ public class TrinoFactory implements JdbcFactory {
     @Override
     public JdbcDialect createDialect() {
         return new TrinoDialect();
+    }
+
+    @Override
+    public JdbcCatalog createCatalog(
+            ClassLoader classLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String baseUrl) {
+        throw new UnsupportedOperationException("Catalog for Trino is not supported yet.");
     }
 }
