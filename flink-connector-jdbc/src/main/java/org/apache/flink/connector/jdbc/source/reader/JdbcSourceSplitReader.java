@@ -48,6 +48,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 
 import static org.apache.flink.connector.jdbc.source.JdbcSourceOptions.AUTO_COMMIT;
@@ -71,24 +72,27 @@ public class JdbcSourceSplitReader<T>
     private final Queue<JdbcSourceSplit> splits;
     private final TypeInformation<T> typeInformation;
     private final JdbcConnectionProvider connectionProvider;
+
     private transient Connection connection;
     private transient PreparedStatement statement;
+    // Boolean to distinguish between default value and explicitly set autoCommit mode.
+    private final Boolean autoCommit;
     private transient ResultSet resultSet;
+    protected boolean hasNextRecordCurrentSplit;
+    private int currentSplitOffset;
 
     private final ResultExtractor<T> resultExtractor;
-    protected boolean hasNextRecordCurrentSplit;
+
     private final DeliveryGuarantee deliveryGuarantee;
 
     private final int splitReaderFetchBatchSize;
-
     private final int resultSetType;
     private final int resultSetConcurrency;
     private final int resultSetFetchSize;
-    // Boolean to distinguish between default value and explicitly set autoCommit mode.
-    private final Boolean autoCommit;
-    private int currentSplitOffset;
 
     private final SourceReaderContext context;
+
+    private @Nullable JdbcSourceSplit skippedSplit;
 
     public JdbcSourceSplitReader(
             SourceReaderContext context,
@@ -120,7 +124,10 @@ public class JdbcSourceSplitReader<T>
     @Override
     public RecordsWithSplitIds<RecordAndOffset<T>> fetch() throws IOException {
 
-        checkSplitOrStartNext();
+        boolean couldFetch = checkSplitOrStartNext();
+        if (!couldFetch) {
+            return new RecordsBySplits.Builder<RecordAndOffset<T>>().build();
+        }
 
         if (!hasNextRecordCurrentSplit) {
             return finishSplit();
@@ -154,21 +161,35 @@ public class JdbcSourceSplitReader<T>
         closeResultSetAndStatement();
 
         RecordsBySplits.Builder<RecordAndOffset<T>> builder = new RecordsBySplits.Builder<>();
-        Preconditions.checkState(currentSplit != null, "currentSplit");
-        builder.addFinishedSplit(currentSplit.splitId());
+        JdbcSourceSplit splitToFinish = Objects.nonNull(currentSplit) ? currentSplit : skippedSplit;
+        Preconditions.checkState(splitToFinish != null, "Split to finish mustn't be null.");
+        builder.addFinishedSplit(splitToFinish.splitId());
         currentSplit = null;
+        skippedSplit = null;
         return builder.build();
     }
 
     private void closeResultSetAndStatement() {
+        closeResultSetIfNeeded();
+        closeStatementIfNeeded();
+    }
+
+    private void closeResultSetIfNeeded() {
         try {
             if (resultSet != null && !resultSet.isClosed()) {
                 resultSet.close();
             }
+            resultSet = null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void closeStatementIfNeeded() {
+        try {
             if (statement != null && !statement.isClosed()) {
                 statement.close();
             }
-            resultSet = null;
             statement = null;
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -206,67 +227,6 @@ public class JdbcSourceSplitReader<T>
         return typeInformation;
     }
 
-    private void checkSplitOrStartNext() {
-
-        try {
-            if (hasNextRecordCurrentSplit && resultSet != null) {
-                return;
-            }
-
-            final JdbcSourceSplit nextSplit = splits.poll();
-            if (nextSplit == null) {
-                throw new IOException("Cannot fetch from another split - no split remaining");
-            }
-            currentSplit = nextSplit;
-            openResultSetForSplit(currentSplit);
-        } catch (SQLException | ClassNotFoundException | IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void discardSplit(JdbcSourceSplit split) throws SQLException {
-        if (split.getOffset() != 0) {
-            hasNextRecordCurrentSplit = false;
-            currentSplitOffset = 0;
-            if (resultSet != null && !resultSet.isClosed()) {
-                resultSet.close();
-            }
-            if (statement != null && !statement.isClosed()) {
-                statement.close();
-            }
-            resultSet = null;
-            statement = null;
-            currentSplit = null;
-        }
-    }
-
-    private void getOrEstablishConnection() throws SQLException, ClassNotFoundException {
-        connection = connectionProvider.getOrEstablishConnection();
-        if (autoCommit == null) {
-            return;
-        }
-        if (autoCommit != connection.getAutoCommit()) {
-            connection.setAutoCommit(autoCommit);
-        }
-    }
-
-    private void openResultSetForSplit(JdbcSourceSplit split)
-            throws SQLException, ClassNotFoundException {
-        getOrEstablishConnection();
-        statement =
-                connection.prepareStatement(
-                        split.getSqlTemplate(), resultSetType, resultSetConcurrency);
-        if (split.getParameters() != null) {
-            Object[] objs = split.getParameters();
-            for (int i = 0; i < objs.length; i++) {
-                statement.setObject(i + 1, objs[i]);
-            }
-        }
-        statement.setFetchSize(resultSetFetchSize);
-        resultSet = statement.executeQuery();
-        hasNextRecordCurrentSplit = resultSet.next();
-    }
-
     @VisibleForTesting
     public List<JdbcSourceSplit> getSplits() {
         return Collections.unmodifiableList(Arrays.asList(splits.toArray(new JdbcSourceSplit[0])));
@@ -285,5 +245,123 @@ public class JdbcSourceSplitReader<T>
     @VisibleForTesting
     public ResultSet getResultSet() {
         return resultSet;
+    }
+
+    // ---------------- Private methods --------------------------------
+
+    private boolean checkSplitOrStartNext() {
+
+        try {
+            if (hasNextRecordCurrentSplit && resultSet != null) {
+                return true;
+            }
+
+            final JdbcSourceSplit nextSplit = splits.poll();
+            if (nextSplit != null) {
+                currentSplit = nextSplit;
+                openResultSetForSplit(currentSplit);
+                return true;
+            }
+            return false;
+        } catch (SQLException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void getOrEstablishConnection() throws SQLException, ClassNotFoundException {
+        connection = connectionProvider.getOrEstablishConnection();
+        if (autoCommit == null) {
+            return;
+        }
+        if (autoCommit != connection.getAutoCommit()) {
+            connection.setAutoCommit(autoCommit);
+        }
+    }
+
+    private void openResultSetForSplit(JdbcSourceSplit split)
+            throws SQLException, ClassNotFoundException {
+        switch (deliveryGuarantee) {
+            case EXACTLY_ONCE:
+                openResultSetForSplitWhenExactlyOnce(split);
+                break;
+            case AT_LEAST_ONCE:
+                openResultSetForSplitWhenAtLeastOnce(split);
+                break;
+            case NONE:
+            default:
+                openResultSetForSplitWhenAtMostOnce(split);
+                break;
+        }
+    }
+
+    private void openResultSetForSplitWhenAtMostOnce(JdbcSourceSplit split)
+            throws SQLException, ClassNotFoundException {
+        if (split.getReaderPosition() != 0) {
+            skippedSplit = currentSplit;
+            currentSplit = null;
+            hasNextRecordCurrentSplit = false;
+            currentSplitOffset = 0;
+            closeResultSetAndStatement();
+        } else {
+            openResultSetForSplitWhenAtLeastOnce(split);
+        }
+    }
+
+    private void openResultSetForSplitWhenExactlyOnce(JdbcSourceSplit split)
+            throws SQLException, ClassNotFoundException {
+        getOrEstablishConnection();
+        closeResultSetIfNeeded();
+        prepareStatement(split);
+        resultSet = statement.executeQuery();
+        currentSplitOffset = 0;
+        hasNextRecordCurrentSplit = resultSet.next();
+        if (hasNextRecordCurrentSplit) {
+            moveResultSetCursorByOffset();
+        }
+    }
+
+    private void moveResultSetCursorByOffset() throws SQLException {
+        int resultSetOffset = currentSplit.getReaderPosition();
+        if (resultSetOffset == 0) {
+            return;
+        }
+        resultSet.last();
+        int last = resultSet.getRow();
+        resultSet.absolute(1);
+        if (resultSetOffset < last) {
+            currentSplitOffset = resultSetOffset;
+            resultSet.absolute(resultSetOffset + 1);
+        } else {
+            hasNextRecordCurrentSplit = false;
+            LOG.warn(
+                    "The offset will not be set from splitState, because the last cursor is {}, the expected cursor is {}.",
+                    last,
+                    resultSetOffset + 1);
+        }
+    }
+
+    private void openResultSetForSplitWhenAtLeastOnce(JdbcSourceSplit split)
+            throws SQLException, ClassNotFoundException {
+        getOrEstablishConnection();
+        closeResultSetIfNeeded();
+        prepareStatement(split);
+        resultSet = statement.executeQuery();
+        // AT_LEAST_ONCE
+        hasNextRecordCurrentSplit = resultSet.next();
+        currentSplitOffset = 0;
+    }
+
+    private void prepareStatement(JdbcSourceSplit split) throws SQLException {
+        closeStatementIfNeeded();
+        statement =
+                connection.prepareStatement(
+                        split.getSqlTemplate(), resultSetType, resultSetConcurrency);
+        if (split.getParameters() != null) {
+            Object[] objs = split.getParameters();
+            for (int i = 0; i < objs.length; i++) {
+                statement.setObject(i + 1, objs[i]);
+            }
+        }
+        statement.setFetchSize(resultSetFetchSize);
     }
 }

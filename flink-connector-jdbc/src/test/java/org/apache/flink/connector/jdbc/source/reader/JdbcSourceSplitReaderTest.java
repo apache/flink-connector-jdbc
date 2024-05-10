@@ -49,7 +49,7 @@ class JdbcSourceSplitReaderTest extends JdbcDataTestBase {
 
     private final JdbcSourceSplit split =
             new JdbcSourceSplit(
-                    "1", "select id, title, author, price, qty from " + INPUT_TABLE, null, 0, null);
+                    "1", "select id, title, author, price, qty from " + INPUT_TABLE, null, null);
     private final JdbcConnectionProvider connectionProvider =
             new SimpleJdbcConnectionProvider(
                     new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()

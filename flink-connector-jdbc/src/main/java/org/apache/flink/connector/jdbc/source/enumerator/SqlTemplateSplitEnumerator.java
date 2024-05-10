@@ -19,21 +19,28 @@
 package org.apache.flink.connector.jdbc.source.enumerator;
 
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.connector.jdbc.source.split.CheckpointedOffset;
 import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 /** A split enumerator based on sql-parameters grains. */
 public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> {
+
+    public static final Logger LOG = LoggerFactory.getLogger(SqlTemplateSplitEnumerator.class);
 
     private final String sqlTemplate;
 
@@ -49,21 +56,40 @@ public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase
     }
 
     @Override
-    public List<JdbcSourceSplit> enumerateSplits() throws IOException {
+    @Nonnull
+    public List<JdbcSourceSplit> enumerateSplits(@Nonnull Supplier<Boolean> splitGettable)
+            throws RuntimeException {
+
+        if (!splitGettable.get()) {
+            LOG.info(
+                    "The current split is over max splits capacity of {}.",
+                    JdbcSourceEnumerator.class.getSimpleName());
+            return Collections.emptyList();
+        }
+
         if (parameterValuesProvider == null) {
             return Collections.singletonList(
-                    new JdbcSourceSplit(getNextId(), sqlTemplate, null, 0, null));
+                    new JdbcSourceSplit(getNextId(), sqlTemplate, null, new CheckpointedOffset()));
+        }
+
+        if (optionalSqlSplitEnumeratorState != null) {
+            parameterValuesProvider.setOptionalState(optionalSqlSplitEnumeratorState);
         }
         Serializable[][] parameters = parameterValuesProvider.getParameterValues();
+
+        // update state
+        optionalSqlSplitEnumeratorState = parameterValuesProvider.getLatestOptionalState();
+
         if (parameters == null) {
             return Collections.singletonList(
-                    new JdbcSourceSplit(getNextId(), sqlTemplate, null, 0, null));
+                    new JdbcSourceSplit(getNextId(), sqlTemplate, null, new CheckpointedOffset()));
         }
 
         List<JdbcSourceSplit> jdbcSourceSplitList = new ArrayList<>(parameters.length);
         for (Serializable[] paramArr : parameters) {
             jdbcSourceSplitList.add(
-                    new JdbcSourceSplit(getNextId(), sqlTemplate, paramArr, 0, null));
+                    new JdbcSourceSplit(
+                            getNextId(), sqlTemplate, paramArr, new CheckpointedOffset()));
         }
         return jdbcSourceSplitList;
     }

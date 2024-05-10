@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.source.split;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.source.SourceSplit;
+import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nullable;
 
@@ -38,25 +39,17 @@ public class JdbcSourceSplit implements SourceSplit, Serializable {
 
     private final @Nullable Serializable[] parameters;
 
-    private final int offset;
-
     private final @Nullable CheckpointedOffset checkpointedOffset;
 
     public JdbcSourceSplit(
             String id,
             String sqlTemplate,
             @Nullable Serializable[] parameters,
-            int offset,
             @Nullable CheckpointedOffset checkpointedOffset) {
         this.id = id;
         this.sqlTemplate = sqlTemplate;
         this.parameters = parameters;
-        this.offset = offset;
         this.checkpointedOffset = checkpointedOffset;
-    }
-
-    public int getOffset() {
-        return offset;
     }
 
     @Nullable
@@ -66,11 +59,19 @@ public class JdbcSourceSplit implements SourceSplit, Serializable {
 
     public JdbcSourceSplit updateWithCheckpointedPosition(
             @Nullable CheckpointedOffset checkpointedOffset) {
-        return new JdbcSourceSplit(id, sqlTemplate, parameters, offset, checkpointedOffset);
+        return new JdbcSourceSplit(id, sqlTemplate, parameters, checkpointedOffset);
     }
 
-    public Optional<CheckpointedOffset> getReaderPosition() {
+    public Optional<CheckpointedOffset> getReaderPositionOptional() {
         return Optional.ofNullable(checkpointedOffset);
+    }
+
+    public int getReaderPosition() {
+        if (Objects.nonNull(checkpointedOffset)) {
+            Preconditions.checkState(checkpointedOffset.getOffset() <= Integer.MAX_VALUE);
+            return (int) checkpointedOffset.getOffset();
+        }
+        return 0;
     }
 
     public String getSqlTemplate() {
@@ -96,8 +97,7 @@ public class JdbcSourceSplit implements SourceSplit, Serializable {
             return false;
         }
         JdbcSourceSplit that = (JdbcSourceSplit) o;
-        return offset == that.offset
-                && Objects.equals(id, that.id)
+        return Objects.equals(id, that.id)
                 && Objects.equals(sqlTemplate, that.sqlTemplate)
                 && Arrays.equals(parameters, that.parameters)
                 && Objects.equals(checkpointedOffset, that.checkpointedOffset);
@@ -105,7 +105,7 @@ public class JdbcSourceSplit implements SourceSplit, Serializable {
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(id, sqlTemplate, offset, checkpointedOffset);
+        int result = Objects.hash(id, sqlTemplate, checkpointedOffset);
         result = 31 * result + Arrays.hashCode(parameters);
         return result;
     }
@@ -121,8 +121,6 @@ public class JdbcSourceSplit implements SourceSplit, Serializable {
                 + '\''
                 + ", parameters="
                 + Arrays.toString(parameters)
-                + ", offset="
-                + offset
                 + ", checkpointedOffset="
                 + checkpointedOffset
                 + '}';
