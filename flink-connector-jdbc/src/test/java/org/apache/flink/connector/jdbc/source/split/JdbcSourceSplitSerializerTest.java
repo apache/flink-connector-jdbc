@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /** Test for {@link JdbcSourceSplitSerializer}. */
 class JdbcSourceSplitSerializerTest {
 
-    private final JdbcSourceSplit split = new JdbcSourceSplit("1", "select 1", null, 0, null);
+    private final JdbcSourceSplit split = new JdbcSourceSplit("1", "select 1", null, null);
     private final JdbcSourceSplit mockedSplit = new MockedJdbcSourceSplit(split);
     private final JdbcSourceSplitSerializer serializer = new JdbcSourceSplitSerializer();
     private final JdbcSourceSplitSerializer mockedSerializer =
@@ -73,7 +73,6 @@ class JdbcSourceSplitSerializerTest {
                     jdbcSourceSplit.splitId(),
                     jdbcSourceSplit.getSqlTemplate(),
                     (Serializable[]) jdbcSourceSplit.getParameters(),
-                    jdbcSourceSplit.getOffset(),
                     jdbcSourceSplit.getCheckpointedOffset());
         }
     }

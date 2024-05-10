@@ -26,11 +26,14 @@ import org.apache.flink.connector.testutils.source.reader.TestingSplitEnumerator
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.annotation.Nonnull;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,7 +96,6 @@ class JdbcSourceEnumeratorTest {
                 String.valueOf(splitId++),
                 "select 1",
                 new Serializable[] {0},
-                0,
                 new CheckpointedOffset(0, 0));
     }
 
@@ -105,10 +107,12 @@ class JdbcSourceEnumeratorTest {
                 context,
                 new JdbcSqlSplitEnumeratorBase<JdbcSourceSplit>(null) {
                     @Override
-                    public List<JdbcSourceSplit> enumerateSplits() throws IOException {
+                    public @Nonnull List<JdbcSourceSplit> enumerateSplits(
+                            @Nonnull Supplier<Boolean> splitGettable) throws IOException {
                         return Collections.emptyList();
                     }
                 },
+                null,
                 Arrays.stream(splits).collect(Collectors.toList()));
     }
 }

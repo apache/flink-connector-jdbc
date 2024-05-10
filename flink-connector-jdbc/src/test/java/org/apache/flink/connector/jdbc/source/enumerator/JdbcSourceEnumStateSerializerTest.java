@@ -37,15 +37,14 @@ class JdbcSourceEnumStateSerializerTest {
 
     private final JdbcSourceEnumeratorState state =
             new JdbcSourceEnumeratorState(
-                    Arrays.asList(new JdbcSourceSplit("1", "select 1", null, 0, null)),
+                    Arrays.asList(new JdbcSourceSplit("1", "select 1", null, null)),
                     Arrays.asList(
                             new JdbcSourceSplit(
                                     "1",
                                     "select 1",
                                     new Serializable[] {new Integer(0)},
-                                    10,
                                     new CheckpointedOffset(0, 10))),
-                    Arrays.asList(new JdbcSourceSplit("1", "select 1", null, 0, null)),
+                    Arrays.asList(new JdbcSourceSplit("1", "select 1", null, null)),
                     null);
     private final JdbcSourceEnumeratorState mockedState = new MockedJdbcSourceEnumState(state);
     private final JdbcSourceEnumStateSerializer serializer =
