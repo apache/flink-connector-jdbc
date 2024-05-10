@@ -23,6 +23,7 @@ import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplit;
+import org.apache.flink.connector.jdbc.utils.ContinuousEnumerationSettings;
 import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
@@ -34,7 +35,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /** JDBC source enumerator. */
@@ -44,26 +48,43 @@ public class JdbcSourceEnumerator
 
     private final SplitEnumeratorContext<JdbcSourceSplit> context;
     private final Boundedness boundedness;
+    private final LinkedHashMap<Integer, String> readersAwaitingSplit;
     private final List<JdbcSourceSplit> unassigned;
     private final JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> sqlSplitEnumerator;
+    private final @Nullable ContinuousEnumerationSettings continuousEnumerationSettings;
 
     public JdbcSourceEnumerator(
             SplitEnumeratorContext<JdbcSourceSplit> context,
             JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> sqlSplitEnumerator,
+            ContinuousEnumerationSettings continuousEnumerationSettings,
             List<JdbcSourceSplit> unassigned) {
         this.context = Preconditions.checkNotNull(context);
         this.sqlSplitEnumerator = Preconditions.checkNotNull(sqlSplitEnumerator);
-        this.boundedness = Boundedness.BOUNDED;
+        this.continuousEnumerationSettings = continuousEnumerationSettings;
+        this.boundedness =
+                Objects.isNull(continuousEnumerationSettings)
+                        ? Boundedness.BOUNDED
+                        : Boundedness.CONTINUOUS_UNBOUNDED;
         this.unassigned = Preconditions.checkNotNull(unassigned);
+        this.readersAwaitingSplit = new LinkedHashMap<>();
     }
 
     @Override
     public void start() {
         sqlSplitEnumerator.open();
-        try {
-            unassigned.addAll(sqlSplitEnumerator.enumerateSplits());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (boundedness == Boundedness.CONTINUOUS_UNBOUNDED
+                && Objects.nonNull(continuousEnumerationSettings)) {
+            context.callAsync(
+                    () -> sqlSplitEnumerator.enumerateSplits(() -> 1024 - unassigned.size() > 0),
+                    this::processNewSplits,
+                    continuousEnumerationSettings.getInitialDiscoveryDelay().toMillis(),
+                    continuousEnumerationSettings.getDiscoveryInterval().toMillis());
+        } else {
+            try {
+                unassigned.addAll(sqlSplitEnumerator.enumerateSplits(() -> true));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -81,6 +102,9 @@ public class JdbcSourceEnumerator
     public void handleSplitRequest(int subtask, @Nullable String hostname) {
         if (boundedness == Boundedness.BOUNDED) {
             assignSplitsForBounded(subtask, hostname);
+        } else {
+            readersAwaitingSplit.put(subtask, hostname);
+            assignSplitsForUnbounded();
         }
     }
 
@@ -93,6 +117,16 @@ public class JdbcSourceEnumerator
     public void addSplitsBack(List<JdbcSourceSplit> splits, int subtaskId) {
         LOG.debug("File Source Enumerator adds splits back: {}", splits);
         unassigned.addAll(splits);
+        if (boundedness == Boundedness.BOUNDED) {
+            context.registeredReaders()
+                    .keySet()
+                    .forEach(subTask -> assignSplitsForBounded(subTask, null));
+        } else if (boundedness == Boundedness.CONTINUOUS_UNBOUNDED) {
+            if (context.registeredReaders().containsKey(subtaskId)) {
+                readersAwaitingSplit.put(subtaskId, null);
+            }
+            assignSplitsForUnbounded();
+        }
     }
 
     @Override
@@ -110,12 +144,9 @@ public class JdbcSourceEnumerator
             return Optional.empty();
         }
         Iterator<JdbcSourceSplit> iterator = unassigned.iterator();
-        JdbcSourceSplit next = null;
-        if (iterator.hasNext()) {
-            next = iterator.next();
-            iterator.remove();
-        }
-        return Optional.ofNullable(next);
+        JdbcSourceSplit next = iterator.next();
+        iterator.remove();
+        return Optional.of(next);
     }
 
     private void assignSplitsForBounded(int subtask, @Nullable String hostname) {
@@ -135,6 +166,41 @@ public class JdbcSourceEnumerator
         } else {
             context.signalNoMoreSplits(subtask);
             LOG.info("No more splits available for subtask {}", subtask);
+        }
+    }
+
+    private void processNewSplits(List<JdbcSourceSplit> splits, Throwable error) {
+        if (error != null) {
+            LOG.error("Failed to enumerate sql splits.", error);
+            return;
+        }
+        this.unassigned.addAll(splits);
+
+        assignSplitsForUnbounded();
+    }
+
+    private void assignSplitsForUnbounded() {
+        final Iterator<Map.Entry<Integer, String>> awaitingReader =
+                readersAwaitingSplit.entrySet().iterator();
+
+        while (awaitingReader.hasNext()) {
+            final Map.Entry<Integer, String> nextAwaiting = awaitingReader.next();
+
+            // if the reader that requested another split has failed in the meantime, remove
+            // it from the list of waiting readers
+            if (!context.registeredReaders().containsKey(nextAwaiting.getKey())) {
+                awaitingReader.remove();
+                continue;
+            }
+
+            final int awaitingSubtask = nextAwaiting.getKey();
+            final Optional<JdbcSourceSplit> nextSplit = getNextSplit();
+            if (nextSplit.isPresent()) {
+                context.assignSplit(nextSplit.get(), awaitingSubtask);
+                awaitingReader.remove();
+            } else {
+                break;
+            }
         }
     }
 }

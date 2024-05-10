@@ -51,7 +51,7 @@ class JdbcSourceReaderTest extends JdbcDataTestBase {
         final TestingReaderContext context = new TestingReaderContext();
         final JdbcSourceReader<String> reader = createReader(context);
         reader.addSplits(
-                Collections.singletonList(new JdbcSourceSplit("1", "select 1", null, 0, null)));
+                Collections.singletonList(new JdbcSourceSplit("1", "select 1", null, null)));
         reader.start();
         reader.close();
         assertThat(context.getNumSplitRequests()).isEqualTo(0);

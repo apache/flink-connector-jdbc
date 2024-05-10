@@ -37,7 +37,7 @@ public class JdbcSourceSplitState<SplitT extends JdbcSourceSplit> implements Ser
     public JdbcSourceSplitState(SplitT split) {
         this.split = checkNotNull(split);
 
-        final Optional<CheckpointedOffset> readerPosition = split.getReaderPosition();
+        final Optional<CheckpointedOffset> readerPosition = split.getReaderPositionOptional();
         if (readerPosition.isPresent()) {
             this.offset = readerPosition.get().getOffset();
             this.recordsToSkipAfterOffset = readerPosition.get().getRecordsAfterOffset();

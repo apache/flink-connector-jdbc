@@ -22,11 +22,17 @@ import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.source.enumerator.SqlTemplateSplitEnumerator;
 import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
+import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcNumericBetweenParametersProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
+import org.apache.flink.connector.jdbc.split.JdbcSlideTimingParameterProvider;
+import org.apache.flink.connector.jdbc.utils.ContinuousEnumerationSettings;
 import org.apache.flink.types.Row;
 
 import org.junit.jupiter.api.Test;
+
+import java.io.Serializable;
+import java.time.Duration;
 
 import static org.apache.flink.connector.jdbc.source.JdbcSourceOptions.READER_FETCH_BATCH_SIZE;
 import static org.apache.flink.connector.jdbc.source.JdbcSourceOptions.RESULTSET_FETCH_SIZE;
@@ -139,5 +145,40 @@ class JdbcSourceBuilderTest {
                                         .setUsername(username)
                                         .build())
                 .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void testSetStreamingSemantic() {
+        assertThatThrownBy(
+                        () ->
+                                sourceBuilder
+                                        .setContinuousEnumerationSettings(
+                                                new ContinuousEnumerationSettings(
+                                                        Duration.ofMillis(1L),
+                                                        Duration.ofMillis(1L)))
+                                        .build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(JdbcSourceBuilder.INVALID_SLIDE_TIMING_CONTINUOUS_HINT);
+
+        assertThatThrownBy(
+                        () ->
+                                sourceBuilder
+                                        .setJdbcParameterValuesProvider(
+                                                new JdbcGenericParameterValuesProvider(
+                                                        new Serializable[][] {}))
+                                        .build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(JdbcSourceBuilder.INVALID_SLIDE_TIMING_CONTINUOUS_HINT);
+
+        sourceBuilder.setContinuousEnumerationSettings(null);
+        assertThatThrownBy(
+                        () ->
+                                sourceBuilder
+                                        .setJdbcParameterValuesProvider(
+                                                new JdbcSlideTimingParameterProvider(
+                                                        1L, 1L, 1L, 1L))
+                                        .build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(JdbcSourceBuilder.INVALID_CONTINUOUS_SLIDE_TIMING_HINT);
     }
 }

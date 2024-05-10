@@ -40,8 +40,11 @@ import org.apache.flink.connector.jdbc.source.reader.JdbcSourceSplitReader;
 import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplitSerializer;
+import org.apache.flink.connector.jdbc.utils.ContinuousEnumerationSettings;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.Preconditions;
+
+import javax.annotation.Nullable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -55,6 +58,7 @@ public class JdbcSource<OUT>
 
     private final Boundedness boundedness;
     private final TypeInformation<OUT> typeInformation;
+    private final @Nullable ContinuousEnumerationSettings continuousEnumerationSettings;
 
     private final Configuration configuration;
     private final JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> sqlSplitEnumeratorProvider;
@@ -69,29 +73,20 @@ public class JdbcSource<OUT>
             JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> sqlSplitEnumeratorProvider,
             ResultExtractor<OUT> resultExtractor,
             TypeInformation<OUT> typeInformation,
-            DeliveryGuarantee deliveryGuarantee) {
+            @Nullable DeliveryGuarantee deliveryGuarantee,
+            @Nullable ContinuousEnumerationSettings continuousEnumerationSettings) {
         this.configuration = Preconditions.checkNotNull(configuration);
         this.connectionProvider = Preconditions.checkNotNull(connectionProvider);
         this.sqlSplitEnumeratorProvider = Preconditions.checkNotNull(sqlSplitEnumeratorProvider);
         this.resultExtractor = Preconditions.checkNotNull(resultExtractor);
-        this.deliveryGuarantee = Preconditions.checkNotNull(deliveryGuarantee);
+        this.deliveryGuarantee =
+                Objects.isNull(deliveryGuarantee) ? DeliveryGuarantee.NONE : deliveryGuarantee;
         this.typeInformation = Preconditions.checkNotNull(typeInformation);
-        this.boundedness = Boundedness.BOUNDED;
-    }
-
-    JdbcSource(
-            Configuration configuration,
-            JdbcConnectionProvider connectionProvider,
-            JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> sqlSplitEnumeratorProvider,
-            ResultExtractor<OUT> resultExtractor,
-            TypeInformation<OUT> typeInformation) {
-        this(
-                configuration,
-                connectionProvider,
-                sqlSplitEnumeratorProvider,
-                resultExtractor,
-                typeInformation,
-                DeliveryGuarantee.NONE);
+        this.continuousEnumerationSettings = continuousEnumerationSettings;
+        this.boundedness =
+                Objects.isNull(continuousEnumerationSettings)
+                        ? Boundedness.BOUNDED
+                        : Boundedness.CONTINUOUS_UNBOUNDED;
     }
 
     @Override
@@ -119,7 +114,10 @@ public class JdbcSource<OUT>
     public SplitEnumerator<JdbcSourceSplit, JdbcSourceEnumeratorState> createEnumerator(
             SplitEnumeratorContext<JdbcSourceSplit> enumContext) throws Exception {
         return new JdbcSourceEnumerator(
-                enumContext, sqlSplitEnumeratorProvider.create(), new ArrayList<>());
+                enumContext,
+                sqlSplitEnumeratorProvider.create(),
+                continuousEnumerationSettings,
+                new ArrayList<>());
     }
 
     @Override
@@ -132,6 +130,7 @@ public class JdbcSource<OUT>
         return new JdbcSourceEnumerator(
                 enumContext,
                 sqlSplitEnumeratorProvider.restore(optionalUserDefinedSplitEnumeratorState),
+                continuousEnumerationSettings,
                 checkpoint.getRemainingSplits());
     }
 
@@ -193,6 +192,8 @@ public class JdbcSource<OUT>
                 && Objects.equals(sqlSplitEnumeratorProvider, that.sqlSplitEnumeratorProvider)
                 && Objects.equals(connectionProvider, that.connectionProvider)
                 && Objects.equals(resultExtractor, that.resultExtractor)
-                && deliveryGuarantee == that.deliveryGuarantee;
+                && deliveryGuarantee == that.deliveryGuarantee
+                && Objects.equals(
+                        continuousEnumerationSettings, that.continuousEnumerationSettings);
     }
 }

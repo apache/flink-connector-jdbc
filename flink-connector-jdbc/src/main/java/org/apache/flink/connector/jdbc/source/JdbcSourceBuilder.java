@@ -28,6 +28,8 @@ import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnecti
 import org.apache.flink.connector.jdbc.source.enumerator.SqlTemplateSplitEnumerator;
 import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
+import org.apache.flink.connector.jdbc.split.JdbcSlideTimingParameterProvider;
+import org.apache.flink.connector.jdbc.utils.ContinuousEnumerationSettings;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
@@ -36,9 +38,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
+import java.io.Serializable;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Objects;
 
 import static org.apache.flink.connector.jdbc.source.JdbcSourceOptions.AUTO_COMMIT;
 import static org.apache.flink.connector.jdbc.source.JdbcSourceOptions.READER_FETCH_BATCH_SIZE;
@@ -94,6 +100,11 @@ public class JdbcSourceBuilder<OUT> {
 
     public static final Logger LOG = LoggerFactory.getLogger(JdbcSourceBuilder.class);
 
+    public static final String INVALID_CONTINUOUS_SLIDE_TIMING_HINT =
+            "The 'jdbcParameterValuesProvider' must be specified with in type of 'JdbcSlideTimingParameterProvider' when using 'continuousEnumerationSettings'.";
+    public static final String INVALID_SLIDE_TIMING_CONTINUOUS_HINT =
+            "The 'continuousEnumerationSettings' must be specified with in type of 'ContinuousEnumerationSettings' when using 'jdbcParameterValuesProvider' in type of 'JdbcSlideTimingParameterProvider'.";
+
     private final Configuration configuration;
 
     private int splitReaderFetchBatchSize;
@@ -103,15 +114,15 @@ public class JdbcSourceBuilder<OUT> {
     // Boolean to distinguish between default value and explicitly set autoCommit mode.
     private Boolean autoCommit;
 
-    // TODO It would be used to introduce streaming semantic and tracked in
-    //  https://issues.apache.org/jira/browse/FLINK-33461
     private DeliveryGuarantee deliveryGuarantee;
+    private @Nullable ContinuousEnumerationSettings continuousEnumerationSettings;
 
     private TypeInformation<OUT> typeInformation;
 
     private final JdbcConnectionOptions.JdbcConnectionOptionsBuilder connOptionsBuilder;
     private String sql;
     private JdbcParameterValuesProvider jdbcParameterValuesProvider;
+    private @Nullable Serializable optionalSqlSplitEnumeratorState;
     private ResultExtractor<OUT> resultExtractor;
 
     private JdbcConnectionProvider connectionProvider;
@@ -177,6 +188,32 @@ public class JdbcSourceBuilder<OUT> {
 
     // ------ Optional ------------------------------------------------------------------
 
+    /**
+     * The continuousEnumerationSettings to discovery the next available batch splits. Note: If the
+     * value was set, the {@link #jdbcParameterValuesProvider} must specified with the {@link
+     * org.apache.flink.connector.jdbc.split.JdbcSlideTimingParameterProvider}.
+     */
+    public JdbcSourceBuilder<OUT> setContinuousEnumerationSettings(
+            ContinuousEnumerationSettings continuousEnumerationSettings) {
+        this.continuousEnumerationSettings = continuousEnumerationSettings;
+        return this;
+    }
+
+    /**
+     * If the value was set as an instance of {@link JdbcSlideTimingParameterProvider}, it's
+     * required to specify the {@link #continuousEnumerationSettings}.
+     */
+    public JdbcSourceBuilder<OUT> setJdbcParameterValuesProvider(
+            @Nonnull JdbcParameterValuesProvider parameterValuesProvider) {
+        this.jdbcParameterValuesProvider = Preconditions.checkNotNull(parameterValuesProvider);
+        return this;
+    }
+
+    public JdbcSourceBuilder<OUT> setDeliveryGuarantee(DeliveryGuarantee deliveryGuarantee) {
+        this.deliveryGuarantee = Preconditions.checkNotNull(deliveryGuarantee);
+        return this;
+    }
+
     public JdbcSourceBuilder<OUT> setConnectionCheckTimeoutSeconds(
             int connectionCheckTimeoutSeconds) {
         connOptionsBuilder.withConnectionCheckTimeoutSeconds(connectionCheckTimeoutSeconds);
@@ -187,12 +224,6 @@ public class JdbcSourceBuilder<OUT> {
         Preconditions.checkNotNull(propKey, "Connection property key mustn't be null");
         Preconditions.checkNotNull(propVal, "Connection property value mustn't be null");
         connOptionsBuilder.withProperty(propKey, propVal);
-        return this;
-    }
-
-    public JdbcSourceBuilder<OUT> setJdbcParameterValuesProvider(
-            @Nonnull JdbcParameterValuesProvider parameterValuesProvider) {
-        this.jdbcParameterValuesProvider = Preconditions.checkNotNull(parameterValuesProvider);
         return this;
     }
 
@@ -235,11 +266,26 @@ public class JdbcSourceBuilder<OUT> {
         return this;
     }
 
+    public JdbcSourceBuilder<OUT> setOptionalSqlSplitEnumeratorState(
+            Serializable optionalSqlSplitEnumeratorState) {
+        this.optionalSqlSplitEnumeratorState = optionalSqlSplitEnumeratorState;
+        return this;
+    }
+
     public JdbcSource<OUT> build() {
         this.connectionProvider = new SimpleJdbcConnectionProvider(connOptionsBuilder.build());
         if (resultSetFetchSize > 0) {
             this.configuration.set(RESULTSET_FETCH_SIZE, resultSetFetchSize);
         }
+
+        if (deliveryGuarantee == DeliveryGuarantee.EXACTLY_ONCE) {
+            Preconditions.checkArgument(
+                    this.resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE
+                            || this.resultSetType == ResultSet.CONCUR_READ_ONLY,
+                    "The 'resultSetType' must be ResultSet.TYPE_SCROLL_INSENSITIVE or ResultSet.CONCUR_READ_ONLY when using %s",
+                    DeliveryGuarantee.EXACTLY_ONCE);
+        }
+
         this.configuration.set(RESULTSET_CONCURRENCY, resultSetConcurrency);
         this.configuration.set(RESULTSET_TYPE, resultSetType);
         this.configuration.set(READER_FETCH_BATCH_SIZE, splitReaderFetchBatchSize);
@@ -250,15 +296,31 @@ public class JdbcSourceBuilder<OUT> {
         Preconditions.checkNotNull(resultExtractor, "'resultExtractor' mustn't be null.");
         Preconditions.checkNotNull(typeInformation, "'typeInformation' mustn't be null.");
 
+        if (Objects.nonNull(continuousEnumerationSettings)) {
+            Preconditions.checkArgument(
+                    Objects.nonNull(jdbcParameterValuesProvider)
+                            && jdbcParameterValuesProvider
+                                    instanceof JdbcSlideTimingParameterProvider,
+                    INVALID_SLIDE_TIMING_CONTINUOUS_HINT);
+        }
+
+        if (Objects.nonNull(jdbcParameterValuesProvider)
+                && jdbcParameterValuesProvider instanceof JdbcSlideTimingParameterProvider) {
+            Preconditions.checkArgument(
+                    Objects.nonNull(continuousEnumerationSettings),
+                    INVALID_CONTINUOUS_SLIDE_TIMING_HINT);
+        }
+
         return new JdbcSource<>(
                 configuration,
                 connectionProvider,
                 new SqlTemplateSplitEnumerator.TemplateSqlSplitEnumeratorProvider()
-                        .setOptionalSqlSplitEnumeratorState(null)
+                        .setOptionalSqlSplitEnumeratorState(optionalSqlSplitEnumeratorState)
                         .setSqlTemplate(sql)
                         .setParameterValuesProvider(jdbcParameterValuesProvider),
                 resultExtractor,
                 typeInformation,
-                deliveryGuarantee);
+                deliveryGuarantee,
+                continuousEnumerationSettings);
     }
 }
