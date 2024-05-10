@@ -33,4 +33,12 @@ public interface JdbcParameterValuesProvider extends Serializable {
 
     /** Returns the necessary parameters array to use for query in parallel a table. */
     Serializable[][] getParameterValues();
+
+    /** Get the latest optional state data. */
+    default Serializable getLatestOptionalState() {
+        return null;
+    }
+
+    /** Set the optional state data. */
+    default void setOptionalState(Serializable optionalState) {}
 }
