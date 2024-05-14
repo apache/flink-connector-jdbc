@@ -45,10 +45,6 @@ jobs:
           flink: 1.18.0,
           jdk: '8, 11, 17',
           branch: v3.1
-        }, {
-          flink: 1.19.0,
-          jdk: '8, 11, 17, 21',
-          branch: v3.1
         }]
     uses: apache/flink-connector-shared-utils/.github/workflows/ci.yml@ci_utils
     with:
