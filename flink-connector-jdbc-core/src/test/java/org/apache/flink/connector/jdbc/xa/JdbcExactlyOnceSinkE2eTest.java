@@ -75,6 +75,7 @@ public abstract class JdbcExactlyOnceSinkE2eTest implements DatabaseTest {
     private static final BooksTable OUTPUT_TABLE = new BooksTable("XaTable");
     protected static final int PARALLELISM = 4;
     protected static final long CHECKPOINT_TIMEOUT_MS = 5_000L;
+    protected static final String TASK_CANCELLATION_TIMEOUT_MS = "10000";
 
     @RegisterExtension static final MiniClusterExtension MINI_CLUSTER = createCluster();
 
@@ -89,7 +90,7 @@ public abstract class JdbcExactlyOnceSinkE2eTest implements DatabaseTest {
         // item correctly.
         //  API calling lines will be adapted after the appropriate series versions
         //  that the oldest flink version in the CI can process the config options.
-        configuration.setString(TASK_CANCELLATION_TIMEOUT.key(), "10000");
+        configuration.setString(TASK_CANCELLATION_TIMEOUT.key(), TASK_CANCELLATION_TIMEOUT_MS);
         configuration.set(CHECKPOINTING_TIMEOUT, Duration.ofMillis(CHECKPOINT_TIMEOUT_MS));
 
         return new MiniClusterExtension(

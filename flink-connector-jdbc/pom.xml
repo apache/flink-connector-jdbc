@@ -34,269 +34,51 @@ under the License.
 
 	<packaging>jar</packaging>
 
-	<properties>
-		<scala.binary.version>2.12</scala.binary.version>
-		<scala-library.version>2.12.7</scala-library.version>
-		<assertj.version>3.23.1</assertj.version>
-		<postgres.version>42.7.3</postgres.version>
-		<oracle.version>21.8.0.0</oracle.version>
-		<trino.version>418</trino.version>
-		<byte-buddy.version>1.12.10</byte-buddy.version>
-		<surefire.module.config> <!-- required by
-		Db2ExactlyOnceSinkE2eTest --> --add-opens=java.base/java.util=ALL-UNNAMED <!--
-		SimpleJdbcConnectionProviderDriverClassConcurrentLoadingITCase--> --add-opens=java.base/java.lang=ALL-UNNAMED
-		</surefire.module.config>
-	</properties>
-
 	<dependencies>
 
-		<!-- Connectors -->
-
 		<dependency>
 			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-connector-base</artifactId>
-			<version>${flink.version}</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<!-- Table ecosystem -->
-
-		<!-- Projects depending on this project won't depend on flink-table-*. -->
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-table-api-java-bridge</artifactId>
-			<version>${flink.version}</version>
-			<scope>provided</scope>
-			<optional>true</optional>
-		</dependency>
-
-		<!-- Postgres -->
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<version>${postgres.version}</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<!-- Oracle -->
-		<dependency>
-			<groupId>com.oracle.database.jdbc</groupId>
-			<artifactId>ojdbc8</artifactId>
-			<version>${oracle.version}</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<!-- Trino -->
-		<dependency>
-			<groupId>io.trino</groupId>
-			<artifactId>trino-jdbc</artifactId>
-			<version>${trino.version}</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<!-- SQL Server -->
-		<dependency>
-			<groupId>com.microsoft.sqlserver</groupId>
-			<artifactId>mssql-jdbc</artifactId>
-			<version>10.2.1.jre8</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<!-- CrateDB -->
-		<dependency>
-			<groupId>io.crate</groupId>
-			<artifactId>crate-jdbc</artifactId>
-			<version>2.7.0</version>
-			<scope>provided</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>net.java.dev.jna</groupId>
-					<artifactId>jna</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<!-- Db2 -->
-		<dependency>
-			<groupId>com.ibm.db2.jcc</groupId>
-			<artifactId>db2jcc</artifactId>
-			<version>db2jcc4</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<!-- Tests -->
-
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-test-utils</artifactId>
-			<version>${flink.version}</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-table-common</artifactId>
-			<version>${flink.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-streaming-java</artifactId>
-			<version>${flink.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-core</artifactId>
-			<version>${flink.version}</version>
-			<scope>test</scope>
-			<type>test-jar</type>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-table-planner_${scala.binary.version}</artifactId>
-			<version>${flink.version}</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-table-planner_${scala.binary.version}</artifactId>
-			<version>${flink.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-table-api-scala-bridge_${scala.binary.version}</artifactId>
-			<version>${flink.version}</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-connector-base</artifactId>
-			<version>${flink.version}</version>
-			<scope>test</scope>
-			<type>test-jar</type>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-connector-test-utils</artifactId>
-			<version>${flink.version}</version>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- Assertions test dependencies -->
-
-		<dependency>
-			<groupId>org.assertj</groupId>
-			<artifactId>assertj-core</artifactId>
-			<version>${assertj.version}</version>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- Postgres tests -->
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>postgresql</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- MySQL tests -->
-		<dependency>
-			<groupId>mysql</groupId>
-			<artifactId>mysql-connector-java</artifactId>
-			<version>8.0.29</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>mysql</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- Derby tests -->
-		<dependency>
-			<groupId>org.apache.derby</groupId>
-			<artifactId>derby</artifactId>
-			<version>10.14.2.0</version>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- Oracle tests -->
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>oracle-xe</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- MS SQL test -->
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>mssqlserver</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- H2 tests -->
-		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<version>2.2.224</version>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- Db2 test -->
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>db2</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- Trino test -->
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>trino</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- OceanBase tests -->
-		<dependency>
-			<groupId>com.oceanbase</groupId>
-			<artifactId>oceanbase-client</artifactId>
-			<version>2.4.8</version>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- ArchUit test dependencies -->
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-architecture-tests-test</artifactId>
-			<scope>test</scope>
+			<artifactId>flink-connector-jdbc-core</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 
 	</dependencies>
 
-	<dependencyManagement>
-		<dependencies>
-			<!-- For dependency convergence -->
-			<dependency>
-				<groupId>org.scala-lang</groupId>
-				<artifactId>scala-library</artifactId>
-				<version>${scala-library.version}</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<createDependencyReducedPom>false</createDependencyReducedPom>
+							<shadeTestJar>true</shadeTestJar>
+							<artifactSet>
+								<excludes>
+									<exclude>org.apache.flink:flink-connector-base</exclude>
+								</excludes>
+							</artifactSet>
+							<filters combine.children="append">
+								<filter combine.children="append">
+									<!-- Do not copy the signatures in the META-INF folder. -->
+									<!-- Otherwise, this might cause SecurityExceptions when using the JAR. -->
+									<artifact>*:*</artifact>
+									<excludes combine.children="append">
+										<exclude>META-INF/*.SF</exclude>
+										<exclude>META-INF/*.DSA</exclude>
+										<exclude>META-INF/*.RSA</exclude>
+									</excludes>
+								</filter>
+							</filters>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
