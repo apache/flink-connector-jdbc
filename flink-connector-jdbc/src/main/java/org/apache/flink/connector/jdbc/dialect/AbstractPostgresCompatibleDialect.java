@@ -50,13 +50,14 @@ public abstract class AbstractPostgresCompatibleDialect extends AbstractDialect 
     @Override
     public Optional<String> getUpsertStatement(
             String tableName, String[] fieldNames, String[] uniqueKeyFields) {
+        Set<String> uniqueKeyFieldsSet = Arrays.stream(uniqueKeyFields).collect(Collectors.toSet());
         String uniqueColumns =
-                Arrays.stream(uniqueKeyFields)
+                uniqueKeyFieldsSet.stream()
                         .map(this::quoteIdentifier)
                         .collect(Collectors.joining(", "));
         String updateClause =
                 Arrays.stream(fieldNames)
-                        .filter(f -> !Arrays.asList(uniqueKeyFields).contains(f))
+                        .filter(f -> !uniqueKeyFieldsSet.contains(f))
                         .map(f -> quoteIdentifier(f) + "=EXCLUDED." + quoteIdentifier(f))
                         .collect(Collectors.joining(", "));
         return Optional.of(
