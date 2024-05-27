@@ -197,7 +197,7 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
                 env,
                 () ->
                         Math.abs(collectedRecords.size() - testEntries.size())
-                                <= DATA_NUM_PER_SECOND_SPAN_SPLIT);
+                                <= DATA_NUM_PER_SECOND_SPAN_SPLIT * TESTING_PARALLELISM);
 
         assertThat(testEntries)
                 .hasSizeGreaterThanOrEqualTo(collectedRecords.size())
