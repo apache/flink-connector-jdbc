@@ -18,10 +18,11 @@
 package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
-import org.apache.flink.connector.jdbc.internal.connection.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
+import org.apache.flink.connector.jdbc.sink.JdbcSinkBuilder;
 import org.apache.flink.connector.jdbc.xa.JdbcXaSinkFunction;
 import org.apache.flink.connector.jdbc.xa.XaFacade;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
@@ -105,6 +106,10 @@ public class JdbcSink {
                         exactlyOnceOptions.isTransactionPerConnection()),
                 executionOptions,
                 exactlyOnceOptions);
+    }
+
+    public static <IN> JdbcSinkBuilder<IN> builder() {
+        return org.apache.flink.connector.jdbc.sink.JdbcSink.builder();
     }
 
     private JdbcSink() {}

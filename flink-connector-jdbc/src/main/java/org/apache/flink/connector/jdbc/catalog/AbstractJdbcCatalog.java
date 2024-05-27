@@ -71,8 +71,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.function.Predicate;
 
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.PASSWORD_KEY;
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.USER_KEY;
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.PASSWORD;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.TABLE_NAME;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.URL;
@@ -88,11 +92,11 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractJdbcCatalog.class);
 
     protected final ClassLoader userClassLoader;
-    protected final String username;
-    protected final String pwd;
     protected final String baseUrl;
     protected final String defaultUrl;
+    protected final Properties connectionProperties;
 
+    @Deprecated
     public AbstractJdbcCatalog(
             ClassLoader userClassLoader,
             String catalogName,
@@ -100,20 +104,36 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
             String username,
             String pwd,
             String baseUrl) {
+        this(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                baseUrl,
+                getBriefAuthProperties(username, pwd));
+    }
+
+    public AbstractJdbcCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String baseUrl,
+            Properties connectionProperties) {
         super(catalogName, defaultDatabase);
 
         checkNotNull(userClassLoader);
-        checkArgument(!StringUtils.isNullOrWhitespaceOnly(username));
-        checkArgument(!StringUtils.isNullOrWhitespaceOnly(pwd));
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(baseUrl));
 
         JdbcCatalogUtils.validateJdbcUrl(baseUrl);
 
         this.userClassLoader = userClassLoader;
-        this.username = username;
-        this.pwd = pwd;
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
         this.defaultUrl = this.baseUrl + defaultDatabase;
+        this.connectionProperties = Preconditions.checkNotNull(connectionProperties);
+        checkArgument(
+                !StringUtils.isNullOrWhitespaceOnly(connectionProperties.getProperty(USER_KEY)));
+        checkArgument(
+                !StringUtils.isNullOrWhitespaceOnly(
+                        connectionProperties.getProperty(PASSWORD_KEY)));
     }
 
     @Override
@@ -122,7 +142,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
         try (TemporaryClassLoaderContext ignored =
                 TemporaryClassLoaderContext.of(userClassLoader)) {
             // test connection, fail early if we cannot connect to database
-            try (Connection conn = DriverManager.getConnection(defaultUrl, username, pwd)) {
+            try (Connection conn = DriverManager.getConnection(defaultUrl, connectionProperties)) {
             } catch (SQLException e) {
                 throw new ValidationException(
                         String.format("Failed connecting to %s via JDBC.", defaultUrl), e);
@@ -139,11 +159,11 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
     // ----- getters ------
 
     public String getUsername() {
-        return username;
+        return connectionProperties.getProperty(USER_KEY);
     }
 
     public String getPassword() {
-        return pwd;
+        return connectionProperties.getProperty(PASSWORD_KEY);
     }
 
     public String getBaseUrl() {
@@ -248,7 +268,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
         String databaseName = tablePath.getDatabaseName();
         String dbUrl = baseUrl + databaseName;
 
-        try (Connection conn = DriverManager.getConnection(dbUrl, username, pwd)) {
+        try (Connection conn = DriverManager.getConnection(dbUrl, connectionProperties)) {
             DatabaseMetaData metaData = conn.getMetaData();
             Optional<UniqueConstraint> primaryKey =
                     getPrimaryKey(
@@ -282,8 +302,8 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
             Map<String, String> props = new HashMap<>();
             props.put(CONNECTOR.key(), IDENTIFIER);
             props.put(URL.key(), dbUrl);
-            props.put(USERNAME.key(), username);
-            props.put(PASSWORD.key(), pwd);
+            props.put(USERNAME.key(), connectionProperties.getProperty(USER_KEY));
+            props.put(PASSWORD.key(), connectionProperties.getProperty(PASSWORD_KEY));
             props.put(TABLE_NAME.key(), getSchemaTableName(tablePath));
             return CatalogTable.of(tableSchema, null, Lists.newArrayList(), props);
         } catch (Exception e) {
@@ -497,7 +517,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
             Predicate<String> filterFunc,
             Object... params) {
 
-        try (Connection conn = DriverManager.getConnection(connUrl, username, pwd);
+        try (Connection conn = DriverManager.getConnection(connUrl, connectionProperties);
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             return extractColumnValuesByStatement(ps, columnIndex, filterFunc, params);
 

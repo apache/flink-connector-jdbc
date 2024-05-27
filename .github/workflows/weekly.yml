@@ -16,7 +16,10 @@
 # limitations under the License.
 ################################################################################
 
-name: Nightly
+# We need to specify repo related information here since Apache INFRA doesn't differentiate
+# between several workflows with the same names while preparing a report for GHA usage
+# https://infra-reports.apache.org/#ghactions
+name: Weekly Flink Connector JDBC
 on:
   schedule:
     - cron: "0 0 * * 0"
@@ -27,12 +30,6 @@ jobs:
     strategy:
       matrix:
         flink_branches: [{
-          flink: 1.16-SNAPSHOT,
-          branch: main
-        }, {
-          flink: 1.17-SNAPSHOT,
-          branch: main
-        }, {
           flink: 1.18-SNAPSHOT,
           jdk: '8, 11, 17',
           branch: main
@@ -41,14 +38,16 @@ jobs:
           jdk: '8, 11, 17, 21',
           branch: main
         }, {
-          flink: 1.16.2,
-          branch: v3.1
-        }, {
-          flink: 1.17.1,
-          branch: v3.1
+          flink: 1.20-SNAPSHOT,
+          jdk: '8, 11, 17, 21',
+          branch: main
         }, {
           flink: 1.18.0,
           jdk: '8, 11, 17',
+          branch: v3.1
+        }, {
+          flink: 1.19.0,
+          jdk: '8, 11, 17, 21',
           branch: v3.1
         }]
     uses: apache/flink-connector-shared-utils/.github/workflows/ci.yml@ci_utils

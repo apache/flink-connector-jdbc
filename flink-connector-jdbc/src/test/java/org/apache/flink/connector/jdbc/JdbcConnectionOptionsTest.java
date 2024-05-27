@@ -21,6 +21,8 @@ import org.apache.flink.connector.jdbc.fakedb.FakeDBUtils;
 
 import org.junit.jupiter.api.Test;
 
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.USER_KEY;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Tests for {@link JdbcConnectionOptions}. */
@@ -57,5 +59,32 @@ class JdbcConnectionOptionsTest {
                                         .withConnectionCheckTimeoutSeconds(0)
                                         .build())
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void testConnectionProperty() {
+        // test for null connection properties
+        JdbcConnectionOptions options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .build();
+        assertThat(options.getProperties()).isEmpty();
+
+        // test for useful connection properties
+        options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .withProperty("keyA", "valueA")
+                        .build();
+        assertThat(options.getProperties()).hasSize(1);
+
+        options =
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(FakeDBUtils.TEST_DB_URL)
+                        .withUsername("user")
+                        .withProperty("keyA", "valueA")
+                        .build();
+        assertThat(options.getProperties()).hasSize(2);
+        assertThat(options.getProperties()).hasFieldOrPropertyWithValue(USER_KEY, "user");
     }
 }

@@ -18,7 +18,6 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.connector.jdbc.xa.XaFacade.TransientXaException;
 
 import org.slf4j.Logger;
@@ -105,14 +104,14 @@ class XaGroupOpsImpl implements XaGroupOps {
     }
 
     @Override
-    public void recoverAndRollback(RuntimeContext runtimeContext, XidGenerator xidGenerator) {
+    public void recoverAndRollback(JobSubtask subtask, XidGenerator xidGenerator) {
         Collection<Xid> recovered = xaFacade.recover();
         if (recovered.isEmpty()) {
             return;
         }
         LOG.warn("rollback {} recovered transactions", recovered.size());
         for (Xid xid : recovered) {
-            if (xidGenerator.belongsToSubtask(xid, runtimeContext)) {
+            if (xidGenerator.belongsToSubtask(xid, subtask)) {
                 try {
                     xaFacade.rollback(xid);
                 } catch (Exception e) {

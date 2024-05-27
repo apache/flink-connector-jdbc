@@ -19,7 +19,6 @@ package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.JobID;
-import org.apache.flink.api.common.functions.RuntimeContext;
 
 import javax.transaction.xa.Xid;
 
@@ -62,29 +61,28 @@ class SemanticXidGenerator implements XidGenerator {
     }
 
     @Override
-    public Xid generateXid(RuntimeContext runtimeContext, long checkpointId) {
-        byte[] jobIdBytes = runtimeContext.getJobId().getBytes();
-        System.arraycopy(jobIdBytes, 0, gtridBuffer, 0, JobID.SIZE);
+    public Xid generateXid(JobSubtask subtaskId, long checkpointId) {
+        System.arraycopy(subtaskId.getJobId(), 0, gtridBuffer, 0, JobID.SIZE);
 
-        writeNumber(runtimeContext.getIndexOfThisSubtask(), Integer.BYTES, gtridBuffer, JobID.SIZE);
+        writeNumber(subtaskId.getSubtaskId(), Integer.BYTES, gtridBuffer, JobID.SIZE);
         writeNumber(checkpointId, Long.BYTES, gtridBuffer, JobID.SIZE + Integer.BYTES);
-        // relying on arrays copying inside XidImpl constructor
+        // relying on arrays copying inside XaXid constructor
         return new XidImpl(FORMAT_ID, gtridBuffer, bqualBuffer);
     }
 
     @Override
-    public boolean belongsToSubtask(Xid xid, RuntimeContext ctx) {
+    public boolean belongsToSubtask(Xid xid, JobSubtask subtask) {
         if (xid.getFormatId() != FORMAT_ID) {
             return false;
         }
         int subtaskIndex = readNumber(xid.getGlobalTransactionId(), JobID.SIZE, Integer.BYTES);
-        if (subtaskIndex != ctx.getIndexOfThisSubtask()
-                && subtaskIndex <= ctx.getNumberOfParallelSubtasks() - 1) {
+        if (subtaskIndex != subtask.getSubtaskId()
+                && subtaskIndex <= subtask.getNumberOfSubtasks() - 1) {
             return false;
         }
         byte[] jobIdBytes = new byte[JobID.SIZE];
         System.arraycopy(xid.getGlobalTransactionId(), 0, jobIdBytes, 0, JobID.SIZE);
-        return Arrays.equals(jobIdBytes, ctx.getJobId().getBytes());
+        return Arrays.equals(jobIdBytes, subtask.getJobId());
     }
 
     private static int readNumber(byte[] bytes, int offset, int numBytes) {

@@ -71,6 +71,7 @@ import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.SINK_PA
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.TABLE_NAME;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.URL;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.USERNAME;
+import static org.apache.flink.connector.jdbc.utils.JdbcUtils.getConnectionProperties;
 
 /**
  * Factory for creating configured instances of {@link JdbcDynamicTableSource} and {@link
@@ -153,6 +154,8 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         readableConfig.getOptional(USERNAME).ifPresent(builder::setUsername);
         readableConfig.getOptional(PASSWORD).ifPresent(builder::setPassword);
         readableConfig.getOptional(COMPATIBLE_MODE).ifPresent(builder::setCompatibleMode);
+        getConnectionProperties(readableConfig)
+                .forEach((key, value) -> builder.setProperty(key.toString(), value.toString()));
         return builder.build();
     }
 

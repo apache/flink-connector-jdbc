@@ -20,35 +20,41 @@ package org.apache.flink.connector.jdbc;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.util.Preconditions;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 
 /** JDBC connection options. */
 @PublicEvolving
 public class JdbcConnectionOptions implements Serializable {
+
+    public static final String USER_KEY = "user";
+    public static final String PASSWORD_KEY = "password";
 
     private static final long serialVersionUID = 1L;
 
     protected final String url;
     @Nullable protected final String driverName;
     protected final int connectionCheckTimeoutSeconds;
-    @Nullable protected final String username;
-    @Nullable protected final String password;
+    @Nonnull protected final Properties properties;
 
     protected JdbcConnectionOptions(
             String url,
             @Nullable String driverName,
-            @Nullable String username,
-            @Nullable String password,
-            int connectionCheckTimeoutSeconds) {
-        Preconditions.checkArgument(connectionCheckTimeoutSeconds > 0);
+            int connectionCheckTimeoutSeconds,
+            @Nonnull Properties properties) {
+        Preconditions.checkArgument(
+                connectionCheckTimeoutSeconds > 0,
+                "Connection check timeout seconds shouldn't be smaller than 1");
         this.url = Preconditions.checkNotNull(url, "jdbc url is empty");
         this.driverName = driverName;
-        this.username = username;
-        this.password = password;
         this.connectionCheckTimeoutSeconds = connectionCheckTimeoutSeconds;
+        this.properties =
+                Preconditions.checkNotNull(properties, "Connection properties must be non-null");
     }
 
     public String getDbURL() {
@@ -61,24 +67,40 @@ public class JdbcConnectionOptions implements Serializable {
     }
 
     public Optional<String> getUsername() {
-        return Optional.ofNullable(username);
+        return Optional.ofNullable(properties.getProperty(USER_KEY));
     }
 
     public Optional<String> getPassword() {
-        return Optional.ofNullable(password);
+        return Optional.ofNullable(properties.getProperty(PASSWORD_KEY));
     }
 
     public int getConnectionCheckTimeoutSeconds() {
         return connectionCheckTimeoutSeconds;
     }
 
+    @Nonnull
+    public Properties getProperties() {
+        return properties;
+    }
+
+    @Nonnull
+    public static Properties getBriefAuthProperties(String user, String password) {
+        final Properties result = new Properties();
+        if (Objects.nonNull(user)) {
+            result.put(USER_KEY, user);
+        }
+        if (Objects.nonNull(password)) {
+            result.put(PASSWORD_KEY, password);
+        }
+        return result;
+    }
+
     /** Builder for {@link JdbcConnectionOptions}. */
     public static class JdbcConnectionOptionsBuilder {
         private String url;
         private String driverName;
-        private String username;
-        private String password;
         private int connectionCheckTimeoutSeconds = 60;
+        private final Properties properties = new Properties();
 
         public JdbcConnectionOptionsBuilder withUrl(String url) {
             this.url = url;
@@ -90,13 +112,24 @@ public class JdbcConnectionOptions implements Serializable {
             return this;
         }
 
+        public JdbcConnectionOptionsBuilder withProperty(String propKey, String propVal) {
+            Preconditions.checkNotNull(propKey, "Connection property key mustn't be null");
+            Preconditions.checkNotNull(propVal, "Connection property value mustn't be null");
+            this.properties.put(propKey, propVal);
+            return this;
+        }
+
         public JdbcConnectionOptionsBuilder withUsername(String username) {
-            this.username = username;
+            if (Objects.nonNull(username)) {
+                this.properties.put(USER_KEY, username);
+            }
             return this;
         }
 
         public JdbcConnectionOptionsBuilder withPassword(String password) {
-            this.password = password;
+            if (Objects.nonNull(password)) {
+                this.properties.put(PASSWORD_KEY, password);
+            }
             return this;
         }
 
@@ -114,7 +147,7 @@ public class JdbcConnectionOptions implements Serializable {
 
         public JdbcConnectionOptions build() {
             return new JdbcConnectionOptions(
-                    url, driverName, username, password, connectionCheckTimeoutSeconds);
+                    url, driverName, connectionCheckTimeoutSeconds, properties);
         }
     }
 }

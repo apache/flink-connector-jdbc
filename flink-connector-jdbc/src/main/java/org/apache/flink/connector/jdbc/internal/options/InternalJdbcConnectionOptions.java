@@ -22,11 +22,14 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
+import org.apache.flink.util.Preconditions;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
@@ -44,12 +47,11 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
             String dbURL,
             String tableName,
             @Nullable String driverName,
-            @Nullable String username,
-            @Nullable String password,
             JdbcDialect dialect,
             @Nullable Integer parallelism,
-            int connectionCheckTimeoutSeconds) {
-        super(dbURL, driverName, username, password, connectionCheckTimeoutSeconds);
+            int connectionCheckTimeoutSeconds,
+            @Nonnull Properties properties) {
+        super(dbURL, driverName, connectionCheckTimeoutSeconds, properties);
         this.tableName = tableName;
         this.dialect = dialect;
         this.parallelism = parallelism;
@@ -78,13 +80,12 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
             return Objects.equals(url, options.url)
                     && Objects.equals(tableName, options.tableName)
                     && Objects.equals(driverName, options.driverName)
-                    && Objects.equals(username, options.username)
-                    && Objects.equals(password, options.password)
                     && Objects.equals(
                             dialect.getClass().getName(), options.dialect.getClass().getName())
                     && Objects.equals(parallelism, options.parallelism)
                     && Objects.equals(
-                            connectionCheckTimeoutSeconds, options.connectionCheckTimeoutSeconds);
+                            connectionCheckTimeoutSeconds, options.connectionCheckTimeoutSeconds)
+                    && Objects.equals(properties, options.properties);
         } else {
             return false;
         }
@@ -96,11 +97,10 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
                 url,
                 tableName,
                 driverName,
-                username,
-                password,
                 dialect.getClass().getName(),
                 parallelism,
-                connectionCheckTimeoutSeconds);
+                connectionCheckTimeoutSeconds,
+                properties);
     }
 
     /** Builder of {@link InternalJdbcConnectionOptions}. */
@@ -110,11 +110,10 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
         private String tableName;
         private String driverName;
         private String compatibleMode;
-        private String username;
-        private String password;
         private JdbcDialect dialect;
         private Integer parallelism;
         private int connectionCheckTimeoutSeconds = 60;
+        private final Properties properties = new Properties();
 
         /**
          * optional, specifies the classloader to use in the planner for load the class in user jar.
@@ -137,13 +136,17 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
 
         /** optional, user name. */
         public Builder setUsername(String username) {
-            this.username = username;
+            if (Objects.nonNull(username)) {
+                this.properties.put(USER_KEY, username);
+            }
             return this;
         }
 
         /** optional, password. */
         public Builder setPassword(String password) {
-            this.password = password;
+            if (Objects.nonNull(password)) {
+                this.properties.put(PASSWORD_KEY, password);
+            }
             return this;
         }
 
@@ -188,6 +191,13 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
             return this;
         }
 
+        public Builder setProperty(String propKey, String propVal) {
+            Preconditions.checkNotNull(propKey, "Connection property key mustn't be null");
+            Preconditions.checkNotNull(propVal, "Connection property value mustn't be null");
+            this.properties.put(propKey, propVal);
+            return this;
+        }
+
         public InternalJdbcConnectionOptions build() {
             checkNotNull(dbURL, "No dbURL supplied.");
             checkNotNull(tableName, "No tableName supplied.");
@@ -208,11 +218,10 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
                     dialect.appendDefaultUrlProperties(dbURL),
                     tableName,
                     driverName,
-                    username,
-                    password,
                     dialect,
                     parallelism,
-                    connectionCheckTimeoutSeconds);
+                    connectionCheckTimeoutSeconds,
+                    properties);
         }
     }
 }

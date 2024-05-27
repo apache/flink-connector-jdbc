@@ -26,6 +26,7 @@ import org.apache.flink.connector.jdbc.testutils.tables.TableField;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -110,7 +111,7 @@ public class BooksTable extends TableBase<BooksTable.BookEntry> implements Table
     }
 
     @Override
-    protected JdbcResultSetBuilder<BookEntry> getResultSetBuilder() {
+    public JdbcResultSetBuilder<BookEntry> getResultSetBuilder() {
         return resultSetBuilder;
     }
 
@@ -136,7 +137,7 @@ public class BooksTable extends TableBase<BooksTable.BookEntry> implements Table
 
         @Override
         public String toString() {
-            return new ToStringBuilder(this)
+            return new ToStringBuilder(this, ToStringStyle.JSON_STYLE)
                     .append("id", id)
                     .append("title", title)
                     .append("author", author)

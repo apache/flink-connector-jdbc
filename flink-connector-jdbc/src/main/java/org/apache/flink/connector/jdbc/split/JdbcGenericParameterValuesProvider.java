@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.split;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.JdbcInputFormat;
 
 import java.io.Serializable;
@@ -27,7 +27,7 @@ import java.io.Serializable;
  * This splits generator actually does nothing but wrapping the query parameters computed by the
  * user before creating the {@link JdbcInputFormat} instance.
  */
-@Experimental
+@PublicEvolving
 public class JdbcGenericParameterValuesProvider implements JdbcParameterValuesProvider {
 
     private final Serializable[][] parameters;

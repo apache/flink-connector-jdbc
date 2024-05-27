@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.databases.cratedb.catalog;
 
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
@@ -34,7 +35,10 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
+
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 
 /** Catalog for CrateDB. */
 @Internal
@@ -53,6 +57,7 @@ public class CrateDBCatalog extends PostgresCatalog {
                 }
             };
 
+    @VisibleForTesting
     public CrateDBCatalog(
             ClassLoader userClassLoader,
             String catalogName,
@@ -60,14 +65,27 @@ public class CrateDBCatalog extends PostgresCatalog {
             String username,
             String pwd,
             String baseUrl) {
+        this(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                baseUrl,
+                getBriefAuthProperties(username, pwd));
+    }
+
+    public CrateDBCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String baseUrl,
+            Properties connecProperties) {
         super(
                 userClassLoader,
                 catalogName,
                 defaultDatabase,
-                username,
-                pwd,
                 baseUrl,
-                new CrateDBTypeMapper());
+                new CrateDBTypeMapper(),
+                connecProperties);
     }
 
     // ------ databases ------
