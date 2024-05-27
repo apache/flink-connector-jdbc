@@ -29,7 +29,7 @@ import org.apache.flink.connector.jdbc.source.enumerator.SqlTemplateSplitEnumera
 import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcSlideTimingParameterProvider;
-import org.apache.flink.connector.jdbc.utils.ContinuousEnumerationSettings;
+import org.apache.flink.connector.jdbc.utils.ContinuousUnBoundingSettings;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
@@ -101,9 +101,9 @@ public class JdbcSourceBuilder<OUT> {
     public static final Logger LOG = LoggerFactory.getLogger(JdbcSourceBuilder.class);
 
     public static final String INVALID_CONTINUOUS_SLIDE_TIMING_HINT =
-            "The 'jdbcParameterValuesProvider' must be specified with in type of 'JdbcSlideTimingParameterProvider' when using 'continuousEnumerationSettings'.";
+            "The 'jdbcParameterValuesProvider' must be specified with in type of 'JdbcSlideTimingParameterProvider' when using 'continuousUnBoundingSettings'.";
     public static final String INVALID_SLIDE_TIMING_CONTINUOUS_HINT =
-            "The 'continuousEnumerationSettings' must be specified with in type of 'ContinuousEnumerationSettings' when using 'jdbcParameterValuesProvider' in type of 'JdbcSlideTimingParameterProvider'.";
+            "The 'continuousUnBoundingSettings' must be specified with in type of 'continuousUnBoundingSettings' when using 'jdbcParameterValuesProvider' in type of 'JdbcSlideTimingParameterProvider'.";
 
     private final Configuration configuration;
 
@@ -115,7 +115,7 @@ public class JdbcSourceBuilder<OUT> {
     private Boolean autoCommit;
 
     private DeliveryGuarantee deliveryGuarantee;
-    private @Nullable ContinuousEnumerationSettings continuousEnumerationSettings;
+    private @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings;
 
     private TypeInformation<OUT> typeInformation;
 
@@ -189,19 +189,19 @@ public class JdbcSourceBuilder<OUT> {
     // ------ Optional ------------------------------------------------------------------
 
     /**
-     * The continuousEnumerationSettings to discovery the next available batch splits. Note: If the
+     * The continuousUnBoundingSettings to discovery the next available batch splits. Note: If the
      * value was set, the {@link #jdbcParameterValuesProvider} must specified with the {@link
      * org.apache.flink.connector.jdbc.split.JdbcSlideTimingParameterProvider}.
      */
-    public JdbcSourceBuilder<OUT> setContinuousEnumerationSettings(
-            ContinuousEnumerationSettings continuousEnumerationSettings) {
-        this.continuousEnumerationSettings = continuousEnumerationSettings;
+    public JdbcSourceBuilder<OUT> setContinuousUnBoundingSettings(
+            ContinuousUnBoundingSettings continuousUnBoundingSettings) {
+        this.continuousUnBoundingSettings = continuousUnBoundingSettings;
         return this;
     }
 
     /**
      * If the value was set as an instance of {@link JdbcSlideTimingParameterProvider}, it's
-     * required to specify the {@link #continuousEnumerationSettings}.
+     * required to specify the {@link #continuousUnBoundingSettings}.
      */
     public JdbcSourceBuilder<OUT> setJdbcParameterValuesProvider(
             @Nonnull JdbcParameterValuesProvider parameterValuesProvider) {
@@ -296,7 +296,7 @@ public class JdbcSourceBuilder<OUT> {
         Preconditions.checkNotNull(resultExtractor, "'resultExtractor' mustn't be null.");
         Preconditions.checkNotNull(typeInformation, "'typeInformation' mustn't be null.");
 
-        if (Objects.nonNull(continuousEnumerationSettings)) {
+        if (Objects.nonNull(continuousUnBoundingSettings)) {
             Preconditions.checkArgument(
                     Objects.nonNull(jdbcParameterValuesProvider)
                             && jdbcParameterValuesProvider
@@ -307,7 +307,7 @@ public class JdbcSourceBuilder<OUT> {
         if (Objects.nonNull(jdbcParameterValuesProvider)
                 && jdbcParameterValuesProvider instanceof JdbcSlideTimingParameterProvider) {
             Preconditions.checkArgument(
-                    Objects.nonNull(continuousEnumerationSettings),
+                    Objects.nonNull(continuousUnBoundingSettings),
                     INVALID_CONTINUOUS_SLIDE_TIMING_HINT);
         }
 
@@ -321,6 +321,6 @@ public class JdbcSourceBuilder<OUT> {
                 resultExtractor,
                 typeInformation,
                 deliveryGuarantee,
-                continuousEnumerationSettings);
+                continuousUnBoundingSettings);
     }
 }

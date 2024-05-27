@@ -27,17 +27,18 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.DeliveryGuarantee;
-import org.apache.flink.connector.jdbc.databases.mysql.MySqlTestBase;
+import org.apache.flink.connector.jdbc.databases.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.split.JdbcSlideTimingParameterProvider;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
-import org.apache.flink.connector.jdbc.utils.ContinuousEnumerationSettings;
+import org.apache.flink.connector.jdbc.utils.ContinuousUnBoundingSettings;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.test.junit5.InjectClusterClient;
 import org.apache.flink.util.Collector;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -65,7 +66,7 @@ import static org.apache.flink.runtime.jobgraph.tasks.CheckpointCoordinatorConfi
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for streaming semantic related cases of {@link JdbcSource}. */
-class JdbcSourceStreamRelatedITCase implements MySqlTestBase, JdbcITCaseBase {
+class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
 
     private static final long ONE_SECOND = Duration.ofSeconds(1L).toMillis();
     private static final int TESTING_PARALLELISM = 2;
@@ -75,14 +76,14 @@ class JdbcSourceStreamRelatedITCase implements MySqlTestBase, JdbcITCaseBase {
             (int) (ONE_SECOND / INTERVAL_OF_GENERATING + 1);
     private static final String testingTable = "t_testing";
     private static final String CREATE_SQL =
-            "CREATE TABLE if not exists "
+            "CREATE TABLE "
                     + testingTable
                     + " ("
                     + "id bigint NOT NULL, "
                     + "ts bigint NOT NULL, "
                     + "PRIMARY KEY (id))";
-    private static final ContinuousEnumerationSettings CONTINUOUS_SETTINGS =
-            new ContinuousEnumerationSettings(Duration.ofMillis(10L), Duration.ofSeconds(1L));
+    private static final ContinuousUnBoundingSettings CONTINUOUS_SETTINGS =
+            new ContinuousUnBoundingSettings(Duration.ofMillis(10L), Duration.ofSeconds(1L));
     private static final ResultExtractor<TestEntry> EXTRACTOR =
             resultSet -> new TestEntry(resultSet.getLong("id"), resultSet.getLong("ts"));
     private static final List<TestEntry> testEntries = new ArrayList<>(TESTING_ENTRIES_SIZE);
@@ -97,7 +98,6 @@ class JdbcSourceStreamRelatedITCase implements MySqlTestBase, JdbcITCaseBase {
     void initData() {
         testEntries.clear();
         quickExecutionSQL(CREATE_SQL);
-        quickExecutionSQL("delete from " + testingTable);
         generateTestEntries();
         String insertSQL = generateInsertSQL();
         quickExecutionSQL(insertSQL);
@@ -112,12 +112,18 @@ class JdbcSourceStreamRelatedITCase implements MySqlTestBase, JdbcITCaseBase {
                         .setDBUrl(getMetadata().getJdbcUrl())
                         .setUsername(getMetadata().getUsername())
                         .setPassword(getMetadata().getPassword())
-                        .setContinuousEnumerationSettings(CONTINUOUS_SETTINGS)
+                        .setContinuousUnBoundingSettings(CONTINUOUS_SETTINGS)
                         .setJdbcParameterValuesProvider(slideTimingParamsProvider)
                         .setDriverName(getMetadata().getDriverClass())
                         .setResultExtractor(EXTRACTOR);
 
         collectedRecords = new ConcurrentLinkedDeque<>();
+    }
+
+    @AfterEach
+    void clearData() {
+        quickExecutionSQL("delete from " + testingTable);
+        quickExecutionSQL("DROP TABLE " + testingTable);
     }
 
     @ParameterizedTest

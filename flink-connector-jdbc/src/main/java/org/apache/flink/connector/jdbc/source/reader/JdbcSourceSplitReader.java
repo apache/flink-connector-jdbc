@@ -170,14 +170,26 @@ public class JdbcSourceSplitReader<T>
     }
 
     private void closeResultSetAndStatement() {
+        closeResultSetIfNeeded();
+        closeStatementIfNeeded();
+    }
+
+    private void closeResultSetIfNeeded() {
         try {
             if (resultSet != null && !resultSet.isClosed()) {
                 resultSet.close();
             }
+            resultSet = null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void closeStatementIfNeeded() {
+        try {
             if (statement != null && !statement.isClosed()) {
                 statement.close();
             }
-            resultSet = null;
             statement = null;
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -298,6 +310,7 @@ public class JdbcSourceSplitReader<T>
     private void openResultSetForSplitWhenExactlyOnce(JdbcSourceSplit split)
             throws SQLException, ClassNotFoundException {
         getOrEstablishConnection();
+        closeResultSetIfNeeded();
         prepareStatement(split);
         resultSet = statement.executeQuery();
         currentSplitOffset = 0;
@@ -330,6 +343,7 @@ public class JdbcSourceSplitReader<T>
     private void openResultSetForSplitWhenAtLeastOnce(JdbcSourceSplit split)
             throws SQLException, ClassNotFoundException {
         getOrEstablishConnection();
+        closeResultSetIfNeeded();
         prepareStatement(split);
         resultSet = statement.executeQuery();
         // AT_LEAST_ONCE
@@ -338,6 +352,7 @@ public class JdbcSourceSplitReader<T>
     }
 
     private void prepareStatement(JdbcSourceSplit split) throws SQLException {
+        closeStatementIfNeeded();
         statement =
                 connection.prepareStatement(
                         split.getSqlTemplate(), resultSetType, resultSetConcurrency);

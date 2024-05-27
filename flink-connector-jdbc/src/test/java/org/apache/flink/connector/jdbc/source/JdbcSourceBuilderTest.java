@@ -26,7 +26,7 @@ import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcNumericBetweenParametersProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcSlideTimingParameterProvider;
-import org.apache.flink.connector.jdbc.utils.ContinuousEnumerationSettings;
+import org.apache.flink.connector.jdbc.utils.ContinuousUnBoundingSettings;
 import org.apache.flink.types.Row;
 
 import org.junit.jupiter.api.Test;
@@ -152,8 +152,8 @@ class JdbcSourceBuilderTest {
         assertThatThrownBy(
                         () ->
                                 sourceBuilder
-                                        .setContinuousEnumerationSettings(
-                                                new ContinuousEnumerationSettings(
+                                        .setContinuousUnBoundingSettings(
+                                                new ContinuousUnBoundingSettings(
                                                         Duration.ofMillis(1L),
                                                         Duration.ofMillis(1L)))
                                         .build())
@@ -170,7 +170,7 @@ class JdbcSourceBuilderTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(JdbcSourceBuilder.INVALID_SLIDE_TIMING_CONTINUOUS_HINT);
 
-        sourceBuilder.setContinuousEnumerationSettings(null);
+        sourceBuilder.setContinuousUnBoundingSettings(null);
         assertThatThrownBy(
                         () ->
                                 sourceBuilder

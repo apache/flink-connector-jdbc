@@ -40,7 +40,7 @@ import org.apache.flink.connector.jdbc.source.reader.JdbcSourceSplitReader;
 import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplitSerializer;
-import org.apache.flink.connector.jdbc.utils.ContinuousEnumerationSettings;
+import org.apache.flink.connector.jdbc.utils.ContinuousUnBoundingSettings;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.Preconditions;
 
@@ -58,7 +58,7 @@ public class JdbcSource<OUT>
 
     private final Boundedness boundedness;
     private final TypeInformation<OUT> typeInformation;
-    private final @Nullable ContinuousEnumerationSettings continuousEnumerationSettings;
+    private final @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings;
 
     private final Configuration configuration;
     private final JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> sqlSplitEnumeratorProvider;
@@ -74,7 +74,7 @@ public class JdbcSource<OUT>
             ResultExtractor<OUT> resultExtractor,
             TypeInformation<OUT> typeInformation,
             @Nullable DeliveryGuarantee deliveryGuarantee,
-            @Nullable ContinuousEnumerationSettings continuousEnumerationSettings) {
+            @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings) {
         this.configuration = Preconditions.checkNotNull(configuration);
         this.connectionProvider = Preconditions.checkNotNull(connectionProvider);
         this.sqlSplitEnumeratorProvider = Preconditions.checkNotNull(sqlSplitEnumeratorProvider);
@@ -82,9 +82,9 @@ public class JdbcSource<OUT>
         this.deliveryGuarantee =
                 Objects.isNull(deliveryGuarantee) ? DeliveryGuarantee.NONE : deliveryGuarantee;
         this.typeInformation = Preconditions.checkNotNull(typeInformation);
-        this.continuousEnumerationSettings = continuousEnumerationSettings;
+        this.continuousUnBoundingSettings = continuousUnBoundingSettings;
         this.boundedness =
-                Objects.isNull(continuousEnumerationSettings)
+                Objects.isNull(continuousUnBoundingSettings)
                         ? Boundedness.BOUNDED
                         : Boundedness.CONTINUOUS_UNBOUNDED;
     }
@@ -116,7 +116,7 @@ public class JdbcSource<OUT>
         return new JdbcSourceEnumerator(
                 enumContext,
                 sqlSplitEnumeratorProvider.create(),
-                continuousEnumerationSettings,
+                continuousUnBoundingSettings,
                 new ArrayList<>());
     }
 
@@ -130,7 +130,7 @@ public class JdbcSource<OUT>
         return new JdbcSourceEnumerator(
                 enumContext,
                 sqlSplitEnumeratorProvider.restore(optionalUserDefinedSplitEnumeratorState),
-                continuousEnumerationSettings,
+                continuousUnBoundingSettings,
                 checkpoint.getRemainingSplits());
     }
 
@@ -193,7 +193,6 @@ public class JdbcSource<OUT>
                 && Objects.equals(connectionProvider, that.connectionProvider)
                 && Objects.equals(resultExtractor, that.resultExtractor)
                 && deliveryGuarantee == that.deliveryGuarantee
-                && Objects.equals(
-                        continuousEnumerationSettings, that.continuousEnumerationSettings);
+                && Objects.equals(continuousUnBoundingSettings, that.continuousUnBoundingSettings);
     }
 }

@@ -31,14 +31,14 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * continuous discovery and streaming mode.
  */
 @PublicEvolving
-public final class ContinuousEnumerationSettings implements Serializable {
+public final class ContinuousUnBoundingSettings implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     private final Duration initialDiscoveryDelay;
     private final Duration discoveryInterval;
 
-    public ContinuousEnumerationSettings(
+    public ContinuousUnBoundingSettings(
             Duration initialDiscoveryDelay, Duration discoveryInterval) {
         this.initialDiscoveryDelay = initialDiscoveryDelay;
         this.discoveryInterval = checkNotNull(discoveryInterval);
@@ -56,7 +56,7 @@ public final class ContinuousEnumerationSettings implements Serializable {
 
     @Override
     public String toString() {
-        return "ContinuousEnumerationSettings{"
+        return "ContinuousUnBoundingSettings{"
                 + "initialDiscoveryDelay="
                 + initialDiscoveryDelay
                 + ", discoveryInterval="
@@ -74,7 +74,7 @@ public final class ContinuousEnumerationSettings implements Serializable {
             return false;
         }
 
-        ContinuousEnumerationSettings that = (ContinuousEnumerationSettings) object;
+        ContinuousUnBoundingSettings that = (ContinuousUnBoundingSettings) object;
         return Objects.equals(initialDiscoveryDelay, that.initialDiscoveryDelay)
                 && Objects.equals(discoveryInterval, that.discoveryInterval);
     }

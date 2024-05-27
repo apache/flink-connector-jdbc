@@ -23,7 +23,7 @@ import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplit;
-import org.apache.flink.connector.jdbc.utils.ContinuousEnumerationSettings;
+import org.apache.flink.connector.jdbc.utils.ContinuousUnBoundingSettings;
 import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
@@ -51,18 +51,18 @@ public class JdbcSourceEnumerator
     private final LinkedHashMap<Integer, String> readersAwaitingSplit;
     private final List<JdbcSourceSplit> unassigned;
     private final JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> sqlSplitEnumerator;
-    private final @Nullable ContinuousEnumerationSettings continuousEnumerationSettings;
+    private final @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings;
 
     public JdbcSourceEnumerator(
             SplitEnumeratorContext<JdbcSourceSplit> context,
             JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> sqlSplitEnumerator,
-            ContinuousEnumerationSettings continuousEnumerationSettings,
+            ContinuousUnBoundingSettings continuousUnBoundingSettings,
             List<JdbcSourceSplit> unassigned) {
         this.context = Preconditions.checkNotNull(context);
         this.sqlSplitEnumerator = Preconditions.checkNotNull(sqlSplitEnumerator);
-        this.continuousEnumerationSettings = continuousEnumerationSettings;
+        this.continuousUnBoundingSettings = continuousUnBoundingSettings;
         this.boundedness =
-                Objects.isNull(continuousEnumerationSettings)
+                Objects.isNull(continuousUnBoundingSettings)
                         ? Boundedness.BOUNDED
                         : Boundedness.CONTINUOUS_UNBOUNDED;
         this.unassigned = Preconditions.checkNotNull(unassigned);
@@ -73,12 +73,12 @@ public class JdbcSourceEnumerator
     public void start() {
         sqlSplitEnumerator.open();
         if (boundedness == Boundedness.CONTINUOUS_UNBOUNDED
-                && Objects.nonNull(continuousEnumerationSettings)) {
+                && Objects.nonNull(continuousUnBoundingSettings)) {
             context.callAsync(
                     () -> sqlSplitEnumerator.enumerateSplits(() -> 1024 - unassigned.size() > 0),
                     this::processNewSplits,
-                    continuousEnumerationSettings.getInitialDiscoveryDelay().toMillis(),
-                    continuousEnumerationSettings.getDiscoveryInterval().toMillis());
+                    continuousUnBoundingSettings.getInitialDiscoveryDelay().toMillis(),
+                    continuousUnBoundingSettings.getDiscoveryInterval().toMillis());
         } else {
             try {
                 unassigned.addAll(sqlSplitEnumerator.enumerateSplits(() -> true));

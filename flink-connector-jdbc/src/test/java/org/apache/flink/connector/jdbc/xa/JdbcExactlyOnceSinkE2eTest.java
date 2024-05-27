@@ -46,7 +46,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -74,8 +73,6 @@ public abstract class JdbcExactlyOnceSinkE2eTest implements DatabaseTest {
 
     private static final BooksTable OUTPUT_TABLE = new BooksTable("XaTable");
     protected static final int PARALLELISM = 4;
-    protected static final long CHECKPOINT_TIMEOUT_MS = 5_000L;
-    protected static final long TASK_CANCELLATION_TIMEOUT_MS = 10_000L;
 
     @RegisterExtension static final MiniClusterExtension MINI_CLUSTER = createCluster();
 
@@ -84,9 +81,12 @@ public abstract class JdbcExactlyOnceSinkE2eTest implements DatabaseTest {
         // single failover region to allow checkpointing even after some sources have finished and
         // restart all tasks if at least one fails
         configuration.set(EXECUTION_FAILOVER_STRATEGY, "full");
+
         // cancel tasks eagerly to reduce the risk of running out of memory with many restarts
-        configuration.set(TASK_CANCELLATION_TIMEOUT, TASK_CANCELLATION_TIMEOUT_MS);
-        configuration.set(CHECKPOINTING_TIMEOUT, Duration.ofMillis(CHECKPOINT_TIMEOUT_MS));
+        // Temporarily using the original configuration settings for CI compatibility
+        // TODO: API calls will be adapted after the appropriate version.
+        configuration.setString(TASK_CANCELLATION_TIMEOUT.key(), "10000");
+        configuration.setString(CHECKPOINTING_TIMEOUT.key(), "5000ms");
 
         return new MiniClusterExtension(
                 new MiniClusterResourceConfiguration.Builder()
