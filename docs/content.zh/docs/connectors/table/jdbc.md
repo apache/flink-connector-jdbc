@@ -81,7 +81,9 @@ CREATE TABLE MyUserTable (
 ) WITH (
    'connector' = 'jdbc',
    'url' = 'jdbc:mysql://localhost:3306/mydatabase',
-   'table-name' = 'users'
+   'table-name' = 'users',
+   -- 支持更加丰富的 JDBC connection properties 传参。
+   'connection-properties.key_a' = 'value_a'
 );
 
 -- 从另一张表 "T" 将数据写入到 JDBC 表中
@@ -161,6 +163,14 @@ ON myTopic.key = MyUserTable.id;
       <td style="word-wrap: break-word;">(none)</td>
       <td>String</td>
       <td>JDBC 密码。</td>
+    </tr>
+    <tr>
+      <td><h5>connection-properties.{key_name}</h5></td>
+      <td>optional</td>
+      <td>no</td>
+      <td style="word-wrap: break-word;">(none)</td>
+      <td>String</td>
+      <td>JDBC connection properties 中配置项 '{key_name}' 的值。</td>
     </tr>
     <tr>
       <td><h5>connection.max-retry-timeout</h5></td>

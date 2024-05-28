@@ -26,16 +26,211 @@ under the License.
 
 # JDBC Connector
 
-This connector provides a sink that writes data to a JDBC database.
+This connector provides a source that read data from a JDBC database and
+provides a sink that writes data to a JDBC database.
 
 To use it, add the following dependency to your project (along with your JDBC driver):
 
 {{< connector_artifact flink-connector-jdbc jdbc >}}
 
-Note that the streaming connectors are currently __NOT__ part of the binary distribution. See how to link with them for cluster execution [here]({{< ref "docs/dev/configuration/overview" >}}).
-A driver dependency is also required to connect to a specified database. Please consult your database documentation on how to add the corresponding driver.
+Note that the streaming connectors are currently __NOT__ part of the binary distribution.
+See how to link with them for cluster execution [here]({{< ref "docs/dev/configuration/overview" >}}).
+A driver dependency is also required to connect to a specified database.
+Please consult your database documentation on how to add the corresponding driver.
 
-## `JdbcSink.sink`
+## Source of JDBC Connector
+
+Configuration goes as follow (see also {{< javadoc file="org/apache/flink/connector/jdbc/source/JdbcSource.html" name="JdbcSource javadoc" >}}
+and {{< javadoc file="org/apache/flink/connector/jdbc/source/JdbcSourceBuilder.html" name="JdbcSourceBuilder javadoc" >}}).
+
+### `JdbcSource.builder`
+
+{{< tabs "4ab65f13-607a-411a-8d24-e709f701cd41" >}}
+{{< tab "Java" >}}
+```java
+JdbcSource source = JdbcSourceBuilder.builder()
+        // Required
+        .setSql(...)
+        .setResultExtractor(...)
+        .setUsername(...)
+        .setPassword(...)
+        .setDriverName(...)
+        .setDBUrl(...)
+        .setTypeInformation(...)
+        
+         // Optional
+        .setContinuousUnBoundingSettings(...)
+        .setJdbcParameterValuesProvider(...)
+        .setDeliveryGuarantee(...)
+        .setConnectionCheckTimeoutSeconds(...)
+        
+        // The extended JDBC connection property passing
+        .setConnectionProperty("key", "value")
+        
+        // other attributes
+        .setSplitReaderFetchBatchSize(...)
+        .setResultSetType(...)
+        .setResultSetConcurrency(...)
+        .setAutoCommit(...)
+        .setResultSetFetchSize(...)
+        .setConnectionProvider(...)
+        .build();
+
+```
+{{< /tab >}}
+{{< tab "Python" >}}
+```python
+Still not supported in Python API.
+```
+{{< /tab >}}
+{{< /tabs >}}
+
+#### Delivery guarantee
+
+The JDBC source provides `at-least-once`/`at-most-once(default)`/`exactly-once` guarantee.
+The `JdbcSource` supports `Delivery guarantee` semantic based on `Concur` of `ResultSet`.
+
+**NOTE:** Here's a few disadvantage. It only makes sense for corresponding semantic
+that the `ResultSet` corresponding to this SQL(`JdbcSourceSplit`)
+remains unchanged in the whole lifecycle of `JdbcSourceSplit` processing.
+Unfortunately, this condition is not met in most databases and data scenarios.
+See [FLIP-239](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=217386271) for more details.
+
+#### ResultExtractor
+
+An `Extractor` to extract a record from `ResultSet` executed by a sql.
+
+```java
+import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+class Book {
+    public Book(Long id, String title) {
+        this.id = id;
+        this.title = title;
+    }
+
+    final Long id;
+    final String title;
+};
+
+ResultExtractor resultExtractor = new ResultExtractor() {
+    @Override
+    public Object extract(ResultSet resultSet) throws SQLException {
+        return new Book(resultSet.getLong("id"), resultSet.getString("titile"));
+    }
+};
+
+```
+
+#### JdbcParameterValuesProvider
+
+A provider to provide parameters in sql to fulfill actual value in the corresponding placeholders, which is in the form of two-dimension array.
+See {{< javadoc file="org/apache/flink/connector/jdbc/split/JdbcParameterValuesProvider.html" name="JdbcParameterValuesProvider javadoc" >}} for more details.
+
+```java
+
+class TestEntry {
+    ...
+};
+
+ResultSetExtractor extractor = ...;
+
+StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+JdbcSource<TestEntry> jdbcSource =
+        JdbcSource.<TestEntry>builder()
+                .setTypeInformation(TypeInformation.of(TestEntry.class))
+                .setSql("select * from testing_table where id >= ? and id <= ?")
+                .setJdbcParameterValuesProvider(
+                        new JdbcGenericParameterValuesProvider(
+                                new Serializable[][] {{1001, 1005}, {1006, 1010}}))
+                ...
+                .build();
+env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
+        .addSink(new DiscardSink());
+env.execute();
+
+```
+
+#### Minimalist Streaming Semantic and ContinuousUnBoundingSettings
+If you want to generate continuous milliseconds parameters based on sliding-window,
+please have a try on setting the followed attributes of `JdbcSource`:
+
+```java
+
+jdbcSourceBuilder =
+        JdbcSource.<TestEntry>builder()
+        .setSql("select * from testing_table where ts >= ? and ts < ?")
+        
+        // Required for streaming related semantic.
+        .setContinuousUnBoundingSettings(new ContinuousUnBoundingSettings(Duration.ofMillis(10L), Duration.ofSeconds(1L)))
+        .setJdbcParameterValuesProvider(new JdbcSlideTimingParameterProvider(0L, 1000L, 1000L, 100L))
+        .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
+        .setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE);
+
+        // other attributes
+        ...
+        
+JdbcSource source = jdbcSourceBuilder.build();
+```
+
+See {{< javadoc file="org/apache/flink/connector/jdbc/utils/ContinuousUnBoundingSettings.html" name="ContinuousUnBoundingSettings javadoc" >}} for more details.
+
+#### Full example
+
+{{< tabs "4ab65f13-608a-411a-8d24-e303f348ds81" >}}
+{{< tab "Java" >}}
+
+```java
+
+public class JdbcSourceExample {
+
+    static class Book {
+        public Book(Long id, String title) {
+            this.id = id;
+            this.title = title;
+        }
+
+        final Long id;
+        final String title;
+    };
+
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        JdbcSource<Book> jdbcSource =
+                JdbcSource.<Book>builder()
+                        .setTypeInformation(TypeInformation.of(Book.class))
+                        .setSql(sql)
+                        .setDBUrl("select * from testing_table where id < ?")
+                        .setJdbcParameterValuesProvider(
+                                new JdbcGenericParameterValuesProvider(
+                                        new Serializable[][] {{1001L}}))
+                        .setDriverName(...)
+                        .setResultExtractor(resultSet ->
+                            new Book(
+                                resultSet.getLong("id"),
+                                resultSet.getString("title")))
+                .build();
+        env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
+                .addSink(new DiscardingSink());
+        env.execute();
+    }
+}
+```
+{{< /tab >}}
+{{< tab "Python" >}}
+```python
+Still not supported in Python API.
+```
+{{< /tab >}}
+{{< /tabs >}}
+
+## Sink of JDBC Connector
+
+### `JdbcSink.sink`
 
 The JDBC sink provides at-least-once guarantee.
 Effectively though, exactly-once can be achieved by crafting upsert SQL statements or idempotent SQL updates.
@@ -64,7 +259,7 @@ JdbcSink.sink(
 {{< /tab >}}
 {{< /tabs >}}
 
-### SQL DML statement and JDBC statement builder
+#### SQL DML statement and JDBC statement builder
 
 The sink builds one [JDBC prepared statement](https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/PreparedStatement.html) from a user-provider SQL string, e.g.:
 
@@ -78,7 +273,7 @@ It then repeatedly calls a user-provided function to update that prepared statem
 (preparedStatement, someRecord) -> { ... update here the preparedStatement with values from someRecord ... }
 ```
 
-### JDBC execution options
+#### JDBC execution options
 
 The SQL DML statements are executed in batches, which can optionally be configured with the following instance (see also {{< javadoc name="JdbcExecutionOptions javadoc" file="org/apache/flink/connector/jdbc/JdbcExecutionOptions.html" >}})
 
@@ -106,15 +301,15 @@ JdbcExecutionOptions.builder() \
 A JDBC batch is executed as soon as one of the following conditions is true:
 
 * the configured batch interval time is elapsed
-* the maximum batch size is reached 
+* the maximum batch size is reached
 * a Flink checkpoint has started
 
-### JDBC connection parameters
+#### JDBC connection parameters
 
-The connection to the database is configured with a `JdbcConnectionOptions` instance. 
+The connection to the database is configured with a `JdbcConnectionOptions` instance.
 Please see {{< javadoc name="JdbcConnectionOptions javadoc" file="org/apache/flink/connector/jdbc/JdbcConnectionOptions.html" >}} for details
 
-### Full example
+#### Full example
 
 {{< tabs "4ab65f13-608a-411a-8d24-e303f348ds8d" >}}
 {{< tab "Java" >}}
@@ -201,10 +396,10 @@ env.execute()
 {{< /tab >}}
 {{< /tabs >}}
 
-## `JdbcSink.exactlyOnceSink`
+### `JdbcSink.exactlyOnceSink`
 
-Since 1.13, Flink JDBC sink supports exactly-once mode. 
-The implementation relies on the JDBC driver support of XA 
+Since 1.13, Flink JDBC sink supports exactly-once mode.
+The implementation relies on the JDBC driver support of XA
 [standard](https://pubs.opengroup.org/onlinepubs/009680699/toc.pdf).
 Most drivers support XA if the database also supports XA (so the driver is usually the same).
 
@@ -279,7 +474,7 @@ For MySQL v8+, you should grant `XA_RECOVER_ADMIN` to Flink DB user.
 **ATTENTION:** Currently, `JdbcSink.exactlyOnceSink` can ensure exactly once semantics
 with `JdbcExecutionOptions.maxRetries == 0`; otherwise, duplicated results maybe produced.
 
-### `XADataSource` examples
+#### `XADataSource` examples
 PostgreSQL `XADataSource` example:
 {{< tabs "4ab65f13-608a-411a-8d24-e304f323ab3a" >}}
 {{< tab "Java" >}}
