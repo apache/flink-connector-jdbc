@@ -77,7 +77,9 @@ CREATE TABLE MyUserTable (
 ) WITH (
    'connector' = 'jdbc',
    'url' = 'jdbc:mysql://localhost:3306/mydatabase',
-   'table-name' = 'users'
+   'table-name' = 'users',
+   -- Support better JDBC connection properties passing.
+   'connection-properties.key_a' = 'value_a'
 );
 
 -- write data into the JDBC table from the other table "T"
@@ -163,6 +165,14 @@ Connector Options
       <td style="word-wrap: break-word;">(none)</td>
       <td>String</td>
       <td>The JDBC password.</td>
+    </tr>
+    <tr>
+      <td><h5>connection-properties.{key_name}</h5></td>
+      <td>optional</td>
+      <td>no</td>
+      <td style="word-wrap: break-word;">(none)</td>
+      <td>String</td>
+      <td>The value of '{key_name}' for JDBC connection properties.</td>
     </tr>
     <tr>
       <td><h5>connection.max-retry-timeout</h5></td>
@@ -477,7 +487,9 @@ CREATE CATALOG my_catalog WITH(
     'default-database' = '...',
     'username' = '...',
     'password' = '...',
-    'base-url' = '...'
+    'base-url' = '...',
+    -- Support better JDBC connection properties passing.
+    'connection-properties.key_a' = 'value_a'
 );
 
 USE CATALOG my_catalog;
