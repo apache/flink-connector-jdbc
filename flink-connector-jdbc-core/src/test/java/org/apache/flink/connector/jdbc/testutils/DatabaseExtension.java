@@ -84,6 +84,13 @@ public abstract class DatabaseExtension
     private void getManagedTables(
             ExtensionContext context,
             BiConsumerWithException<TableManaged, Connection, SQLException> execute) {
+        getManagedTables(context, execute, 0);
+    }
+
+    private void getManagedTables(
+            ExtensionContext context,
+            BiConsumerWithException<TableManaged, Connection, SQLException> execute,
+            int attempt) {
         context.getTestClass()
                 .filter(DatabaseTest.class::isAssignableFrom)
                 .ifPresent(
@@ -97,10 +104,23 @@ public abstract class DatabaseExtension
                                         execute.accept(table, conn);
                                     }
                                 } catch (Exception e) {
-                                    throw new RuntimeException(e);
+                                    if (attempt <= 1) {
+                                        waitToDB();
+                                        getManagedTables(context, execute, attempt + 1);
+                                    } else {
+                                        throw new RuntimeException(e);
+                                    }
                                 }
                             }
                         });
+    }
+
+    private void waitToDB() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private boolean ignoreTestDatabase(ExtensionContext context) {
