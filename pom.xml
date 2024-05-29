@@ -45,6 +45,14 @@ under the License.
     <modules>
         <module>flink-connector-jdbc</module>
         <module>flink-connector-jdbc-core</module>
+        <module>flink-connector-jdbc-cratedb</module>
+        <module>flink-connector-jdbc-db2</module>
+        <module>flink-connector-jdbc-mysql</module>
+        <module>flink-connector-jdbc-oceanbase</module>
+        <module>flink-connector-jdbc-oracle</module>
+        <module>flink-connector-jdbc-postgres</module>
+        <module>flink-connector-jdbc-sqlserver</module>
+        <module>flink-connector-jdbc-trino</module>
     </modules>
 
     <properties>
@@ -64,11 +72,15 @@ under the License.
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
 
+
         <flink.parent.artifactId>flink-connector-jdbc-parent</flink.parent.artifactId>
         <flink.forkCountITCase>1</flink.forkCountITCase>
         <!-- These 2 properties should be removed together with upgrade of flink-connector-parent to 1.1.x -->
         <flink.surefire.baseArgLine>-XX:+UseG1GC -Xms256m -XX:+IgnoreUnrecognizedVMOptions ${surefire.module.config}</flink.surefire.baseArgLine>
-        <surefire.module.config/>
+        <surefire.module.config>
+            <!-- required by JdbcExactlyOnceSinkE2eTest --> --add-opens=java.base/java.util=ALL-UNNAMED
+            <!-- SimpleJdbcConnectionProviderDriverClassConcurrentLoadingITCase--> --add-opens=java.base/java.lang=ALL-UNNAMED
+        </surefire.module.config>
         <spotless.skip>false</spotless.skip>
     </properties>
 
@@ -79,6 +91,13 @@ under the License.
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-base</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-common</artifactId>
+            <version>${flink.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
 
         <!-- Logging API -->

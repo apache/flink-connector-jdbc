@@ -34,18 +34,6 @@ under the License.
 
     <packaging>jar</packaging>
 
-    <properties>
-
-        <postgres.version>42.7.3</postgres.version>
-        <oracle.version>21.8.0.0</oracle.version>
-        <trino.version>418</trino.version>
-        <byte-buddy.version>1.12.10</byte-buddy.version>
-        <surefire.module.config> <!-- required by
-		Db2ExactlyOnceSinkE2eTest --> --add-opens=java.base/java.util=ALL-UNNAMED <!--
-		SimpleJdbcConnectionProviderDriverClassConcurrentLoadingITCase--> --add-opens=java.base/java.lang=ALL-UNNAMED
-        </surefire.module.config>
-    </properties>
-
     <dependencies>
 
         <!-- Connectors -->
@@ -66,60 +54,6 @@ under the License.
             <version>${flink.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
-        </dependency>
-
-        <!-- Postgres -->
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>${postgres.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Oracle -->
-        <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8</artifactId>
-            <version>${oracle.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Trino -->
-        <dependency>
-            <groupId>io.trino</groupId>
-            <artifactId>trino-jdbc</artifactId>
-            <version>${trino.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- SQL Server -->
-        <dependency>
-            <groupId>com.microsoft.sqlserver</groupId>
-            <artifactId>mssql-jdbc</artifactId>
-            <version>10.2.1.jre8</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- CrateDB -->
-        <dependency>
-            <groupId>io.crate</groupId>
-            <artifactId>crate-jdbc</artifactId>
-            <version>2.7.0</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>net.java.dev.jna</groupId>
-                    <artifactId>jna</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <!-- Db2 -->
-        <dependency>
-            <groupId>com.ibm.db2.jcc</groupId>
-            <artifactId>db2jcc</artifactId>
-            <version>db2jcc4</version>
-            <scope>provided</scope>
         </dependency>
 
         <!-- Tests -->
@@ -201,26 +135,6 @@ under the License.
             <scope>test</scope>
         </dependency>
 
-        <!-- Postgres tests -->
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- MySQL tests -->
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.29</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>mysql</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Derby tests -->
         <dependency>
             <groupId>org.apache.derby</groupId>
@@ -229,47 +143,11 @@ under the License.
             <scope>test</scope>
         </dependency>
 
-        <!-- Oracle tests -->
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>oracle-xe</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- MS SQL test -->
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>mssqlserver</artifactId>
-            <scope>test</scope>
-        </dependency>
-
         <!-- H2 tests -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>2.2.224</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Db2 test -->
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>db2</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Trino test -->
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>trino</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- OceanBase tests -->
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>oceanbase-client</artifactId>
-            <version>2.4.8</version>
             <scope>test</scope>
         </dependency>
 
