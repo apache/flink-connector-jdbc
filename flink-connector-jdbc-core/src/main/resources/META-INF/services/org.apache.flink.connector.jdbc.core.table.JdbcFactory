@@ -14,11 +14,3 @@
 # limitations under the License.
 
 org.apache.flink.connector.jdbc.databases.derby.dialect.DerbyFactory
-org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlFactory
-org.apache.flink.connector.jdbc.databases.oceanbase.dialect.OceanBaseFactory
-org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresFactory
-org.apache.flink.connector.jdbc.databases.oracle.dialect.OracleFactory
-org.apache.flink.connector.jdbc.databases.sqlserver.dialect.SqlServerFactory
-org.apache.flink.connector.jdbc.databases.cratedb.dialect.CrateDBFactory
-org.apache.flink.connector.jdbc.databases.db2.dialect.Db2Factory
-org.apache.flink.connector.jdbc.databases.trino.dialect.TrinoFactory
