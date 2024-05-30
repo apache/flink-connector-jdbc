@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.split;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import java.io.Serializable;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /** The class is hold the state information of {@link JdbcSourceSplit}. */
+@Experimental
 public class JdbcSourceSplitState<SplitT extends JdbcSourceSplit> implements Serializable {
 
     private final SplitT split;

@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.split;
 
-import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.api.connector.source.SourceSplit;
 import org.apache.flink.util.Preconditions;
 
@@ -30,7 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /** JdbcSourceSplit class. */
-@PublicEvolving
+@Experimental
 public class JdbcSourceSplit implements SourceSplit, Serializable {
 
     private final String id;

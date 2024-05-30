@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.reader;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.SourceReaderContext;
@@ -62,6 +63,7 @@ import static org.apache.flink.connector.jdbc.source.JdbcSourceOptions.RESULTSET
  *
  * @param <T> The type of the record read from the source.
  */
+@Experimental
 public class JdbcSourceSplitReader<T>
         implements SplitReader<RecordAndOffset<T>, JdbcSourceSplit>, ResultTypeQueryable<T> {
 

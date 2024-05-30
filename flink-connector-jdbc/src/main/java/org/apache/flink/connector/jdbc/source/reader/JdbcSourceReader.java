@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.reader;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSourceReaderBase;
@@ -33,6 +34,7 @@ import java.util.function.Supplier;
  *
  * @param <OUT> The type of the record readed from the source.
  */
+@Experimental
 public class JdbcSourceReader<OUT>
         extends SingleThreadMultiplexSourceReaderBase<
                 RecordAndOffset<OUT>, OUT, JdbcSourceSplit, JdbcSourceSplitState<JdbcSourceSplit>> {

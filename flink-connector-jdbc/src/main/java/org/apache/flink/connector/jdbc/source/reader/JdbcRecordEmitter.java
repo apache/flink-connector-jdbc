@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.reader;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.api.connector.source.SourceOutput;
 import org.apache.flink.connector.base.source.reader.RecordEmitter;
 import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplit;
@@ -29,6 +30,7 @@ import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplitState;
  * @param <T> The type of the record.
  * @param <SplitT> The type of JDBC split.
  */
+@Experimental
 public class JdbcRecordEmitter<T, SplitT extends JdbcSourceSplit>
         implements RecordEmitter<RecordAndOffset<T>, T, JdbcSourceSplitState<SplitT>> {
 

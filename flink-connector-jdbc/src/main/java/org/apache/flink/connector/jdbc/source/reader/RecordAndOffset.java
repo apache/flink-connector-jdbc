@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.reader;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.connector.jdbc.source.split.CheckpointedOffset;
 
 /**
@@ -25,6 +26,7 @@ import org.apache.flink.connector.jdbc.source.split.CheckpointedOffset;
  *
  * @param <E> The type of the record.
  */
+@Experimental
 public class RecordAndOffset<E> {
 
     public static final long NO_OFFSET = CheckpointedOffset.NO_OFFSET;

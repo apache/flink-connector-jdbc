@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.enumerator;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumerator;
@@ -42,6 +43,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /** JDBC source enumerator. */
+@Experimental
 public class JdbcSourceEnumerator
         implements SplitEnumerator<JdbcSourceSplit, JdbcSourceEnumeratorState> {
     private static final Logger LOG = LoggerFactory.getLogger(JdbcSourceEnumerator.class);

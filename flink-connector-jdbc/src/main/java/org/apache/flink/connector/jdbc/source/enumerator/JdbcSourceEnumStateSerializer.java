@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.enumerator;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplitSerializer;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
@@ -36,6 +37,7 @@ import java.util.List;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /** The serializer for {@link JdbcSourceEnumeratorState}. */
+@Experimental
 public class JdbcSourceEnumStateSerializer
         implements SimpleVersionedSerializer<JdbcSourceEnumeratorState>, Serializable {
 

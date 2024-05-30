@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.enumerator;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.source.split.CheckpointedOffset;
 import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplit;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /** A split enumerator based on sql-parameters grains. */
+@Experimental
 public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> {
 
     public static final Logger LOG = LoggerFactory.getLogger(SqlTemplateSplitEnumerator.class);

@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 
@@ -25,6 +26,7 @@ import java.io.Serializable;
 import java.sql.ResultSet;
 
 /** JDBC source options. */
+@Experimental
 public class JdbcSourceOptions implements Serializable {
 
     private JdbcSourceOptions() {}

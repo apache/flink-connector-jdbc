@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.reader.extractor;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 
@@ -25,6 +26,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /** The extractor is used to extract the data from {@link ResultSet} into a {@link Row} object. */
+@Experimental
 public class RowResultExtractor implements ResultExtractor<Row> {
     @Override
     public Row extract(ResultSet resultSet) throws SQLException {

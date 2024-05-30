@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.split;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.InstantiationUtil;
 
@@ -31,6 +32,7 @@ import java.io.Serializable;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /** The class is used to de/serialize the {@link JdbcSourceSplit}. */
+@Experimental
 public class JdbcSourceSplitSerializer implements SimpleVersionedSerializer<JdbcSourceSplit> {
 
     private static final int CURRENT_VERSION = 0;
