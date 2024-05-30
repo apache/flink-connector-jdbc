@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.split;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** The parameters provider generate parameters by slide timing window strategy. */
+@Experimental
 public class JdbcSlideTimingParameterProvider implements JdbcParameterValuesProvider {
 
     private final long slideStepMills;

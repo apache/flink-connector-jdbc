@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.utils;
 
-import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.annotation.Experimental;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -30,7 +30,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * Settings describing how to do continuous file discovery and enumeration for the file source's
  * continuous discovery and streaming mode.
  */
-@PublicEvolving
+@Experimental
 public final class ContinuousUnBoundingSettings implements Serializable {
 
     private static final long serialVersionUID = 1L;
