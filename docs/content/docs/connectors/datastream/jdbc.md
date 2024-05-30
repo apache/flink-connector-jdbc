@@ -38,7 +38,7 @@ See how to link with them for cluster execution [here]({{< ref "docs/dev/configu
 A driver dependency is also required to connect to a specified database.
 Please consult your database documentation on how to add the corresponding driver.
 
-## Source of JDBC Connector
+## Source of JDBC Connector(Experimental)
 
 Configuration goes as follow (see also {{< javadoc file="org/apache/flink/connector/jdbc/source/JdbcSource.html" name="JdbcSource javadoc" >}}
 and {{< javadoc file="org/apache/flink/connector/jdbc/source/JdbcSourceBuilder.html" name="JdbcSourceBuilder javadoc" >}}).

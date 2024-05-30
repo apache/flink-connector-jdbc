@@ -78,7 +78,7 @@ CREATE TABLE MyUserTable (
    'connector' = 'jdbc',
    'url' = 'jdbc:mysql://localhost:3306/mydatabase',
    'table-name' = 'users',
-   -- Support better JDBC connection properties passing.
+   -- Experimental: Support better JDBC connection properties passing. 
    'connection-properties.key_a' = 'value_a'
 );
 

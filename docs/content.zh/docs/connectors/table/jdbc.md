@@ -82,7 +82,7 @@ CREATE TABLE MyUserTable (
    'connector' = 'jdbc',
    'url' = 'jdbc:mysql://localhost:3306/mydatabase',
    'table-name' = 'users',
-   -- 支持更加丰富的 JDBC connection properties 传参。
+   -- Experimental: 支持更加灵活的 JDBC connection properties 传参。
    'connection-properties.key_a' = 'value_a'
 );
 
