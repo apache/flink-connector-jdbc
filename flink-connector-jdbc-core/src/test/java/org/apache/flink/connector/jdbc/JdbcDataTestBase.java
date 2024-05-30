@@ -17,8 +17,8 @@
 
 package org.apache.flink.connector.jdbc;
 
+import org.apache.flink.connector.jdbc.derby.testutils.DerbyMetadata;
 import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
-import org.apache.flink.connector.jdbc.testutils.databases.derby.DerbyMetadata;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;

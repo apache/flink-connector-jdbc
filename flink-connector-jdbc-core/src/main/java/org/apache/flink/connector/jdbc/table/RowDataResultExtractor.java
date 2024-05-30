@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.table;
 
-import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
+import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectConverter;
 import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.Preconditions;

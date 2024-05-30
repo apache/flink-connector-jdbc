@@ -18,14 +18,14 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
-import org.apache.flink.connector.jdbc.core.table.JdbcFactoryLoader;
-import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.databases.cratedb.catalog.CrateDBCatalog;
-import org.apache.flink.connector.jdbc.databases.cratedb.dialect.CrateDBDialect;
-import org.apache.flink.connector.jdbc.databases.mysql.catalog.MySqlCatalog;
-import org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialect;
-import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog;
-import org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialect;
+import org.apache.flink.connector.jdbc.core.database.JdbcFactoryLoader;
+import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.cratedb.database.catalog.CrateDBCatalog;
+import org.apache.flink.connector.jdbc.cratedb.database.dialect.CrateDBDialect;
+import org.apache.flink.connector.jdbc.mysql.database.catalog.MySqlCatalog;
+import org.apache.flink.connector.jdbc.mysql.database.dialect.MySqlDialect;
+import org.apache.flink.connector.jdbc.postgres.database.catalog.PostgresCatalog;
+import org.apache.flink.connector.jdbc.postgres.database.dialect.PostgresDialect;
 
 import java.util.Properties;
 
@@ -80,7 +80,7 @@ public class JdbcCatalogUtils {
         JdbcDialect dialect =
                 JdbcFactoryLoader.loadDialect(baseUrl, userClassLoader, compatibleMode);
 
-        org.apache.flink.connector.jdbc.core.table.catalog.AbstractJdbcCatalog catalog;
+        org.apache.flink.connector.jdbc.core.database.catalog.AbstractJdbcCatalog catalog;
         if (dialect instanceof PostgresDialect) {
             catalog =
                     new PostgresCatalog(

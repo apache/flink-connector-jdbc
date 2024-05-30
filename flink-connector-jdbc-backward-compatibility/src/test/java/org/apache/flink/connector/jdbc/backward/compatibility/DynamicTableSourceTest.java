@@ -1,7 +1,7 @@
 package org.apache.flink.connector.jdbc.backward.compatibility;
 
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connector.jdbc.databases.postgres.PostgresTestBase;
+import org.apache.flink.connector.jdbc.postgres.PostgresTestBase;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;

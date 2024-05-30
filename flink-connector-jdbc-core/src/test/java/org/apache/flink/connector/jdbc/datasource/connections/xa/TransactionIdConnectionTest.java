@@ -1,9 +1,9 @@
 package org.apache.flink.connector.jdbc.datasource.connections.xa;
 
 import org.apache.flink.api.common.JobID;
-import org.apache.flink.connector.jdbc.databases.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.TransactionId;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.EmptyTransactionXaException;
+import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 

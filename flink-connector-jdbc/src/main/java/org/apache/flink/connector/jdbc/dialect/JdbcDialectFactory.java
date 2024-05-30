@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.dialect;
 
-import org.apache.flink.connector.jdbc.core.table.JdbcFactory;
+import org.apache.flink.connector.jdbc.core.database.JdbcFactory;
 import org.apache.flink.util.StringUtils;
 
 /**

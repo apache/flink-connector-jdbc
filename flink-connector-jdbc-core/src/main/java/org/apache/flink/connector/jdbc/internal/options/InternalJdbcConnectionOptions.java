@@ -20,8 +20,8 @@ package org.apache.flink.connector.jdbc.internal.options;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
-import org.apache.flink.connector.jdbc.core.table.JdbcFactoryLoader;
-import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.core.database.JdbcFactoryLoader;
+import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nonnull;

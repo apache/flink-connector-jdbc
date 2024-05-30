@@ -19,7 +19,7 @@
 package org.apache.flink.connector.jdbc.dialect;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
 
 /**
  * Base class for {@link JdbcDialect JdbcDialects} that implements basic data type validation and
@@ -34,5 +34,5 @@ import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
 @Deprecated
 @PublicEvolving
 public abstract class AbstractDialect
-        extends org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialect
+        extends org.apache.flink.connector.jdbc.core.database.dialect.AbstractDialect
         implements org.apache.flink.connector.jdbc.dialect.JdbcDialect {}
