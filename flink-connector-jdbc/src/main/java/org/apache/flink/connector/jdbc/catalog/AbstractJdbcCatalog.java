@@ -25,7 +25,7 @@ package org.apache.flink.connector.jdbc.catalog;
  */
 @Deprecated
 public abstract class AbstractJdbcCatalog
-        extends org.apache.flink.connector.jdbc.core.table.catalog.AbstractJdbcCatalog {
+        extends org.apache.flink.connector.jdbc.core.database.catalog.AbstractJdbcCatalog {
 
     public AbstractJdbcCatalog(
             ClassLoader userClassLoader,

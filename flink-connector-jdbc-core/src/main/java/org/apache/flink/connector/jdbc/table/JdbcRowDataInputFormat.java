@@ -27,7 +27,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
-import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectConverter;
+import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectConverter;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;

@@ -18,7 +18,7 @@
 package org.apache.flink.connector.jdbc.sink;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
-import org.apache.flink.connector.jdbc.databases.derby.DerbyTestBase;
+import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;

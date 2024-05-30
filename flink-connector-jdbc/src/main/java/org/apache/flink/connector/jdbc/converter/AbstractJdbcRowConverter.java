@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.converter;
 
-import org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialectConverter;
+import org.apache.flink.connector.jdbc.core.database.dialect.AbstractDialectConverter;
 import org.apache.flink.table.types.logical.RowType;
 
 /**
