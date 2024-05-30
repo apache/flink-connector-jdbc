@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.table;
 
-import org.apache.flink.connector.jdbc.databases.derby.DerbyTestBase;
+import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

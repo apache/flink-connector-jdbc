@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
-import org.apache.flink.connector.jdbc.core.table.JdbcFactoryLoader;
+import org.apache.flink.connector.jdbc.core.database.JdbcFactoryLoader;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
 import org.apache.flink.connector.jdbc.internal.RowJdbcOutputFormat;

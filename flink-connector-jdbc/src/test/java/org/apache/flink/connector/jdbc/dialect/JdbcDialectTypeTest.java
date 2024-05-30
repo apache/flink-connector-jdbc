@@ -18,11 +18,12 @@
 
 package org.apache.flink.connector.jdbc.dialect;
 
+import org.apache.flink.connector.jdbc.derby.database.DerbyDialectTest;
+
 /**
  * Tests for all DataTypes and Dialects of JDBC connector.
  *
  * @deprecated use org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest
  */
 @Deprecated
-public class JdbcDialectTypeTest
-        extends org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialectTest {}
+public class JdbcDialectTypeTest extends DerbyDialectTest {}

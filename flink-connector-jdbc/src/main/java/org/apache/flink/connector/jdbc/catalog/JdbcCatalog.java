@@ -21,7 +21,7 @@ package org.apache.flink.connector.jdbc.catalog;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.connector.jdbc.core.table.catalog.AbstractJdbcCatalog;
+import org.apache.flink.connector.jdbc.core.database.catalog.AbstractJdbcCatalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
 import org.apache.flink.table.catalog.CatalogDatabase;
 import org.apache.flink.table.catalog.ObjectPath;
@@ -41,10 +41,9 @@ import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuth
  */
 @Deprecated
 @PublicEvolving
-public class JdbcCatalog
-        extends org.apache.flink.connector.jdbc.core.table.catalog.AbstractJdbcCatalog {
+public class JdbcCatalog extends AbstractJdbcCatalog {
 
-    private final org.apache.flink.connector.jdbc.core.table.catalog.AbstractJdbcCatalog internal;
+    private final AbstractJdbcCatalog internal;
 
     @Deprecated
     /**

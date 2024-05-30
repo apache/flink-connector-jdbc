@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.table;
 
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
-import org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcNumericBetweenParametersProvider;

@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.dialect;
 
-import org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalogTypeMapper;
+import org.apache.flink.connector.jdbc.core.database.catalog.JdbcCatalogTypeMapper;
 
 /**
  * Separate the jdbc meta-information type to flink table type into the interface.

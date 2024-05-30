@@ -19,7 +19,7 @@
 package org.apache.flink.connector.jdbc.dialect;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.connector.jdbc.core.table.JdbcFactory;
+import org.apache.flink.connector.jdbc.core.database.JdbcFactory;
 
 /**
  * Represents a dialect of SQL implemented by a particular JDBC system. Dialects should be immutable
@@ -31,4 +31,4 @@ import org.apache.flink.connector.jdbc.core.table.JdbcFactory;
 @Deprecated
 @PublicEvolving
 public interface JdbcDialect
-        extends org.apache.flink.connector.jdbc.core.table.dialect.JdbcDialect {}
+        extends org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect {}
