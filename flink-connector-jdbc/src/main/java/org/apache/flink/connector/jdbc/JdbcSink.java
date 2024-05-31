@@ -17,6 +17,7 @@
 
 package org.apache.flink.connector.jdbc;
 
+import org.apache.flink.annotation.Experimental;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
@@ -108,6 +109,7 @@ public class JdbcSink {
                 exactlyOnceOptions);
     }
 
+    @Experimental
     public static <IN> JdbcSinkBuilder<IN> builder() {
         return org.apache.flink.connector.jdbc.sink.JdbcSink.builder();
     }
