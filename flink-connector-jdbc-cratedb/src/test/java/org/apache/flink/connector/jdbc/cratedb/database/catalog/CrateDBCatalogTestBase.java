@@ -23,6 +23,7 @@ import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.List;
 import java.util.TimeZone;
 
 import static org.apache.flink.connector.jdbc.cratedb.testutils.CrateDBDatabase.CONTAINER;
@@ -103,6 +106,21 @@ class CrateDBCatalogTestBase implements JdbcITCaseBase, CrateDBTestBase {
                         TABLE_ARRAY_TYPE, getArrayTable().values));
     }
 
+    @AfterAll
+    static void clean() throws SQLException {
+        List<String> tables =
+                Arrays.asList(
+                        CrateDBTablePath.fromFlinkTableName(TABLE1).getFullPath(),
+                        CrateDBTablePath.fromFlinkTableName(TABLE2).getFullPath(),
+                        new CrateDBTablePath(TEST_SCHEMA, TABLE3).getFullPath(),
+                        CrateDBTablePath.fromFlinkTableName(TABLE_PRIMITIVE_TYPE).getFullPath(),
+                        CrateDBTablePath.fromFlinkTableName(TABLE_TARGET_PRIMITIVE).getFullPath(),
+                        CrateDBTablePath.fromFlinkTableName(TABLE_ARRAY_TYPE).getFullPath());
+        for (String table : tables) {
+            executeSQL(String.format("DROP TABLE %s", table));
+        }
+    }
+
     public static void createTable(CrateDBTablePath tablePath, String tableSchemaSql)
             throws SQLException {
         executeSQL(String.format("CREATE TABLE %s(%s);", tablePath.getFullPath(), tableSchemaSql));
@@ -165,7 +183,7 @@ class CrateDBCatalogTestBase implements JdbcITCaseBase, CrateDBTestBase {
                         .column("ip", DataTypes.STRING())
                         .column("timestamp", DataTypes.TIMESTAMP(6))
                         //  .column("timestamptz", DataTypes.TIMESTAMP_WITH_TIME_ZONE(6))
-                        .primaryKeyNamed("primitive_table_pk", "short", "int")
+                        .primaryKeyNamed("primitive_table_pk", "int", "short")
                         .build(),
                 "int integer, "
                         + "short short, "
@@ -185,7 +203,7 @@ class CrateDBCatalogTestBase implements JdbcITCaseBase, CrateDBTestBase {
                         + "ip ip, "
                         + "timestamp timestamp, "
                         // + "timestamptz timestamptz, "
-                        + "PRIMARY KEY (short, int)",
+                        + "PRIMARY KEY (int, short)",
                 // Values
                 "1,"
                         + "3,"

@@ -16,6 +16,8 @@
 
     <properties>
         <sqlserver.version>10.2.1.jre8</sqlserver.version>
+
+        <flink.forkCountITCase>1</flink.forkCountITCase>
     </properties>
 
     <dependencies>

@@ -29,13 +29,13 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.junit.jupiter.Container;
 
 /** Db2 database for testing. */
-public class Db2Database extends DatabaseExtension {
+public class Db2Database extends DatabaseExtension implements Db2Images {
 
     private static final Logger LOG = LoggerFactory.getLogger(Db2Database.class);
 
     @Container
     protected static final Db2Container CONTAINER =
-            new Db2Container()
+            new Db2Container(DB2_11)
                     .withUsername("db2inst1")
                     .withPassword("flinkpw")
                     .withEnv("AUTOCONFIG", "false")
