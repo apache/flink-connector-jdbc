@@ -41,6 +41,8 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
                     .withEnv("FASTBOOT", "true")
                     .withEnv("OB_DATAFILE_SIZE", "1G")
                     .withEnv("OB_LOG_DISK_SIZE", "4G")
+                    .withStartupTimeoutSeconds(15 * 60)
+                    .withConnectTimeoutSeconds(15 * 60)
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
     private static OceanBaseMetadata metadata;

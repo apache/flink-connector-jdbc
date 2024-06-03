@@ -28,8 +28,8 @@ public class OracleDatabase extends DatabaseExtension implements OracleImages {
 
     private static final OracleContainer CONTAINER =
             new OracleContainer(ORACLE_21)
-                    .withStartupTimeoutSeconds(240)
-                    .withConnectTimeoutSeconds(120)
+                    .withStartupTimeoutSeconds(15 * 60)
+                    .withConnectTimeoutSeconds(15 * 60)
                     .usingSid();
 
     private static OracleMetadata metadata;
