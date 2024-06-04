@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.reader.extractor;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.types.Row;
 
 import java.io.Serializable;
@@ -30,7 +30,7 @@ import java.sql.SQLException;
  *
  * @param <T> The target data type.
  */
-@Experimental
+@PublicEvolving
 public interface ResultExtractor<T> extends Serializable {
 
     /**

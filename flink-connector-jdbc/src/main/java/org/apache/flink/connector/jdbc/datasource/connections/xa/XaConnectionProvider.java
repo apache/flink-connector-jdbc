@@ -1,6 +1,6 @@
 package org.apache.flink.connector.jdbc.datasource.connections.xa;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.TransientXaException;
 
@@ -25,7 +25,7 @@ import java.util.Collection;
  *
  * {@link #recover} can be used to get abandoned prepared transactions for cleanup.
  */
-@Experimental
+@PublicEvolving
 public interface XaConnectionProvider extends JdbcConnectionProvider {
 
     void open() throws Exception;

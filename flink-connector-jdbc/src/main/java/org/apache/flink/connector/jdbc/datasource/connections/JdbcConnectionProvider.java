@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.jdbc.datasource.connections;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -28,7 +28,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 /** JDBC connection provider. */
-@Experimental
+@PublicEvolving
 public interface JdbcConnectionProvider extends Serializable, AutoCloseable {
     /**
      * Get existing connection.

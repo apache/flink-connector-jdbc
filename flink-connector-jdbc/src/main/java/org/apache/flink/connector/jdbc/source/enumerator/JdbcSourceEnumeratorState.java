@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.enumerator;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.source.split.JdbcSourceSplit;
 import org.apache.flink.util.Preconditions;
 
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Objects;
 
 /** Enumerator state class for {@link JdbcSourceEnumerator}. */
-@Experimental
+@PublicEvolving
 public class JdbcSourceEnumeratorState implements Serializable {
 
     private final @Nonnull List<JdbcSourceSplit> completedSplits;

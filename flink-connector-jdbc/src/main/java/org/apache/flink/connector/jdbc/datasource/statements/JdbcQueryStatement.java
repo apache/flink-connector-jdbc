@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.jdbc.datasource.statements;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 
 import java.io.Serializable;
 import java.sql.PreparedStatement;
@@ -26,7 +26,7 @@ import java.sql.SQLException;
 /**
  * Sets {@link PreparedStatement} parameters to use in JDBC Sink based on a specific type of record.
  */
-@Experimental
+@PublicEvolving
 public interface JdbcQueryStatement<T> extends Serializable {
     String query();
 

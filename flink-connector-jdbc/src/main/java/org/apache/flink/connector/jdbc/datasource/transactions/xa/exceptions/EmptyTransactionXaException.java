@@ -1,6 +1,6 @@
 package org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.xa.XaFacade;
 import org.apache.flink.util.FlinkRuntimeException;
 
@@ -12,7 +12,7 @@ import javax.transaction.xa.Xid;
  * XA_RDONLY} indicating that the transaction doesn't include any changes. When such a transaction
  * is committed RM may return an error (usually, {@link XAException#XAER_NOTA XAER_NOTA}).
  */
-@Experimental
+@PublicEvolving
 public class EmptyTransactionXaException extends FlinkRuntimeException {
     private final Xid xid;
 

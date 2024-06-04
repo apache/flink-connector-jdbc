@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.jdbc.datasource.connections;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.util.Preconditions;
 
@@ -37,7 +37,7 @@ import java.util.Properties;
 
 /** Simple JDBC connection provider. */
 @NotThreadSafe
-@Experimental
+@PublicEvolving
 public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimpleJdbcConnectionProvider.class);

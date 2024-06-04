@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.Boundedness;
@@ -48,7 +48,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 /** JDBC source. */
-@Experimental
+@PublicEvolving
 public class JdbcSource<OUT>
         implements Source<OUT, JdbcSourceSplit, JdbcSourceEnumeratorState>,
                 ResultTypeQueryable<OUT> {

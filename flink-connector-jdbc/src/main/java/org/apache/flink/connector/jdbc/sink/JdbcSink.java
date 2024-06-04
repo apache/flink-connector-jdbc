@@ -17,8 +17,8 @@
 
 package org.apache.flink.connector.jdbc.sink;
 
-import org.apache.flink.annotation.Experimental;
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.sink2.Committer;
 import org.apache.flink.api.connector.sink2.StatefulSink;
 import org.apache.flink.api.connector.sink2.TwoPhaseCommittingSink;
@@ -45,7 +45,7 @@ import java.util.Collections;
  *
  * @see JdbcSinkBuilder on how to construct a JdbcSink
  */
-@Experimental
+@PublicEvolving
 public class JdbcSink<IN>
         implements StatefulSink<IN, JdbcWriterState>, TwoPhaseCommittingSink<IN, JdbcCommitable> {
 

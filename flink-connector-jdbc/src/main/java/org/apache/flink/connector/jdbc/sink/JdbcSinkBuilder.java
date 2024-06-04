@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.jdbc.sink;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
@@ -37,7 +37,7 @@ import javax.sql.XADataSource;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /** Builder to construct {@link JdbcSink}. */
-@Experimental
+@PublicEvolving
 public class JdbcSinkBuilder<IN> {
 
     private JdbcExecutionOptions executionOptions;
