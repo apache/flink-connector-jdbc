@@ -17,14 +17,14 @@
 
 package org.apache.flink.connector.jdbc.datasource.statements;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /** A simple implementation for {@link JdbcQueryStatement}. */
-@Experimental
+@PublicEvolving
 public class SimpleJdbcQueryStatement<IN> implements JdbcQueryStatement<IN> {
     private final String query;
     private final JdbcStatementBuilder<IN> statement;

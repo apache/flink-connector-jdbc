@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source.split;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -27,7 +27,7 @@ import java.util.Objects;
  * The class to hold the offset for checkpointed state. Note: The current class is not enabled for
  * using.
  */
-@Experimental
+@PublicEvolving
 public class CheckpointedOffset implements Serializable {
 
     public static final int NO_OFFSET = 0;

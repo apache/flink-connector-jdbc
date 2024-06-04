@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.source;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.DeliveryGuarantee;
@@ -89,7 +89,7 @@ import static org.apache.flink.connector.jdbc.source.JdbcSourceOptions.RESULTSET
  * @see DriverManager
  * @see JdbcSource
  */
-@Experimental
+@PublicEvolving
 public class JdbcSourceBuilder<OUT> {
 
     public static final Logger LOG = LoggerFactory.getLogger(JdbcSourceBuilder.class);
