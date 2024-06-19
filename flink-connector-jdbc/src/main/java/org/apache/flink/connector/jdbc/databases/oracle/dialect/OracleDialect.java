@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.databases.oracle.dialect;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.converter.JdbcRowConverter;
 import org.apache.flink.connector.jdbc.dialect.AbstractDialect;
+import org.apache.flink.connector.jdbc.utils.JdbcUtils;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 
@@ -68,7 +69,7 @@ public class OracleDialect extends AbstractDialect {
 
     @Override
     public String quoteIdentifier(String identifier) {
-        return identifier;
+        return JdbcUtils.handleDoubleQuotes(identifier);
     }
 
     @Override

@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.databases.postgres.dialect;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.dialect.AbstractPostgresCompatibleDialect;
+import org.apache.flink.connector.jdbc.utils.JdbcUtils;
 import org.apache.flink.table.types.logical.RowType;
 
 import java.util.Optional;
@@ -43,5 +44,10 @@ public class PostgresDialect extends AbstractPostgresCompatibleDialect {
     @Override
     public String dialectName() {
         return "PostgreSQL";
+    }
+
+    @Override
+    public String quoteIdentifier(String identifier) {
+        return JdbcUtils.handleDoubleQuotes(identifier);
     }
 }
