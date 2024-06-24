@@ -7,12 +7,12 @@
     <parent>
         <groupId>org.apache.flink</groupId>
         <artifactId>flink-connector-jdbc-parent</artifactId>
-        <version>3.2-SNAPSHOT</version>
+        <version>3.3-SNAPSHOT</version>
     </parent>
 
     <groupId>org.apache.flink</groupId>
     <artifactId>flink-connector-jdbc-backward-compatibility</artifactId>
-    <version>3.2-SNAPSHOT</version>
+
     <name>Flink : Connectors : JDBC : Backward Compatibility</name>
     <packaging>jar</packaging>
 
