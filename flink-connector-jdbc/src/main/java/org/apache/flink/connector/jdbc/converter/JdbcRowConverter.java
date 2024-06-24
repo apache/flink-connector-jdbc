@@ -19,34 +19,15 @@
 package org.apache.flink.connector.jdbc.converter;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatement;
+import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectConverter;
 import org.apache.flink.table.data.RowData;
-
-import java.io.Serializable;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 /**
  * Converter that is responsible to convert between JDBC object and Flink SQL internal data
  * structure {@link RowData}.
+ *
+ * @deprecated use JdbcDialectConverter
  */
+@Deprecated
 @PublicEvolving
-public interface JdbcRowConverter extends Serializable {
-
-    /**
-     * Convert data retrieved from {@link ResultSet} to internal {@link RowData}.
-     *
-     * @param resultSet ResultSet from JDBC
-     */
-    RowData toInternal(ResultSet resultSet) throws SQLException;
-
-    /**
-     * Convert data retrieved from Flink internal RowData to JDBC Object.
-     *
-     * @param rowData The given internal {@link RowData}.
-     * @param statement The statement to be filled.
-     * @return The filled statement.
-     */
-    FieldNamedPreparedStatement toExternal(RowData rowData, FieldNamedPreparedStatement statement)
-            throws SQLException;
-}
+public interface JdbcRowConverter extends JdbcDialectConverter {}

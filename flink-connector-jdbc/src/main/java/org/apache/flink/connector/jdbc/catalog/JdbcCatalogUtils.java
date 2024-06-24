@@ -18,21 +18,26 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
-import org.apache.flink.connector.jdbc.databases.cratedb.catalog.CrateDBCatalog;
-import org.apache.flink.connector.jdbc.databases.cratedb.dialect.CrateDBDialect;
-import org.apache.flink.connector.jdbc.databases.mysql.catalog.MySqlCatalog;
-import org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialect;
-import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog;
-import org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialect;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.dialect.JdbcDialectLoader;
+import org.apache.flink.connector.jdbc.core.database.JdbcFactoryLoader;
+import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.cratedb.database.catalog.CrateDBCatalog;
+import org.apache.flink.connector.jdbc.cratedb.database.dialect.CrateDBDialect;
+import org.apache.flink.connector.jdbc.mysql.database.catalog.MySqlCatalog;
+import org.apache.flink.connector.jdbc.mysql.database.dialect.MySqlDialect;
+import org.apache.flink.connector.jdbc.postgres.database.catalog.PostgresCatalog;
+import org.apache.flink.connector.jdbc.postgres.database.dialect.PostgresDialect;
 
 import java.util.Properties;
 
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
-/** Utils for {@link JdbcCatalog}. */
+/**
+ * Utils for {@link JdbcCatalog}.
+ *
+ * @deprecated
+ */
+@Deprecated
 public class JdbcCatalogUtils {
     /**
      * URL has to be without database, like "jdbc:postgresql://localhost:5432/" or
@@ -71,20 +76,40 @@ public class JdbcCatalogUtils {
             String baseUrl,
             String compatibleMode,
             Properties connectionProperties) {
-        JdbcDialect dialect = JdbcDialectLoader.load(baseUrl, compatibleMode, userClassLoader);
 
+        JdbcDialect dialect =
+                JdbcFactoryLoader.loadDialect(baseUrl, userClassLoader, compatibleMode);
+
+        org.apache.flink.connector.jdbc.core.database.catalog.AbstractJdbcCatalog catalog;
         if (dialect instanceof PostgresDialect) {
-            return new PostgresCatalog(
-                    userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
+            catalog =
+                    new PostgresCatalog(
+                            userClassLoader,
+                            catalogName,
+                            defaultDatabase,
+                            baseUrl,
+                            connectionProperties);
         } else if (dialect instanceof CrateDBDialect) {
-            return new CrateDBCatalog(
-                    userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
+            catalog =
+                    new CrateDBCatalog(
+                            userClassLoader,
+                            catalogName,
+                            defaultDatabase,
+                            baseUrl,
+                            connectionProperties);
         } else if (dialect instanceof MySqlDialect) {
-            return new MySqlCatalog(
-                    userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
+            catalog =
+                    new MySqlCatalog(
+                            userClassLoader,
+                            catalogName,
+                            defaultDatabase,
+                            baseUrl,
+                            connectionProperties);
         } else {
             throw new UnsupportedOperationException(
                     String.format("Catalog for '%s' is not supported yet.", dialect));
         }
+
+        return (AbstractJdbcCatalog) catalog;
     }
 }

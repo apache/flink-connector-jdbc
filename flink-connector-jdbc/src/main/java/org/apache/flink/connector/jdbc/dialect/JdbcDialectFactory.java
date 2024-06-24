@@ -18,41 +18,34 @@
 
 package org.apache.flink.connector.jdbc.dialect;
 
-import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.jdbc.core.database.JdbcFactory;
 import org.apache.flink.util.StringUtils;
 
 /**
- * A factory to create a specific {@link JdbcDialect}. This factory is used with Java's Service
- * Provider Interfaces (SPI) for discovering.
+ * A factory to create a specific {@link org.apache.flink.connector.jdbc.dialect.JdbcDialect}. This
+ * factory is used with Java's Service Provider Interfaces (SPI) for discovering.
  *
  * <p>Classes that implement this interface can be added to the
- * "META_INF/services/org.apache.flink.connector.jdbc.dialect.JdbcDialectFactory" file of a JAR file
- * in the current classpath to be found.
+ * "META_INF/services/org.apache.flink.connector.jdbc.JdbcDialectFactory" file of a JAR file in the
+ * current classpath to be found.
  *
- * @see JdbcDialect
+ * @see org.apache.flink.connector.jdbc.dialect.JdbcDialect
+ * @deprecated use JdbcFactory
  */
-@PublicEvolving
-public interface JdbcDialectFactory {
+@Deprecated
+public interface JdbcDialectFactory extends JdbcFactory {
 
     /**
-     * Retrieves whether the dialect thinks that it can open a connection to the given URL.
-     * Typically, dialects will return <code>true</code> if they understand the sub-protocol
-     * specified in the URL and <code>false</code> if they do not.
-     *
-     * @param url the URL of the database
-     * @return <code>true</code> if this dialect understands the given URL; <code>false</code>
-     *     otherwise.
+     * @deprecated
+     * @return Creates a new instance of the {@link
+     *     org.apache.flink.connector.jdbc.dialect.JdbcDialect}.
      */
-    boolean acceptsURL(String url);
-
-    /** @return Creates a new instance of the {@link JdbcDialect}. */
     JdbcDialect create();
 
     /**
-     * Creates a new instance of the {@link JdbcDialect} based on compatible mode.
-     *
+     * @deprecated
      * @param compatibleMode the compatible mode of database
-     * @return a new instance of {@link JdbcDialect}
+     * @return a new instance of {@link org.apache.flink.connector.jdbc.dialect.JdbcDialect}
      */
     default JdbcDialect create(String compatibleMode) {
         if (StringUtils.isNullOrWhitespaceOnly(compatibleMode)) {
@@ -60,5 +53,23 @@ public interface JdbcDialectFactory {
         }
         throw new UnsupportedOperationException(
                 "Not supported option 'compatible-mode' with value: " + compatibleMode);
+    }
+
+    /**
+     * @return a new instance of the {@link org.apache.flink.connector.jdbc.dialect.JdbcDialect}.
+     */
+    default JdbcDialect createDialect() {
+        return create();
+    }
+
+    /**
+     * Creates a new instance of the {@link org.apache.flink.connector.jdbc.dialect.JdbcDialect}
+     * based on compatible mode.
+     *
+     * @param compatibleMode the compatible mode of database
+     * @return a new instance of {@link org.apache.flink.connector.jdbc.dialect.JdbcDialect}
+     */
+    default JdbcDialect createDialect(String compatibleMode) {
+        return create(compatibleMode);
     }
 }

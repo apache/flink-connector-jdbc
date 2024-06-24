@@ -1,0 +1,103 @@
+################################################################################
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+
+# We need to specify repo related information here since Apache INFRA doesn't differentiate
+# between several workflows with the same names while preparing a report for GHA usage
+# https://infra-reports.apache.org/#ghactions
+name: Flink Connector JDBC CI Backwards Compatibility
+on: [push, pull_request]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  backwards_compatibility_test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flink: [1.18-SNAPSHOT, 1.19-SNAPSHOT]
+        jdk: [8, 11, 17]
+
+    env:
+      MVN_CONNECTION_OPTIONS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
+      FLINK_CACHE_DIR: "/tmp/cache/flink"
+      MVN_BUILD_OUTPUT_FILE: "/tmp/mvn_build_output.out"
+      MVN_VALIDATION_DIR: "/tmp/flink-validation-deployment"
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.jdk }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Set Maven 3.8.6
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.8.6
+
+      - name: "Determine Flink binary url"
+        run: |
+          binary_url=""
+          if [[ "${{ matrix.flink }}" = *-SNAPSHOT ]]; then
+            binary_url=https://s3.amazonaws.com/flink-nightly/flink-${{ matrix.flink }}-bin-scala_2.12.tgz
+            cache_binary=false
+          else
+            binary_url=https://archive.apache.org/dist/flink/flink-${{ matrix.flink }}/flink-${{ matrix.flink }}-bin-scala_2.12.tgz
+            cache_binary=true
+          fi
+          echo "binary_url=$binary_url" >> ${GITHUB_ENV}
+
+      - name: "Print Flink binary url / caching"
+        run: echo "${{ env.binary_url }} / caching=${{ env.cache_binary }}"
+
+      - name: Create cache dirs
+        run: mkdir -p ${{ env.FLINK_CACHE_DIR }}
+
+      - name: Download Flink binary
+        working-directory: ${{ env.FLINK_CACHE_DIR }}
+        run: wget -q -c ${{ env.binary_url }} -O - | tar -xz
+
+      - name: Install JDBC Libs
+        run: |
+          set -o pipefail
+
+          mvn clean install -U -B --no-transfer-progress -Dflink.version=${{ matrix.flink }} \
+            -DskipTests \
+            -DaltDeploymentRepository=validation_repository::default::file:${{ env.MVN_VALIDATION_DIR }} \
+            -Dscala-2.12 \
+            -DdistDir=${{ env.FLINK_CACHE_DIR }}/flink-${{ matrix.flink }} \
+            ${{ env.MVN_CONNECTION_OPTIONS }} \
+            -Dlog4j.configurationFile=file://$(pwd)/tools/ci/log4j.properties \
+            | tee ${{ env.MVN_BUILD_OUTPUT_FILE }}
+
+      - name: Test backwards compatibility
+        working-directory: ./flink-connector-jdbc-backward-compatibility
+        run: |
+          set -o pipefail
+
+          mvn clean test -U -B --no-transfer-progress -Dflink.version=${{ matrix.flink }} \
+            -DaltDeploymentRepository=validation_repository::default::file:${{ env.MVN_VALIDATION_DIR }} \
+            -Dscala-2.12 \
+            -DdistDir=${{ env.FLINK_CACHE_DIR }}/flink-${{ matrix.flink }} \
+            ${{ env.MVN_CONNECTION_OPTIONS }} \
+            -Dlog4j.configurationFile=file://$(pwd)/tools/ci/log4j.properties \
+            | tee ${{ env.MVN_BUILD_OUTPUT_FILE }}
