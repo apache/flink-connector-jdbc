@@ -68,6 +68,11 @@ public class SqlServerDialect extends AbstractDialect {
     }
 
     @Override
+    public String hashModForField(String fieldName, int numPartitions) {
+        return "ABS(HASHBYTES('MD5', " + quoteIdentifier(fieldName) + ") % " + numPartitions + ")";
+    }
+
+    @Override
     public Optional<String> getUpsertStatement(
             String tableName, String[] fieldNames, String[] uniqueKeyFields) {
         List<String> nonUniqueKeyFields =

@@ -72,6 +72,11 @@ public class OracleDialect extends AbstractDialect {
     }
 
     @Override
+    public String hashModForField(String fieldName, int numPartitions) {
+        return "MOD(ORA_HASH(" + quoteIdentifier(fieldName) + ")," + numPartitions + ")";
+    }
+
+    @Override
     public Optional<String> getUpsertStatement(
             String tableName, String[] fieldNames, String[] uniqueKeyFields) {
 

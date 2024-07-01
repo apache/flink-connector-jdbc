@@ -41,6 +41,11 @@ public class PostgresDialect extends AbstractPostgresCompatibleDialect {
     }
 
     @Override
+    public String hashModForField(String fieldName, int numPartitions) {
+        return "(ABS(HASHTEXT(" + quoteIdentifier(fieldName) + ")) % " + numPartitions + ")";
+    }
+
+    @Override
     public String dialectName() {
         return "PostgreSQL";
     }

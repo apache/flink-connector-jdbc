@@ -124,7 +124,7 @@ class JdbcFullTest extends JdbcDataTestBase {
                     inputBuilder
                             .setQuery(SELECT_ALL_BOOKS_SPLIT_BY_ID)
                             .setParametersProvider(
-                                    new JdbcNumericBetweenParametersProvider(min, max)
+                                    new JdbcNumericBetweenParametersProvider(min, max, false)
                                             .ofBatchSize(fetchSize));
         }
         DataSet<Row> source = environment.createInput(inputBuilder.finish());

@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.databases.trino.table;
 import org.apache.flink.connector.jdbc.databases.trino.TrinoTestBase;
 import org.apache.flink.connector.jdbc.databases.trino.dialect.TrinoDialect;
 import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSourceITCase;
+import org.apache.flink.connector.jdbc.testutils.databases.DbName;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;
@@ -47,6 +48,7 @@ class TrinoDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase impleme
     protected TableRow createInputTable() {
         return tableRow(
                 "jdbDynamicTableSource",
+                DbName.TRINO_DB,
                 field("id", dbType("INTEGER"), DataTypes.BIGINT()),
                 field("decimal_col", DataTypes.DECIMAL(10, 4)),
                 field("timestamp6_col", DataTypes.TIMESTAMP(6)),

@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.databases.oracle.table;
 import org.apache.flink.connector.jdbc.databases.oracle.OracleTestBase;
 import org.apache.flink.connector.jdbc.databases.oracle.dialect.OracleDialect;
 import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSourceITCase;
+import org.apache.flink.connector.jdbc.testutils.databases.DbName;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;
@@ -43,6 +44,7 @@ public class OracleDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
     protected TableRow createInputTable() {
         return tableRow(
                 "jdbDynamicTableSource",
+                DbName.ORACLE_DB,
                 field("id", dbType("INTEGER"), DataTypes.BIGINT().notNull()),
                 field("decimal_col", DataTypes.DECIMAL(10, 4)),
                 field("timestamp6_col", dbType("TIMESTAMP"), DataTypes.TIMESTAMP(6)),
@@ -53,7 +55,7 @@ public class OracleDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
                 field("binary_double_col", dbType("BINARY_DOUBLE"), DataTypes.DOUBLE()),
                 field("char_col", dbType("CHAR"), DataTypes.CHAR(1)),
                 field("nchar_col", dbType("NCHAR(3)"), DataTypes.VARCHAR(3)),
-                field("varchar2_col", dbType("VARCHAR2(30)"), DataTypes.VARCHAR(30)),
+                field("string_col", dbType("VARCHAR2(30)"), DataTypes.VARCHAR(30)),
                 field("date_col", dbType("DATE"), DataTypes.DATE()),
                 field("timestamp9_col", dbType("TIMESTAMP(9)"), DataTypes.TIMESTAMP(9)),
                 field("clob_col", dbType("CLOB"), DataTypes.STRING()));
