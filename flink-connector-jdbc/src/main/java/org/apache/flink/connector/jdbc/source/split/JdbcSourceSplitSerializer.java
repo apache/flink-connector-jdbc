@@ -102,7 +102,8 @@ public class JdbcSourceSplitSerializer implements SimpleVersionedSerializer<Jdbc
         byte[] chkOffsetBytes = new byte[chkOffsetBytesLen];
         in.read(chkOffsetBytes);
         CheckpointedOffset chkOffset =
-                InstantiationUtil.deserializeObject(chkOffsetBytes, in.getClass().getClassLoader());
+                InstantiationUtil.deserializeObject(
+                        chkOffsetBytes, CheckpointedOffset.class.getClassLoader());
 
         return new JdbcSourceSplit(id, sqlTemplate, params, chkOffset);
     }
