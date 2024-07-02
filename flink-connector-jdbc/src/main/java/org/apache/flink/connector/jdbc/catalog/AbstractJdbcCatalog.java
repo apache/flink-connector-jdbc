@@ -298,18 +298,21 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
             primaryKey.ifPresent(
                     pk -> schemaBuilder.primaryKeyNamed(pk.getName(), pk.getColumns()));
             Schema tableSchema = schemaBuilder.build();
-
-            Map<String, String> props = new HashMap<>();
-            props.put(CONNECTOR.key(), IDENTIFIER);
-            props.put(URL.key(), dbUrl);
-            props.put(USERNAME.key(), connectionProperties.getProperty(USER_KEY));
-            props.put(PASSWORD.key(), connectionProperties.getProperty(PASSWORD_KEY));
-            props.put(TABLE_NAME.key(), getSchemaTableName(tablePath));
-            return CatalogTable.of(tableSchema, null, Lists.newArrayList(), props);
+            return CatalogTable.of(tableSchema, null, Lists.newArrayList(), getOptions(tablePath));
         } catch (Exception e) {
             throw new CatalogException(
                     String.format("Failed getting table %s", tablePath.getFullName()), e);
         }
+    }
+
+    protected Map<String, String> getOptions(ObjectPath tablePath) {
+        Map<String, String> props = new HashMap<>();
+        props.put(CONNECTOR.key(), IDENTIFIER);
+        props.put(URL.key(), baseUrl + tablePath.getDatabaseName());
+        props.put(USERNAME.key(), connectionProperties.getProperty(USER_KEY));
+        props.put(PASSWORD.key(), connectionProperties.getProperty(PASSWORD_KEY));
+        props.put(TABLE_NAME.key(), getSchemaTableName(tablePath));
+        return props;
     }
 
     @Override

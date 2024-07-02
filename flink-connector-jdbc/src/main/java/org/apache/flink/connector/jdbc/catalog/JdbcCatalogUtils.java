@@ -22,6 +22,8 @@ import org.apache.flink.connector.jdbc.databases.cratedb.catalog.CrateDBCatalog;
 import org.apache.flink.connector.jdbc.databases.cratedb.dialect.CrateDBDialect;
 import org.apache.flink.connector.jdbc.databases.mysql.catalog.MySqlCatalog;
 import org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialect;
+import org.apache.flink.connector.jdbc.databases.oceanbase.catalog.OceanBaseCatalog;
+import org.apache.flink.connector.jdbc.databases.oceanbase.dialect.OceanBaseDialect;
 import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog;
 import org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
@@ -82,6 +84,14 @@ public class JdbcCatalogUtils {
         } else if (dialect instanceof MySqlDialect) {
             return new MySqlCatalog(
                     userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
+        } else if (dialect instanceof OceanBaseDialect) {
+            return new OceanBaseCatalog(
+                    userClassLoader,
+                    catalogName,
+                    compatibleMode,
+                    defaultDatabase,
+                    baseUrl,
+                    connectionProperties);
         } else {
             throw new UnsupportedOperationException(
                     String.format("Catalog for '%s' is not supported yet.", dialect));

@@ -28,18 +28,29 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import java.sql.Connection;
 import java.sql.Statement;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 /** OceanBase database for testing. */
 public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseImages {
 
     private static final Logger LOG = LoggerFactory.getLogger(OceanBaseDatabase.class);
 
+    private static final String ZONE_OFFSET =
+            DateTimeFormatter.ofPattern("xxx")
+                    .format(ZoneId.systemDefault().getRules().getOffset(Instant.now()));
+
     private static final OceanBaseContainer CONTAINER =
             new OceanBaseContainer(OCEANBASE_CE_4)
-                    .withEnv("MODE", "slim")
-                    .withEnv("FASTBOOT", "true")
-                    .withEnv("OB_DATAFILE_SIZE", "1G")
+                    .withEnv("MODE", "mini")
+                    .withEnv("OB_DATAFILE_SIZE", "2G")
                     .withEnv("OB_LOG_DISK_SIZE", "4G")
+                    .withPassword("123456")
+                    .withUrlParam("useSSL", "false")
+                    .withUrlParam("serverTimezone", ZONE_OFFSET)
+                    .withStartupTimeout(Duration.ofMinutes(4))
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
     private static OceanBaseMetadata metadata;
@@ -49,7 +60,13 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
             throw new FlinkRuntimeException("Container is stopped.");
         }
         if (metadata == null) {
-            metadata = new OceanBaseMetadata(CONTAINER);
+            metadata =
+                    new OceanBaseMetadata(
+                            CONTAINER.getUsername(),
+                            CONTAINER.getPassword(),
+                            CONTAINER.getJdbcUrl(),
+                            CONTAINER.getDriverClassName(),
+                            CONTAINER.getDockerImageName());
         }
         return metadata;
     }
@@ -57,9 +74,9 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
     @Override
     protected DatabaseMetadata startDatabase() throws Exception {
         CONTAINER.start();
-        try (Connection connection = getMetadata().getConnection();
+        try (Connection connection = CONTAINER.createConnection("");
                 Statement statement = connection.createStatement()) {
-            statement.execute("SET GLOBAL time_zone = '+00:00'");
+            statement.execute(String.format("SET GLOBAL time_zone = '%s'", ZONE_OFFSET));
         }
         return getMetadata();
     }

@@ -32,11 +32,12 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.apache.flink.connector.jdbc.databases.oceanbase.OceanBaseOracleTestBase.tableRow;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbType;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.field;
 
 /** The Table Source ITCase for OceanBase Oracle mode. */
-@Disabled
+@Disabled("OceanBase Oracle mode can only be tested locally.")
 public class OceanBaseOracleDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
         implements OceanBaseOracleTestBase {
 

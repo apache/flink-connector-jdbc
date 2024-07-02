@@ -30,6 +30,7 @@ import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.apache.flink.connector.jdbc.databases.oceanbase.OceanBaseMysqlTestBase.tableRow;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbType;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.field;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.pkField;

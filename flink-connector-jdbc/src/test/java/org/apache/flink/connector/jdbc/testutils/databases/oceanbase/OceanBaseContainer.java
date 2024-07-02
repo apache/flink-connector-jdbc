@@ -19,21 +19,37 @@
 package org.apache.flink.connector.jdbc.testutils.databases.oceanbase;
 
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 /** {@link JdbcDatabaseContainer} for OceanBase. */
 public class OceanBaseContainer extends JdbcDatabaseContainer<OceanBaseContainer> {
 
-    public static final Integer SQL_PORT = 2881;
+    private static final int SQL_PORT = 2881;
+    private static final String DEFAULT_PASSWORD = "";
+
+    private String password = DEFAULT_PASSWORD;
 
     public OceanBaseContainer(String dockerImageName) {
         this(DockerImageName.parse(dockerImageName));
-
-        addExposedPort(SQL_PORT);
     }
 
     public OceanBaseContainer(DockerImageName dockerImageName) {
         super(dockerImageName);
+
+        addExposedPort(SQL_PORT);
+        setWaitStrategy(Wait.forLogMessage(".*boot success!.*", 1));
+    }
+
+    @Override
+    protected void configure() {
+        if (!DEFAULT_PASSWORD.equals(password)) {
+            addEnv("OB_TENANT_PASSWORD", password);
+        }
+    }
+
+    protected void waitUntilContainerStarted() {
+        this.getWaitStrategy().waitUntilReady(this);
     }
 
     @Override
@@ -64,11 +80,16 @@ public class OceanBaseContainer extends JdbcDatabaseContainer<OceanBaseContainer
 
     @Override
     public String getPassword() {
-        return "";
+        return password;
     }
 
     @Override
     protected String getTestQueryString() {
         return "SELECT 1";
+    }
+
+    public OceanBaseContainer withPassword(String password) {
+        this.password = password;
+        return this;
     }
 }
