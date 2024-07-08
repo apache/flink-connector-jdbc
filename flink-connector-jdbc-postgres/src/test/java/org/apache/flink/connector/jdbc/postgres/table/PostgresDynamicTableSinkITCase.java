@@ -18,9 +18,9 @@
 
 package org.apache.flink.connector.jdbc.postgres.table;
 
+import org.apache.flink.connector.jdbc.core.table.sink.JdbcDynamicTableSinkITCase;
 import org.apache.flink.connector.jdbc.postgres.PostgresTestBase;
 import org.apache.flink.connector.jdbc.postgres.database.dialect.PostgresDialect;
-import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSinkITCase;
 
 /** The Table Sink ITCase for {@link PostgresDialect}. */
 class PostgresDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase

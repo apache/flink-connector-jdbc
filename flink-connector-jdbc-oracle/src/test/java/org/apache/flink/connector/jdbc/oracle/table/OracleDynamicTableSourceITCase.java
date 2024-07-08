@@ -18,9 +18,9 @@
 
 package org.apache.flink.connector.jdbc.oracle.table;
 
+import org.apache.flink.connector.jdbc.core.table.source.JdbcDynamicTableSourceITCase;
 import org.apache.flink.connector.jdbc.oracle.OracleTestBase;
 import org.apache.flink.connector.jdbc.oracle.database.dialect.OracleDialect;
-import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSourceITCase;
 import org.apache.flink.connector.jdbc.testutils.tables.TableBuilder;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;

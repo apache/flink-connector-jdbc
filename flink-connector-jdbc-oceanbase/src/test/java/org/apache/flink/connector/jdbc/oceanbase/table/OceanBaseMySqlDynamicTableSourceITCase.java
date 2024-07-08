@@ -18,8 +18,8 @@
 
 package org.apache.flink.connector.jdbc.oceanbase.table;
 
+import org.apache.flink.connector.jdbc.core.table.source.JdbcDynamicTableSourceITCase;
 import org.apache.flink.connector.jdbc.oceanbase.OceanBaseMysqlTestBase;
-import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSourceITCase;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;

@@ -18,9 +18,9 @@
 
 package org.apache.flink.connector.jdbc.db2.database.table;
 
+import org.apache.flink.connector.jdbc.core.table.source.JdbcDynamicTableSourceITCase;
 import org.apache.flink.connector.jdbc.db2.Db2TestBase;
 import org.apache.flink.connector.jdbc.db2.database.dialect.Db2Dialect;
-import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSourceITCase;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;

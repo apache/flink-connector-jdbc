@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.table;
+package org.apache.flink.connector.jdbc.core.table.source;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
