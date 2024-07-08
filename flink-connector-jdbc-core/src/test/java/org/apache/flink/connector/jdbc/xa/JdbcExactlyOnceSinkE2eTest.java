@@ -25,7 +25,7 @@ import org.apache.flink.api.common.time.Time;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.JdbcSink;
+import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
@@ -35,16 +35,20 @@ import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.test.junit5.MiniClusterExtension;
 import org.apache.flink.util.ExceptionUtils;
+import org.apache.flink.util.function.SerializableSupplier;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.sql.XADataSource;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -140,7 +144,7 @@ public abstract class JdbcExactlyOnceSinkE2eTest implements DatabaseTest {
                 .setParallelism(PARALLELISM)
                 .map(new FailingMapper(numElementsPerCheckpoint + (numElementsPerCheckpoint / 2)))
                 .addSink(
-                        JdbcSink.exactlyOnceSink(
+                        exactlyOnceSink(
                                 OUTPUT_TABLE.getInsertIntoQuery(),
                                 OUTPUT_TABLE.getStatementBuilder(),
                                 JdbcExecutionOptions.builder().withMaxRetries(0).build(),
@@ -164,6 +168,23 @@ public abstract class JdbcExactlyOnceSinkE2eTest implements DatabaseTest {
                 "Test insert for {} finished in {} ms.",
                 getMetadata().getVersion(),
                 System.currentTimeMillis() - started);
+    }
+
+    private <T> SinkFunction<T> exactlyOnceSink(
+            String sql,
+            JdbcStatementBuilder<T> statementBuilder,
+            JdbcExecutionOptions executionOptions,
+            JdbcExactlyOnceOptions exactlyOnceOptions,
+            SerializableSupplier<XADataSource> dataSourceSupplier) {
+        return new JdbcXaSinkFunction<>(
+                sql,
+                statementBuilder,
+                XaFacade.fromXaDataSourceSupplier(
+                        dataSourceSupplier,
+                        exactlyOnceOptions.getTimeoutSec(),
+                        exactlyOnceOptions.isTransactionPerConnection()),
+                executionOptions,
+                exactlyOnceOptions);
     }
 
     /**

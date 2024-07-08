@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.sink;
+package org.apache.flink.connector.jdbc.core.datastream.sink;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.PublicEvolving;
@@ -25,15 +25,15 @@ import org.apache.flink.api.connector.sink2.TwoPhaseCommittingSink;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
+import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitable;
+import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitableSerializer;
+import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitter;
+import org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriter;
+import org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriterState;
+import org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriterStateSerializer;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.statements.JdbcQueryStatement;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
-import org.apache.flink.connector.jdbc.sink.committer.JdbcCommitable;
-import org.apache.flink.connector.jdbc.sink.committer.JdbcCommitableSerializer;
-import org.apache.flink.connector.jdbc.sink.committer.JdbcCommitter;
-import org.apache.flink.connector.jdbc.sink.writer.JdbcWriter;
-import org.apache.flink.connector.jdbc.sink.writer.JdbcWriterState;
-import org.apache.flink.connector.jdbc.sink.writer.JdbcWriterStateSerializer;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
 import java.io.IOException;

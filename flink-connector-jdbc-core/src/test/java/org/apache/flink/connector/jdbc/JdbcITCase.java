@@ -19,8 +19,13 @@ package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
+import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
+import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.util.function.FunctionWithException;
 
 import org.junit.jupiter.api.Test;
@@ -46,7 +51,7 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Smoke tests for the {@link JdbcSink} and the underlying classes. */
+/** Smoke tests for the {@link GenericJdbcSinkFunction} and the underlying classes. */
 public class JdbcITCase extends JdbcTestBase implements JdbcITCaseBase {
 
     public static final JdbcStatementBuilder<TestEntry> TEST_ENTRY_JDBC_STATEMENT_BUILDER =
@@ -69,7 +74,7 @@ public class JdbcITCase extends JdbcTestBase implements JdbcITCaseBase {
         env.setParallelism(1);
         env.fromElements(TEST_DATA)
                 .addSink(
-                        JdbcSink.sink(
+                        sink(
                                 String.format(INSERT_TEMPLATE, INPUT_TABLE),
                                 TEST_ENTRY_JDBC_STATEMENT_BUILDER,
                                 new JdbcConnectionOptionsBuilder()
@@ -100,7 +105,7 @@ public class JdbcITCase extends JdbcTestBase implements JdbcITCaseBase {
                             return reused;
                         })
                 .addSink(
-                        JdbcSink.sink(
+                        sink(
                                 JdbcTestFixture.INSERT_INTO_WORDS_TEMPLATE,
                                 (ps, e) -> {
                                     ps.setInt(1, counter.getAndIncrement());
@@ -171,5 +176,16 @@ public class JdbcITCase extends JdbcTestBase implements JdbcITCaseBase {
             throws SQLException {
         T value = get.apply(rs);
         return rs.wasNull() ? null : value;
+    }
+
+    private <T> SinkFunction<T> sink(
+            String sql,
+            JdbcStatementBuilder<T> statementBuilder,
+            JdbcConnectionOptions connectionOptions) {
+        return new GenericJdbcSinkFunction<>(
+                new JdbcOutputFormat<>(
+                        new SimpleJdbcConnectionProvider(connectionOptions),
+                        JdbcExecutionOptions.defaults(),
+                        () -> JdbcBatchStatementExecutor.simple(sql, statementBuilder)));
     }
 }

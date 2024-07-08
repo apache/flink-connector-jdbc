@@ -1,14 +1,14 @@
-package org.apache.flink.connector.jdbc.sink.committer;
+package org.apache.flink.connector.jdbc.core.datastream.sink.committer;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.connector.sink2.Committer;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
+import org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriterState;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.XaConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.XaTransaction;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.TransactionId;
-import org.apache.flink.connector.jdbc.sink.writer.JdbcWriterState;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import java.io.IOException;

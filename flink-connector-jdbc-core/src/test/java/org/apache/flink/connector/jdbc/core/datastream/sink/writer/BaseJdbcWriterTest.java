@@ -1,4 +1,4 @@
-package org.apache.flink.connector.jdbc.sink.writer;
+package org.apache.flink.connector.jdbc.core.datastream.sink.writer;
 
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.connector.sink2.Sink;
@@ -6,12 +6,12 @@ import org.apache.flink.api.connector.sink2.SinkWriter;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
+import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitable;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.statements.JdbcQueryStatement;
 import org.apache.flink.connector.jdbc.datasource.statements.SimpleJdbcQueryStatement;
 import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
-import org.apache.flink.connector.jdbc.sink.committer.JdbcCommitable;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 import org.apache.flink.util.StringUtils;
@@ -29,7 +29,11 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 
-/** Base smoke tests for the {@link JdbcWriter} and the underlying classes. */
+/**
+ * Base smoke tests for the {@link
+ * org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriter} and the underlying
+ * classes.
+ */
 abstract class BaseJdbcWriterTest implements DerbyTestBase {
 
     private static final String JOBID = "6b64d8a9a951e2e8767ae952ad951706";

@@ -15,19 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.sink;
+package org.apache.flink.connector.jdbc.core.datastream;
 
-import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
-import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
+import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.jdbc.core.datastream.sink.JdbcSink;
+import org.apache.flink.connector.jdbc.core.datastream.sink.JdbcSinkBuilder;
 
-/** Smoke tests for the {@link JdbcSink} and the underlying classes. */
-class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
+/** Facade to create JDBC stream sources and sinks. */
+@PublicEvolving
+public class Jdbc {
 
-    @Override
-    protected <T> JdbcSink<T> finishSink(JdbcSinkBuilder<T> builder) {
-        return builder.withExecutionOptions(
-                        JdbcExecutionOptions.builder().withMaxRetries(0).build())
-                .buildExactlyOnce(
-                        JdbcExactlyOnceOptions.defaults(), getMetadata().getXaSourceSupplier());
+    /** Create a JDBC sink builder. */
+    public static <IN> JdbcSinkBuilder<IN> sinkBuilder() {
+        return JdbcSink.builder();
     }
 }
