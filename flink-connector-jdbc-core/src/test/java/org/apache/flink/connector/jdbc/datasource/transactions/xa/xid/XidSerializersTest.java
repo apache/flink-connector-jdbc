@@ -15,9 +15,33 @@
  * limitations under the License.
  */
 
-/**
- * Provides exactly-once JDBC sink implementation using Java XA transactions API (JTA).
- *
- * @see org.apache.flink.connector.jdbc.xa.JdbcXaSinkFunction JdbcXaExactlyOnceSinkFunction
- */
-package org.apache.flink.connector.jdbc.xa;
+package org.apache.flink.connector.jdbc.datasource.transactions.xa.xid;
+
+import org.apache.flink.api.common.typeutils.SerializerTestBase;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
+
+import javax.transaction.xa.Xid;
+
+/** XaSerializersTest. */
+class XidSerializersTest extends SerializerTestBase<Xid> {
+
+    @Override
+    protected TypeSerializer<Xid> createSerializer() {
+        return new XidSerializer();
+    }
+
+    @Override
+    protected int getLength() {
+        return -1;
+    }
+
+    @Override
+    protected Class<Xid> getTypeClass() {
+        return Xid.class;
+    }
+
+    @Override
+    protected Xid[] getTestData() {
+        return new Xid[] {XaXidTest.XID};
+    }
+}

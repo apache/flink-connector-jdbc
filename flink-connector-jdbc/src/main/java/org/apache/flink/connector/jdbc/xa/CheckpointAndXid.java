@@ -31,6 +31,7 @@ import java.util.Objects;
  */
 @ThreadSafe
 @Internal
+@Deprecated
 public final class CheckpointAndXid {
     final long checkpointId;
     final Xid xid;

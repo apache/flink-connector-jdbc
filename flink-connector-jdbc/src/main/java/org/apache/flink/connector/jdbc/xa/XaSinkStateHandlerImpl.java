@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Internal
+@Deprecated
 class XaSinkStateHandlerImpl implements XaSinkStateHandler {
 
     private static final long serialVersionUID = 1L;

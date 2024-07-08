@@ -31,6 +31,7 @@ import static java.util.Collections.unmodifiableCollection;
 /** Thread-safe (assuming immutable {@link Xid} implementation). */
 @ThreadSafe
 @Internal
+@Deprecated
 class JdbcXaSinkFunctionState {
     private final Collection<CheckpointAndXid> prepared;
     private final Collection<Xid> hanging;

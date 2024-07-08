@@ -19,6 +19,7 @@ package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.connector.jdbc.datasource.transactions.xa.xid.XidImpl;
 
 import javax.transaction.xa.Xid;
 
@@ -41,6 +42,7 @@ import java.util.Arrays;
  * collide).
  */
 @Internal
+@Deprecated
 class SemanticXidGenerator implements XidGenerator {
 
     private static final long serialVersionUID = 1L;

@@ -127,6 +127,7 @@ import static org.apache.flink.connector.jdbc.xa.JdbcXaSinkFunctionState.of;
  * @since 1.13
  */
 @Internal
+@Deprecated
 public class JdbcXaSinkFunction<T> extends AbstractRichFunction
         implements CheckpointedFunction,
                 CheckpointListener,

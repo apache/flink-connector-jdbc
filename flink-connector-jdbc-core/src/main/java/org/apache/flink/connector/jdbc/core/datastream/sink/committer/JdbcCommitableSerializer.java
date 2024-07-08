@@ -2,7 +2,7 @@ package org.apache.flink.connector.jdbc.core.datastream.sink.committer;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
-import org.apache.flink.connector.jdbc.xa.XidSerializer;
+import org.apache.flink.connector.jdbc.datasource.transactions.xa.xid.XidSerializer;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;

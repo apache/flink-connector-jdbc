@@ -19,6 +19,7 @@ package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.api.common.typeutils.SerializerTestBase;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.connector.jdbc.datasource.transactions.xa.xid.XaXidTest;
 
 /** XaSerializersTest. */
 class CheckpointAndXidSerializersTest extends SerializerTestBase<CheckpointAndXid> {

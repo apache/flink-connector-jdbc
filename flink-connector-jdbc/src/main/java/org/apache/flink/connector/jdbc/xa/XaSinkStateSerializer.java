@@ -21,6 +21,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeutils.SimpleTypeSerializerSnapshot;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
+import org.apache.flink.connector.jdbc.datasource.transactions.xa.xid.XidSerializer;
 import org.apache.flink.core.memory.DataInputView;
 import org.apache.flink.core.memory.DataOutputView;
 
@@ -32,6 +33,7 @@ import java.util.List;
 
 /** XaSinkStateSerializer. */
 @Internal
+@Deprecated
 public final class XaSinkStateSerializer extends TypeSerializer<JdbcXaSinkFunctionState> {
 
     private static final TypeSerializerSnapshot<JdbcXaSinkFunctionState> SNAPSHOT =

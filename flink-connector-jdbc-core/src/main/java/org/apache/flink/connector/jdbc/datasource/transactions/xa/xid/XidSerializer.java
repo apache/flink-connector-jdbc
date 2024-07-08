@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.xa;
+package org.apache.flink.connector.jdbc.datasource.transactions.xa.xid;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeutils.SimpleTypeSerializerSnapshot;
@@ -27,42 +27,38 @@ import org.apache.flink.core.memory.DataOutputView;
 import javax.transaction.xa.Xid;
 
 import java.io.IOException;
-import java.util.Objects;
 
-/** {@link CheckpointAndXid} serializer. */
+/** {@link Xid} serializer. */
 @Internal
-public final class CheckpointAndXidSerializer extends TypeSerializer<CheckpointAndXid> {
+public final class XidSerializer extends TypeSerializer<Xid> {
 
     private static final long serialVersionUID = 1L;
 
-    public static final TypeSerializerSnapshot<CheckpointAndXid> SNAPSHOT =
-            new CheckpointAndXidSimpleTypeSerializerSnapshot();
-
-    private final TypeSerializer<Xid> xidSerializer = new XidSerializer();
+    private static final TypeSerializerSnapshot<Xid> SNAPSHOT =
+            new XidSimpleTypeSerializerSnapshot();
 
     @Override
     public boolean isImmutableType() {
-        return xidSerializer.isImmutableType();
+        return true;
     }
 
     @Override
-    public TypeSerializer<CheckpointAndXid> duplicate() {
+    public TypeSerializer<Xid> duplicate() {
         return this;
     }
 
     @Override
-    public CheckpointAndXid createInstance() {
-        return CheckpointAndXid.createRestored(0L, 0, xidSerializer.createInstance());
+    public Xid createInstance() {
+        return new XidImpl(0, new byte[0], new byte[0]);
     }
 
     @Override
-    public CheckpointAndXid copy(CheckpointAndXid from) {
-        return CheckpointAndXid.createRestored(
-                from.checkpointId, from.attempts, xidSerializer.copy(from.xid));
+    public Xid copy(Xid from) {
+        return from;
     }
 
     @Override
-    public CheckpointAndXid copy(CheckpointAndXid from, CheckpointAndXid reuse) {
+    public Xid copy(Xid from, Xid reuse) {
         return from;
     }
 
@@ -72,21 +68,31 @@ public final class CheckpointAndXidSerializer extends TypeSerializer<CheckpointA
     }
 
     @Override
-    public void serialize(CheckpointAndXid record, DataOutputView target) throws IOException {
-        target.writeLong(record.checkpointId);
-        target.writeInt(record.attempts);
-        xidSerializer.serialize(record.xid, target);
+    public void serialize(Xid xid, DataOutputView target) throws IOException {
+        target.writeInt(xid.getFormatId());
+        writeBytesWithSize(target, xid.getGlobalTransactionId());
+        writeBytesWithSize(target, xid.getBranchQualifier());
     }
 
     @Override
-    public CheckpointAndXid deserialize(DataInputView source) throws IOException {
-        return CheckpointAndXid.createRestored(
-                source.readLong(), source.readInt(), xidSerializer.deserialize(source));
+    public Xid deserialize(DataInputView source) throws IOException {
+        return new XidImpl(source.readInt(), readBytesWithSize(source), readBytesWithSize(source));
+    }
+
+    private void writeBytesWithSize(DataOutputView target, byte[] bytes) throws IOException {
+        target.writeByte(bytes.length);
+        target.write(bytes, 0, bytes.length);
+    }
+
+    private byte[] readBytesWithSize(DataInputView source) throws IOException {
+        byte len = source.readByte();
+        byte[] bytes = new byte[len];
+        source.read(bytes, 0, len);
+        return bytes;
     }
 
     @Override
-    public CheckpointAndXid deserialize(CheckpointAndXid reuse, DataInputView source)
-            throws IOException {
+    public Xid deserialize(Xid reuse, DataInputView source) throws IOException {
         return deserialize(source);
     }
 
@@ -96,27 +102,26 @@ public final class CheckpointAndXidSerializer extends TypeSerializer<CheckpointA
     }
 
     @Override
-    public boolean equals(Object o) {
-        return o instanceof CheckpointAndXidSerializer;
+    public boolean equals(Object obj) {
+        return obj instanceof XidSerializer;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(xidSerializer);
+        return XidSerializer.class.hashCode();
     }
 
     @Override
-    public TypeSerializerSnapshot<CheckpointAndXid> snapshotConfiguration() {
+    public TypeSerializerSnapshot<Xid> snapshotConfiguration() {
         return SNAPSHOT;
     }
 
-    /** SImple {@link TypeSerializerSnapshot} for {@link CheckpointAndXidSerializer}. */
-    public static class CheckpointAndXidSimpleTypeSerializerSnapshot
-            extends SimpleTypeSerializerSnapshot<CheckpointAndXid> {
+    /** Simple {@link TypeSerializerSnapshot} for {@link XidSerializer}. */
+    public static class XidSimpleTypeSerializerSnapshot extends SimpleTypeSerializerSnapshot<Xid> {
         private static final int VERSION = 1;
 
-        public CheckpointAndXidSimpleTypeSerializerSnapshot() {
-            super(CheckpointAndXidSerializer::new);
+        public XidSimpleTypeSerializerSnapshot() {
+            super(XidSerializer::new);
         }
 
         @Override

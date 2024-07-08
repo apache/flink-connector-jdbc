@@ -26,6 +26,7 @@ import java.security.SecureRandom;
 
 /** {@link Xid} generator. */
 @Internal
+@Deprecated
 public interface XidGenerator extends Serializable, AutoCloseable {
 
     /**
