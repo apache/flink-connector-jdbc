@@ -27,6 +27,8 @@ import org.apache.flink.api.common.io.statistics.BaseStatistics;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.jdbc.core.datastream.source.JdbcSource;
+import org.apache.flink.connector.jdbc.core.datastream.source.JdbcSourceBuilder;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
@@ -99,9 +101,8 @@ import java.util.Arrays;
  * @see JdbcParameterValuesProvider
  * @see PreparedStatement
  * @see DriverManager
- * @deprecated Please use {@link org.apache.flink.connector.jdbc.source.JdbcSource} instead. The
- *     builder utils and parameters passing could be view {@link
- *     org.apache.flink.connector.jdbc.source.JdbcSourceBuilder}.
+ * @deprecated Please use {@link JdbcSource} instead. The builder utils and parameters passing could
+ *     be view {@link JdbcSourceBuilder}.
  */
 @Deprecated
 @Experimental

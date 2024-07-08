@@ -16,27 +16,24 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.table;
+package org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor;
 
-import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectConverter;
-import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
-import org.apache.flink.table.data.RowData;
+import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-/** The result extractor for {@link RowData}. */
-public class RowDataResultExtractor implements ResultExtractor<RowData> {
-
-    private final JdbcDialectConverter jdbcDialectConverter;
-
-    public RowDataResultExtractor(JdbcDialectConverter jdbcDialectConverter) {
-        this.jdbcDialectConverter = Preconditions.checkNotNull(jdbcDialectConverter);
-    }
-
+/** The extractor is used to extract the data from {@link ResultSet} into a {@link Row} object. */
+public class RowResultExtractor implements ResultExtractor<Row> {
     @Override
-    public RowData extract(ResultSet resultSet) throws SQLException {
-        return jdbcDialectConverter.toInternal(resultSet);
+    public Row extract(ResultSet resultSet) throws SQLException {
+        int arity = resultSet.getMetaData().getColumnCount();
+        Row row = new Row(arity);
+        Preconditions.checkArgument(!resultSet.isClosed());
+        for (int index = 0; index < row.getArity(); index++) {
+            row.setField(index, resultSet.getObject(index + 1));
+        }
+        return row;
     }
 }
