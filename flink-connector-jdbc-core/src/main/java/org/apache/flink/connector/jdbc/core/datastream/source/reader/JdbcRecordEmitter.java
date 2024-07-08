@@ -16,16 +16,30 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.base.source.reader.splitreader;
+package org.apache.flink.connector.jdbc.core.datastream.source.reader;
 
+import org.apache.flink.api.connector.source.SourceOutput;
+import org.apache.flink.connector.base.source.reader.RecordEmitter;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
+import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplitState;
 
-import java.util.List;
+/**
+ * The JDBC resorce emitter.
+ *
+ * @param <T> The type of the record.
+ * @param <SplitT> The type of JDBC split.
+ */
+public class JdbcRecordEmitter<T, SplitT extends JdbcSourceSplit>
+        implements RecordEmitter<RecordAndOffset<T>, T, JdbcSourceSplitState<SplitT>> {
 
-/** Test util class for {@link SplitsChange}. */
-public class TestingSplitsChange extends SplitsChange<JdbcSourceSplit> {
+    @Override
+    public void emitRecord(
+            RecordAndOffset<T> element,
+            SourceOutput<T> output,
+            JdbcSourceSplitState<SplitT> splitState)
+            throws Exception {
 
-    public TestingSplitsChange(List<JdbcSourceSplit> splits) {
-        super(splits);
+        output.collect(element.getRecord());
+        splitState.setPosition(element.getOffset(), element.getRecordSkipCount());
     }
 }

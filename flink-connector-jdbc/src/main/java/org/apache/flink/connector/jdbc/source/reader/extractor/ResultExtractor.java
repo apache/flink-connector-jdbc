@@ -16,16 +16,22 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.base.source.reader.splitreader;
+package org.apache.flink.connector.jdbc.source.reader.extractor;
 
-import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
+import org.apache.flink.annotation.PublicEvolving;
 
-import java.util.List;
+import java.sql.ResultSet;
 
-/** Test util class for {@link SplitsChange}. */
-public class TestingSplitsChange extends SplitsChange<JdbcSourceSplit> {
-
-    public TestingSplitsChange(List<JdbcSourceSplit> splits) {
-        super(splits);
-    }
-}
+/**
+ * The Extractor to extract the data from {@link ResultSet}.
+ *
+ * @param <T> The target data type.
+ * @deprecated please use {@link
+ *     org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor}
+ */
+@PublicEvolving
+@Deprecated
+public interface ResultExtractor<T>
+        extends org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor
+                        .ResultExtractor<
+                T> {}

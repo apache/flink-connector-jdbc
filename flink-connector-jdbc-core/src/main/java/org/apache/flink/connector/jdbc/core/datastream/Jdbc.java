@@ -20,10 +20,17 @@ package org.apache.flink.connector.jdbc.core.datastream;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.core.datastream.sink.JdbcSink;
 import org.apache.flink.connector.jdbc.core.datastream.sink.JdbcSinkBuilder;
+import org.apache.flink.connector.jdbc.core.datastream.source.JdbcSource;
+import org.apache.flink.connector.jdbc.core.datastream.source.JdbcSourceBuilder;
 
 /** Facade to create JDBC stream sources and sinks. */
 @PublicEvolving
 public class Jdbc {
+
+    /** Create a JDBC source builder. */
+    public static <OUT> JdbcSourceBuilder<OUT> sourceBuilder() {
+        return JdbcSource.builder();
+    }
 
     /** Create a JDBC sink builder. */
     public static <IN> JdbcSinkBuilder<IN> sinkBuilder() {
