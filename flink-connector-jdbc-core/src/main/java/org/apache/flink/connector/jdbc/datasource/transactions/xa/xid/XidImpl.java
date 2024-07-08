@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.xa;
+package org.apache.flink.connector.jdbc.datasource.transactions.xa.xid;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.util.Preconditions;
@@ -34,7 +34,7 @@ import static org.apache.flink.util.StringUtils.byteToHexString;
  * arrays.
  */
 @Internal
-final class XidImpl implements Xid, Serializable {
+public final class XidImpl implements Xid, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -42,7 +42,7 @@ final class XidImpl implements Xid, Serializable {
     @Nonnull private final byte[] globalTransactionId;
     @Nonnull private final byte[] branchQualifier;
 
-    XidImpl(int formatId, byte[] globalTransactionId, byte[] branchQualifier) {
+    public XidImpl(int formatId, byte[] globalTransactionId, byte[] branchQualifier) {
         Preconditions.checkArgument(globalTransactionId.length <= Xid.MAXGTRIDSIZE);
         Preconditions.checkArgument(branchQualifier.length <= Xid.MAXBQUALSIZE);
         this.formatId = formatId;

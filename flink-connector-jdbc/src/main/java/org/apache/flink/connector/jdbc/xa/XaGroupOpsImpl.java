@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 
 @Internal
+@Deprecated
 class XaGroupOpsImpl implements XaGroupOps {
 
     private static final long serialVersionUID = 1L;

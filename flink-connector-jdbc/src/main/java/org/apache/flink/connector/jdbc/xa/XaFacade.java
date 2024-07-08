@@ -47,6 +47,7 @@ import java.util.function.Supplier;
  * {@link #recover} can be used to get abandoned prepared transactions for cleanup.
  */
 @Internal
+@Deprecated
 public interface XaFacade extends JdbcConnectionProvider, Serializable, AutoCloseable {
 
     /** @return a non-serializable instance. */

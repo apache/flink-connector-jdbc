@@ -45,6 +45,7 @@ import static org.apache.flink.util.Preconditions.checkState;
  * XA resource after each xa_start call is made (and associates it with the xid to commit later).
  */
 @Internal
+@Deprecated
 class XaFacadePoolingImpl implements XaFacade {
     private static final long serialVersionUID = 1L;
 

@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Internal
+@Deprecated
 interface XaGroupOps extends Serializable {
 
     GroupXaOperationResult<CheckpointAndXid> commit(

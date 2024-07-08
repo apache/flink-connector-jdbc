@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 /** Job identifier. */
 @Internal
+@Deprecated
 class JobSubtask implements Serializable {
 
     private final byte[] jobId;

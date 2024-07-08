@@ -64,6 +64,7 @@ import static javax.transaction.xa.XAResource.TMSTARTRSCAN;
 /** Default {@link XaFacade} implementation. */
 @NotThreadSafe
 @Internal
+@Deprecated
 class XaFacadeImpl implements XaFacade {
 
     private static final long serialVersionUID = 1L;

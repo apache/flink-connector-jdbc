@@ -23,6 +23,7 @@ import org.apache.flink.runtime.state.FunctionInitializationContext;
 import java.io.Serializable;
 
 @Internal
+@Deprecated
 interface XaSinkStateHandler extends Serializable {
 
     JdbcXaSinkFunctionState load(FunctionInitializationContext context) throws Exception;

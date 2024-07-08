@@ -19,6 +19,7 @@ package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.connector.jdbc.datasource.transactions.xa.xid.XidImpl;
 
 import org.junit.jupiter.api.Test;
 

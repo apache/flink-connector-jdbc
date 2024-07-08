@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.xa;
+package org.apache.flink.connector.jdbc.datasource.transactions.xa.xid;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,8 +26,9 @@ import static javax.transaction.xa.Xid.MAXGTRIDSIZE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link XidImpl}. */
-class XaXidTest {
-    static final XidImpl XID = new XidImpl(1, randomBytes(MAXGTRIDSIZE), randomBytes(MAXBQUALSIZE));
+public class XaXidTest {
+    public static final XidImpl XID =
+            new XidImpl(1, randomBytes(MAXGTRIDSIZE), randomBytes(MAXBQUALSIZE));
 
     @Test
     void testXidsEqual() {
