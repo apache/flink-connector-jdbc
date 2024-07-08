@@ -3,11 +3,11 @@ package org.apache.flink.connector.jdbc.datasource.transactions.xa;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
+import org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriterState;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.XaConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.TransactionId;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.EmptyTransactionXaException;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.TransientXaException;
-import org.apache.flink.connector.jdbc.sink.writer.JdbcWriterState;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.Preconditions;
 

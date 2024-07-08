@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.sink;
+package org.apache.flink.connector.jdbc.core.datastream.sink;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
@@ -37,8 +37,8 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Smoke tests for the {@link org.apache.flink.connector.jdbc.sink.JdbcSink} and the underlying
- * classes.
+ * Smoke tests for the {@link org.apache.flink.connector.jdbc.core.datastream.sink.JdbcSink} and the
+ * underlying classes.
  */
 public abstract class BaseJdbcSinkTest implements DerbyTestBase {
 
