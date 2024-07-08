@@ -18,9 +18,9 @@
 
 package org.apache.flink.connector.jdbc.sqlserver.table;
 
+import org.apache.flink.connector.jdbc.core.table.sink.JdbcDynamicTableSinkITCase;
 import org.apache.flink.connector.jdbc.sqlserver.SqlServerTestBase;
 import org.apache.flink.connector.jdbc.sqlserver.database.dialect.SqlServerDialect;
-import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSinkITCase;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
 

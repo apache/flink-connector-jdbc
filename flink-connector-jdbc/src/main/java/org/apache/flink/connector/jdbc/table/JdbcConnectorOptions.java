@@ -18,25 +18,14 @@
 
 package org.apache.flink.connector.jdbc.table;
 
-import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectConverter;
-import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
-import org.apache.flink.table.data.RowData;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.annotation.PublicEvolving;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-/** The result extractor for {@link RowData}. */
-public class RowDataResultExtractor implements ResultExtractor<RowData> {
-
-    private final JdbcDialectConverter jdbcDialectConverter;
-
-    public RowDataResultExtractor(JdbcDialectConverter jdbcDialectConverter) {
-        this.jdbcDialectConverter = Preconditions.checkNotNull(jdbcDialectConverter);
-    }
-
-    @Override
-    public RowData extract(ResultSet resultSet) throws SQLException {
-        return jdbcDialectConverter.toInternal(resultSet);
-    }
-}
+/**
+ * Options for the JDBC connector.
+ *
+ * @deprecated please use {@link org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions}
+ */
+@PublicEvolving
+@Deprecated
+public class JdbcConnectorOptions
+        extends org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions {}

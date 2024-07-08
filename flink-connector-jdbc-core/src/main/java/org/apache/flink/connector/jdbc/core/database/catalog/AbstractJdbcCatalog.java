@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.core.database.catalog;
 
-import org.apache.flink.connector.jdbc.table.JdbcDynamicTableFactory;
+import org.apache.flink.connector.jdbc.core.table.JdbcDynamicTableFactory;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.catalog.AbstractCatalog;
@@ -77,11 +77,11 @@ import java.util.function.Predicate;
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.PASSWORD_KEY;
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.USER_KEY;
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
-import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.PASSWORD;
-import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.TABLE_NAME;
-import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.URL;
-import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.USERNAME;
-import static org.apache.flink.connector.jdbc.table.JdbcDynamicTableFactory.IDENTIFIER;
+import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.PASSWORD;
+import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.TABLE_NAME;
+import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.URL;
+import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.USERNAME;
+import static org.apache.flink.connector.jdbc.core.table.JdbcDynamicTableFactory.IDENTIFIER;
 import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;

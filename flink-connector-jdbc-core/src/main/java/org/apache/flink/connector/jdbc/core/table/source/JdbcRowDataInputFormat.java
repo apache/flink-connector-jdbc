@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.table;
+package org.apache.flink.connector.jdbc.core.table.source;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.io.DefaultInputSplitAssigner;

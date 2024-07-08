@@ -22,7 +22,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.connector.jdbc.core.database.catalog.JdbcCatalog;
-import org.apache.flink.connector.jdbc.table.JdbcConnectorOptions;
+import org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions;
 import org.apache.flink.table.catalog.CommonCatalogOptions;
 
 /** {@link ConfigOption}s for {@link JdbcCatalog}. */

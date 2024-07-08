@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.table;
+package org.apache.flink.connector.jdbc.core.table;
 
 import org.apache.flink.table.api.TableConfig;
 import org.apache.flink.table.planner.utils.StreamTableTestUtil;

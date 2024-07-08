@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.trino.table;
 
-import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSinkITCase;
+import org.apache.flink.connector.jdbc.core.table.sink.JdbcDynamicTableSinkITCase;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.trino.TrinoTestBase;
