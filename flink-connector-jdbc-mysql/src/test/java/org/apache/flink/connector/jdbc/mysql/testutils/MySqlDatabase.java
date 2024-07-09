@@ -27,7 +27,7 @@ import org.testcontainers.containers.MySQLContainer;
 public class MySqlDatabase extends DatabaseExtension implements MySqlImages {
 
     private static final MySQLContainer<?> CONTAINER =
-            new MySqlContainer(MYSQL_8_0)
+            new MySqlContainer(MYSQL_8)
                     .withXa()
                     .withLockWaitTimeout(50_000L)
                     .withCommand("--character-set-server=utf8")

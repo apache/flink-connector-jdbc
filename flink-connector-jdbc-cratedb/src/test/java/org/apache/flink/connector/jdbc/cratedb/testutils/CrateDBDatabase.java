@@ -31,14 +31,13 @@ import java.time.Duration;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 /** A CrateDB database for testing. */
-public class CrateDBDatabase extends DatabaseExtension {
+public class CrateDBDatabase extends DatabaseExtension implements CrateDBImages {
 
-    private static final String CRATEDB = "crate:5.3.1";
     private static final int CRATEDB_PG_PORT = 5432;
     private static final int CRATEDB_HTTP_PORT = 4200;
 
     private static final DockerImageName CRATEDB_DOCKER_IMAGE =
-            DockerImageName.parse(CRATEDB).asCompatibleSubstituteFor("postgres");
+            DockerImageName.parse(CRATEDB_5).asCompatibleSubstituteFor("postgres");
     private static final WaitStrategy WAIT_STRATEGY =
             Wait.forHttp("/")
                     .forPort(CRATEDB_HTTP_PORT)

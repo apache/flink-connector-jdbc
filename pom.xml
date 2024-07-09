@@ -64,7 +64,7 @@ under the License.
         <junit4.version>4.13.2</junit4.version>
         <junit5.version>5.10.1</junit5.version>
         <assertj.version>3.24.2</assertj.version>
-        <testcontainers.version>1.19.3</testcontainers.version>
+        <testcontainers.version>1.19.8</testcontainers.version>
         <mockito.version>3.12.4</mockito.version>
 
         <japicmp.referenceVersion>3.0.0-1.16</japicmp.referenceVersion>
@@ -74,7 +74,6 @@ under the License.
 
 
         <flink.parent.artifactId>flink-connector-jdbc-parent</flink.parent.artifactId>
-        <flink.forkCountITCase>1</flink.forkCountITCase>
         <!-- These 2 properties should be removed together with upgrade of flink-connector-parent to 1.1.x -->
         <flink.surefire.baseArgLine>-XX:+UseG1GC -Xms256m -XX:+IgnoreUnrecognizedVMOptions ${surefire.module.config}</flink.surefire.baseArgLine>
         <surefire.module.config>

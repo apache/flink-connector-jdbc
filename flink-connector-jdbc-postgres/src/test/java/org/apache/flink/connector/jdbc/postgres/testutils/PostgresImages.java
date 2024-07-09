@@ -19,6 +19,6 @@ package org.apache.flink.connector.jdbc.postgres.testutils;
 
 /** Postgres docker images. */
 public interface PostgresImages {
-    String POSTGRES_9 = "postgres:9.6.24";
-    String POSTGRES_15 = "postgres:15.1";
+    String POSTGRES_15 = "postgres:15.7";
+    String POSTGRES_16 = "postgres:16.3";
 }

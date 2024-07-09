@@ -24,7 +24,7 @@ import org.apache.flink.connector.jdbc.trino.testutils.TrinoDatabase;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 
-/** Base class for Oracle testing. */
+/** Base class for Trino testing. */
 @ExtendWith(TrinoDatabase.class)
 public interface TrinoTestBase extends DatabaseTest {
 

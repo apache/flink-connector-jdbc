@@ -137,6 +137,14 @@ under the License.
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Derby tests -->
+		<dependency>
+			<groupId>org.apache.derby</groupId>
+			<artifactId>derby</artifactId>
+			<version>10.14.2.0</version>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 
 	<build>
