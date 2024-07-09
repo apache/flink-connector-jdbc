@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.oracle.testutils;
+package org.apache.flink.connector.jdbc.cratedb.testutils;
 
-/** Oracle docker images. */
-public interface OracleImages {
-    String ORACLE_21 = "gvenzl/oracle-xe:21.3.0-slim-faststart";
+/** Postgres docker images. */
+public interface CrateDBImages {
+    String CRATEDB_5 = "crate:5.7.2";
 }

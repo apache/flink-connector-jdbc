@@ -25,6 +25,7 @@ import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.oceanbase.OceanBaseCEContainer;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -34,8 +35,8 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
 
     private static final Logger LOG = LoggerFactory.getLogger(OceanBaseDatabase.class);
 
-    private static final OceanBaseContainer CONTAINER =
-            new OceanBaseContainer(OCEANBASE_CE_4)
+    private static final OceanBaseCEContainer CONTAINER =
+            new OceanBaseCEContainer(OCEANBASE_CE_4)
                     .withEnv("MODE", "slim")
                     .withEnv("FASTBOOT", "true")
                     .withEnv("OB_DATAFILE_SIZE", "1G")

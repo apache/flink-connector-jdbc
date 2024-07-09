@@ -19,5 +19,5 @@ package org.apache.flink.connector.jdbc.trino.testutils;
 
 /** Postgres docker images. */
 public interface TrinoImages {
-    String TRINO_IMAGE = "trinodb/trino:418";
+    String TRINO_IMAGE = "trinodb/trino:451";
 }

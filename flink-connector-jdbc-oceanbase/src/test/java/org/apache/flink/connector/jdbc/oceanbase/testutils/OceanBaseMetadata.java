@@ -20,6 +20,8 @@ package org.apache.flink.connector.jdbc.oceanbase.testutils;
 
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 
+import org.testcontainers.oceanbase.OceanBaseCEContainer;
+
 import javax.sql.XADataSource;
 
 /** OceanBase metadata. */
@@ -31,7 +33,7 @@ public class OceanBaseMetadata implements DatabaseMetadata {
     private final String driver;
     private final String version;
 
-    public OceanBaseMetadata(OceanBaseContainer container) {
+    public OceanBaseMetadata(OceanBaseCEContainer container) {
         this.username = container.getUsername();
         this.password = container.getPassword();
         this.url = container.getJdbcUrl();

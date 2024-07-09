@@ -42,7 +42,7 @@ public class TrinoDatabase extends DatabaseExtension implements TrinoImages, Pos
     private static final Integer CONTAINER_DB_PORT = 5432;
 
     private static final PostgreSQLContainer<?> CONTAINER_DB =
-            new PostgresDatabase.PostgresXaContainer(POSTGRES_15)
+            new PostgresDatabase.PostgresXaContainer(POSTGRES_16)
                     .withMaxConnections(10)
                     .withMaxTransactions(50)
                     .withExposedPorts(CONTAINER_DB_PORT)
