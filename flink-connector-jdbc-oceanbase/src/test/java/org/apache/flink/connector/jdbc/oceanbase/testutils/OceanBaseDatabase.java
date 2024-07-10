@@ -20,6 +20,8 @@ package org.apache.flink.connector.jdbc.oceanbase.testutils;
 
 import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseResource;
+import org.apache.flink.connector.jdbc.testutils.resources.DockerResource;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import org.slf4j.Logger;
@@ -28,6 +30,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.oceanbase.OceanBaseCEContainer;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 /** OceanBase database for testing. */
@@ -56,18 +59,23 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
     }
 
     @Override
-    protected DatabaseMetadata startDatabase() throws Exception {
-        CONTAINER.start();
-        try (Connection connection = getMetadata().getConnection();
-                Statement statement = connection.createStatement()) {
-            statement.execute("SET GLOBAL time_zone = '+00:00'");
-        }
+    protected DatabaseMetadata getMetadataDB() {
         return getMetadata();
     }
 
     @Override
-    protected void stopDatabase() throws Exception {
-        CONTAINER.stop();
-        metadata = null;
+    protected DatabaseResource getResource() {
+        return new DockerResource(CONTAINER) {
+            @Override
+            public void start() {
+                super.start();
+                try (Connection connection = getMetadata().getConnection();
+                        Statement statement = connection.createStatement()) {
+                    statement.execute("SET GLOBAL time_zone = '+00:00'");
+                } catch (SQLException e) {
+                    throw new FlinkRuntimeException(e);
+                }
+            }
+        };
     }
 }

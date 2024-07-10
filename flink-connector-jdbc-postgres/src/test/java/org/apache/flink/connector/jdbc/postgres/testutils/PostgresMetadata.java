@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.postgres.testutils;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 
 import org.postgresql.xa.PGXADataSource;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import javax.sql.XADataSource;
@@ -38,7 +39,7 @@ public class PostgresMetadata implements DatabaseMetadata {
         this(container, false);
     }
 
-    public PostgresMetadata(PostgreSQLContainer<?> container, boolean hasXaEnabled) {
+    public PostgresMetadata(JdbcDatabaseContainer<?> container, boolean hasXaEnabled) {
         this.username = container.getUsername();
         this.password = container.getPassword();
         this.url = container.getJdbcUrl();

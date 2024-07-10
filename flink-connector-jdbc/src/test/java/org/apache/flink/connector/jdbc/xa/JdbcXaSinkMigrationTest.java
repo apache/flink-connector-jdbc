@@ -22,7 +22,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
 import org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
-import org.apache.flink.connector.jdbc.derby.testutils.DerbyDatabase;
+import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
 import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
 import org.apache.flink.streaming.api.operators.StreamSink;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
@@ -52,7 +52,8 @@ import static org.apache.flink.streaming.util.OperatorSnapshotUtil.readStateHand
 import static org.apache.flink.streaming.util.OperatorSnapshotUtil.writeStateHandle;
 
 /** Tests state migration for {@link JdbcXaSinkFunction}. */
-class JdbcXaSinkMigrationTest extends JdbcTestBase {
+@Deprecated
+class JdbcXaSinkMigrationTest extends JdbcTestBase implements DerbyTestBase {
 
     // write a snapshot:
     // java <CLASS_NAME> <VERSION>
@@ -60,7 +61,7 @@ class JdbcXaSinkMigrationTest extends JdbcTestBase {
     // mvn exec:java -Dexec.mainClass="<CLASS_NAME>" -Dexec.args='<VERSION>'
     // -Dexec.classpathScope=test -Dexec.cleanupDaemonThreads=false
     public static void main(String[] args) throws Exception {
-        new DerbyDatabase().startDatabase();
+        //        new DerbyDatabase();
         JdbcXaSinkMigrationTest test = new JdbcXaSinkMigrationTest();
         test.writeSnapshot(parseVersionArg(args));
     }

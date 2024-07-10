@@ -19,6 +19,8 @@ package org.apache.flink.connector.jdbc.postgres.testutils;
 
 import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseResource;
+import org.apache.flink.connector.jdbc.testutils.resources.DockerResource;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -44,16 +46,13 @@ public class PostgresDatabase extends DatabaseExtension implements PostgresImage
         return metadata;
     }
 
-    @Override
-    protected DatabaseMetadata startDatabase() throws Exception {
-        CONTAINER.start();
+    protected DatabaseMetadata getMetadataDB() {
         return getMetadata();
     }
 
     @Override
-    protected void stopDatabase() throws Exception {
-        CONTAINER.stop();
-        metadata = null;
+    protected DatabaseResource getResource() {
+        return new DockerResource(CONTAINER);
     }
 
     /** {@link PostgreSQLContainer} with XA enabled (by setting max_prepared_transactions). */
