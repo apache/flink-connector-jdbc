@@ -19,6 +19,8 @@ package org.apache.flink.connector.jdbc.oracle.testutils;
 
 import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseResource;
+import org.apache.flink.connector.jdbc.testutils.resources.DockerResource;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import org.testcontainers.containers.OracleContainer;
@@ -45,14 +47,12 @@ public class OracleDatabase extends DatabaseExtension implements OracleImages {
     }
 
     @Override
-    protected DatabaseMetadata startDatabase() throws Exception {
-        CONTAINER.start();
+    protected DatabaseMetadata getMetadataDB() {
         return getMetadata();
     }
 
     @Override
-    protected void stopDatabase() throws Exception {
-        CONTAINER.stop();
-        metadata = null;
+    protected DatabaseResource getResource() {
+        return new DockerResource(CONTAINER);
     }
 }

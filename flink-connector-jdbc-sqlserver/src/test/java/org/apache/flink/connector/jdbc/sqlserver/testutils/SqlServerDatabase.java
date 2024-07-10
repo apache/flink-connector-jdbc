@@ -19,6 +19,8 @@ package org.apache.flink.connector.jdbc.sqlserver.testutils;
 
 import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseResource;
+import org.apache.flink.connector.jdbc.testutils.resources.DockerResource;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkRuntimeException;
 
@@ -48,15 +50,13 @@ public class SqlServerDatabase extends DatabaseExtension implements SqlServerIma
     }
 
     @Override
-    protected DatabaseMetadata startDatabase() throws Exception {
-        CONTAINER.start();
+    protected DatabaseMetadata getMetadataDB() {
         return getMetadata();
     }
 
     @Override
-    protected void stopDatabase() throws Exception {
-        CONTAINER.stop();
-        metadata = null;
+    protected DatabaseResource getResource() {
+        return new DockerResource(CONTAINER);
     }
 
     /** {@link MSSQLServerContainer} with Xa. */

@@ -19,6 +19,8 @@ package org.apache.flink.connector.jdbc.h2.testutils;
 
 import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseResource;
+import org.apache.flink.connector.jdbc.testutils.resources.MemoryResource;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import java.sql.DriverManager;
@@ -26,31 +28,36 @@ import java.sql.DriverManager;
 /** H2 database for testing. */
 public class H2XaDatabase extends DatabaseExtension {
 
-    private static H2Metadata metadata;
+    private static final H2Metadata metadata = new H2Metadata("test");
 
     public static H2Metadata getMetadata() {
-        if (metadata == null) {
-            metadata = new H2Metadata("test");
-        }
         return metadata;
     }
 
     @Override
-    protected DatabaseMetadata startDatabase() throws Exception {
-        DatabaseMetadata metadata = getMetadata();
-        try {
-            Class.forName(metadata.getDriverClass());
-            DriverManager.getConnection(
-                            String.format(
-                                    "%s;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS %s\\;SET SCHEMA %s",
-                                    metadata.getJdbcUrl(), "test", "test"))
-                    .close();
-        } catch (Exception e) {
-            throw new FlinkRuntimeException(e);
-        }
-        return metadata;
+    protected DatabaseMetadata getMetadataDB() {
+        return getMetadata();
     }
 
     @Override
-    protected void stopDatabase() throws Exception {}
+    protected DatabaseResource getResource() {
+        return new MemoryResource() {
+            @Override
+            public void start() {
+                try {
+                    Class.forName(metadata.getDriverClass());
+                    DriverManager.getConnection(
+                                    String.format(
+                                            "%s;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS %s\\;SET SCHEMA %s",
+                                            metadata.getJdbcUrl(), "test", "test"))
+                            .close();
+                } catch (Exception e) {
+                    throw new FlinkRuntimeException(e);
+                }
+            }
+
+            @Override
+            public void stop() {}
+        };
+    }
 }

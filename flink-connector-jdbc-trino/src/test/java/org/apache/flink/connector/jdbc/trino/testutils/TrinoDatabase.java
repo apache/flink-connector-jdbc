@@ -22,6 +22,8 @@ import org.apache.flink.connector.jdbc.postgres.testutils.PostgresImages;
 import org.apache.flink.connector.jdbc.postgres.testutils.PostgresMetadata;
 import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseResource;
+import org.apache.flink.connector.jdbc.testutils.resources.DockerResource;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import org.testcontainers.containers.BindMode;
@@ -33,6 +35,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 /** A Trino database for testing. */
 public class TrinoDatabase extends DatabaseExtension implements TrinoImages, PostgresImages {
@@ -75,34 +78,52 @@ public class TrinoDatabase extends DatabaseExtension implements TrinoImages, Pos
     }
 
     @Override
-    protected DatabaseMetadata startDatabase() throws Exception {
-        CONTAINER_DB.start();
-
-        Path tempFile = Files.createTempFile(null, null);
-        String postgresContent =
-                "connector.name=postgresql\n"
-                        + String.format(
-                                "connection-url=jdbc:postgresql://%s:%s/test\n",
-                                CONTAINER_DB_ALIAS, CONTAINER_DB_PORT)
-                        + String.format("connection-user=%s\n", CONTAINER_DB.getUsername())
-                        + String.format("connection-password=%s\n", CONTAINER_DB.getPassword());
-        Files.write(tempFile, postgresContent.getBytes(StandardCharsets.UTF_8));
-
-        CONTAINER
-                .withDatabaseName("postgres/public")
-                .withFileSystemBind(
-                        tempFile.toFile().getAbsolutePath(),
-                        "/etc/trino/catalog/postgres.properties",
-                        BindMode.READ_WRITE)
-                .waitingFor(Wait.forHttp("/ui/login.html").forStatusCode(200));
-        CONTAINER.start();
+    protected DatabaseMetadata getMetadataDB() {
         return getMetadata();
     }
 
     @Override
-    protected void stopDatabase() throws Exception {
-        CONTAINER.stop();
-        CONTAINER_DB.stop();
-        metadata = null;
+    protected DatabaseResource getResource() {
+        return new DatabaseResource() {
+            @Override
+            public void start() {
+                try {
+                    CONTAINER_DB.start();
+
+                    Path tempFile = Files.createTempFile(null, null);
+                    String postgresContent =
+                            "connector.name=postgresql\n"
+                                    + String.format(
+                                            "connection-url=jdbc:postgresql://%s:%s/test\n",
+                                            CONTAINER_DB_ALIAS, CONTAINER_DB_PORT)
+                                    + String.format(
+                                            "connection-user=%s\n", CONTAINER_DB.getUsername())
+                                    + String.format(
+                                            "connection-password=%s\n", CONTAINER_DB.getPassword());
+                    Files.write(tempFile, postgresContent.getBytes(StandardCharsets.UTF_8));
+
+                    CONTAINER
+                            .withDatabaseName("postgres/public")
+                            .withFileSystemBind(
+                                    tempFile.toFile().getAbsolutePath(),
+                                    "/etc/trino/catalog/postgres.properties",
+                                    BindMode.READ_WRITE)
+                            .waitingFor(Wait.forHttp("/ui/login.html").forStatusCode(200));
+                    CONTAINER.start();
+                } catch (Exception e) {
+                    throw new FlinkRuntimeException(e);
+                }
+            }
+
+            @Override
+            public void stop() {
+                Arrays.asList(CONTAINER, CONTAINER_DB)
+                        .forEach(
+                                container -> {
+                                    container.stop();
+                                    DockerResource.cleanContainers(container);
+                                });
+            }
+        };
     }
 }

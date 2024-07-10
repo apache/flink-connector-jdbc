@@ -20,6 +20,8 @@ package org.apache.flink.connector.jdbc.db2.testutils;
 
 import org.apache.flink.connector.jdbc.testutils.DatabaseExtension;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
+import org.apache.flink.connector.jdbc.testutils.DatabaseResource;
+import org.apache.flink.connector.jdbc.testutils.resources.DockerResource;
 import org.apache.flink.util.FlinkRuntimeException;
 
 import org.slf4j.Logger;
@@ -56,14 +58,12 @@ public class Db2Database extends DatabaseExtension implements Db2Images {
     }
 
     @Override
-    protected DatabaseMetadata startDatabase() throws Exception {
-        CONTAINER.start();
+    protected DatabaseMetadata getMetadataDB() {
         return getMetadata();
     }
 
     @Override
-    protected void stopDatabase() throws Exception {
-        CONTAINER.stop();
-        metadata = null;
+    protected DatabaseResource getResource() {
+        return new DockerResource(CONTAINER);
     }
 }

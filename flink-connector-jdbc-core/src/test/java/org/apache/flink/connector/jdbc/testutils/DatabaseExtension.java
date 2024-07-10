@@ -35,42 +35,21 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.junit.platform.commons.support.AnnotationSupport.findRepeatableAnnotations;
 
 /** Database extension for testing. */
 public abstract class DatabaseExtension
-        implements BeforeAllCallback,
-                AfterAllCallback,
-                BeforeEachCallback,
-                AfterEachCallback,
-                ExtensionContext.Store.CloseableResource {
+        implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback, AfterEachCallback {
 
-    /**
-     * Database Lifecycle for testing. The goal it's that all database containers are create only
-     * one time.
-     */
-    public enum Lifecycle {
-        /** Database will be instantiated only one time. */
-        PER_EXECUTION,
-        /** Database will be instantiated by class. */
-        PER_CLASS
-    }
+    protected abstract DatabaseMetadata getMetadataDB();
 
-    protected abstract DatabaseMetadata startDatabase() throws Exception;
-
-    protected abstract void stopDatabase() throws Exception;
+    protected abstract DatabaseResource getResource();
 
     private final String uniqueKey = this.getClass().getSimpleName();
-
-    protected Lifecycle getLifecycle() {
-        return Lifecycle.PER_EXECUTION;
-    }
-
-    private ExtensionContext.Store getStore(ExtensionContext context) {
-        return context.getRoot().getStore(Namespace.GLOBAL);
-    }
+    private final String uniqueResource = String.format("%sResource", uniqueKey);
 
     private DatabaseTest getDatabaseBaseTest(Class<?> clazz) throws Exception {
         DatabaseTest dbClazz = null;
@@ -95,8 +74,7 @@ public abstract class DatabaseExtension
                 .filter(DatabaseTest.class::isAssignableFrom)
                 .ifPresent(
                         clazz -> {
-                            DatabaseMetadata metadata =
-                                    getStore(context).get(uniqueKey, DatabaseMetadata.class);
+                            DatabaseMetadata metadata = getMetadataDB();
                             if (metadata != null) {
                                 try (Connection conn = metadata.getConnection()) {
                                     for (TableManaged table :
@@ -132,15 +110,19 @@ public abstract class DatabaseExtension
         return false;
     }
 
+    private DatabaseResource getResource(ExtensionContext context) {
+        return context.getRoot()
+                .getStore(Namespace.GLOBAL)
+                .getOrComputeIfAbsent(uniqueResource, startResource(), DatabaseResource.class);
+    }
+
     @Override
     public final void beforeAll(ExtensionContext context) throws Exception {
         if (ignoreTestDatabase(context)) {
             return;
         }
 
-        if (getStore(context).get(uniqueKey) == null) {
-            getStore(context).put(uniqueKey, startDatabase());
-        }
+        getResource(context);
 
         getManagedTables(context, TableManaged::createTable);
     }
@@ -153,6 +135,7 @@ public abstract class DatabaseExtension
         if (ignoreTestDatabase(context)) {
             return;
         }
+
         getManagedTables(context, TableManaged::deleteTable);
     }
 
@@ -161,18 +144,9 @@ public abstract class DatabaseExtension
         if (ignoreTestDatabase(context)) {
             return;
         }
-        getManagedTables(context, TableManaged::dropTable);
-        if (Lifecycle.PER_CLASS == getLifecycle()) {
-            stopDatabase();
-            getStore(context).remove(uniqueKey, DatabaseMetadata.class);
-        }
-    }
 
-    @Override
-    public final void close() throws Throwable {
-        if (Lifecycle.PER_EXECUTION == getLifecycle()) {
-            stopDatabase();
-        }
+        getManagedTables(context, TableManaged::dropTable);
+        getResource(context);
     }
 
     private Set<String> retrieveDatabaseExtensions(final ExtensionContext context) {
@@ -198,5 +172,13 @@ public abstract class DatabaseExtension
                 };
 
         return retrieveExtensions.apply(context, new HashSet<>());
+    }
+
+    private Function<String, DatabaseResource> startResource() {
+        return s -> {
+            DatabaseResource resource = getResource();
+            resource.start();
+            return resource;
+        };
     }
 }
