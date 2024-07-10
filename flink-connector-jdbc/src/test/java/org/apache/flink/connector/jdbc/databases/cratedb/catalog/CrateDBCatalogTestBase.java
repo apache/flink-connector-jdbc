@@ -164,7 +164,7 @@ class CrateDBCatalogTestBase implements JdbcITCaseBase, CrateDBTestBase {
                         .column("ip", DataTypes.STRING())
                         .column("timestamp", DataTypes.TIMESTAMP(6))
                         //  .column("timestamptz", DataTypes.TIMESTAMP_WITH_TIME_ZONE(6))
-                        .primaryKeyNamed("primitive_table_pk", "short", "int")
+                        .primaryKeyNamed("primitive_table_pk", "int", "short")
                         .build(),
                 "int integer, "
                         + "short short, "
@@ -184,7 +184,7 @@ class CrateDBCatalogTestBase implements JdbcITCaseBase, CrateDBTestBase {
                         + "ip ip, "
                         + "timestamp timestamp, "
                         // + "timestamptz timestamptz, "
-                        + "PRIMARY KEY (short, int)",
+                        + "PRIMARY KEY (int, short)",
                 // Values
                 "1,"
                         + "3,"

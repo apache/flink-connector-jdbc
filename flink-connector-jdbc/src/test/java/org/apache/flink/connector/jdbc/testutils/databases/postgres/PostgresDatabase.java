@@ -30,7 +30,7 @@ import static org.apache.flink.util.Preconditions.checkArgument;
 public class PostgresDatabase extends DatabaseExtension implements PostgresImages {
 
     private static final PostgreSQLContainer<?> CONTAINER =
-            new PostgresXaContainer(POSTGRES_15).withMaxConnections(10).withMaxTransactions(50);
+            new PostgresXaContainer(POSTGRES_16).withMaxConnections(10).withMaxTransactions(50);
 
     private static PostgresMetadata metadata;
 

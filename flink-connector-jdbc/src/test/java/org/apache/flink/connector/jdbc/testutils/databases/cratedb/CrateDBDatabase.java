@@ -33,7 +33,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 /** A CrateDB database for testing. */
 public class CrateDBDatabase extends DatabaseExtension {
 
-    private static final String CRATEDB = "crate:5.3.1";
+    private static final String CRATEDB = "crate:5.7.2";
     private static final int CRATEDB_PG_PORT = 5432;
     private static final int CRATEDB_HTTP_PORT = 4200;
 

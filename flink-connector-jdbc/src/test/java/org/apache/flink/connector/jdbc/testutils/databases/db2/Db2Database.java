@@ -35,7 +35,7 @@ public class Db2Database extends DatabaseExtension {
 
     @Container
     protected static final Db2Container CONTAINER =
-            new Db2Container()
+            new Db2Container("icr.io/db2_community/db2:11.5.8.0")
                     .withUsername("db2inst1")
                     .withPassword("flinkpw")
                     .withEnv("AUTOCONFIG", "false")
