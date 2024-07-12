@@ -33,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * transaction is not yet committed). But XA support isn't full, so for some scenarios {@link
  * H2XaDsWrapper wrapper} is used, and for some - Derby.
  */
+@Deprecated
 class JdbcXaSinkH2Test extends JdbcXaSinkTestBase implements H2XaTestBase {
 
     @Override

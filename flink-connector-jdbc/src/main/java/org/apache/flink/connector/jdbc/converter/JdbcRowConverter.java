@@ -26,7 +26,7 @@ import org.apache.flink.table.data.RowData;
  * Converter that is responsible to convert between JDBC object and Flink SQL internal data
  * structure {@link RowData}.
  *
- * @deprecated use JdbcDialectConverter
+ * @deprecated Use {@link JdbcDialectConverter}
  */
 @Deprecated
 @PublicEvolving

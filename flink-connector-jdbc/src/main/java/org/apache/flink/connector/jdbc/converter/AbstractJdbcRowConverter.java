@@ -24,7 +24,7 @@ import org.apache.flink.table.types.logical.RowType;
 /**
  * Base class for all converters that convert between JDBC object and Flink internal object.
  *
- * @deprecated use AbstractDialectConverter
+ * @deprecated Use {@link AbstractDialectConverter}
  */
 @Deprecated
 public abstract class AbstractJdbcRowConverter extends AbstractDialectConverter {

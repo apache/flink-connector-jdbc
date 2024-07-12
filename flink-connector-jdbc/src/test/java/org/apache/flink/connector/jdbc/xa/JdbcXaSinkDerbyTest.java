@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * {@link JdbcXaSinkFunction} tests using Derby DB. Derby supports XA but doesn't use MVCC, so we
  * can't check anything before all transactions are completed.
  */
+@Deprecated
 class JdbcXaSinkDerbyTest extends JdbcXaSinkTestBase {
 
     /**

@@ -22,6 +22,7 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.xid.XaXidTest;
 
 /** XaSerializersTest. */
+@Deprecated
 class CheckpointAndXidSerializersTest extends SerializerTestBase<CheckpointAndXid> {
     private static final CheckpointAndXid CHECKPOINT_AND_XID =
             CheckpointAndXid.createRestored(1L, 1, XaXidTest.XID);

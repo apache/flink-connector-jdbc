@@ -29,7 +29,7 @@ import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
  * <p>Implementors should be careful to check the default SQL statements are performant for their
  * specific dialect and override them if necessary.
  *
- * @deprecated use org.apache.flink.connector.jdbc.core.table.dialect.AbstractDialect
+ * @deprecated Use {@link org.apache.flink.connector.jdbc.core.database.dialect.AbstractDialect}
  */
 @Deprecated
 @PublicEvolving

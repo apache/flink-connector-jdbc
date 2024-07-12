@@ -39,8 +39,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 /**
  * Builder to construct {@link JdbcSink}.
  *
- * @deprecated please use {@link
- *     org.apache.flink.connector.jdbc.core.datastream.sink.JdbcSinkBuilder}
+ * @deprecated Use {@link org.apache.flink.connector.jdbc.core.datastream.sink.JdbcSinkBuilder}
  */
 @PublicEvolving
 @Deprecated

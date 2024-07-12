@@ -37,7 +37,7 @@ import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuth
 /**
  * Catalogs for relational databases via JDBC.
  *
- * @deprecated user org.apache.flink.connector.jdbc.core.table.catalog.JdbcCatalog
+ * @deprecated Use {@link org.apache.flink.connector.jdbc.core.database.catalog.JdbcCatalog}
  */
 @Deprecated
 @PublicEvolving

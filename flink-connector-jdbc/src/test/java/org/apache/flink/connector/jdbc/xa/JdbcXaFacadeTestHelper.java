@@ -33,6 +33,7 @@ import java.util.stream.IntStream;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Deprecated
 class JdbcXaFacadeTestHelper implements AutoCloseable {
     private final String table;
     private final DatabaseMetadata metadata;

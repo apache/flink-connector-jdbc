@@ -23,7 +23,7 @@ import org.apache.flink.connector.jdbc.core.database.catalog.JdbcCatalogTypeMapp
 /**
  * Separate the jdbc meta-information type to flink table type into the interface.
  *
- * @deprecated use JdbcCatalogTypeMapper
+ * @deprecated Use {@link JdbcCatalogTypeMapper}
  */
 @Deprecated
 public interface JdbcDialectTypeMapper extends JdbcCatalogTypeMapper {}

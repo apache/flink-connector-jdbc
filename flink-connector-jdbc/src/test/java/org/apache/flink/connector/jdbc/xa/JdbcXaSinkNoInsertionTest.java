@@ -28,6 +28,7 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Tests that data is not inserted ahead of time. */
+@Deprecated
 class JdbcXaSinkNoInsertionTest extends JdbcXaSinkTestBase implements H2XaTestBase {
 
     @Override
