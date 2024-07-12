@@ -25,6 +25,7 @@ import org.apache.flink.util.Preconditions;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.xa.JdbcXaSinkTestBase.TEST_SINK_CONTEXT;
 
+@Deprecated
 class JdbcXaSinkTestHelper implements AutoCloseable {
 
     private final JdbcXaSinkFunction<TestEntry> sink;

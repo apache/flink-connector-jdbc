@@ -36,6 +36,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /** {@link XaFacadeImpl} tests. */
+@Deprecated
 class JdbcXaFacadeImplTest extends JdbcTestBase {
 
     private static final Xid XID =

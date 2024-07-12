@@ -23,7 +23,7 @@ import org.apache.flink.annotation.PublicEvolving;
 /**
  * Options for the JDBC connector.
  *
- * @deprecated please use {@link org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions}
+ * @deprecated Use {@link org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions}
  */
 @PublicEvolving
 @Deprecated

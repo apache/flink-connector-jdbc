@@ -30,7 +30,11 @@ import org.apache.flink.util.function.SerializableSupplier;
 
 import javax.sql.XADataSource;
 
-/** Facade to create JDBC {@link SinkFunction sinks}. */
+/**
+ * Facade to create JDBC {@link SinkFunction sinks}.
+ *
+ * @deprecated Use {@link org.apache.flink.connector.jdbc.core.datastream.Jdbc}
+ */
 @PublicEvolving
 @Deprecated
 public class JdbcSink {

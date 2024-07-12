@@ -89,8 +89,7 @@ import java.util.Objects;
  * @see PreparedStatement
  * @see DriverManager
  * @see JdbcSource
- * @deprecated please use {@link
- *     org.apache.flink.connector.jdbc.core.datastream.source.JdbcSourceBuilder}
+ * @deprecated Use {@link org.apache.flink.connector.jdbc.core.datastream.source.JdbcSourceBuilder}
  */
 @PublicEvolving
 @Deprecated

@@ -30,7 +30,7 @@ import org.apache.flink.util.StringUtils;
  * current classpath to be found.
  *
  * @see org.apache.flink.connector.jdbc.dialect.JdbcDialect
- * @deprecated use JdbcFactory
+ * @deprecated Use {@link JdbcFactory}
  */
 @Deprecated
 public interface JdbcDialectFactory extends JdbcFactory {

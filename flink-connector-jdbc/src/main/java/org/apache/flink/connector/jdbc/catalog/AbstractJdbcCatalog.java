@@ -21,7 +21,7 @@ package org.apache.flink.connector.jdbc.catalog;
 /**
  * Abstract catalog for any JDBC catalogs.
  *
- * @deprecated use org.apache.flink.connector.jdbc.core.table.catalog.AbstractJdbcCatalog
+ * @deprecated Use {@link org.apache.flink.connector.jdbc.core.database.catalog.AbstractJdbcCatalog}
  */
 @Deprecated
 public abstract class AbstractJdbcCatalog

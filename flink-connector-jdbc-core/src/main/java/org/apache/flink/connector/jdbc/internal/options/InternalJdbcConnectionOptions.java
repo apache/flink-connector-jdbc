@@ -179,7 +179,7 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
 
         /**
          * optional, Handle the SQL dialect of jdbc driver. If not set, it will be infer by {@link
-         * JdbcFactoryLoader#load} from DB url.
+         * JdbcFactoryLoader#loadDialect} from DB url.
          */
         public Builder setDialect(JdbcDialect dialect) {
             this.dialect = dialect;

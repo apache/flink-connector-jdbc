@@ -72,6 +72,7 @@ import static org.apache.flink.util.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** A simple end-to-end test for {@link JdbcXaSinkFunction}. */
+@Deprecated
 public abstract class JdbcExactlyOnceSinkE2eTest implements DatabaseTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcExactlyOnceSinkE2eTest.class);

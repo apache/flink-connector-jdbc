@@ -42,7 +42,8 @@ import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 /**
  * Factory for {@link JdbcCatalog}.
  *
- * @deprecated use org.apache.flink.connector.jdbc.core.table.catalog.factory.JdbcCatalogFactory
+ * @deprecated Use {@link
+ *     org.apache.flink.connector.jdbc.core.database.catalog.factory.JdbcCatalogFactory}.
  */
 @Deprecated
 public class JdbcCatalogFactory implements CatalogFactory {

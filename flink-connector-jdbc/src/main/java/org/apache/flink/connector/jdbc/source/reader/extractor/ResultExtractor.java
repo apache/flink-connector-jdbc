@@ -26,7 +26,7 @@ import java.sql.ResultSet;
  * The Extractor to extract the data from {@link ResultSet}.
  *
  * @param <T> The target data type.
- * @deprecated please use {@link
+ * @deprecated Use {@link
  *     org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor}
  */
 @PublicEvolving

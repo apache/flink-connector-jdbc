@@ -44,7 +44,7 @@ import java.util.Collections;
  * Flink Sink to produce data into a jdbc database.
  *
  * @see JdbcSinkBuilder on how to construct a JdbcSink
- * @deprecated please use {@link org.apache.flink.connector.jdbc.core.datastream.sink.JdbcSink}
+ * @deprecated Use {@link org.apache.flink.connector.jdbc.core.datastream.sink.JdbcSink}
  */
 @PublicEvolving
 @Deprecated

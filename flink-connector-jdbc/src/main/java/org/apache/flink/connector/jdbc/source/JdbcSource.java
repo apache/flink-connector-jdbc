@@ -53,7 +53,7 @@ import java.util.Objects;
 /**
  * JDBC source.
  *
- * @deprecated please use {@link org.apache.flink.connector.jdbc.core.datastream.source.JdbcSource}
+ * @deprecated Use {@link org.apache.flink.connector.jdbc.core.datastream.source.JdbcSource}
  */
 @PublicEvolving
 @Deprecated
