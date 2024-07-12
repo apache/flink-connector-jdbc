@@ -528,3 +528,5 @@ Still not supported in Python API.
 Please also take Oracle connection pooling into account.
 
 Please refer to the `JdbcXaSinkFunction` documentation for more details.
+
+{{< top >}}
