@@ -52,7 +52,7 @@ import static org.apache.flink.streaming.util.OperatorSnapshotUtil.readStateHand
 import static org.apache.flink.streaming.util.OperatorSnapshotUtil.writeStateHandle;
 
 /** Tests state migration for {@link JdbcXaSinkFunction}. */
-public class JdbcXaSinkMigrationTest extends JdbcTestBase {
+class JdbcXaSinkMigrationTest extends JdbcTestBase {
 
     // write a snapshot:
     // java <CLASS_NAME> <VERSION>

@@ -62,7 +62,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test base for {@link MySqlCatalog}. */
-public abstract class MySqlCatalogTestBase implements JdbcITCaseBase, DatabaseTest {
+abstract class MySqlCatalogTestBase implements JdbcITCaseBase, DatabaseTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(MySqlCatalogTestBase.class);
     private static final String TEST_CATALOG_NAME = "mysql_catalog";

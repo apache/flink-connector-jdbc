@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Tests for {@link OceanBaseDialect}. */
-public class OceanBaseDialectTest {
+class OceanBaseDialectTest {
 
     @Test
     void testMysqlAppendDefaultUrlProperties() {

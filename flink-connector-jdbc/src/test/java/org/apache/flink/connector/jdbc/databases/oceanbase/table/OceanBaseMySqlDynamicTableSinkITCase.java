@@ -30,7 +30,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.fiel
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.pkField;
 
 /** The Table Sink ITCase for OceanBase MySql mode. */
-public class OceanBaseMySqlDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
+class OceanBaseMySqlDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
         implements OceanBaseMysqlTestBase {
 
     @Override

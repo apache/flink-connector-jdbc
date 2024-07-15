@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /** The PostgresSql params for {@link JdbcDialectTypeTest}. */
-public class PostgresDialectTypeTest extends JdbcDialectTypeTest {
+class PostgresDialectTypeTest extends JdbcDialectTypeTest {
 
     @Override
     protected String testDialect() {

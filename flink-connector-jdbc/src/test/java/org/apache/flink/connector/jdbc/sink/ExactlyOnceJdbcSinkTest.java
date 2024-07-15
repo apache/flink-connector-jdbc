@@ -21,7 +21,7 @@ import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 
 /** Smoke tests for the {@link JdbcSink} and the underlying classes. */
-public class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
+class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
 
     @Override
     protected <T> JdbcSink<T> finishSink(JdbcSinkBuilder<T> builder) {

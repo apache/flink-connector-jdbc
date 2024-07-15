@@ -37,7 +37,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.pkFi
 
 /** The Table Sink ITCase for OceanBase Oracle mode. */
 @Disabled
-public class OceanBaseOracleDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
+class OceanBaseOracleDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
         implements OceanBaseOracleTestBase {
 
     @Override

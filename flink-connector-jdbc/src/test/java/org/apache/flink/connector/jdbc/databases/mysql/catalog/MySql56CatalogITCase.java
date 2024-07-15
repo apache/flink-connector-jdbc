@@ -24,7 +24,7 @@ import org.apache.flink.connector.jdbc.testutils.databases.mysql.MySql56Database
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** E2E test for {@link MySqlCatalog} with MySql version 5.6. */
-public class MySql56CatalogITCase extends MySqlCatalogTestBase {
+class MySql56CatalogITCase extends MySqlCatalogTestBase {
 
     @RegisterExtension private static final MySql56Database DATABASE = new MySql56Database();
 

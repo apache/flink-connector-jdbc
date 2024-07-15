@@ -22,4 +22,4 @@ import org.apache.flink.connector.jdbc.databases.db2.Db2TestBase;
 import org.apache.flink.connector.jdbc.xa.JdbcExactlyOnceSinkE2eTest;
 
 /** A simple end-to-end test for {@link JdbcExactlyOnceSinkE2eTest}. */
-public class Db2ExactlyOnceSinkE2eTest extends JdbcExactlyOnceSinkE2eTest implements Db2TestBase {}
+class Db2ExactlyOnceSinkE2eTest extends JdbcExactlyOnceSinkE2eTest implements Db2TestBase {}

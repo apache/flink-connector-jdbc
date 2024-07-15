@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /** The CrateDB params for {@link JdbcDialectTypeTest}. */
-public class CrateDBDialectTypeTest extends JdbcDialectTypeTest {
+class CrateDBDialectTypeTest extends JdbcDialectTypeTest {
 
     @Override
     protected String testDialect() {

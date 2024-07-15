@@ -21,4 +21,4 @@ package org.apache.flink.connector.jdbc.databases.mysql.catalog;
 import org.apache.flink.connector.jdbc.databases.mysql.MySqlTestBase;
 
 /** E2E test for {@link MySqlCatalog}. */
-public class MySqlCatalogITCase extends MySqlCatalogTestBase implements MySqlTestBase {}
+class MySqlCatalogITCase extends MySqlCatalogTestBase implements MySqlTestBase {}

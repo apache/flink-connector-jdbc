@@ -35,7 +35,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.fiel
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.pkField;
 
 /** The Table Source ITCase for OceanBase MySql mode. */
-public class OceanBaseMySqlDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
+class OceanBaseMySqlDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
         implements OceanBaseMysqlTestBase {
 
     @Override

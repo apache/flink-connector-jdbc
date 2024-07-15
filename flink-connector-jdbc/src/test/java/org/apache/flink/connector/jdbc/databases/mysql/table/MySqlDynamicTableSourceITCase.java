@@ -36,8 +36,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.fiel
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 
 /** The Table Source ITCase for {@link MySqlDialect}. */
-public class MySqlDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
-        implements MySqlTestBase {
+class MySqlDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase implements MySqlTestBase {
 
     @Override
     protected TableRow createInputTable() {

@@ -36,7 +36,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.fiel
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 
 /** The Table Source ITCase for {@link PostgresDialect}. */
-public class PostgresDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
+class PostgresDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
         implements PostgresTestBase {
 
     @Override

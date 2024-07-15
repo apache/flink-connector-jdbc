@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.sink;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 
 /** Smoke tests for the {@link JdbcSink} and the underlying classes. */
-public class AtLeastOnceJdbcSinkTest extends BaseJdbcSinkTest {
+class AtLeastOnceJdbcSinkTest extends BaseJdbcSinkTest {
 
     @Override
     protected <T> JdbcSink<T> finishSink(JdbcSinkBuilder<T> builder) {

@@ -37,8 +37,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.fiel
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 
 /** The Table Source ITCase for {@link Db2Dialect}. */
-public class Db2DynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
-        implements Db2TestBase {
+class Db2DynamicTableSourceITCase extends JdbcDynamicTableSourceITCase implements Db2TestBase {
 
     @Override
     protected TableRow createInputTable() {

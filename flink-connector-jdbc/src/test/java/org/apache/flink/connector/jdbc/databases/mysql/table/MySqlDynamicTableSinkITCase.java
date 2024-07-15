@@ -30,8 +30,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.pkFi
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 
 /** The Table Sink ITCase for {@link MySqlDialect}. */
-public class MySqlDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
-        implements MySqlTestBase {
+class MySqlDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implements MySqlTestBase {
 
     @Override
     protected TableRow createUpsertOutputTable() {
