@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /** The MySql params for {@link JdbcDialectTypeTest}. */
-public class MySqlDialectTypeTest extends JdbcDialectTypeTest {
+class MySqlDialectTypeTest extends JdbcDialectTypeTest {
 
     @Override
     protected String testDialect() {

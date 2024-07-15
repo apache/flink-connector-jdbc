@@ -35,8 +35,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.pkFi
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 
 /** The Table Sink ITCase for {@link OracleDialect}. */
-public class OracleDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
-        implements OracleTestBase {
+class OracleDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implements OracleTestBase {
 
     @Override
     protected TableRow createUpsertOutputTable() {

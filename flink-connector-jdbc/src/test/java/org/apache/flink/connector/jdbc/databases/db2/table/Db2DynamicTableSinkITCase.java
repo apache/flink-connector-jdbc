@@ -30,7 +30,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.pkFi
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 
 /** The Table Sink ITCase for {@link Db2Dialect}. */
-public class Db2DynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implements Db2TestBase {
+class Db2DynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implements Db2TestBase {
     @Override
     protected TableRow createUpsertOutputTable() {
         return tableRow(

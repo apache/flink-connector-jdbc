@@ -28,7 +28,7 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.rules.TestName;
 
 /** Plan tests for JDBC connector, for example, testing projection push down. */
-public class JdbcTablePlanTest extends TableTestBase {
+class JdbcTablePlanTest extends TableTestBase {
 
     private final StreamTableTestUtil util = streamTestUtil(TableConfig.getDefault());
 

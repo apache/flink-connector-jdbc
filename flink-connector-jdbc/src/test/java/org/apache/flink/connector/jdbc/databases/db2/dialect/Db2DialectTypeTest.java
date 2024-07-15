@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /** The Db2 params for {@link JdbcDialectTypeTest}. */
-public class Db2DialectTypeTest extends JdbcDialectTypeTest {
+class Db2DialectTypeTest extends JdbcDialectTypeTest {
 
     @Override
     protected String testDialect() {

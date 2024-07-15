@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /** The OceanBase MySql mode params for {@link JdbcDialectTypeTest}. */
-public class OceanBaseMysqlDialectTypeTest extends JdbcDialectTypeTest {
+class OceanBaseMysqlDialectTypeTest extends JdbcDialectTypeTest {
 
     public OceanBaseMysqlDialectTypeTest() {
         ddlFormat =

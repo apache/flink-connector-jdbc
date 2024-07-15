@@ -30,7 +30,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.pkFi
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 
 /** The Table Sink ITCase for {@link SqlServerDialect}. */
-public class SqlServerDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
+class SqlServerDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
         implements SqlServerTestBase {
 
     @Override

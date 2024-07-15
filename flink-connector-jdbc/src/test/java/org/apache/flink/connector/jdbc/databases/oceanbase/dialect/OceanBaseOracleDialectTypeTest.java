@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /** The OceanBase Oracle mode params for {@link JdbcDialectTypeTest}. */
-public class OceanBaseOracleDialectTypeTest extends JdbcDialectTypeTest {
+class OceanBaseOracleDialectTypeTest extends JdbcDialectTypeTest {
 
     public OceanBaseOracleDialectTypeTest() {
         ddlFormat =

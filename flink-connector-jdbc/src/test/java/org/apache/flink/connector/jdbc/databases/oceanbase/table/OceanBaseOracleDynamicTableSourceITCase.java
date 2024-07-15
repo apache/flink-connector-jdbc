@@ -37,7 +37,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.fiel
 
 /** The Table Source ITCase for OceanBase Oracle mode. */
 @Disabled
-public class OceanBaseOracleDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
+class OceanBaseOracleDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
         implements OceanBaseOracleTestBase {
 
     @Override

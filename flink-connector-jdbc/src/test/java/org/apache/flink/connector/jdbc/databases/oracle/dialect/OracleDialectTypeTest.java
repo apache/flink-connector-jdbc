@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /** The Oracle params for {@link JdbcDialectTypeTest}. */
-public class OracleDialectTypeTest extends JdbcDialectTypeTest {
+class OracleDialectTypeTest extends JdbcDialectTypeTest {
 
     @Override
     protected String testDialect() {

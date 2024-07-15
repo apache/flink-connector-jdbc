@@ -23,5 +23,4 @@ import org.apache.flink.connector.jdbc.databases.derby.dialect.DerbyDialect;
 import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSinkITCase;
 
 /** The Table Sink ITCase for {@link DerbyDialect}. */
-public class DerbyDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
-        implements DerbyTestBase {}
+class DerbyDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implements DerbyTestBase {}

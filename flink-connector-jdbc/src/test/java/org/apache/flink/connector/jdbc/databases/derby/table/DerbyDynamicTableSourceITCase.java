@@ -36,8 +36,7 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.fiel
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 
 /** The Table Source ITCase for {@link DerbyDialect}. */
-public class DerbyDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
-        implements DerbyTestBase {
+class DerbyDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase implements DerbyTestBase {
 
     protected TableRow createInputTable() {
         return tableRow(
