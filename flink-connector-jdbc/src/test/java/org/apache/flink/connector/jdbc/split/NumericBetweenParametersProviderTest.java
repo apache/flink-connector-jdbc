@@ -30,7 +30,7 @@ class NumericBetweenParametersProviderTest {
     @Test
     void testBatchSizeDivisible() {
         JdbcNumericBetweenParametersProvider provider =
-                new JdbcNumericBetweenParametersProvider(-5, 9).ofBatchSize(3);
+                new JdbcNumericBetweenParametersProvider(-5, 9, false).ofBatchSize(3);
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
@@ -46,7 +46,7 @@ class NumericBetweenParametersProviderTest {
     @Test
     void testBatchSizeNotDivisible() {
         JdbcNumericBetweenParametersProvider provider =
-                new JdbcNumericBetweenParametersProvider(-5, 11).ofBatchSize(4);
+                new JdbcNumericBetweenParametersProvider(-5, 11, false).ofBatchSize(4);
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
@@ -62,7 +62,7 @@ class NumericBetweenParametersProviderTest {
     @Test
     void testBatchSizeTooLarge() {
         JdbcNumericBetweenParametersProvider provider =
-                new JdbcNumericBetweenParametersProvider(0, 2).ofBatchSize(5);
+                new JdbcNumericBetweenParametersProvider(0, 2, false).ofBatchSize(5);
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {new long[] {0, 2}};
@@ -72,7 +72,7 @@ class NumericBetweenParametersProviderTest {
     @Test
     void testBatchNumDivisible() {
         JdbcNumericBetweenParametersProvider provider =
-                new JdbcNumericBetweenParametersProvider(-5, 9).ofBatchNum(5);
+                new JdbcNumericBetweenParametersProvider(-5, 9, false).ofBatchNum(5);
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
@@ -88,7 +88,7 @@ class NumericBetweenParametersProviderTest {
     @Test
     void testBatchNumNotDivisible() {
         JdbcNumericBetweenParametersProvider provider =
-                new JdbcNumericBetweenParametersProvider(-5, 11).ofBatchNum(5);
+                new JdbcNumericBetweenParametersProvider(-5, 11, false).ofBatchNum(5);
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {
@@ -104,7 +104,7 @@ class NumericBetweenParametersProviderTest {
     @Test
     void testBatchNumTooLarge() {
         JdbcNumericBetweenParametersProvider provider =
-                new JdbcNumericBetweenParametersProvider(0, 2).ofBatchNum(5);
+                new JdbcNumericBetweenParametersProvider(0, 2, false).ofBatchNum(5);
         Serializable[][] actual = provider.getParameterValues();
 
         long[][] expected = {

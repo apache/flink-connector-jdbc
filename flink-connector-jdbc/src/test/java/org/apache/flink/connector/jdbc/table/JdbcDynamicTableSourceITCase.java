@@ -18,9 +18,18 @@
 
 package org.apache.flink.connector.jdbc.table;
 
+import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.jdbc.JdbcInputFormat;
+import org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialect;
+import org.apache.flink.connector.jdbc.databases.oracle.dialect.OracleDialect;
+import org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialect;
+import org.apache.flink.connector.jdbc.databases.sqlserver.dialect.SqlServerDialect;
+import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
+import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
+import org.apache.flink.connector.jdbc.testutils.databases.DbName;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -47,12 +56,14 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -101,6 +112,15 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
     public static StreamExecutionEnvironment env;
     public static TableEnvironment tEnv;
 
+    private static final List<DbName> dbNameList = new ArrayList<>();
+
+    static {
+        dbNameList.add(DbName.POSTGRES_DB);
+        dbNameList.add(DbName.MYSQL_DB);
+        dbNameList.add(DbName.ORACLE_DB);
+        dbNameList.add(DbName.SQL_SERVER_DB);
+    }
+
     protected TableRow createInputTable() {
         return tableRow(
                 "jdbDynamicTableSource",
@@ -142,12 +162,106 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
 
     @Test
     void testJdbcSource() {
+        String fieldStr = "string_col";
+        String fieldId = "id";
         String testTable = "testTable";
-        tEnv.executeSql(inputTable.getCreateQueryForFlink(getMetadata(), testTable));
+        boolean isShardContainString = Arrays.asList(inputTable.getTableFields()).contains(fieldId);
+        if (!isShardContainString) {
+            throw new IllegalArgumentException(
+                    "The data column in the jdbc table test must contain the `id`");
+        }
+        boolean isPartitionColumnTypeString =
+                (dbNameList.contains(createInputTable().getDbName()) && isShardContainString);
 
+        DatabaseMetadata metadata = getMetadata();
+        //  Non slice read
+        tEnv.executeSql(inputTable.getCreateQueryForFlink(metadata, testTable));
         List<Row> collected = executeQuery("SELECT * FROM " + testTable);
-
         assertThat(collected).containsExactlyInAnyOrderElementsOf(getTestData());
+
+        String testReadPartitionString = "testReadPartitionString";
+
+        // string slice read
+        List<String> withParams = new ArrayList<>();
+
+        String partitionColumn =
+                Arrays.asList(inputTable.getTableFields()).contains(fieldStr) ? fieldStr : fieldId;
+        int partitionNum = 10;
+        int lowerBound = 0;
+        int upperBound = 9;
+        withParams.add(String.format("'scan.partition.column'='%s'", partitionColumn));
+        withParams.add(String.format("'scan.partition.num'='%s'", partitionNum));
+        withParams.add(String.format("'scan.partition.lower-bound'='%s'", lowerBound));
+        withParams.add(String.format("'scan.partition.upper-bound'='%s'", upperBound));
+
+        tEnv.executeSql(
+                inputTable.getCreateQueryForFlink(metadata, testReadPartitionString, withParams));
+        List<Row> collectedPartitionString =
+                executeQuery("SELECT * FROM " + testReadPartitionString);
+        assertThat(collectedPartitionString).containsExactlyInAnyOrderElementsOf(getTestData());
+
+        Serializable[][] queryParameters = new Long[3][1];
+        queryParameters[0] = new Long[] {0L};
+        queryParameters[1] = new Long[] {1L};
+        queryParameters[2] = new Long[] {2L};
+
+        String partitionKeyName = isPartitionColumnTypeString ? fieldStr : fieldId;
+        String sqlFilterField;
+        switch (createInputTable().getDbName()) {
+            case POSTGRES_DB:
+                sqlFilterField =
+                        new PostgresDialect()
+                                .hashModForField(partitionKeyName, queryParameters.length);
+                break;
+            case MYSQL_DB:
+                sqlFilterField =
+                        new MySqlDialect()
+                                .hashModForField(partitionKeyName, queryParameters.length);
+                break;
+            case ORACLE_DB:
+                sqlFilterField =
+                        new OracleDialect()
+                                .hashModForField(partitionKeyName, queryParameters.length);
+                break;
+            case SQL_SERVER_DB:
+                sqlFilterField =
+                        new SqlServerDialect()
+                                .hashModForField(partitionKeyName, queryParameters.length);
+                break;
+            default:
+                sqlFilterField = partitionKeyName;
+                break;
+        }
+
+        ExecutionEnvironment executionEnvironment = ExecutionEnvironment.getExecutionEnvironment();
+        JdbcInputFormat jdbcInputFormat =
+                JdbcInputFormat.buildJdbcInputFormat()
+                        .setDrivername(metadata.getDriverClass())
+                        .setDBUrl(metadata.getJdbcUrl())
+                        .setUsername(metadata.getUsername())
+                        .setPassword(metadata.getPassword())
+                        .setPartitionColumnTypeString(isPartitionColumnTypeString)
+                        .setQuery(
+                                "select * from "
+                                        + inputTable.getTableName()
+                                        + " where ( "
+                                        + sqlFilterField
+                                        + " ) = ?")
+                        .setRowTypeInfo(inputTable.getTableRowTypeInfo())
+                        .setParametersProvider(
+                                new JdbcGenericParameterValuesProvider(queryParameters))
+                        .finish();
+        try {
+            int jdbcInputRowSize =
+                    executionEnvironment
+                            .createInput(jdbcInputFormat)
+                            .map(row -> row.getField(fieldId))
+                            .collect()
+                            .size();
+            assertThat(jdbcInputRowSize).isEqualTo(getTestData().size());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test

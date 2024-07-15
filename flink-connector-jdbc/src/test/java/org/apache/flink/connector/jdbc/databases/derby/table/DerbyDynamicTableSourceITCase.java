@@ -31,6 +31,7 @@ import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.apache.flink.connector.jdbc.testutils.databases.DbName.DERBY_DB;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbType;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.field;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
@@ -41,6 +42,7 @@ class DerbyDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase impleme
     protected TableRow createInputTable() {
         return tableRow(
                 "jdbDynamicTableSource",
+                DERBY_DB,
                 field("id", DataTypes.BIGINT().notNull()),
                 field("decimal_col", DataTypes.DECIMAL(10, 4)),
                 field("timestamp6_col", dbType("TIMESTAMP"), DataTypes.TIMESTAMP(6)),

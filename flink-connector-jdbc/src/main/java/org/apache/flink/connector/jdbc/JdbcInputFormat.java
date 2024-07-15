@@ -125,6 +125,7 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
 
     protected boolean hasNext;
     protected Object[][] parameterValues;
+    protected boolean isPartitionColumnTypeString;
 
     public JdbcInputFormat() {}
 
@@ -194,7 +195,11 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
     public void open(InputSplit inputSplit) throws IOException {
         try {
             if (inputSplit != null && parameterValues != null) {
-                for (int i = 0; i < parameterValues[inputSplit.getSplitNumber()].length; i++) {
+                int parameterLength =
+                        isPartitionColumnTypeString
+                                ? 1
+                                : parameterValues[inputSplit.getSplitNumber()].length;
+                for (int i = 0; i < parameterLength; i++) {
                     Object param = parameterValues[inputSplit.getSplitNumber()][i];
                     if (param instanceof String) {
                         statement.setString(i + 1, (String) param);
@@ -269,7 +274,7 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
      * Checks whether all data has been read.
      *
      * @return boolean value indication whether all data has been read.
-     * @throws IOException
+     * @throws IOException if an I/O error occurs
      */
     @Override
     public boolean reachedEnd() throws IOException {
@@ -397,6 +402,12 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
             return this;
         }
 
+        public JdbcInputFormatBuilder setPartitionColumnTypeString(
+                boolean partitionColumnTypeString) {
+            format.isPartitionColumnTypeString = partitionColumnTypeString;
+            return this;
+        }
+
         public JdbcInputFormatBuilder setRowTypeInfo(RowTypeInfo rowTypeInfo) {
             format.rowTypeInfo = rowTypeInfo;
             return this;
@@ -429,6 +440,7 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
             if (format.parameterValues == null) {
                 LOG.debug("No input splitting configured (data will be read with parallelism 1).");
             }
+
             return format;
         }
     }

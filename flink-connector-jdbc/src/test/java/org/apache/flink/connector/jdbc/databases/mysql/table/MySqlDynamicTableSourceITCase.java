@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.databases.mysql.table;
 import org.apache.flink.connector.jdbc.databases.mysql.MySqlTestBase;
 import org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialect;
 import org.apache.flink.connector.jdbc.table.JdbcDynamicTableSourceITCase;
+import org.apache.flink.connector.jdbc.testutils.databases.DbName;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;
@@ -42,6 +43,7 @@ class MySqlDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase impleme
     protected TableRow createInputTable() {
         return tableRow(
                 "jdbDynamicTableSource",
+                DbName.MYSQL_DB,
                 field("id", DataTypes.BIGINT().notNull()),
                 field("decimal_col", DataTypes.DECIMAL(10, 4)),
                 field("timestamp6_col", DataTypes.TIMESTAMP(6)),
@@ -49,7 +51,8 @@ class MySqlDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase impleme
                 field("real_col", dbType("REAL"), DataTypes.DOUBLE()),
                 field("double_col", DataTypes.DOUBLE()),
                 field("time_col", dbType("TIME"), DataTypes.TIME()),
-                field("timestamp9_col", DataTypes.TIMESTAMP(6)));
+                field("timestamp9_col", DataTypes.TIMESTAMP(6)),
+                field("string_col", DataTypes.VARCHAR(30)));
     }
 
     protected List<Row> getTestData() {
@@ -61,7 +64,8 @@ class MySqlDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase impleme
                         1.175E-37D,
                         1.79769E308D,
                         LocalTime.parse("15:35"),
-                        LocalDateTime.parse("2020-01-01T15:35:00.123456")),
+                        LocalDateTime.parse("2020-01-01T15:35:00.123456"),
+                        "Leblanc_1"),
                 Row.of(
                         2L,
                         BigDecimal.valueOf(101.1234),
@@ -69,6 +73,7 @@ class MySqlDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase impleme
                         -1.175E-37D,
                         -1.79769E308,
                         LocalTime.parse("15:36:01"),
-                        LocalDateTime.parse("2020-01-01T15:36:01.123456")));
+                        LocalDateTime.parse("2020-01-01T15:36:01.123456"),
+                        "Wade"));
     }
 }
