@@ -21,7 +21,10 @@ package org.apache.flink.connector.jdbc.internal;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
+
+import org.apache.flink.connector.jdbc.JdbcRowOutputFormat;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
+
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
@@ -31,6 +34,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -41,7 +45,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.apache.flink.connector.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
+import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE_4;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -211,6 +217,30 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
         }
         format.flush();
         check(expected);
+    }
+
+    @Test
+    public void testExceptionOnFlush() {
+        JdbcRowOutputFormat jdbcOutputFormat =
+                JdbcRowOutputFormat.buildJdbcOutputFormat()
+                        .setDrivername(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE_4))
+                        .setBatchSize(2)
+                        .finish();
+        setRuntimeContext(jdbcOutputFormat, true);
+        try {
+            jdbcOutputFormat.open(0, 1);
+
+            jdbcOutputFormat.writeRecord(toRow(TEST_DATA[1]));
+            jdbcOutputFormat.writeRecord(toRow(TEST_DATA[1]));
+        } catch (IOException e) {
+            try {
+                jdbcOutputFormat.close();
+            } catch (Exception e1) {
+                assertThat(jdbcOutputFormat.getConnection()).isEqualTo(null);
+            }
+        }
     }
 
     private void check(Row[] rows) throws SQLException {
