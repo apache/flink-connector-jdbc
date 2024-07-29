@@ -46,6 +46,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -254,12 +255,11 @@ class JdbcFilterPushdownPreparedStatementVisitorTest {
 
         FlinkTypeFactory typeFactory = new FlinkTypeFactory(classLoader, FlinkTypeSystem.INSTANCE);
         RexNodeToExpressionConverter converter =
-                new RexNodeToExpressionConverter(
+                getConverter(
                         new RexBuilder(typeFactory),
                         sourceType.getFieldNames().toArray(new String[0]),
                         funCat,
-                        catMan,
-                        TimeZone.getTimeZone(tEnv.getConfig().getLocalTimeZone()));
+                        catMan);
 
         RexNodeExpression rexExp =
                 (RexNodeExpression) tbImpl.getParser().parseSqlExpression(sqlExp, sourceType, null);
@@ -293,5 +293,41 @@ class JdbcFilterPushdownPreparedStatementVisitorTest {
                         .build();
 
         return resolver.resolve(Arrays.asList(resolvedExp));
+    }
+
+    private RexNodeToExpressionConverter getConverter(
+            RexBuilder rexBuilder,
+            String[] inputNames,
+            FunctionCatalog functionCatalog,
+            CatalogManager catalogManager) {
+        try {
+            Class<?> clazz =
+                    Class.forName(
+                            "org.apache.flink.table.planner.plan.utils.RexNodeToExpressionConverter",
+                            false,
+                            classLoader);
+
+            Constructor<?>[] constructors = clazz.getConstructors();
+
+            for (Constructor<?> constructor : constructors) {
+                if (constructor.getParameterCount() == 4) {
+                    return (RexNodeToExpressionConverter)
+                            constructor.newInstance(
+                                    rexBuilder, inputNames, functionCatalog, catalogManager);
+                }
+                if (constructor.getParameterCount() == 5) {
+                    return (RexNodeToExpressionConverter)
+                            constructor.newInstance(
+                                    rexBuilder,
+                                    inputNames,
+                                    functionCatalog,
+                                    catalogManager,
+                                    TimeZone.getTimeZone(tEnv.getConfig().getLocalTimeZone()));
+                }
+            }
+        } catch (Throwable e) {
+            throw new RuntimeException("Failed to instantiate RexNodeToExpressionConverter", e);
+        }
+        throw new RuntimeException("No suitable RexNodeToExpressionConverter constructor found.");
     }
 }
