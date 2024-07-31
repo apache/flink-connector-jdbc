@@ -303,7 +303,7 @@ class JdbcFilterPushdownPreparedStatementVisitorTest {
         try {
             Class<?> clazz =
                     Class.forName(
-                            "org.apache.flink.table.planner.plan.utils.RexNodeToExpressionConverter",
+                            RexNodeToExpressionConverter.class.getCanonicalName(),
                             false,
                             classLoader);
 
@@ -315,7 +315,8 @@ class JdbcFilterPushdownPreparedStatementVisitorTest {
                             constructor.newInstance(
                                     rexBuilder, inputNames, functionCatalog, catalogManager);
                 }
-                if (constructor.getParameterCount() == 5) {
+                if (constructor.getParameterCount() == 5
+                        && TimeZone.class.equals(constructor.getParameters()[4].getType())) {
                     return (RexNodeToExpressionConverter)
                             constructor.newInstance(
                                     rexBuilder,
