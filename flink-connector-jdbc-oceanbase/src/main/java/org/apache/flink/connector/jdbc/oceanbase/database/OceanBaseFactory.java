@@ -37,8 +37,7 @@ public class OceanBaseFactory implements JdbcFactory {
 
     @Override
     public JdbcDialect createDialect() {
-        throw new UnsupportedOperationException(
-                "Can't create JdbcDialect without compatible mode for OceanBase");
+        return createDialect(null);
     }
 
     @Override
@@ -54,8 +53,8 @@ public class OceanBaseFactory implements JdbcFactory {
             String username,
             String pwd,
             String baseUrl) {
-        throw new UnsupportedOperationException(
-                "Catalog for OceanBase without 'compatible-mode' is not supported.");
+        return createCatalog(
+                classLoader, catalogName, defaultDatabase, username, pwd, baseUrl, null);
     }
 
     @Override
