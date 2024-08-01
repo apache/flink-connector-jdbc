@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.oceanbase.database.catalog;
 
 import org.apache.flink.connector.jdbc.oceanbase.OceanBaseOracleTestBase;
+import org.apache.flink.connector.jdbc.oceanbase.database.dialect.OceanBaseCompatibleMode;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
@@ -95,7 +96,7 @@ public class OceanBaseOracleCatalogITCase extends OceanBaseCatalogITCaseBase
     }
 
     public OceanBaseOracleCatalogITCase() {
-        super("oceanbase_oracle_catalog", "oracle", SCHEMA);
+        super("oceanbase_oracle_catalog", OceanBaseCompatibleMode.Oracle, SCHEMA);
     }
 
     @Override

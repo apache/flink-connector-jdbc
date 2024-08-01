@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.oceanbase;
 
+import org.apache.flink.connector.jdbc.oceanbase.database.dialect.OceanBaseCompatibleMode;
 import org.apache.flink.connector.jdbc.oceanbase.table.OceanBaseTableRow;
 import org.apache.flink.connector.jdbc.oceanbase.testutils.OceanBaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
@@ -29,7 +30,7 @@ import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 public interface OceanBaseOracleTestBase extends DatabaseTest {
 
     static TableRow tableRow(String name, TableField... fields) {
-        return new OceanBaseTableRow("oracle", name, fields);
+        return new OceanBaseTableRow(OceanBaseCompatibleMode.Oracle, name, fields);
     }
 
     @Override

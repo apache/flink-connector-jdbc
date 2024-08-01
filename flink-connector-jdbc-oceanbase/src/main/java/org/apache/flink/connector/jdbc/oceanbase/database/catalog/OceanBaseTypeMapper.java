@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.oceanbase.database.catalog;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.core.database.catalog.JdbcCatalogTypeMapper;
+import org.apache.flink.connector.jdbc.oceanbase.database.dialect.OceanBaseCompatibleMode;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.types.DataType;
@@ -39,9 +40,9 @@ public class OceanBaseTypeMapper implements JdbcCatalogTypeMapper {
     private static final int TYPE_BINARY_FLOAT = 100;
     private static final int TYPE_BINARY_DOUBLE = 101;
 
-    private final String compatibleMode;
+    private final OceanBaseCompatibleMode compatibleMode;
 
-    public OceanBaseTypeMapper(String compatibleMode) {
+    public OceanBaseTypeMapper(OceanBaseCompatibleMode compatibleMode) {
         this.compatibleMode = compatibleMode;
     }
 
@@ -71,7 +72,7 @@ public class OceanBaseTypeMapper implements JdbcCatalogTypeMapper {
             case Types.FLOAT:
             case Types.NUMERIC:
             case Types.DECIMAL:
-                if ("mysql".equalsIgnoreCase(compatibleMode)) {
+                if (compatibleMode.isMySQLMode()) {
                     return isUnsignedType(typeName)
                             ? getDecimalType(precision + 1, scale)
                             : getDecimalType(precision, scale);
@@ -148,7 +149,6 @@ public class OceanBaseTypeMapper implements JdbcCatalogTypeMapper {
 
     private boolean isExplicitPrecision(int precision, int defaultPrecision) {
         return precision > defaultPrecision
-                && (precision - defaultPrecision - 1
-                        <= ("mysql".equalsIgnoreCase(compatibleMode) ? 6 : 9));
+                && (precision - defaultPrecision - 1 <= (compatibleMode.isMySQLMode() ? 6 : 9));
     }
 }

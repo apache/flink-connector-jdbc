@@ -27,7 +27,7 @@ class OceanBaseDialectTest {
 
     @Test
     void testMysqlAppendDefaultUrlProperties() {
-        OceanBaseDialect dialect = new OceanBaseDialect("mysql");
+        OceanBaseDialect dialect = new OceanBaseDialect(OceanBaseCompatibleMode.MySQL);
         String jdbcUrl = "jdbc:oceanbase://localhost:2883/foo";
 
         assertThat(dialect.appendDefaultUrlProperties(jdbcUrl))
@@ -44,7 +44,7 @@ class OceanBaseDialectTest {
 
     @Test
     void testOracleAppendDefaultUrlProperties() {
-        OceanBaseDialect dialect = new OceanBaseDialect("oracle");
+        OceanBaseDialect dialect = new OceanBaseDialect(OceanBaseCompatibleMode.Oracle);
         String jdbcUrl = "jdbc:oceanbase://localhost:2883/foo";
 
         assertThat(dialect.appendDefaultUrlProperties(jdbcUrl)).isEqualTo(jdbcUrl);

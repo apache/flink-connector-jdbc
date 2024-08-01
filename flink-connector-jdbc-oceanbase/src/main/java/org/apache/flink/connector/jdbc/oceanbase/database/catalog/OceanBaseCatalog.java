@@ -22,6 +22,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.core.database.catalog.AbstractJdbcCatalog;
 import org.apache.flink.connector.jdbc.core.database.catalog.JdbcCatalogTypeMapper;
 import org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions;
+import org.apache.flink.connector.jdbc.oceanbase.database.dialect.OceanBaseCompatibleMode;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.UniqueConstraint;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
@@ -59,13 +60,13 @@ public class OceanBaseCatalog extends AbstractJdbcCatalog {
                 }
             };
 
-    private final String compatibleMode;
+    private final OceanBaseCompatibleMode compatibleMode;
     private final JdbcCatalogTypeMapper dialectTypeMapper;
 
     public OceanBaseCatalog(
             ClassLoader userClassLoader,
             String catalogName,
-            String compatibleMode,
+            OceanBaseCompatibleMode compatibleMode,
             String defaultDatabase,
             String username,
             String pwd,
@@ -82,7 +83,7 @@ public class OceanBaseCatalog extends AbstractJdbcCatalog {
     public OceanBaseCatalog(
             ClassLoader userClassLoader,
             String catalogName,
-            String compatibleMode,
+            OceanBaseCompatibleMode compatibleMode,
             String defaultDatabase,
             String baseUrl,
             Properties connectionProperties) {
@@ -91,14 +92,10 @@ public class OceanBaseCatalog extends AbstractJdbcCatalog {
         this.dialectTypeMapper = new OceanBaseTypeMapper(compatibleMode);
     }
 
-    private boolean isMySQLMode() {
-        return "mysql".equalsIgnoreCase(compatibleMode);
-    }
-
     @Override
     public List<String> listDatabases() throws CatalogException {
         String query =
-                isMySQLMode()
+                compatibleMode.isMySQLMode()
                         ? "SELECT `SCHEMA_NAME` FROM `INFORMATION_SCHEMA`.`SCHEMATA`"
                         : "SELECT USERNAME FROM ALL_USERS";
         return extractColumnValuesBySQL(
@@ -114,7 +111,7 @@ public class OceanBaseCatalog extends AbstractJdbcCatalog {
             throw new DatabaseNotExistException(getName(), databaseName);
         }
         String sql =
-                isMySQLMode()
+                compatibleMode.isMySQLMode()
                         ? "SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_SCHEMA = ?"
                         : "SELECT TABLE_NAME FROM ALL_TABLES WHERE OWNER = ?";
         return extractColumnValuesBySQL(defaultUrl, sql, 1, null, databaseName);
@@ -123,7 +120,7 @@ public class OceanBaseCatalog extends AbstractJdbcCatalog {
     @Override
     public boolean tableExists(ObjectPath tablePath) throws CatalogException {
         String query =
-                isMySQLMode()
+                compatibleMode.isMySQLMode()
                         ? "SELECT TABLE_NAME FROM information_schema.`TABLES` "
                                 + "WHERE TABLE_SCHEMA = ? and TABLE_NAME = ?"
                         : "SELECT TABLE_NAME FROM ALL_TABLES "
@@ -142,7 +139,7 @@ public class OceanBaseCatalog extends AbstractJdbcCatalog {
     protected Optional<UniqueConstraint> getPrimaryKey(
             DatabaseMetaData metaData, String database, String schema, String table)
             throws SQLException {
-        if (isMySQLMode()) {
+        if (compatibleMode.isMySQLMode()) {
             return super.getPrimaryKey(metaData, database, null, table);
         } else {
             return super.getPrimaryKey(metaData, null, database, table);
@@ -152,7 +149,7 @@ public class OceanBaseCatalog extends AbstractJdbcCatalog {
     @Override
     protected Map<String, String> getOptions(ObjectPath tablePath) {
         Map<String, String> options = super.getOptions(tablePath);
-        options.put(JdbcConnectorOptions.COMPATIBLE_MODE.key(), compatibleMode);
+        options.put(JdbcConnectorOptions.COMPATIBLE_MODE.key(), compatibleMode.toString());
         return options;
     }
 

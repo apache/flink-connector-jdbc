@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.oceanbase.database.catalog;
 
+import org.apache.flink.connector.jdbc.oceanbase.database.dialect.OceanBaseCompatibleMode;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
@@ -50,11 +51,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public abstract class OceanBaseCatalogITCaseBase implements JdbcITCaseBase, DatabaseTest {
 
     private final String catalogName;
-    private final String compatibleMode;
+    private final OceanBaseCompatibleMode compatibleMode;
     private final String defaultDatabase;
 
     public OceanBaseCatalogITCaseBase(
-            String catalogName, String compatibleMode, String defaultDatabase) {
+            String catalogName, OceanBaseCompatibleMode compatibleMode, String defaultDatabase) {
         this.catalogName = catalogName;
         this.compatibleMode = compatibleMode;
         this.defaultDatabase = defaultDatabase;

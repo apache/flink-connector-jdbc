@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.oceanbase.database.catalog;
 
 import org.apache.flink.connector.jdbc.oceanbase.OceanBaseMysqlTestBase;
+import org.apache.flink.connector.jdbc.oceanbase.database.dialect.OceanBaseCompatibleMode;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.TableBuilder;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
@@ -265,7 +266,7 @@ public class OceanBaseMysqlCatalogITCase extends OceanBaseCatalogITCaseBase
     }
 
     public OceanBaseMysqlCatalogITCase() {
-        super("oceanbase_mysql_catalog", "mysql", DEFAULT_DB);
+        super("oceanbase_mysql_catalog", OceanBaseCompatibleMode.MySQL, DEFAULT_DB);
     }
 
     @Override

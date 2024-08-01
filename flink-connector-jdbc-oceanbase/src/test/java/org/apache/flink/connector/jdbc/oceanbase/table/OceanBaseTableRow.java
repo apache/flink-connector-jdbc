@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.oceanbase.table;
 
+import org.apache.flink.connector.jdbc.oceanbase.database.dialect.OceanBaseCompatibleMode;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.tables.TableField;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
@@ -28,9 +29,10 @@ import java.util.List;
 /** TableRow for OceanBase. */
 public class OceanBaseTableRow extends TableRow {
 
-    private final String compatibleMode;
+    private final OceanBaseCompatibleMode compatibleMode;
 
-    public OceanBaseTableRow(String compatibleMode, String name, TableField[] fields) {
+    public OceanBaseTableRow(
+            OceanBaseCompatibleMode compatibleMode, String name, TableField[] fields) {
         super(name, fields);
         this.compatibleMode = compatibleMode;
     }

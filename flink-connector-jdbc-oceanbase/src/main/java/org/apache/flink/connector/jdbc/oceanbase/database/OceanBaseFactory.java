@@ -23,9 +23,8 @@ import org.apache.flink.connector.jdbc.core.database.JdbcFactory;
 import org.apache.flink.connector.jdbc.core.database.catalog.JdbcCatalog;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.oceanbase.database.catalog.OceanBaseCatalog;
+import org.apache.flink.connector.jdbc.oceanbase.database.dialect.OceanBaseCompatibleMode;
 import org.apache.flink.connector.jdbc.oceanbase.database.dialect.OceanBaseDialect;
-
-import javax.annotation.Nonnull;
 
 /** Factory for {@link OceanBaseDialect}. */
 @Internal
@@ -43,8 +42,8 @@ public class OceanBaseFactory implements JdbcFactory {
     }
 
     @Override
-    public JdbcDialect createDialect(@Nonnull String compatibleMode) {
-        return new OceanBaseDialect(compatibleMode);
+    public JdbcDialect createDialect(String compatibleMode) {
+        return new OceanBaseDialect(OceanBaseCompatibleMode.parse(compatibleMode));
     }
 
     @Override
@@ -69,6 +68,12 @@ public class OceanBaseFactory implements JdbcFactory {
             String baseUrl,
             String compatibleMode) {
         return new OceanBaseCatalog(
-                classLoader, catalogName, compatibleMode, defaultDatabase, username, pwd, baseUrl);
+                classLoader,
+                catalogName,
+                OceanBaseCompatibleMode.parse(compatibleMode),
+                defaultDatabase,
+                username,
+                pwd,
+                baseUrl);
     }
 }
