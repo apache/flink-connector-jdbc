@@ -25,6 +25,7 @@ import org.apache.flink.table.api.DataTypes;
 
 import java.util.Map;
 
+import static org.apache.flink.connector.jdbc.oceanbase.OceanBaseMysqlTestBase.tableRow;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbType;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.field;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.pkField;

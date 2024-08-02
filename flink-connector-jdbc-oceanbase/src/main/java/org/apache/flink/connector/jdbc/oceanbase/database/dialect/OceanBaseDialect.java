@@ -26,8 +26,6 @@ import org.apache.flink.connector.jdbc.oracle.database.dialect.OracleDialect;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 
-import javax.annotation.Nonnull;
-
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
@@ -40,17 +38,11 @@ public class OceanBaseDialect extends AbstractDialect {
 
     private final AbstractDialect dialect;
 
-    public OceanBaseDialect(@Nonnull String compatibleMode) {
-        switch (compatibleMode.toLowerCase()) {
-            case "mysql":
-                this.dialect = new MySqlDialect();
-                break;
-            case "oracle":
-                this.dialect = new OracleDialect();
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        "Unsupported compatible mode: " + compatibleMode);
+    public OceanBaseDialect(OceanBaseCompatibleMode compatibleMode) {
+        if (compatibleMode.isMySQLMode()) {
+            this.dialect = new MySqlDialect();
+        } else {
+            this.dialect = new OracleDialect();
         }
     }
 

@@ -31,12 +31,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.flink.connector.jdbc.oceanbase.OceanBaseOracleTestBase.tableRow;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbType;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.field;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.pkField;
 
 /** The Table Sink ITCase for OceanBase Oracle mode. */
-@Disabled
+@Disabled("OceanBase Oracle mode can only be tested locally.")
 class OceanBaseOracleDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
         implements OceanBaseOracleTestBase {
 
