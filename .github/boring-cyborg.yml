@@ -24,9 +24,35 @@ labelPRBasedOnFilePath:
   component=Documentation:
     - docs/**/*
 
-  component=Connectors/JDBC:
-    - flink-connector-jdbc*/**/*
-    - flink-sql-connector-jdbc*/**/*
+  component=JDBC/Core:
+    - flink-connector-jdbc-core/**/*
+
+  component=JDBC/CrateDB:
+    - flink-connector-jdbc-cratedb/**/*
+
+  component=JDBC/DB2:
+    - flink-connector-jdbc-db2/**/*
+
+  component=JDBC/MySql:
+    - flink-connector-jdbc-mysql/**/*
+
+  component=JDBC/OceanBase:
+    - flink-connector-jdbc-oceanbase/**/*
+
+  component=JDBC/Oracle:
+    - flink-connector-jdbc-oracle/**/*
+
+  component=JDBC/Postgres:
+    - flink-connector-jdbc-postgres/**/*
+
+  component=JDBC/Shaded:
+    - flink-connector-jdbc/**/*
+
+  component=JDBC/SqlServer:
+    - flink-connector-jdbc-sqlserver/**/*
+
+  component=JDBC/Trino:
+    - flink-connector-jdbc-trino/**/*
 
 ###### IssueLink Adder #################################################################################################
 # Insert Issue (Jira/Github etc) link in PR description based on the Issue ID in PR title.

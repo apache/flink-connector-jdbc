@@ -30,7 +30,7 @@ under the License.
 	</parent>
 
 	<artifactId>flink-connector-jdbc</artifactId>
-	<name>Flink : Connectors : JDBC</name>
+	<name>Flink : Connectors : JDBC : Shaded</name>
 
 	<packaging>jar</packaging>
 
