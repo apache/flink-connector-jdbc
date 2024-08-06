@@ -30,7 +30,6 @@ import java.time.Duration;
 
 import static org.apache.flink.connector.jdbc.elastic.testutils.ElasticMetadata.PASSWORD;
 
-
 /** An Elastic database for testing. */
 public class ElasticDatabase extends DatabaseExtension implements ElasticImages {
 

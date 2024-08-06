@@ -33,4 +33,3 @@ public interface ElasticTestBase extends DatabaseTest {
         return ElasticDatabase.getMetadata();
     }
 }
-

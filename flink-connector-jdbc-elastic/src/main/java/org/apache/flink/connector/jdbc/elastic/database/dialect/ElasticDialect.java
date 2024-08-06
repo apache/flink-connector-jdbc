@@ -28,9 +28,7 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * JDBC dialect for Elastic.
- */
+/** JDBC dialect for Elastic. */
 @Internal
 public class ElasticDialect extends AbstractDialect {
 

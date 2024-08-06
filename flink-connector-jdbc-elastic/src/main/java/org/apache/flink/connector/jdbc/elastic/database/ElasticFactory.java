@@ -24,9 +24,7 @@ import org.apache.flink.connector.jdbc.core.database.catalog.JdbcCatalog;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.elastic.database.dialect.ElasticDialect;
 
-/**
- * Factory for {@link ElasticDialect}.
- */
+/** Factory for {@link ElasticDialect}. */
 @Internal
 public class ElasticFactory implements JdbcFactory {
 
@@ -50,5 +48,4 @@ public class ElasticFactory implements JdbcFactory {
             String baseUrl) {
         throw new UnsupportedOperationException("Catalog for Elastic is not supported yet.");
     }
-
 }
