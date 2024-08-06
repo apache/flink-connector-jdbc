@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import java.util.Arrays;
 
@@ -16,9 +15,9 @@ public class DockerResource implements DatabaseResource {
 
     protected static final Logger LOG = LoggerFactory.getLogger(DockerResource.class);
 
-    private final JdbcDatabaseContainer<?> container;
+    private final GenericContainer<?> container;
 
-    public DockerResource(JdbcDatabaseContainer<?> container) {
+    public DockerResource(GenericContainer<?> container) {
         this.container = container;
     }
 

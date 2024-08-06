@@ -47,6 +47,7 @@ under the License.
         <module>flink-connector-jdbc-core</module>
         <module>flink-connector-jdbc-cratedb</module>
         <module>flink-connector-jdbc-db2</module>
+        <module>flink-connector-jdbc-elastic</module>
         <module>flink-connector-jdbc-mysql</module>
         <module>flink-connector-jdbc-oceanbase</module>
         <module>flink-connector-jdbc-oracle</module>
@@ -414,6 +415,37 @@ under the License.
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>ban-elastic-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <!--
+                                Exclude all Elastic dependencies by default. If there is any Elastic dependency needed,
+                                ensure its usage is compatible with Apache licence and then add it to includes.
+                                -->
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>org.elasticsearch.*:*</exclude>
+                                    </excludes>
+                                    <includes>
+                                        <include>org.elasticsearch.plugin:x-pack-sql-jdbc:*:*:provided</include>
+                                        <include>org.elasticsearch.client:elasticsearch-rest-client:*:*:test</include>
+                                    </includes>
+                                    <message>Elastic x-pack dependencies are not allowed to be bundled due to licensing issues.</message>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
             </plugin>
 
@@ -444,11 +476,6 @@ under the License.
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
             </plugin>
 
             <plugin>
