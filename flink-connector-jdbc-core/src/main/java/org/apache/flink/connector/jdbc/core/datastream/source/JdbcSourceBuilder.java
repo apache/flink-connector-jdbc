@@ -29,7 +29,7 @@ import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProv
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcSlideTimingParameterProvider;
-import org.apache.flink.connector.jdbc.utils.ContinuousUnBoundingSettings;
+import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
