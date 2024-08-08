@@ -40,7 +40,7 @@ import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.R
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplitSerializer;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
-import org.apache.flink.connector.jdbc.utils.ContinuousUnBoundingSettings;
+import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.Preconditions;
 
