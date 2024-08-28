@@ -30,6 +30,7 @@ import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.DeliveryGuarantee;
+import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSourceEnumStateSerializer;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSourceEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSourceEnumeratorState;
@@ -40,7 +41,6 @@ import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.R
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplitSerializer;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
-import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.Preconditions;
 
