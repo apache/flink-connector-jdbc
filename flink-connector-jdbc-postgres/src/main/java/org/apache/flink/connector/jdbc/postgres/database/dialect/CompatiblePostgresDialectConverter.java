@@ -18,11 +18,11 @@
 
 package org.apache.flink.connector.jdbc.postgres.database.dialect;
 
-import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.table.types.logical.RowType;
 
 /** JDBC converter for PostgreSQL compatible databases. */
-@PublicEvolving
+@Internal
 public abstract class CompatiblePostgresDialectConverter extends PostgresDialectConverter {
 
     private static final long serialVersionUID = 1L;
