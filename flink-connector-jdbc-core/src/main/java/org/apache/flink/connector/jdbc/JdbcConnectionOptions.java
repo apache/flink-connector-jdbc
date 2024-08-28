@@ -18,7 +18,7 @@
 package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -47,14 +47,14 @@ public class JdbcConnectionOptions implements Serializable {
             @Nullable String driverName,
             int connectionCheckTimeoutSeconds,
             @Nonnull Properties properties) {
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 connectionCheckTimeoutSeconds > 0,
                 "Connection check timeout seconds shouldn't be smaller than 1");
-        this.url = Preconditions.checkNotNull(url, "jdbc url is empty");
+        this.url = Precondition.checkNotNull(url, "jdbc url is empty");
         this.driverName = driverName;
         this.connectionCheckTimeoutSeconds = connectionCheckTimeoutSeconds;
         this.properties =
-                Preconditions.checkNotNull(properties, "Connection properties must be non-null");
+                Precondition.checkNotNull(properties, "Connection properties must be non-null");
     }
 
     public String getDbURL() {
@@ -113,8 +113,8 @@ public class JdbcConnectionOptions implements Serializable {
         }
 
         public JdbcConnectionOptionsBuilder withProperty(String propKey, String propVal) {
-            Preconditions.checkNotNull(propKey, "Connection property key mustn't be null");
-            Preconditions.checkNotNull(propVal, "Connection property value mustn't be null");
+            Precondition.checkNotNull(propKey, "Connection property key mustn't be null");
+            Precondition.checkNotNull(propVal, "Connection property value mustn't be null");
             this.properties.put(propKey, propVal);
             return this;
         }

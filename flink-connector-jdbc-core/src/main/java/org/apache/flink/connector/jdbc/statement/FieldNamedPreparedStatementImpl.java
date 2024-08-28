@@ -31,8 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 
 /** Simple implementation of {@link FieldNamedPreparedStatement}. */
 public class FieldNamedPreparedStatementImpl implements FieldNamedPreparedStatement {

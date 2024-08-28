@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.core.database.catalog;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.core.table.JdbcDynamicTableFactory;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.catalog.AbstractCatalog;
@@ -50,7 +51,6 @@ import org.apache.flink.table.catalog.stats.CatalogTableStatistics;
 import org.apache.flink.table.expressions.Expression;
 import org.apache.flink.table.factories.Factory;
 import org.apache.flink.table.types.DataType;
-import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 import org.apache.flink.util.TemporaryClassLoaderContext;
 
@@ -83,9 +83,9 @@ import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.TA
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.URL;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.USERNAME;
 import static org.apache.flink.connector.jdbc.core.table.JdbcDynamicTableFactory.IDENTIFIER;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /** Abstract catalog for any JDBC catalogs. */
 @PublicEvolving
@@ -130,7 +130,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
         this.userClassLoader = userClassLoader;
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
         this.defaultUrl = getDatabaseUrl(defaultDatabase);
-        this.connectionProperties = Preconditions.checkNotNull(connectionProperties);
+        this.connectionProperties = Precondition.checkNotNull(connectionProperties);
         checkArgument(
                 !StringUtils.isNullOrWhitespaceOnly(connectionProperties.getProperty(USER_KEY)));
         checkArgument(
@@ -197,7 +197,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
             String columnName = rs.getString("COLUMN_NAME");
             pkName = rs.getString("PK_NAME"); // all the PK_NAME should be the same
             int keySeq = rs.getInt("KEY_SEQ");
-            Preconditions.checkState(
+            Precondition.checkState(
                     !keySeqColumnName.containsKey(keySeq - 1),
                     "The field(s) of primary key must be from the same table.");
             keySeqColumnName.put(keySeq - 1, columnName); // KEY_SEQ is 1-based index
@@ -251,7 +251,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
     public CatalogDatabase getDatabase(String databaseName)
             throws DatabaseNotExistException, CatalogException {
 
-        Preconditions.checkState(
+        Precondition.checkState(
                 !StringUtils.isNullOrWhitespaceOnly(databaseName),
                 "Database name must not be blank.");
         if (listDatabases().contains(databaseName)) {

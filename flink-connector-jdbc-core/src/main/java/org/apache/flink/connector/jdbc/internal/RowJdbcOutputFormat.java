@@ -34,8 +34,8 @@ import javax.annotation.Nonnull;
 
 import java.util.HashMap;
 
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 import static org.apache.flink.connector.jdbc.utils.JdbcUtils.setRecordToStatement;
-import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /** A JDBC Row outputFormat that supports batching records before writing records to database. */
 @Internal

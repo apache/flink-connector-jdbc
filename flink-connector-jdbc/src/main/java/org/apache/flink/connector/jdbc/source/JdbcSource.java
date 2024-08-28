@@ -19,7 +19,6 @@
 package org.apache.flink.connector.jdbc.source;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.api.connector.source.Source;
@@ -39,10 +38,11 @@ import org.apache.flink.connector.jdbc.core.datastream.source.reader.JdbcSourceS
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplitSerializer;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
+import org.apache.flink.connector.jdbc.core.util.VisibleForTest;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.utils.ContinuousUnBoundingSettings;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
-import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nullable;
 
@@ -80,13 +80,13 @@ public class JdbcSource<OUT>
             TypeInformation<OUT> typeInformation,
             @Nullable DeliveryGuarantee deliveryGuarantee,
             @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings) {
-        this.configuration = Preconditions.checkNotNull(configuration);
-        this.connectionProvider = Preconditions.checkNotNull(connectionProvider);
-        this.sqlSplitEnumeratorProvider = Preconditions.checkNotNull(sqlSplitEnumeratorProvider);
-        this.resultExtractor = Preconditions.checkNotNull(resultExtractor);
+        this.configuration = Precondition.checkNotNull(configuration);
+        this.connectionProvider = Precondition.checkNotNull(connectionProvider);
+        this.sqlSplitEnumeratorProvider = Precondition.checkNotNull(sqlSplitEnumeratorProvider);
+        this.resultExtractor = Precondition.checkNotNull(resultExtractor);
         this.deliveryGuarantee =
                 Objects.isNull(deliveryGuarantee) ? DeliveryGuarantee.NONE : deliveryGuarantee;
-        this.typeInformation = Preconditions.checkNotNull(typeInformation);
+        this.typeInformation = Precondition.checkNotNull(typeInformation);
         this.continuousUnBoundingSettings = continuousUnBoundingSettings;
         this.boundedness =
                 Objects.isNull(continuousUnBoundingSettings)
@@ -161,27 +161,27 @@ public class JdbcSource<OUT>
 
     // ---- Visible for testing methods. ---
 
-    @VisibleForTesting
+    @VisibleForTest
     public JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> getSqlSplitEnumeratorProvider() {
         return sqlSplitEnumeratorProvider;
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     public TypeInformation<OUT> getTypeInformation() {
         return typeInformation;
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     public Configuration getConfiguration() {
         return configuration;
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     public ResultExtractor<OUT> getResultExtractor() {
         return resultExtractor;
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     @Override
     public boolean equals(Object o) {
         if (this == o) {

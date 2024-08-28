@@ -4,12 +4,12 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriterState;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.XaConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.TransactionId;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.EmptyTransactionXaException;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.TransientXaException;
 import org.apache.flink.util.ExceptionUtils;
-import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,8 +118,8 @@ public class XaTransaction implements Serializable, AutoCloseable {
     }
 
     public void checkState() {
-        Preconditions.checkState(currentTid != null, "current xid must not be null");
-        Preconditions.checkState(
+        Precondition.checkState(currentTid != null, "current xid must not be null");
+        Precondition.checkState(
                 !hangingXids.isEmpty() && hangingXids.peekLast().equals(currentTid),
                 "inconsistent internal state");
     }
@@ -127,7 +127,7 @@ public class XaTransaction implements Serializable, AutoCloseable {
     /** @param checkpointId to associate with the new transaction. */
     public void createTx(long checkpointId) throws IOException {
         try {
-            Preconditions.checkState(currentTid == null, "currentXid not null");
+            Precondition.checkState(currentTid == null, "currentXid not null");
             currentTid = baseTransaction.withBranch(checkpointId);
             hangingXids.offerLast(currentTid);
             xaConnectionProvider.start(currentTid);

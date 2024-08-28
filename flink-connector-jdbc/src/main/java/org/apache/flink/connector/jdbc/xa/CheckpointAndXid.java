@@ -18,7 +18,7 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.transaction.xa.Xid;
@@ -44,7 +44,7 @@ public final class CheckpointAndXid {
 
     private CheckpointAndXid(long checkpointId, Xid xid, int attempts, boolean restored) {
         this.checkpointId = checkpointId;
-        this.xid = Preconditions.checkNotNull(xid);
+        this.xid = Precondition.checkNotNull(xid);
         this.attempts = attempts;
         this.restored = restored;
     }

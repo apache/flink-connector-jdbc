@@ -23,11 +23,11 @@ import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.InputTypeConfigurable;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
-import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nonnull;
 
@@ -41,7 +41,7 @@ public class GenericJdbcSinkFunction<T> extends RichSinkFunction<T>
     private JdbcOutputSerializer<T> serializer;
 
     public GenericJdbcSinkFunction(@Nonnull JdbcOutputFormat<T, ?, ?> outputFormat) {
-        this.outputFormat = Preconditions.checkNotNull(outputFormat);
+        this.outputFormat = Precondition.checkNotNull(outputFormat);
     }
 
     @Override

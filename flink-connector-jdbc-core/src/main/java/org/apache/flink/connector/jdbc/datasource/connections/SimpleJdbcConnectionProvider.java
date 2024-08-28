@@ -19,7 +19,7 @@ package org.apache.flink.connector.jdbc.datasource.connections;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,7 +84,7 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
     }
 
     private Driver loadDriver(String driverName) throws SQLException, ClassNotFoundException {
-        Preconditions.checkNotNull(driverName);
+        Precondition.checkNotNull(driverName);
         Enumeration<Driver> drivers = DriverManager.getDrivers();
         while (drivers.hasMoreElements()) {
             Driver driver = drivers.nextElement();

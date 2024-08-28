@@ -2,10 +2,10 @@ package org.apache.flink.connector.jdbc.datasource.transactions.xa.domain;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
 import org.apache.flink.util.FlinkRuntimeException;
-import org.apache.flink.util.Preconditions;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -166,7 +166,7 @@ public class TransactionId implements Xid, Serializable {
 
     @Override
     public byte[] getBranchQualifier() {
-        Preconditions.checkArgument(checkpointId >= 0, "No branch was initialized");
+        Precondition.checkArgument(checkpointId >= 0, "No branch was initialized");
         try {
             // branchQualifier = numberOfSubtasks + checkpoint id
             final DataOutputSerializer out = new DataOutputSerializer(1);

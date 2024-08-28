@@ -24,7 +24,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.util.Objects;
 
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 
 /**
  * Settings describing how to do continuous file discovery and enumeration for the file source's

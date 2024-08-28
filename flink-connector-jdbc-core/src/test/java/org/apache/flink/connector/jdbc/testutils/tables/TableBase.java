@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.testutils.tables;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.functions.JdbcResultSetBuilder;
@@ -33,7 +34,6 @@ import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.utils.TypeConversions;
-import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.function.FunctionWithException;
 
 import java.sql.Connection;
@@ -56,8 +56,8 @@ public abstract class TableBase<T> implements TableManaged {
     private final TableField[] fields;
 
     protected TableBase(String name, TableField[] fields) {
-        Preconditions.checkArgument(name != null && !name.isEmpty(), "Table name must be defined");
-        Preconditions.checkArgument(
+        Precondition.checkArgument(name != null && !name.isEmpty(), "Table name must be defined");
+        Precondition.checkArgument(
                 fields != null && fields.length != 0, "Table fields must be defined");
         this.name = name;
         this.fields = fields;

@@ -25,6 +25,7 @@ import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitable;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.XaConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.statements.JdbcQueryStatement;
@@ -33,7 +34,6 @@ import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.Transac
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
-import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +45,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
-import static org.apache.flink.util.Preconditions.checkState;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkState;
 
 /**
  * Jdbc writer that allow at-least-once (non-XA operation) and exactly-once (XA operation)
@@ -189,7 +189,7 @@ public class JdbcWriter<IN>
             return Collections.emptyList();
         }
 
-        Preconditions.checkState(
+        Precondition.checkState(
                 checkpointId > lastCheckpointId,
                 "Expected %s > %s",
                 checkpointId,

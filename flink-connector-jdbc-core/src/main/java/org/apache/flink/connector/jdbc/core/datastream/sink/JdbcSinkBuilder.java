@@ -34,7 +34,7 @@ import org.apache.flink.util.function.SerializableSupplier;
 
 import javax.sql.XADataSource;
 
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 
 /** Builder to construct {@link JdbcSink}. */
 @PublicEvolving

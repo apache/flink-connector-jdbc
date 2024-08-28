@@ -19,7 +19,7 @@
 package org.apache.flink.connector.jdbc.split;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import javax.annotation.Nonnull;
 
@@ -42,15 +42,15 @@ public class JdbcSlideTimingParameterProvider implements JdbcParameterValuesProv
             long slideSpanMills,
             long slideStepMills,
             long splitGenerateDelayMillis) {
-        this.startMills = Preconditions.checkNotNull(startMills);
-        Preconditions.checkArgument(
+        this.startMills = Precondition.checkNotNull(startMills);
+        Precondition.checkArgument(
                 startMills > 0L,
                 "'startMillis' of JdbcSlideTimingParameterProvider must be greater than 0. ");
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 slideSpanMills > 0 || slideStepMills > 0,
                 "JdbcSlideTimingParameterProvider parameters must satisfy "
                         + "slideSpanMills > 0 and slideStepMills > 0");
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 splitGenerateDelayMillis >= 0L,
                 "JdbcSlideTimingParameterProvider parameters must satisfy "
                         + "splitGenerateDelayMillis >= 0");
@@ -73,7 +73,7 @@ public class JdbcSlideTimingParameterProvider implements JdbcParameterValuesProv
 
     @Override
     public void setOptionalState(Serializable optionalState) {
-        Preconditions.checkArgument((Long) optionalState > 0L);
+        Precondition.checkArgument((Long) optionalState > 0L);
         this.startMills = (Long) optionalState;
     }
 

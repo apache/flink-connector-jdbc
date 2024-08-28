@@ -19,8 +19,8 @@ package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.connector.jdbc.JdbcTestCheckpoint;
 import org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
-import org.apache.flink.util.Preconditions;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.xa.JdbcXaSinkTestBase.TEST_SINK_CONTEXT;
@@ -32,8 +32,8 @@ class JdbcXaSinkTestHelper implements AutoCloseable {
     private final XaSinkStateHandler state;
 
     JdbcXaSinkTestHelper(JdbcXaSinkFunction<TestEntry> sink, XaSinkStateHandler stateHandler) {
-        this.sink = Preconditions.checkNotNull(sink);
-        this.state = Preconditions.checkNotNull(stateHandler);
+        this.sink = Precondition.checkNotNull(sink);
+        this.state = Precondition.checkNotNull(stateHandler);
     }
 
     void emitAndCheckpoint(JdbcTestCheckpoint cp) throws Exception {

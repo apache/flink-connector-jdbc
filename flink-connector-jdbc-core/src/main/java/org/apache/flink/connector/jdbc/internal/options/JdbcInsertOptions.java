@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.jdbc.internal.options;
 
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import java.util.stream.IntStream;
 
@@ -30,7 +30,7 @@ public class JdbcInsertOptions extends JdbcTypedQueryOptions {
 
     public JdbcInsertOptions(String query, int[] typesArray) {
         super(typesArray);
-        this.query = Preconditions.checkNotNull(query, "query is empty");
+        this.query = Precondition.checkNotNull(query, "query is empty");
     }
 
     public String getQuery() {

@@ -23,7 +23,7 @@ import org.apache.flink.util.StringUtils;
 
 import java.util.Objects;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
 
 /**
  * Table path of PostgresSQL in Flink. Can be of formats "table_name" or "schema_name.table_name".

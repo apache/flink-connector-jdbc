@@ -26,12 +26,12 @@ import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.SqlTemplateSplitEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcSlideTimingParameterProvider;
 import org.apache.flink.types.Row;
-import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 
 import org.slf4j.Logger;
@@ -133,7 +133,7 @@ public class JdbcSourceBuilder<OUT> {
     }
 
     public JdbcSourceBuilder<OUT> setSql(@Nonnull String sql) {
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 !StringUtils.isNullOrWhitespaceOnly(sql),
                 "It's required to set the 'sql' with non-empty value.");
         this.sql = sql;
@@ -142,7 +142,7 @@ public class JdbcSourceBuilder<OUT> {
 
     public JdbcSourceBuilder<OUT> setResultExtractor(ResultExtractor<OUT> resultExtractor) {
         this.resultExtractor =
-                Preconditions.checkNotNull(
+                Precondition.checkNotNull(
                         resultExtractor, "It's required to set the 'resultExtractor'.");
         return this;
     }
@@ -158,7 +158,7 @@ public class JdbcSourceBuilder<OUT> {
     }
 
     public JdbcSourceBuilder<OUT> setDriverName(String driverName) {
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 !StringUtils.isNullOrWhitespaceOnly(driverName),
                 "It's required to set the 'driverName'.");
         connOptionsBuilder.withDriverName(driverName);
@@ -166,7 +166,7 @@ public class JdbcSourceBuilder<OUT> {
     }
 
     public JdbcSourceBuilder<OUT> setDBUrl(String dbURL) {
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 !StringUtils.isNullOrWhitespaceOnly(dbURL), "It's required to set the 'dbURL'.");
         connOptionsBuilder.withUrl(dbURL);
         return this;
@@ -175,7 +175,7 @@ public class JdbcSourceBuilder<OUT> {
     public JdbcSourceBuilder<OUT> setTypeInformation(
             @Nonnull TypeInformation<OUT> typeInformation) {
         this.typeInformation =
-                Preconditions.checkNotNull(
+                Precondition.checkNotNull(
                         typeInformation, "It's required to set the 'typeInformation'.");
         return this;
     }
@@ -199,12 +199,12 @@ public class JdbcSourceBuilder<OUT> {
      */
     public JdbcSourceBuilder<OUT> setJdbcParameterValuesProvider(
             @Nonnull JdbcParameterValuesProvider parameterValuesProvider) {
-        this.jdbcParameterValuesProvider = Preconditions.checkNotNull(parameterValuesProvider);
+        this.jdbcParameterValuesProvider = Precondition.checkNotNull(parameterValuesProvider);
         return this;
     }
 
     public JdbcSourceBuilder<OUT> setDeliveryGuarantee(DeliveryGuarantee deliveryGuarantee) {
-        this.deliveryGuarantee = Preconditions.checkNotNull(deliveryGuarantee);
+        this.deliveryGuarantee = Precondition.checkNotNull(deliveryGuarantee);
         return this;
     }
 
@@ -215,14 +215,14 @@ public class JdbcSourceBuilder<OUT> {
     }
 
     public JdbcSourceBuilder<OUT> setConnectionProperty(String propKey, String propVal) {
-        Preconditions.checkNotNull(propKey, "Connection property key mustn't be null");
-        Preconditions.checkNotNull(propVal, "Connection property value mustn't be null");
+        Precondition.checkNotNull(propKey, "Connection property key mustn't be null");
+        Precondition.checkNotNull(propVal, "Connection property value mustn't be null");
         connOptionsBuilder.withProperty(propKey, propVal);
         return this;
     }
 
     public JdbcSourceBuilder<OUT> setSplitReaderFetchBatchSize(int splitReaderFetchBatchSize) {
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 splitReaderFetchBatchSize > 0,
                 "'splitReaderFetchBatchSize' must be in range (0, %s]",
                 Integer.MAX_VALUE);
@@ -246,7 +246,7 @@ public class JdbcSourceBuilder<OUT> {
     }
 
     public JdbcSourceBuilder<OUT> setResultSetFetchSize(int resultSetFetchSize) {
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 resultSetFetchSize == Integer.MIN_VALUE || resultSetFetchSize > 0,
                 "Illegal value %s for fetchSize, has to be positive or Integer.MIN_VALUE.",
                 resultSetFetchSize);
@@ -256,7 +256,7 @@ public class JdbcSourceBuilder<OUT> {
 
     public JdbcSourceBuilder<OUT> setConnectionProvider(
             @Nonnull JdbcConnectionProvider connectionProvider) {
-        this.connectionProvider = Preconditions.checkNotNull(connectionProvider);
+        this.connectionProvider = Precondition.checkNotNull(connectionProvider);
         return this;
     }
 
@@ -273,7 +273,7 @@ public class JdbcSourceBuilder<OUT> {
         }
 
         if (deliveryGuarantee == DeliveryGuarantee.EXACTLY_ONCE) {
-            Preconditions.checkArgument(
+            Precondition.checkArgument(
                     this.resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE
                             || this.resultSetType == ResultSet.CONCUR_READ_ONLY,
                     "The 'resultSetType' must be ResultSet.TYPE_SCROLL_INSENSITIVE or ResultSet.CONCUR_READ_ONLY when using %s",
@@ -286,13 +286,13 @@ public class JdbcSourceBuilder<OUT> {
                 JdbcSourceOptions.READER_FETCH_BATCH_SIZE, splitReaderFetchBatchSize);
         this.configuration.set(JdbcSourceOptions.AUTO_COMMIT, autoCommit);
 
-        Preconditions.checkState(
+        Precondition.checkState(
                 !StringUtils.isNullOrWhitespaceOnly(sql), "'sql' mustn't be null or empty.");
-        Preconditions.checkNotNull(resultExtractor, "'resultExtractor' mustn't be null.");
-        Preconditions.checkNotNull(typeInformation, "'typeInformation' mustn't be null.");
+        Precondition.checkNotNull(resultExtractor, "'resultExtractor' mustn't be null.");
+        Precondition.checkNotNull(typeInformation, "'typeInformation' mustn't be null.");
 
         if (Objects.nonNull(continuousUnBoundingSettings)) {
-            Preconditions.checkArgument(
+            Precondition.checkArgument(
                     Objects.nonNull(jdbcParameterValuesProvider)
                             && jdbcParameterValuesProvider
                                     instanceof JdbcSlideTimingParameterProvider,
@@ -301,7 +301,7 @@ public class JdbcSourceBuilder<OUT> {
 
         if (Objects.nonNull(jdbcParameterValuesProvider)
                 && jdbcParameterValuesProvider instanceof JdbcSlideTimingParameterProvider) {
-            Preconditions.checkArgument(
+            Precondition.checkArgument(
                     Objects.nonNull(continuousUnBoundingSettings),
                     INVALID_CONTINUOUS_SLIDE_TIMING_HINT);
         }

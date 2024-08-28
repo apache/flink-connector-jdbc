@@ -27,6 +27,7 @@ import org.apache.flink.connector.jdbc.core.database.JdbcFactoryLoader;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.core.table.sink.JdbcDynamicTableSink;
 import org.apache.flink.connector.jdbc.core.table.source.JdbcDynamicTableSource;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcReadOptions;
@@ -40,7 +41,6 @@ import org.apache.flink.table.factories.DynamicTableSourceFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nullable;
 
@@ -353,7 +353,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         }
         String[] propertyNames =
                 Arrays.stream(configOptions).map(ConfigOption::key).toArray(String[]::new);
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 configOptions.length == presentCount || presentCount == 0,
                 "Either all or none of the following options should be provided:\n"
                         + String.join("\n", propertyNames));

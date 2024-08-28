@@ -28,6 +28,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
@@ -37,7 +38,6 @@ import org.apache.flink.runtime.state.FunctionSnapshotContext;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.util.ExceptionUtils;
-import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -199,16 +199,16 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
             JdbcExactlyOnceOptions options,
             XaGroupOps xaGroupOps) {
 
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 outputFormat.getExecutionOptions().getMaxRetries() == 0,
                 "JDBC XA sink requires maxRetries equal to 0, otherwise it could "
                         + "cause duplicates. See issue FLINK-22311 for details.");
 
-        this.xaFacade = Preconditions.checkNotNull(xaFacade);
-        this.xidGenerator = Preconditions.checkNotNull(xidGenerator);
-        this.outputFormat = Preconditions.checkNotNull(outputFormat);
-        this.stateHandler = Preconditions.checkNotNull(stateHandler);
-        this.options = Preconditions.checkNotNull(options);
+        this.xaFacade = Precondition.checkNotNull(xaFacade);
+        this.xidGenerator = Precondition.checkNotNull(xidGenerator);
+        this.outputFormat = Precondition.checkNotNull(outputFormat);
+        this.stateHandler = Precondition.checkNotNull(stateHandler);
+        this.options = Precondition.checkNotNull(options);
         this.xaGroupOps = xaGroupOps;
     }
 
@@ -261,7 +261,7 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
 
     @Override
     public void invoke(T value, Context context) throws IOException {
-        Preconditions.checkState(currentXid != null, "current xid must not be null");
+        Precondition.checkState(currentXid != null, "current xid must not be null");
         if (LOG.isTraceEnabled()) {
             LOG.trace("invoke, xid: {}, value: {}", currentXid, value);
         }
@@ -288,8 +288,8 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
     }
 
     private void prepareCurrentTx(long checkpointId) throws IOException {
-        Preconditions.checkState(currentXid != null, "no current xid");
-        Preconditions.checkState(
+        Precondition.checkState(currentXid != null, "no current xid");
+        Precondition.checkState(
                 !hangingXids.isEmpty() && hangingXids.peekLast().equals(currentXid),
                 "inconsistent internal state");
         hangingXids.pollLast();
@@ -310,7 +310,7 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
 
     /** @param checkpointId to associate with the new transaction. */
     private void beginTx(long checkpointId) throws Exception {
-        Preconditions.checkState(currentXid == null, "currentXid not null");
+        Precondition.checkState(currentXid == null, "currentXid not null");
         currentXid = xidGenerator.generateXid(JobSubtask.of(getRuntimeContext()), checkpointId);
         hangingXids.offerLast(currentXid);
         xaFacade.start(currentXid);

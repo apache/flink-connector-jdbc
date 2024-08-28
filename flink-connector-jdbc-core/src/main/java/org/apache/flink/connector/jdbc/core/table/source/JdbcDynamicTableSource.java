@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.core.table.source;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.core.table.FilterHandlingPolicy;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcReadOptions;
 import org.apache.flink.connector.jdbc.split.CompositeJdbcParameterValuesProvider;
@@ -43,7 +44,6 @@ import org.apache.flink.table.expressions.CallExpression;
 import org.apache.flink.table.expressions.ResolvedExpression;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.util.Preconditions;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -103,7 +103,7 @@ public class JdbcDynamicTableSource
         String[] keyNames = new String[context.getKeys().length];
         for (int i = 0; i < keyNames.length; i++) {
             int[] innerKeyArr = context.getKeys()[i];
-            Preconditions.checkArgument(
+            Precondition.checkArgument(
                     innerKeyArr.length == 1, "JDBC only support non-nested look up keys");
             keyNames[i] = DataType.getFieldNames(physicalRowDataType).get(innerKeyArr[0]);
         }

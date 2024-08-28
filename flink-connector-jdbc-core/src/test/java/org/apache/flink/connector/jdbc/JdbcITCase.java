@@ -48,7 +48,7 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.INPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.INSERT_TEMPLATE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Smoke tests for the {@link GenericJdbcSinkFunction} and the underlying classes. */

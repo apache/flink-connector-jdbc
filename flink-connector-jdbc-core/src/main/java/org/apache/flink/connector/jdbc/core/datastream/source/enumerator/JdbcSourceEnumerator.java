@@ -24,7 +24,7 @@ import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,14 +58,14 @@ public class JdbcSourceEnumerator
             JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> sqlSplitEnumerator,
             ContinuousUnBoundingSettings continuousUnBoundingSettings,
             List<JdbcSourceSplit> unassigned) {
-        this.context = Preconditions.checkNotNull(context);
-        this.sqlSplitEnumerator = Preconditions.checkNotNull(sqlSplitEnumerator);
+        this.context = Precondition.checkNotNull(context);
+        this.sqlSplitEnumerator = Precondition.checkNotNull(sqlSplitEnumerator);
         this.continuousUnBoundingSettings = continuousUnBoundingSettings;
         this.boundedness =
                 Objects.isNull(continuousUnBoundingSettings)
                         ? Boundedness.BOUNDED
                         : Boundedness.CONTINUOUS_UNBOUNDED;
-        this.unassigned = Preconditions.checkNotNull(unassigned);
+        this.unassigned = Precondition.checkNotNull(unassigned);
         this.readersAwaitingSplit = new LinkedHashMap<>();
     }
 

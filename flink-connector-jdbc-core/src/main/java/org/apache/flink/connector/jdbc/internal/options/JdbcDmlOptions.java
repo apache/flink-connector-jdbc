@@ -18,7 +18,7 @@
 package org.apache.flink.connector.jdbc.internal.options;
 
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import javax.annotation.Nullable;
 
@@ -48,9 +48,9 @@ public class JdbcDmlOptions extends JdbcTypedQueryOptions {
             int[] fieldTypes,
             String[] keyFields) {
         super(fieldTypes);
-        this.tableName = Preconditions.checkNotNull(tableName, "table is empty");
-        this.dialect = Preconditions.checkNotNull(dialect, "dialect is empty");
-        this.fieldNames = Preconditions.checkNotNull(fieldNames, "field names is empty");
+        this.tableName = Precondition.checkNotNull(tableName, "table is empty");
+        this.dialect = Precondition.checkNotNull(dialect, "dialect is empty");
+        this.fieldNames = Precondition.checkNotNull(fieldNames, "field names is empty");
         this.keyFields = keyFields;
     }
 

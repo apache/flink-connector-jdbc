@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.jdbc.split;
 
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import java.io.Serializable;
 
@@ -52,7 +52,7 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
      * @param maxVal the upper bound of the produced "to" values
      */
     public JdbcNumericBetweenParametersProvider(long minVal, long maxVal) {
-        Preconditions.checkArgument(minVal <= maxVal, "minVal must not be larger than maxVal");
+        Precondition.checkArgument(minVal <= maxVal, "minVal must not be larger than maxVal");
         this.minVal = minVal;
         this.maxVal = maxVal;
     }
@@ -65,14 +65,14 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
      * @param maxVal the upper bound of the produced "to" values
      */
     public JdbcNumericBetweenParametersProvider(long fetchSize, long minVal, long maxVal) {
-        Preconditions.checkArgument(minVal <= maxVal, "minVal must not be larger than maxVal");
+        Precondition.checkArgument(minVal <= maxVal, "minVal must not be larger than maxVal");
         this.minVal = minVal;
         this.maxVal = maxVal;
         ofBatchSize(fetchSize);
     }
 
     public JdbcNumericBetweenParametersProvider ofBatchSize(long batchSize) {
-        Preconditions.checkArgument(batchSize > 0, "Batch size must be positive");
+        Precondition.checkArgument(batchSize > 0, "Batch size must be positive");
 
         long maxElemCount = (maxVal - minVal) + 1;
         if (batchSize > maxElemCount) {
@@ -84,7 +84,7 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
     }
 
     public JdbcNumericBetweenParametersProvider ofBatchNum(int batchNum) {
-        Preconditions.checkArgument(batchNum > 0, "Batch number must be positive");
+        Precondition.checkArgument(batchNum > 0, "Batch number must be positive");
 
         long maxElemCount = (maxVal - minVal) + 1;
         if (batchNum > maxElemCount) {
@@ -97,7 +97,7 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
 
     @Override
     public Serializable[][] getParameterValues() {
-        Preconditions.checkState(
+        Precondition.checkState(
                 batchSize > 0,
                 "Batch size and batch number must be positive. Have you called `ofBatchSize` or `ofBatchNum`?");
 

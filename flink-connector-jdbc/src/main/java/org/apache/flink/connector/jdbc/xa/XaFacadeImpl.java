@@ -18,9 +18,9 @@
 package org.apache.flink.connector.jdbc.xa;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
+import org.apache.flink.connector.jdbc.core.util.VisibleForTest;
 import org.apache.flink.util.FlinkRuntimeException;
-import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.function.ThrowingRunnable;
 
 import org.slf4j.Logger;
@@ -82,19 +82,19 @@ class XaFacadeImpl implements XaFacade {
     private transient Connection connection;
     private transient XAConnection xaConnection;
 
-    @VisibleForTesting
+    @VisibleForTest
     static XaFacadeImpl fromXaDataSource(XADataSource ds) {
         return new XaFacadeImpl(() -> ds, null);
     }
 
     XaFacadeImpl(Supplier<XADataSource> dataSourceSupplier, Integer timeoutSec) {
-        this.dataSourceSupplier = Preconditions.checkNotNull(dataSourceSupplier);
+        this.dataSourceSupplier = Precondition.checkNotNull(dataSourceSupplier);
         this.timeoutSec = timeoutSec;
     }
 
     @Override
     public void open() throws SQLException {
-        Preconditions.checkState(!isOpen(), "already connected");
+        Precondition.checkState(!isOpen(), "already connected");
         XADataSource ds = dataSourceSupplier.get();
         xaConnection = ds.getXAConnection();
         xaResource = xaConnection.getXAResource();
@@ -108,7 +108,7 @@ class XaFacadeImpl implements XaFacade {
         connection = xaConnection.getConnection();
         connection.setReadOnly(false);
         connection.setAutoCommit(false);
-        Preconditions.checkState(!connection.getAutoCommit());
+        Precondition.checkState(!connection.getAutoCommit());
     }
 
     @Override
@@ -135,7 +135,7 @@ class XaFacadeImpl implements XaFacade {
 
     @Override
     public Connection getConnection() {
-        Preconditions.checkNotNull(connection);
+        Precondition.checkNotNull(connection);
         return connection;
     }
 
@@ -248,7 +248,7 @@ class XaFacadeImpl implements XaFacade {
                                 for (int i = 0; list.addAll(recover(TMNOFLAGS)); i++) {
                                     // H2 sometimes returns same tx list here - should probably use
                                     // recover(TMSTARTRSCAN | TMENDRSCAN)
-                                    Preconditions.checkState(
+                                    Precondition.checkState(
                                             i < MAX_RECOVER_CALLS, "too many xa_recover() calls");
                                 }
                             } finally {
@@ -268,7 +268,7 @@ class XaFacadeImpl implements XaFacade {
     }
 
     private <T> T execute(Command<T> cmd) throws FlinkRuntimeException {
-        Preconditions.checkState(isOpen(), "not connected");
+        Precondition.checkState(isOpen(), "not connected");
         LOG.debug("{}, xid={}", cmd.name, cmd.xid);
         try {
             T result = cmd.callable.call();

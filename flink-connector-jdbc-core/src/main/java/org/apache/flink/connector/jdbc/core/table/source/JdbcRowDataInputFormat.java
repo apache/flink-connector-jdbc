@@ -28,6 +28,7 @@ import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectConverter;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
@@ -35,7 +36,6 @@ import org.apache.flink.core.io.GenericInputSplit;
 import org.apache.flink.core.io.InputSplit;
 import org.apache.flink.core.io.InputSplitAssigner;
 import org.apache.flink.table.data.RowData;
-import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -353,7 +353,7 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
         }
 
         public Builder setFetchSize(int fetchSize) {
-            Preconditions.checkArgument(
+            Precondition.checkArgument(
                     fetchSize == Integer.MIN_VALUE || fetchSize > 0,
                     "Illegal value %s for fetchSize, has to be positive or Integer.MIN_VALUE.",
                     fetchSize);

@@ -29,7 +29,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.function.Function;
 
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 
 /**
  * {@link JdbcBatchStatementExecutor} that provides upsert semantics by updating row if it exists

@@ -19,7 +19,6 @@
 package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.annotation.Experimental;
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.io.DefaultInputSplitAssigner;
 import org.apache.flink.api.common.io.InputFormat;
 import org.apache.flink.api.common.io.RichInputFormat;
@@ -29,6 +28,8 @@ import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.core.datastream.source.JdbcSource;
 import org.apache.flink.connector.jdbc.core.datastream.source.JdbcSourceBuilder;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
+import org.apache.flink.connector.jdbc.core.util.VisibleForTest;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
@@ -36,7 +37,6 @@ import org.apache.flink.core.io.GenericInputSplit;
 import org.apache.flink.core.io.InputSplit;
 import org.apache.flink.core.io.InputSplitAssigner;
 import org.apache.flink.types.Row;
-import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -325,12 +325,12 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
         return new DefaultInputSplitAssigner(inputSplits);
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     protected PreparedStatement getStatement() {
         return statement;
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     protected Connection getDbConn() {
         return connectionProvider.getConnection();
     }
@@ -404,7 +404,7 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
         }
 
         public JdbcInputFormatBuilder setFetchSize(int fetchSize) {
-            Preconditions.checkArgument(
+            Precondition.checkArgument(
                     fetchSize == Integer.MIN_VALUE || fetchSize > 0,
                     "Illegal value %s for fetchSize, has to be positive or Integer.MIN_VALUE.",
                     fetchSize);

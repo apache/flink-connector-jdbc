@@ -19,14 +19,14 @@
 package org.apache.flink.connector.jdbc.mysql.database.catalog;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.core.database.catalog.AbstractJdbcCatalog;
 import org.apache.flink.connector.jdbc.core.database.catalog.JdbcCatalogTypeMapper;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
+import org.apache.flink.connector.jdbc.core.util.VisibleForTest;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.types.DataType;
-import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.TemporaryClassLoaderContext;
 
 import org.apache.commons.lang3.StringUtils;
@@ -64,7 +64,7 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
                 }
             };
 
-    @VisibleForTesting
+    @VisibleForTest
     public MySqlCatalog(
             ClassLoader userClassLoader,
             String catalogName,
@@ -89,9 +89,9 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
         super(userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
 
         String driverVersion =
-                Preconditions.checkNotNull(getDriverVersion(), "Driver version must not be null.");
+                Precondition.checkNotNull(getDriverVersion(), "Driver version must not be null.");
         String databaseVersion =
-                Preconditions.checkNotNull(
+                Precondition.checkNotNull(
                         getDatabaseVersion(), "Database version must not be null.");
         LOG.info("Driver version: {}, database version: {}", driverVersion, databaseVersion);
         this.dialectTypeMapper = new MySqlTypeMapper(databaseVersion, driverVersion);
@@ -111,7 +111,7 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
     @Override
     public List<String> listTables(String databaseName)
             throws DatabaseNotExistException, CatalogException {
-        Preconditions.checkState(
+        Precondition.checkState(
                 StringUtils.isNotBlank(databaseName), "Database name must not be blank.");
         if (!databaseExists(databaseName)) {
             throw new DatabaseNotExistException(getName(), databaseName);

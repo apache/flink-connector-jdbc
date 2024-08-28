@@ -19,8 +19,8 @@
 package org.apache.flink.connector.jdbc.internal;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
+import org.apache.flink.connector.jdbc.core.util.VisibleForTest;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
@@ -42,7 +42,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 
 /** A JDBC outputFormat that supports batching records before writing records to database. */
 @Internal
@@ -247,7 +247,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
         return executionOptions;
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     public Connection getConnection() {
         return connectionProvider.getConnection();
     }

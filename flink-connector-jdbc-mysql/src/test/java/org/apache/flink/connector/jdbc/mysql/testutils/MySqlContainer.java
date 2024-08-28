@@ -31,7 +31,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
 
 /** {@link MySQLContainer} with Xa and LockDB. */
 public class MySqlContainer extends MySQLContainer<MySqlContainer> {

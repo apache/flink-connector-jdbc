@@ -18,7 +18,7 @@
 package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -35,7 +35,7 @@ public class JdbcExecutionOptions implements Serializable {
     private final int maxRetries;
 
     private JdbcExecutionOptions(long batchIntervalMs, int batchSize, int maxRetries) {
-        Preconditions.checkArgument(maxRetries >= 0);
+        Precondition.checkArgument(maxRetries >= 0);
         this.batchIntervalMs = batchIntervalMs;
         this.batchSize = batchSize;
         this.maxRetries = maxRetries;

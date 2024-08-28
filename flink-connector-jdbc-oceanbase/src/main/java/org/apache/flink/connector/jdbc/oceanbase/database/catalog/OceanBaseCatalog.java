@@ -22,13 +22,13 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.core.database.catalog.AbstractJdbcCatalog;
 import org.apache.flink.connector.jdbc.core.database.catalog.JdbcCatalogTypeMapper;
 import org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.connector.jdbc.oceanbase.database.dialect.OceanBaseCompatibleMode;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.UniqueConstraint;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.types.DataType;
-import org.apache.flink.util.Preconditions;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -105,7 +105,7 @@ public class OceanBaseCatalog extends AbstractJdbcCatalog {
     @Override
     public List<String> listTables(String databaseName)
             throws DatabaseNotExistException, CatalogException {
-        Preconditions.checkState(
+        Precondition.checkState(
                 StringUtils.isNotBlank(databaseName), "Database name must not be blank.");
         if (!databaseExists(databaseName)) {
             throw new DatabaseNotExistException(getName(), databaseName);

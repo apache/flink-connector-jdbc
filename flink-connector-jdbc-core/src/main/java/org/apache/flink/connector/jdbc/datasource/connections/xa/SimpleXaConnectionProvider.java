@@ -18,11 +18,11 @@
 package org.apache.flink.connector.jdbc.datasource.connections.xa;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
+import org.apache.flink.connector.jdbc.core.util.VisibleForTest;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.EmptyTransactionXaException;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.XaError;
 import org.apache.flink.util.FlinkRuntimeException;
-import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +62,7 @@ public class SimpleXaConnectionProvider implements XaConnectionProvider {
     private transient Connection connection;
     private transient XAConnection xaConnection;
 
-    @VisibleForTesting
+    @VisibleForTest
     public static SimpleXaConnectionProvider from(XADataSource ds) {
         return from(ds, null);
     }
@@ -78,13 +78,13 @@ public class SimpleXaConnectionProvider implements XaConnectionProvider {
 
     private SimpleXaConnectionProvider(
             Supplier<XADataSource> dataSourceSupplier, Integer timeoutSec) {
-        this.dataSourceSupplier = Preconditions.checkNotNull(dataSourceSupplier);
+        this.dataSourceSupplier = Precondition.checkNotNull(dataSourceSupplier);
         this.timeoutSec = timeoutSec;
     }
 
     @Override
     public void open() throws SQLException {
-        Preconditions.checkState(!isOpen(), "already connected");
+        Precondition.checkState(!isOpen(), "already connected");
         XADataSource ds = dataSourceSupplier.get();
         xaConnection = ds.getXAConnection();
         xaResource = xaConnection.getXAResource();
@@ -98,7 +98,7 @@ public class SimpleXaConnectionProvider implements XaConnectionProvider {
         connection = xaConnection.getConnection();
         connection.setReadOnly(false);
         connection.setAutoCommit(false);
-        Preconditions.checkState(!connection.getAutoCommit());
+        Precondition.checkState(!connection.getAutoCommit());
     }
 
     @Override
@@ -125,7 +125,7 @@ public class SimpleXaConnectionProvider implements XaConnectionProvider {
 
     @Override
     public Connection getConnection() {
-        Preconditions.checkNotNull(connection);
+        Precondition.checkNotNull(connection);
         return connection;
     }
 
@@ -243,7 +243,7 @@ public class SimpleXaConnectionProvider implements XaConnectionProvider {
                                 for (int i = 0; list.addAll(recover(TMNOFLAGS)); i++) {
                                     // H2 sometimes returns same tx list here - should probably use
                                     // recover(TMSTARTRSCAN | TMENDRSCAN)
-                                    Preconditions.checkState(
+                                    Precondition.checkState(
                                             i < MAX_RECOVER_CALLS, "too many xa_recover() calls");
                                 }
                             } finally {
@@ -258,7 +258,7 @@ public class SimpleXaConnectionProvider implements XaConnectionProvider {
     }
 
     private <T> T execute(XaCommand<T> cmd) throws FlinkRuntimeException {
-        Preconditions.checkState(isOpen(), "not connected");
+        Precondition.checkState(isOpen(), "not connected");
         try {
             return cmd.execute();
         } catch (XAException e) {
