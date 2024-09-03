@@ -178,14 +178,10 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
                     throw new IOException(e);
                 }
                 try {
-                    if (!connectionProvider.isConnectionValid()) {
-                        updateExecutor(true);
-                    }
+                    updateExecutor(!connectionProvider.isConnectionValid());
                 } catch (Exception exception) {
-                    LOG.error(
-                            "JDBC connection is not valid, and reestablish connection failed.",
-                            exception);
-                    throw new IOException("Reestablish JDBC connection failed", exception);
+                    LOG.error("Attempt to update the JDBC statement executor failed.", exception);
+                    throw new IOException("Unable to update JDBC statement executor", exception);
                 }
                 try {
                     Thread.sleep(1000 * i);
