@@ -18,8 +18,8 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor;
 
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.types.Row;
-import org.apache.flink.util.Preconditions;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,7 +30,7 @@ public class RowResultExtractor implements ResultExtractor<Row> {
     public Row extract(ResultSet resultSet) throws SQLException {
         int arity = resultSet.getMetaData().getColumnCount();
         Row row = new Row(arity);
-        Preconditions.checkArgument(!resultSet.isClosed());
+        Precondition.checkArgument(!resultSet.isClosed());
         for (int index = 0; index < row.getArity(); index++) {
             row.setField(index, resultSet.getObject(index + 1));
         }

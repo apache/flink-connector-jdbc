@@ -31,7 +31,7 @@ import org.apache.flink.types.RowKind;
 
 import java.util.Objects;
 
-import static org.apache.flink.util.Preconditions.checkState;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkState;
 
 /** A {@link DynamicTableSink} for JDBC. */
 @Internal

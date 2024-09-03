@@ -19,9 +19,9 @@
 package org.apache.flink.connector.jdbc.core.table.source;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectConverter;
+import org.apache.flink.connector.jdbc.core.util.VisibleForTest;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
@@ -48,8 +48,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 
 /** A lookup function for {@link JdbcDynamicTableSource}. */
 @Internal
@@ -220,7 +220,7 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
         connectionProvider.closeConnection();
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     public Connection getDbConnection() {
         return connectionProvider.getConnection();
     }

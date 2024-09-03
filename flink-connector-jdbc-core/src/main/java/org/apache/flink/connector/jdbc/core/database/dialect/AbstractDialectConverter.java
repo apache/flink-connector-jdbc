@@ -44,7 +44,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 
 /** Base class for all converters that convert between JDBC object and Flink internal object. */
 public abstract class AbstractDialectConverter implements JdbcDialectConverter {

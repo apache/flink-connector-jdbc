@@ -18,11 +18,11 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.source.enumerator;
 
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.CheckpointedOffset;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
+import org.apache.flink.connector.jdbc.core.util.VisibleForTest;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
-import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 
 import org.slf4j.Logger;
@@ -51,7 +51,7 @@ public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase
             String sqlTemplate,
             @Nullable JdbcParameterValuesProvider parametersProvider) {
         super(userDefinedState);
-        this.sqlTemplate = Preconditions.checkNotNull(sqlTemplate);
+        this.sqlTemplate = Precondition.checkNotNull(sqlTemplate);
         this.parameterValuesProvider = parametersProvider;
     }
 
@@ -94,12 +94,12 @@ public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase
         return jdbcSourceSplitList;
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     public String getSqlTemplate() {
         return sqlTemplate;
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     public JdbcParameterValuesProvider getParameterValuesProvider() {
         return parameterValuesProvider;
     }
@@ -115,7 +115,7 @@ public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase
         private @Nullable JdbcParameterValuesProvider parameterValuesProvider;
 
         public TemplateSqlSplitEnumeratorProvider setSqlTemplate(String sqlTemplate) {
-            Preconditions.checkArgument(
+            Precondition.checkArgument(
                     !StringUtils.isNullOrWhitespaceOnly(sqlTemplate),
                     "sqlTemplate must not be empty.");
             this.sqlTemplate = sqlTemplate;

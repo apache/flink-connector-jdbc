@@ -18,7 +18,6 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.source.reader;
 
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
@@ -31,8 +30,9 @@ import org.apache.flink.connector.base.source.reader.splitreader.SplitsAddition;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsChange;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
+import org.apache.flink.connector.jdbc.core.util.VisibleForTest;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
-import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,23 +101,23 @@ public class JdbcSourceSplitReader<T>
             JdbcConnectionProvider connectionProvider,
             DeliveryGuarantee deliveryGuarantee,
             ResultExtractor<T> resultExtractor) {
-        this.context = Preconditions.checkNotNull(context);
-        this.config = Preconditions.checkNotNull(config);
-        this.typeInformation = Preconditions.checkNotNull(typeInformation);
-        this.connectionProvider = Preconditions.checkNotNull(connectionProvider);
+        this.context = Precondition.checkNotNull(context);
+        this.config = Precondition.checkNotNull(config);
+        this.typeInformation = Precondition.checkNotNull(typeInformation);
+        this.connectionProvider = Precondition.checkNotNull(connectionProvider);
         this.resultSetType = config.getInteger(RESULTSET_TYPE);
         this.resultSetConcurrency = config.getInteger(RESULTSET_CONCURRENCY);
         this.resultSetFetchSize = config.getInteger(RESULTSET_FETCH_SIZE);
         this.autoCommit = config.getBoolean(AUTO_COMMIT);
-        this.deliveryGuarantee = Preconditions.checkNotNull(deliveryGuarantee);
+        this.deliveryGuarantee = Precondition.checkNotNull(deliveryGuarantee);
         this.splits = new ArrayDeque<>();
         this.hasNextRecordCurrentSplit = false;
         this.currentSplit = null;
         int splitReaderFetchBatchSize = config.getInteger(READER_FETCH_BATCH_SIZE);
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 splitReaderFetchBatchSize > 0 && splitReaderFetchBatchSize < Integer.MAX_VALUE);
         this.splitReaderFetchBatchSize = splitReaderFetchBatchSize;
-        this.resultExtractor = Preconditions.checkNotNull(resultExtractor);
+        this.resultExtractor = Precondition.checkNotNull(resultExtractor);
         this.currentSplitOffset = 0;
     }
 
@@ -135,7 +135,7 @@ public class JdbcSourceSplitReader<T>
 
         RecordsBySplits.Builder<RecordAndOffset<T>> recordAndOffsetBuilder =
                 new RecordsBySplits.Builder<>();
-        Preconditions.checkState(currentSplit != null, "currentSplit");
+        Precondition.checkState(currentSplit != null, "currentSplit");
         int batch = this.splitReaderFetchBatchSize;
         while (batch > 0 && hasNextRecordCurrentSplit) {
             try {
@@ -162,7 +162,7 @@ public class JdbcSourceSplitReader<T>
 
         RecordsBySplits.Builder<RecordAndOffset<T>> builder = new RecordsBySplits.Builder<>();
         JdbcSourceSplit splitToFinish = Objects.nonNull(currentSplit) ? currentSplit : skippedSplit;
-        Preconditions.checkState(splitToFinish != null, "Split to finish mustn't be null.");
+        Precondition.checkState(splitToFinish != null, "Split to finish mustn't be null.");
         builder.addFinishedSplit(splitToFinish.splitId());
         currentSplit = null;
         skippedSplit = null;
@@ -227,22 +227,22 @@ public class JdbcSourceSplitReader<T>
         return typeInformation;
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     public List<JdbcSourceSplit> getSplits() {
         return Collections.unmodifiableList(Arrays.asList(splits.toArray(new JdbcSourceSplit[0])));
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     public Connection getConnection() {
         return connection;
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     public PreparedStatement getStatement() {
         return statement;
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     public ResultSet getResultSet() {
         return resultSet;
     }

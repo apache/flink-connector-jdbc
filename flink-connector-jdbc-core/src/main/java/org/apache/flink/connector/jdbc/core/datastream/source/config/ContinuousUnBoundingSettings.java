@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.utils;
+package org.apache.flink.connector.jdbc.core.datastream.source.config;
 
 import org.apache.flink.annotation.PublicEvolving;
 
@@ -24,14 +24,14 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.util.Objects;
 
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 
 /**
  * Settings describing how to do continuous file discovery and enumeration for the file source's
  * continuous discovery and streaming mode.
  */
 @PublicEvolving
-public final class ContinuousUnBoundingSettings implements Serializable {
+public class ContinuousUnBoundingSettings implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

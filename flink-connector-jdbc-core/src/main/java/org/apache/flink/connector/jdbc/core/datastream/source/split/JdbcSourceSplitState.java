@@ -23,7 +23,7 @@ import org.apache.flink.util.FlinkRuntimeException;
 import java.io.Serializable;
 import java.util.Optional;
 
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 
 /** The class is hold the state information of {@link JdbcSourceSplit}. */
 public class JdbcSourceSplitState<SplitT extends JdbcSourceSplit> implements Serializable {

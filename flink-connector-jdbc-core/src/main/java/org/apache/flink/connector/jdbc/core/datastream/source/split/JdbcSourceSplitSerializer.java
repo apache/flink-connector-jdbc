@@ -28,7 +28,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
 
 /** The class is used to de/serialize the {@link JdbcSourceSplit}. */
 public class JdbcSourceSplitSerializer implements SimpleVersionedSerializer<JdbcSourceSplit> {

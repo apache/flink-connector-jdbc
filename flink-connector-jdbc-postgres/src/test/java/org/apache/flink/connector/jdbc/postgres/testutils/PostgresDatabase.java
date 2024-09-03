@@ -26,7 +26,7 @@ import org.apache.flink.util.FlinkRuntimeException;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
 
 /** A Postgres database for testing. */
 public class PostgresDatabase extends DatabaseExtension implements PostgresImages {

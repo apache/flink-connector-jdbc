@@ -30,7 +30,7 @@ import org.apache.flink.connector.jdbc.postgres.database.dialect.PostgresDialect
 import java.util.Properties;
 
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
-import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
 
 /**
  * Utils for {@link JdbcCatalog}.

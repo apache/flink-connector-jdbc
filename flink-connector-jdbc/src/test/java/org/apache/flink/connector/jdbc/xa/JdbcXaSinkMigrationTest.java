@@ -22,11 +22,11 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
 import org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
 import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
 import org.apache.flink.streaming.api.operators.StreamSink;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
-import org.apache.flink.util.Preconditions;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
@@ -170,7 +170,7 @@ class JdbcXaSinkMigrationTest extends JdbcTestBase implements DerbyTestBase {
         String path = getSnapshotPath(flinkVersion);
 
         //        Files.createFile(Paths.get(path));/
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 !Files.exists(Paths.get(path)),
                 String.format("snapshot for version %s already exist: %s", flinkVersion, path));
         initSchema(getMetadata());

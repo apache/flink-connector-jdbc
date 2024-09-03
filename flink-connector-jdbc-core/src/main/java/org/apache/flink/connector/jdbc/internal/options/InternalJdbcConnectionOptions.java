@@ -22,7 +22,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.core.database.JdbcFactoryLoader;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,7 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 
 /** Options for the JDBC connector. */
 @Internal
@@ -192,8 +192,8 @@ public class InternalJdbcConnectionOptions extends JdbcConnectionOptions {
         }
 
         public Builder setProperty(String propKey, String propVal) {
-            Preconditions.checkNotNull(propKey, "Connection property key mustn't be null");
-            Preconditions.checkNotNull(propVal, "Connection property value mustn't be null");
+            Precondition.checkNotNull(propKey, "Connection property key mustn't be null");
+            Precondition.checkNotNull(propVal, "Connection property value mustn't be null");
             this.properties.put(propKey, propVal);
             return this;
         }

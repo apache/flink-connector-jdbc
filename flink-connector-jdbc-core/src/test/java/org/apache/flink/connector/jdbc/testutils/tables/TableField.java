@@ -18,8 +18,8 @@
 
 package org.apache.flink.connector.jdbc.testutils.tables;
 
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.table.types.DataType;
-import org.apache.flink.util.Preconditions;
 
 /** Table field. * */
 public class TableField {
@@ -29,8 +29,8 @@ public class TableField {
     private final boolean pkField;
 
     protected TableField(String name, DataType dataType, DbType dbType, boolean pkField) {
-        Preconditions.checkNotNull(name, "Column name can not be null.");
-        Preconditions.checkNotNull(dataType, "Column data type can not be null.");
+        Precondition.checkNotNull(name, "Column name can not be null.");
+        Precondition.checkNotNull(dataType, "Column data type can not be null.");
         this.name = name;
         this.dataType = dataType;
         this.dbType = dbType;

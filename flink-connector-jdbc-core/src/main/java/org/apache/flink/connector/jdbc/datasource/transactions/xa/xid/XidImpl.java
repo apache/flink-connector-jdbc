@@ -18,7 +18,7 @@
 package org.apache.flink.connector.jdbc.datasource.transactions.xa.xid;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import javax.annotation.Nonnull;
 import javax.transaction.xa.Xid;
@@ -43,8 +43,8 @@ public final class XidImpl implements Xid, Serializable {
     @Nonnull private final byte[] branchQualifier;
 
     public XidImpl(int formatId, byte[] globalTransactionId, byte[] branchQualifier) {
-        Preconditions.checkArgument(globalTransactionId.length <= Xid.MAXGTRIDSIZE);
-        Preconditions.checkArgument(branchQualifier.length <= Xid.MAXBQUALSIZE);
+        Precondition.checkArgument(globalTransactionId.length <= Xid.MAXGTRIDSIZE);
+        Precondition.checkArgument(branchQualifier.length <= Xid.MAXBQUALSIZE);
         this.formatId = formatId;
         this.globalTransactionId = Arrays.copyOf(globalTransactionId, globalTransactionId.length);
         this.branchQualifier = Arrays.copyOf(branchQualifier, branchQualifier.length);

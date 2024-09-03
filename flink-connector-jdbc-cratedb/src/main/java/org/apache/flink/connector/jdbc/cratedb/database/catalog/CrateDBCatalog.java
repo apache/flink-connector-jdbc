@@ -19,7 +19,7 @@
 package org.apache.flink.connector.jdbc.cratedb.database.catalog;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.connector.jdbc.core.util.VisibleForTest;
 import org.apache.flink.connector.jdbc.postgres.database.catalog.PostgresCatalog;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
@@ -57,7 +57,7 @@ public class CrateDBCatalog extends PostgresCatalog {
                 }
             };
 
-    @VisibleForTesting
+    @VisibleForTest
     public CrateDBCatalog(
             ClassLoader userClassLoader,
             String catalogName,

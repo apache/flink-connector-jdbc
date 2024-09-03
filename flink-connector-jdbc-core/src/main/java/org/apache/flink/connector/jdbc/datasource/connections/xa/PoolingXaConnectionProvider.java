@@ -38,8 +38,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkState;
 import static org.apache.flink.util.ExceptionUtils.rethrow;
-import static org.apache.flink.util.Preconditions.checkState;
 
 /**
  * A "pooling" implementation of {@link XaConnectionProvider}. Some database implement XA such that

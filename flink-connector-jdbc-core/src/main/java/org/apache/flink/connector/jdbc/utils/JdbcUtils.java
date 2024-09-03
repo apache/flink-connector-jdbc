@@ -20,8 +20,8 @@ package org.apache.flink.connector.jdbc.utils;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.types.Row;
-import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +46,7 @@ public class JdbcUtils {
     public static Properties getConnectionProperties(ReadableConfig config) {
         final Properties result =
                 getBriefAuthProperties(config.get(USERNAME), config.get(PASSWORD));
-        Preconditions.checkArgument(config instanceof Configuration);
+        Precondition.checkArgument(config instanceof Configuration);
         Map<String, String> configMap = ((Configuration) config).toMap();
         configMap.forEach(
                 (k, v) -> {

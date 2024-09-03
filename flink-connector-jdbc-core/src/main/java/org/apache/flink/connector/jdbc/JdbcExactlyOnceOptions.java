@@ -18,7 +18,7 @@
 package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import java.io.Serializable;
 import java.util.Optional;
@@ -72,7 +72,7 @@ public class JdbcExactlyOnceOptions implements Serializable {
         this.allowOutOfOrderCommits = allowOutOfOrderCommits;
         this.timeoutSec = timeoutSec.orElse(null);
         this.transactionPerConnection = transactionPerConnection;
-        Preconditions.checkArgument(this.maxCommitAttempts > 0, "maxCommitAttempts should be > 0");
+        Precondition.checkArgument(this.maxCommitAttempts > 0, "maxCommitAttempts should be > 0");
     }
 
     public static JdbcExactlyOnceOptions defaults() {

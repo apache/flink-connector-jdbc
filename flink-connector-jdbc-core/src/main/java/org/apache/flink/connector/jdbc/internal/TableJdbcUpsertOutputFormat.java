@@ -17,8 +17,8 @@
 
 package org.apache.flink.connector.jdbc.internal;
 
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
+import org.apache.flink.connector.jdbc.core.util.VisibleForTest;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.executor.InsertOrUpdateJdbcExecutor;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
@@ -38,9 +38,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.function.Function;
 
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
 import static org.apache.flink.connector.jdbc.utils.JdbcUtils.getPrimaryKey;
 import static org.apache.flink.connector.jdbc.utils.JdbcUtils.setRecordToStatement;
-import static org.apache.flink.util.Preconditions.checkArgument;
 
 class TableJdbcUpsertOutputFormat extends RowJdbcOutputFormat<Row> {
     private static final Logger LOG = LoggerFactory.getLogger(TableJdbcUpsertOutputFormat.class);
@@ -60,7 +60,7 @@ class TableJdbcUpsertOutputFormat extends RowJdbcOutputFormat<Row> {
                 () -> createDeleteExecutor(dmlOptions));
     }
 
-    @VisibleForTesting
+    @VisibleForTest
     TableJdbcUpsertOutputFormat(
             JdbcConnectionProvider connectionProvider,
             JdbcExecutionOptions batchOptions,
