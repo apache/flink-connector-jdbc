@@ -21,11 +21,13 @@ package org.apache.flink.connector.jdbc.postgres.database.dialect;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.core.database.dialect.AbstractDialectConverter;
 import org.apache.flink.table.data.GenericArrayData;
+import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
+import org.postgresql.util.PGobject;
 
 import java.lang.reflect.Array;
 
@@ -91,7 +93,19 @@ public class PostgresDialectConverter extends AbstractDialectConverter {
     // Have its own method so that Postgres can support primitives that super class doesn't support
     // in the future
     private JdbcDeserializationConverter createPrimitiveConverter(LogicalType type) {
-        return super.createInternalConverter(type);
+        switch (type.getTypeRoot()) {
+            case VARCHAR:
+                return val -> {
+                    if (val instanceof PGobject) {
+                        PGobject obj = (PGobject) val;
+                        return StringData.fromString(obj.getValue());
+                    } else {
+                        return StringData.fromString((String) val);
+                    }
+                };
+            default:
+                return super.createInternalConverter(type);
+        }
     }
 
     @Override
