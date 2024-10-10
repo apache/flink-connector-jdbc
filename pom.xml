@@ -64,7 +64,7 @@ under the License.
         <junit4.version>4.13.2</junit4.version>
         <junit5.version>5.10.1</junit5.version>
         <assertj.version>3.24.2</assertj.version>
-        <testcontainers.version>1.19.8</testcontainers.version>
+        <testcontainers.version>1.20.1</testcontainers.version>
         <mockito.version>3.12.4</mockito.version>
 
         <japicmp.referenceVersion>3.0.0-1.16</japicmp.referenceVersion>

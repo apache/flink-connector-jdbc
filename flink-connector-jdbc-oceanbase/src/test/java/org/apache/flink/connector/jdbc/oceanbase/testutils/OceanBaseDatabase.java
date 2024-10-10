@@ -27,11 +27,9 @@ import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.oceanbase.OceanBaseCEContainer;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -46,7 +44,7 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
                     .format(ZoneId.systemDefault().getRules().getOffset(Instant.now()));
 
     private static final OceanBaseCEContainer CONTAINER =
-            new OceanBaseContainer(OCEANBASE_CE_4)
+            new OceanBaseCEContainer(OCEANBASE_CE_4)
                     .withPassword("123456")
                     .withUrlParam("useSSL", "false")
                     .withUrlParam("serverTimezone", ZONE_OFFSET)
@@ -54,9 +52,6 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
                             Transferable.of(
                                     String.format("SET GLOBAL time_zone = '%s';", ZONE_OFFSET)),
                             "/root/boot/init.d/init.sql")
-                    .waitingFor(
-                            Wait.forLogMessage(".*boot success!.*", 1)
-                                    .withStartupTimeout(Duration.ofMinutes(2)))
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
     private static OceanBaseMetadata metadata;
