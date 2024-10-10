@@ -46,7 +46,7 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
                     .format(ZoneId.systemDefault().getRules().getOffset(Instant.now()));
 
     private static final OceanBaseCEContainer CONTAINER =
-            new OceanBaseContainer(OCEANBASE_CE_4)
+            new OceanBaseCEContainer(OCEANBASE_CE_4)
                     .withPassword("123456")
                     .withUrlParam("useSSL", "false")
                     .withUrlParam("serverTimezone", ZONE_OFFSET)
@@ -56,7 +56,7 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
                             "/root/boot/init.d/init.sql")
                     .waitingFor(
                             Wait.forLogMessage(".*boot success!.*", 1)
-                                    .withStartupTimeout(Duration.ofMinutes(2)))
+                                    .withStartupTimeout(Duration.ofMinutes(3)))
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
     private static OceanBaseMetadata metadata;
