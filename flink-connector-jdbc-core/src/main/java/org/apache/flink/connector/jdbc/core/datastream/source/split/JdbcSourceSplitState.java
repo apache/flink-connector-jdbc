@@ -79,7 +79,7 @@ public class JdbcSourceSplitState<SplitT extends JdbcSourceSplit> implements Ser
         this.recordsToSkipAfterOffset = offset.getRecordsAfterOffset();
     }
 
-    /** Use the current row count as the starting row count to create a new FileSourceSplit. */
+    /** Use the current row count as the starting row count to create a new JdbcSourceSplit. */
     @SuppressWarnings("unchecked")
     public SplitT toJdbcSourceSplit() {
         final CheckpointedOffset position =
