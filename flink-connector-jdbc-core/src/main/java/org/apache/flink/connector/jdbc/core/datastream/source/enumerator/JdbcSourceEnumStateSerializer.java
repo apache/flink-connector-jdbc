@@ -20,9 +20,9 @@ package org.apache.flink.connector.jdbc.core.datastream.source.enumerator;
 
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplitSerializer;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.InstantiationUtil;
-import org.apache.flink.util.Preconditions;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -33,7 +33,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
 
 /** The serializer for {@link JdbcSourceEnumeratorState}. */
 public class JdbcSourceEnumStateSerializer
@@ -44,7 +44,7 @@ public class JdbcSourceEnumStateSerializer
     private final JdbcSourceSplitSerializer splitSerializer;
 
     public JdbcSourceEnumStateSerializer(JdbcSourceSplitSerializer splitSerializer) {
-        this.splitSerializer = Preconditions.checkNotNull(splitSerializer);
+        this.splitSerializer = Precondition.checkNotNull(splitSerializer);
     }
 
     @Override
@@ -83,7 +83,7 @@ public class JdbcSourceEnumStateSerializer
 
         out.writeInt(jdbcSourceSplits.size());
         for (JdbcSourceSplit sourceSplit : jdbcSourceSplits) {
-            Preconditions.checkNotNull(sourceSplit);
+            Precondition.checkNotNull(sourceSplit);
             splitSerializer.serializeJdbcSourceSplit(out, sourceSplit);
         }
     }

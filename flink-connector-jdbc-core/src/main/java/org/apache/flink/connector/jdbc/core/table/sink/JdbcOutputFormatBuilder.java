@@ -41,9 +41,9 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.function.Function;
 
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 import static org.apache.flink.table.data.RowData.createFieldGetter;
-import static org.apache.flink.util.Preconditions.checkArgument;
-import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /** Builder for {@link JdbcOutputFormat} for Table/SQL. */
 public class JdbcOutputFormatBuilder implements Serializable {

@@ -19,7 +19,7 @@
 package org.apache.flink.connector.jdbc.split;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import java.io.Serializable;
 
@@ -31,7 +31,7 @@ public class CompositeJdbcParameterValuesProvider implements JdbcParameterValues
 
     public CompositeJdbcParameterValuesProvider(
             JdbcParameterValuesProvider a, JdbcParameterValuesProvider b) {
-        Preconditions.checkArgument(
+        Precondition.checkArgument(
                 a.getParameterValues().length == b.getParameterValues().length,
                 "Both JdbcParameterValuesProvider should have the same length.");
         this.a = a;

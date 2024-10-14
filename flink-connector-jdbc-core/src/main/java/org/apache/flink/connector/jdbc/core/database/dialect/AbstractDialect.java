@@ -19,13 +19,13 @@
 package org.apache.flink.connector.jdbc.core.database.dialect;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.TimestampType;
 import org.apache.flink.table.types.logical.VarBinaryType;
-import org.apache.flink.util.Preconditions;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -253,7 +253,7 @@ public abstract class AbstractDialect implements JdbcDialect {
         private final int max;
 
         public static Range of(int min, int max) {
-            Preconditions.checkArgument(
+            Precondition.checkArgument(
                     min <= max,
                     String.format(
                             "The range min value in range %d must be <= max value %d", min, max));

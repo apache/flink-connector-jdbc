@@ -20,7 +20,7 @@ package org.apache.flink.connector.jdbc.core.datastream.source.enumerator;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
-import org.apache.flink.util.Preconditions;
+import org.apache.flink.connector.jdbc.core.util.Precondition;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -44,9 +44,9 @@ public class JdbcSourceEnumeratorState implements Serializable {
             @Nonnull List<JdbcSourceSplit> pendingSplits,
             @Nonnull List<JdbcSourceSplit> remainingSplits,
             @Nullable Serializable optionalUserDefinedSplitEnumeratorState) {
-        this.completedSplits = Preconditions.checkNotNull(completedSplits);
-        this.pendingSplits = Preconditions.checkNotNull(pendingSplits);
-        this.remainingSplits = Preconditions.checkNotNull(remainingSplits);
+        this.completedSplits = Precondition.checkNotNull(completedSplits);
+        this.pendingSplits = Precondition.checkNotNull(pendingSplits);
+        this.remainingSplits = Precondition.checkNotNull(remainingSplits);
         this.optionalUserDefinedSplitEnumeratorState = optionalUserDefinedSplitEnumeratorState;
     }
 

@@ -21,7 +21,7 @@ package org.apache.flink.connector.jdbc.cratedb.database.catalog;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.postgres.database.catalog.PostgresTablePath;
 
-import static org.apache.flink.util.Preconditions.checkArgument;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkArgument;
 
 /**
  * Table path of CrateDB in Flink. Can be of formats "table_name" or "schema_name.table_name". When

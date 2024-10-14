@@ -26,7 +26,7 @@ import org.apache.flink.table.data.RowData;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.connector.jdbc.core.util.Precondition.checkNotNull;
 
 /**
  * A {@link JdbcBatchStatementExecutor} that simply adds the records into batches of {@link
