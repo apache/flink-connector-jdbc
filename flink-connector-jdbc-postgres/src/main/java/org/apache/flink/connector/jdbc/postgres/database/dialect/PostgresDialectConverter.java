@@ -96,17 +96,21 @@ public class PostgresDialectConverter extends AbstractDialectConverter {
     private JdbcDeserializationConverter createPrimitiveConverter(LogicalType type) {
         switch (type.getTypeRoot()) {
             case VARCHAR:
-                return val -> {
-                    if (val instanceof PGobject) {
-                        PGobject obj = (PGobject) val;
-                        return StringData.fromString(obj.getValue());
-                    } else {
-                        return StringData.fromString((String) val);
-                    }
-                };
+                return createVarcharConverter();
             default:
                 return super.createInternalConverter(type);
         }
+    }
+
+    protected JdbcDeserializationConverter createVarcharConverter() {
+        return val -> {
+            if (val instanceof PGobject) {
+                PGobject obj = (PGobject) val;
+                return StringData.fromString(obj.getValue());
+            } else {
+                return StringData.fromString((String) val);
+            }
+        };
     }
 
     @Override

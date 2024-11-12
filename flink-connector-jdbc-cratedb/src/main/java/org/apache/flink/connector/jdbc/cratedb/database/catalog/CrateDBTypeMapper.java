@@ -47,6 +47,10 @@ public class CrateDBTypeMapper extends PostgresTypeMapper {
                 return DataTypes.STRING();
             case PG_STRING_ARRAY:
                 return DataTypes.ARRAY(DataTypes.STRING());
+            case PG_JSON: // TODO: Add support for JSON type.
+                return null;
+            case PG_JSONB: // CrateDB supports JSON type, but not JSONB.
+                return null;
             default:
                 return super.getMapping(pgType, precision, scale);
         }
