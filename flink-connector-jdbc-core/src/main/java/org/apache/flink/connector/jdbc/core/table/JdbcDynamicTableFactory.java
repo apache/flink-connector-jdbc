@@ -319,8 +319,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
             }
         }
 
-        if (config.getOptional(SCAN_PARALLELISM).isPresent()
-                && config.get(SCAN_PARALLELISM) <= 0) {
+        if (config.getOptional(SCAN_PARALLELISM).isPresent() && config.get(SCAN_PARALLELISM) <= 0) {
             throw new IllegalArgumentException(
                     String.format(
                             "The value of '%s' option should be positive, but is %s.",

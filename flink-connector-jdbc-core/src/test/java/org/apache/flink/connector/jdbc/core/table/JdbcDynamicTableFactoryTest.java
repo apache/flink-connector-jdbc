@@ -372,12 +372,10 @@ class JdbcDynamicTableFactoryTest {
         // scan parallelism > = 1
         properties = getAllOptions();
         properties.put("scan.parallelism", "-1");
-
         Map<String, String> finalProperties8 = properties;
         assertThatThrownBy(() -> createTableSource(SCHEMA, finalProperties8))
                 .hasStackTraceContaining(
                         "The value of 'scan.parallelism' option should be positive, but is -1.");
-
     }
 
     @Test
