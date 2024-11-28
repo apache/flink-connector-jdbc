@@ -125,6 +125,7 @@ class JdbcDynamicTableFactoryTest {
         properties.put("scan.partition.num", "10");
         properties.put("scan.fetch-size", "20");
         properties.put("scan.auto-commit", "false");
+        properties.put("scan.parallelism", "13");
 
         DynamicTableSource actual = createTableSource(SCHEMA, properties);
 
@@ -141,6 +142,7 @@ class JdbcDynamicTableFactoryTest {
                         .setNumPartitions(10)
                         .setFetchSize(20)
                         .setAutoCommit(false)
+                        .setParallelism(13)
                         .build();
         JdbcDynamicTableSource expected =
                 new JdbcDynamicTableSource(
@@ -366,6 +368,16 @@ class JdbcDynamicTableFactoryTest {
         assertThatThrownBy(() -> createTableSource(SCHEMA, finalProperties7))
                 .hasStackTraceContaining(
                         "The value of 'connection.max-retry-timeout' option must be in second granularity and shouldn't be smaller than 1 second, but is 100ms.");
+
+        // scan parallelism > = 1
+        properties = getAllOptions();
+        properties.put("scan.parallelism", "-1");
+
+        Map<String, String> finalProperties8 = properties;
+        assertThatThrownBy(() -> createTableSource(SCHEMA, finalProperties8))
+                .hasStackTraceContaining(
+                        "The value of 'scan.parallelism' option should be positive, but is -1.");
+
     }
 
     @Test

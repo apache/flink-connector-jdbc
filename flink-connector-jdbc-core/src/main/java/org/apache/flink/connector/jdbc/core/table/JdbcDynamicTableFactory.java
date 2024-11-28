@@ -63,6 +63,7 @@ import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.MA
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.PASSWORD;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SCAN_AUTO_COMMIT;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SCAN_FETCH_SIZE;
+import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SCAN_PARALLELISM;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SCAN_PARTITION_COLUMN;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SCAN_PARTITION_LOWER_BOUND;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SCAN_PARTITION_NUM;
@@ -167,6 +168,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         final Optional<String> partitionColumnName =
                 readableConfig.getOptional(SCAN_PARTITION_COLUMN);
         final JdbcReadOptions.Builder builder = JdbcReadOptions.builder();
+        readableConfig.getOptional(SCAN_PARALLELISM).ifPresent(builder::setParallelism);
         if (partitionColumnName.isPresent()) {
             builder.setPartitionColumnName(partitionColumnName.get());
             builder.setPartitionLowerBound(readableConfig.get(SCAN_PARTITION_LOWER_BOUND));
@@ -243,6 +245,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         optionalOptions.add(COMPATIBLE_MODE);
         optionalOptions.add(USERNAME);
         optionalOptions.add(PASSWORD);
+        optionalOptions.add(SCAN_PARALLELISM);
         optionalOptions.add(SCAN_PARTITION_COLUMN);
         optionalOptions.add(SCAN_PARTITION_LOWER_BOUND);
         optionalOptions.add(SCAN_PARTITION_UPPER_BOUND);
@@ -314,6 +317,14 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
                                 SCAN_PARTITION_UPPER_BOUND.key(),
                                 upperBound));
             }
+        }
+
+        if (config.getOptional(SCAN_PARALLELISM).isPresent()
+                && config.get(SCAN_PARALLELISM) <= 0) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "The value of '%s' option should be positive, but is %s.",
+                            SCAN_PARALLELISM.key(), config.get(SCAN_PARALLELISM)));
         }
 
         checkAllOrNone(config, new ConfigOption[] {LOOKUP_CACHE_MAX_ROWS, LOOKUP_CACHE_TTL});
