@@ -25,6 +25,7 @@ import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnecti
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
 import org.apache.flink.types.Row;
 
 import org.junit.jupiter.api.AfterEach;
@@ -122,6 +123,11 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
                                     }
 
                                     @Override
+                                    public String insertSql() {
+                                        return "";
+                                    }
+
+                                    @Override
                                     public void prepareStatements(Connection connection) {}
 
                                     @Override
@@ -137,6 +143,11 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
                                         if (exceptionThrown[0]) {
                                             deleteExecutorPrepared[0] = true;
                                         }
+                                    }
+
+                                    @Override
+                                    public String insertSql() {
+                                        return "";
                                     }
 
                                     @Override
@@ -211,6 +222,36 @@ public class JdbcTableOutputFormatTest extends JdbcDataTestBase {
         }
         format.flush();
         check(expected);
+    }
+
+    @Test
+    void testGetLineageVertex() throws Exception {
+        InternalJdbcConnectionOptions options =
+                InternalJdbcConnectionOptions.builder()
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setTableName(OUTPUT_TABLE)
+                        .build();
+        JdbcDmlOptions dmlOptions =
+                JdbcDmlOptions.builder()
+                        .withTableName(options.getTableName())
+                        .withDialect(options.getDialect())
+                        .withFieldNames(fieldNames)
+                        .withKeyFields(keyFields)
+                        .build();
+        format =
+                new TableJdbcUpsertOutputFormat(
+                        new SimpleJdbcConnectionProvider(options),
+                        dmlOptions,
+                        JdbcExecutionOptions.defaults());
+
+        JdbcOutputSerializer<Row> serializer =
+                JdbcOutputSerializer.of(getSerializer(TypeInformation.of(Row.class), true));
+        format.open(serializer);
+
+        LineageVertex lineageVertex = format.getLineageVertex();
+        assertThat(lineageVertex.datasets().size()).isEqualTo(1);
+        assertThat(lineageVertex.datasets().get(0).name()).isEqualTo(OUTPUT_TABLE);
+        assertThat(lineageVertex.datasets().get(0).namespace()).isEqualTo("derby:memory:test");
     }
 
     private void check(Row[] rows) throws SQLException {

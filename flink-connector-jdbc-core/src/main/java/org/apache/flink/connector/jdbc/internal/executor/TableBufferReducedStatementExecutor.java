@@ -85,6 +85,11 @@ public final class TableBufferReducedStatementExecutor
     }
 
     @Override
+    public String insertSql() {
+        return upsertExecutor.insertSql();
+    }
+
+    @Override
     public void executeBatch() throws SQLException {
         if (!reduceBuffer.isEmpty()) {
             for (Map.Entry<RowData, Tuple2<Boolean, RowData>> entry : reduceBuffer.entrySet()) {

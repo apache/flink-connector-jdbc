@@ -18,10 +18,14 @@
 
 package org.apache.flink.connector.jdbc;
 
+import org.apache.flink.api.connector.source.Boundedness;
+import org.apache.flink.connector.jdbc.lineage.DefaultTypeDatasetFacet;
 import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcNumericBetweenParametersProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.core.io.InputSplit;
+import org.apache.flink.streaming.api.lineage.LineageDataset;
+import org.apache.flink.streaming.api.lineage.SourceLineageVertex;
 import org.apache.flink.types.Row;
 
 import org.junit.jupiter.api.AfterEach;
@@ -378,6 +382,34 @@ class JdbcInputFormatTest extends JdbcDataTestBase {
         verifySplit(splits[1], TEST_DATA[0].id + TEST_DATA[1].id);
 
         jdbcInputFormat.closeInputFormat();
+    }
+
+    @Test
+    void testGetLineageVertex() {
+        jdbcInputFormat =
+                JdbcInputFormat.buildJdbcInputFormat()
+                        .setDrivername(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setQuery(SELECT_ALL_BOOKS)
+                        .setRowTypeInfo(ROW_TYPE_INFO)
+                        .setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE)
+                        .finish();
+
+        SourceLineageVertex lineageVertex =
+                (SourceLineageVertex) jdbcInputFormat.getLineageVertex();
+
+        assertThat(lineageVertex.datasets().size()).isEqualTo(1);
+        assertThat(lineageVertex.boundedness()).isEqualTo(Boundedness.BOUNDED);
+        LineageDataset lineageDataset = lineageVertex.datasets().get(0);
+        assertThat(lineageDataset.name()).isEqualTo("books");
+        assertThat(lineageDataset.namespace()).isEqualTo("derby:memory:test");
+        assertThat(lineageDataset.facets().size()).isEqualTo(1);
+        assertThat(lineageDataset.facets().size()).isEqualTo(1);
+        assertThat(
+                        ((DefaultTypeDatasetFacet) lineageDataset.facets().values().toArray()[0])
+                                .getTypeInformation()
+                                .getArity())
+                .isEqualTo(5);
     }
 
     private void verifySplit(InputSplit split, int expectedIDSum) throws IOException {

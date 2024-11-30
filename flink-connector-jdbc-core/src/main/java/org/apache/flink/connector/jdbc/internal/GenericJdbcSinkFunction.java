@@ -27,6 +27,8 @@ import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.sink.legacy.RichSinkFunction;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
+import org.apache.flink.streaming.api.lineage.LineageVertexProvider;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -36,7 +38,7 @@ import java.io.IOException;
 /** A generic SinkFunction for JDBC. */
 @Internal
 public class GenericJdbcSinkFunction<T> extends RichSinkFunction<T>
-        implements CheckpointedFunction, InputTypeConfigurable {
+        implements LineageVertexProvider, CheckpointedFunction, InputTypeConfigurable {
     private final JdbcOutputFormat<T, ?, ?> outputFormat;
     private JdbcOutputSerializer<T> serializer;
 
@@ -77,5 +79,10 @@ public class GenericJdbcSinkFunction<T> extends RichSinkFunction<T>
                 JdbcOutputSerializer.of(
                         ((TypeInformation<T>) type)
                                 .createSerializer(executionConfig.getSerializerConfig()));
+    }
+
+    @Override
+    public LineageVertex getLineageVertex() {
+        return outputFormat.getLineageVertex();
     }
 }
