@@ -82,6 +82,11 @@ public final class TableInsertOrUpdateStatementExecutor
         processOneRowInBatch(keyExtractor.apply(record), record);
     }
 
+    @Override
+    public String insertSql() {
+        return insertStatement.getQuery();
+    }
+
     private void processOneRowInBatch(RowData pk, RowData row) throws SQLException {
         if (exist(pk)) {
             updateSetter.toExternal(row, updateStatement);
