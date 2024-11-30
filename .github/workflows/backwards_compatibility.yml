@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        flink: [1.18-SNAPSHOT, 1.19-SNAPSHOT]
+        flink: [1.19-SNAPSHOT]
         jdk: [8, 11, 17]
 
     env:
