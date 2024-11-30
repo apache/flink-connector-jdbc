@@ -24,6 +24,7 @@ import org.apache.flink.api.common.io.DefaultInputSplitAssigner;
 import org.apache.flink.api.common.io.InputFormat;
 import org.apache.flink.api.common.io.RichInputFormat;
 import org.apache.flink.api.common.io.statistics.BaseStatistics;
+import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.configuration.Configuration;
@@ -31,10 +32,15 @@ import org.apache.flink.connector.jdbc.core.datastream.source.JdbcSource;
 import org.apache.flink.connector.jdbc.core.datastream.source.JdbcSourceBuilder;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.lineage.DefaultTypeDatasetFacet;
+import org.apache.flink.connector.jdbc.lineage.LineageUtils;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.core.io.GenericInputSplit;
 import org.apache.flink.core.io.InputSplit;
 import org.apache.flink.core.io.InputSplitAssigner;
+import org.apache.flink.streaming.api.lineage.LineageDataset;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
+import org.apache.flink.streaming.api.lineage.LineageVertexProvider;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 
@@ -53,6 +59,8 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
 
 /**
  * InputFormat to read data from a database and generate Rows. The InputFormat has to be configured
@@ -107,7 +115,7 @@ import java.util.Arrays;
 @Deprecated
 @Experimental
 public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
-        implements ResultTypeQueryable<Row> {
+        implements LineageVertexProvider, ResultTypeQueryable<Row> {
 
     protected static final long serialVersionUID = 2L;
     protected static final Logger LOG = LoggerFactory.getLogger(JdbcInputFormat.class);
@@ -342,6 +350,19 @@ public class JdbcInputFormat extends RichInputFormat<Row, InputSplit>
      */
     public static JdbcInputFormatBuilder buildJdbcInputFormat() {
         return new JdbcInputFormatBuilder();
+    }
+
+    @Override
+    public LineageVertex getLineageVertex() {
+        DefaultTypeDatasetFacet defaultTypeDatasetFacet =
+                new DefaultTypeDatasetFacet(getProducedType());
+        Optional<String> nameOpt = LineageUtils.nameOf(queryTemplate);
+        String namespace = LineageUtils.namespaceOf(connectionProvider);
+        LineageDataset dataset =
+                LineageUtils.datasetOf(
+                        nameOpt.orElse(""), namespace, Arrays.asList(defaultTypeDatasetFacet));
+        return LineageUtils.sourceLineageVertexOf(
+                Boundedness.BOUNDED, Collections.singleton(dataset));
     }
 
     /** Builder for {@link JdbcInputFormat}. */
