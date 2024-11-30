@@ -288,6 +288,12 @@ under the License.
                 <version>${log4j.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>io.openlineage</groupId>
+                <artifactId>openlineage-sql-java</artifactId>
+                <version>1.25.0</version>
+            </dependency>
+
             <!-- For dependency convergence -->
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
