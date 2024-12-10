@@ -34,26 +34,36 @@ import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSou
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSourceEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSourceEnumeratorState;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSqlSplitEnumeratorBase;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.SqlTemplateSplitEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.JdbcSourceReader;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.JdbcSourceSplitReader;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplitSerializer;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.lineage.DefaultTypeDatasetFacet;
+import org.apache.flink.connector.jdbc.lineage.LineageUtils;
 import org.apache.flink.connector.jdbc.utils.ContinuousUnBoundingSettings;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
+import org.apache.flink.streaming.api.lineage.LineageDataset;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
+import org.apache.flink.streaming.api.lineage.LineageVertexProvider;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nullable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Optional;
 
 /** JDBC source. */
 @PublicEvolving
 public class JdbcSource<OUT>
-        implements Source<OUT, JdbcSourceSplit, JdbcSourceEnumeratorState>,
+        implements LineageVertexProvider,
+                Source<OUT, JdbcSourceSplit, JdbcSourceEnumeratorState>,
                 ResultTypeQueryable<OUT> {
 
     private final Boundedness boundedness;
@@ -194,5 +204,19 @@ public class JdbcSource<OUT>
                 && Objects.equals(resultExtractor, that.resultExtractor)
                 && deliveryGuarantee == that.deliveryGuarantee
                 && Objects.equals(continuousUnBoundingSettings, that.continuousUnBoundingSettings);
+    }
+
+    @Override
+    public LineageVertex getLineageVertex() {
+        DefaultTypeDatasetFacet defaultTypeDatasetFacet =
+                new DefaultTypeDatasetFacet(getTypeInformation());
+        SqlTemplateSplitEnumerator enumerator =
+                (SqlTemplateSplitEnumerator) sqlSplitEnumeratorProvider.create();
+        Optional<String> nameOpt = LineageUtils.nameOf(enumerator.getSqlTemplate());
+        String namespace = LineageUtils.namespaceOf(connectionProvider);
+        LineageDataset dataset =
+                LineageUtils.datasetOf(
+                        nameOpt.orElse(""), namespace, Arrays.asList(defaultTypeDatasetFacet));
+        return LineageUtils.sourceLineageVertexOf(boundedness, Collections.singleton(dataset));
     }
 }
