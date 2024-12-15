@@ -20,18 +20,26 @@ package org.apache.flink.connector.jdbc.core.table.source;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectConverter;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
+import org.apache.flink.connector.jdbc.lineage.DefaultTypeDatasetFacet;
+import org.apache.flink.connector.jdbc.lineage.LineageUtils;
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatement;
+import org.apache.flink.streaming.api.lineage.LineageDataset;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
+import org.apache.flink.streaming.api.lineage.LineageVertexProvider;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.functions.FunctionContext;
 import org.apache.flink.table.functions.LookupFunction;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.types.utils.LegacyTypeInfoDataTypeConverter;
+import org.apache.flink.table.types.utils.TypeConversions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +54,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
@@ -53,7 +62,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /** A lookup function for {@link JdbcDynamicTableSource}. */
 @Internal
-public class JdbcRowDataLookupFunction extends LookupFunction {
+public class JdbcRowDataLookupFunction extends LookupFunction implements LineageVertexProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcRowDataLookupFunction.class);
     private static final long serialVersionUID = 2L;
@@ -67,6 +76,7 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
 
     private final List<String> resolvedPredicates;
     private final Serializable[] pushdownParams;
+    private final RowType producedType;
 
     private transient FieldNamedPreparedStatement statement;
 
@@ -106,12 +116,12 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
                         .getSelectFromStatement(options.getTableName(), fieldNames, keyNames);
         JdbcDialect jdbcDialect = options.getDialect();
         this.jdbcDialectConverter = jdbcDialect.getRowConverter(rowType);
-        this.lookupKeyRowConverter =
-                jdbcDialect.getRowConverter(
-                        RowType.of(
-                                Arrays.stream(keyTypes)
-                                        .map(DataType::getLogicalType)
-                                        .toArray(LogicalType[]::new)));
+        this.producedType =
+                RowType.of(
+                        Arrays.stream(keyTypes)
+                                .map(DataType::getLogicalType)
+                                .toArray(LogicalType[]::new));
+        this.lookupKeyRowConverter = jdbcDialect.getRowConverter(producedType);
         this.resolvedPredicates = resolvedPredicates;
         this.pushdownParams = pushdownParams;
     }
@@ -223,5 +233,20 @@ public class JdbcRowDataLookupFunction extends LookupFunction {
     @VisibleForTesting
     public Connection getDbConnection() {
         return connectionProvider.getConnection();
+    }
+
+    @Override
+    public LineageVertex getLineageVertex() {
+        DefaultTypeDatasetFacet defaultTypeDatasetFacet =
+                new DefaultTypeDatasetFacet(
+                        LegacyTypeInfoDataTypeConverter.toLegacyTypeInfo(
+                                TypeConversions.fromLogicalToDataType(producedType)));
+        Optional<String> nameOpt = LineageUtils.nameOf(query);
+        String namespace = LineageUtils.namespaceOf(connectionProvider);
+        LineageDataset dataset =
+                LineageUtils.datasetOf(
+                        nameOpt.orElse(""), namespace, Arrays.asList(defaultTypeDatasetFacet));
+        return LineageUtils.sourceLineageVertexOf(
+                Boundedness.BOUNDED, Collections.singleton(dataset));
     }
 }
