@@ -267,7 +267,10 @@ public class JdbcSourceBuilder<OUT> {
     }
 
     public JdbcSource<OUT> build() {
-        this.connectionProvider = new SimpleJdbcConnectionProvider(connOptionsBuilder.build());
+        if (Objects.isNull(this.connectionProvider)) {
+            this.connectionProvider = new SimpleJdbcConnectionProvider(connOptionsBuilder.build());
+        }
+
         if (resultSetFetchSize > 0) {
             this.configuration.set(JdbcSourceOptions.RESULTSET_FETCH_SIZE, resultSetFetchSize);
         }
