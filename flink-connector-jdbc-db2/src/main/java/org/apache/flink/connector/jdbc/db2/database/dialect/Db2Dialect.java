@@ -111,7 +111,7 @@ public class Db2Dialect extends AbstractDialect {
                                         + " WHEN MATCHED THEN"
                                         + " UPDATE SET %s"
                                         + " WHEN NOT MATCHED THEN"
-                                        + " INSERT (%s) VALUES (%s);",
+                                        + " INSERT (%s) VALUES (%s)",
                                 quoteIdentifier(tableName),
                                 valuesBinding,
                                 columnBinding,
