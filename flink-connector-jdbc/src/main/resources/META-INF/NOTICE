@@ -1,0 +1,4 @@
+flink-connector-jdbc
+
+OpenLineage/OpenLineage is licensed under the Apache License 2.0.
+- io.openlineage:openlineage-sql-java:1.25.0
