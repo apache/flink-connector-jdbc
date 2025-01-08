@@ -22,11 +22,15 @@ import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.connector.jdbc.testutils.databases.oracle.OracleDatabase;
 
+import org.apache.flink.connector.jdbc.testutils.databases.oracle.OracleImages;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
+
+@Testcontainers
 /** Base class for Oracle testing. */
 @ExtendWith(OracleDatabase.class)
-public interface OracleTestBase extends DatabaseTest {
+public interface OracleTestBase extends DatabaseTest, OracleImages {
 
     @Override
     default DatabaseMetadata getMetadata() {

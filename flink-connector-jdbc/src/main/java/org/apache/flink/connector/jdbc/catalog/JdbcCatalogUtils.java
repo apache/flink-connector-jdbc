@@ -22,6 +22,8 @@ import org.apache.flink.connector.jdbc.databases.cratedb.catalog.CrateDBCatalog;
 import org.apache.flink.connector.jdbc.databases.cratedb.dialect.CrateDBDialect;
 import org.apache.flink.connector.jdbc.databases.mysql.catalog.MySqlCatalog;
 import org.apache.flink.connector.jdbc.databases.mysql.dialect.MySqlDialect;
+import org.apache.flink.connector.jdbc.databases.oracle.catalog.OracleCatalog;
+import org.apache.flink.connector.jdbc.databases.oracle.dialect.OracleDialect;
 import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresCatalog;
 import org.apache.flink.connector.jdbc.databases.postgres.dialect.PostgresDialect;
 import org.apache.flink.connector.jdbc.dialect.JdbcDialect;
@@ -60,6 +62,9 @@ public class JdbcCatalogUtils {
                     userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
         } else if (dialect instanceof MySqlDialect) {
             return new MySqlCatalog(
+                    userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+        } else if (dialect instanceof OracleDialect){
+            return new OracleCatalog(
                     userClassLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
         } else {
             throw new UnsupportedOperationException(
