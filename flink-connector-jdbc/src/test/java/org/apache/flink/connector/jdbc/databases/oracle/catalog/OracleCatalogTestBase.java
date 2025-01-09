@@ -1,7 +1,6 @@
 package org.apache.flink.connector.jdbc.databases.oracle.catalog;
 
 import org.apache.flink.connector.jdbc.databases.oracle.OracleTestBase;
-import org.apache.flink.connector.jdbc.databases.postgres.catalog.PostgresTablePath;
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.connector.jdbc.testutils.databases.oracle.OracleDatabase;
@@ -12,33 +11,27 @@ import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
-
-    private static DatabaseMetadata getStaticMetadata() {
-        return OracleDatabase.getMetadata();
-    }
 
     public static final Logger LOG = LoggerFactory.getLogger(OracleCatalogTestBase.class);
 
     protected static final String TEST_CATALOG_NAME = "mypg";
-    protected static final String TEST_USERNAME = getStaticMetadata().getUsername();
-    protected static final String TEST_PWD = getStaticMetadata().getPassword();
+    protected static final String TEST_USERNAME = CONTAINER.getUsername();
+    protected static final String TEST_PWD = CONTAINER.getPassword();
     protected static final String TEST_DB = "test";
     protected static final String TEST_SCHEMA = "test_schema";
-    protected static final String TABLE1 = "t1";
-    protected static final String TABLE2 = "t2";
-    protected static final String TABLE3 = "t3";
-    protected static final String TABLE4 = "t4";
-    protected static final String TABLE5 = "t5";
-    protected static final String TABLE_PRIMITIVE_TYPE = "primitive_table";
-    protected static final String TABLE_PRIMITIVE_TYPE2 = "primitive_table2";
-    protected static final String TABLE_ARRAY_TYPE = "array_table";
-    protected static final String TABLE_SERIAL_TYPE = "serial_table";
+    protected static final String TEST_PASSWORD = "test_password";
+    protected static final String TABLE1 = TEST_SCHEMA + ".t1";
+    protected static final String TABLE2 = TEST_SCHEMA + ".t2";
+    protected static final String TABLE3 = TEST_SCHEMA + ".t3";
+    protected static final String TABLE4 = TEST_SCHEMA + ".t4";
+    protected static final String TABLE5 = TEST_SCHEMA + ".t5";
+    protected static final String TABLE_PRIMITIVE_TYPE = TEST_SCHEMA + ".primitive_table";
+    protected static final String TABLE_PRIMITIVE_TYPE2 = TEST_SCHEMA + ".primitive_table2";
+    protected static final String TABLE_ARRAY_TYPE = TEST_SCHEMA + ".array_table";
+    protected static final String TABLE_SERIAL_TYPE = TEST_SCHEMA + ".serial_table";
 
     protected static String baseUrl;
     protected static OracleCatalog catalog;
@@ -47,29 +40,28 @@ public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
     @BeforeAll
     static void init() throws SQLException {
         // jdbc:oracle:thin:@//localhost:50807/helowin
-        String jdbcUrl = getStaticMetadata().getJdbcUrl();
+        String jdbcUrl = CONTAINER.getJdbcUrl();
         // jdbc:oracle:thin:@//localhost:50807/
-        baseUrl = jdbcUrl.substring(0, jdbcUrl.lastIndexOf("/"));
-
+        baseUrl = jdbcUrl; // jdbcUrl.substring(0, jdbcUrl.lastIndexOf("/"));
         catalog =
                 new OracleCatalog(
                         Thread.currentThread().getContextClassLoader(),
                         TEST_CATALOG_NAME,
-                        OracleCatalog.DEFAULT_DATABASE,
+                        CONTAINER.getSid(),
                         TEST_USERNAME,
                         TEST_PWD,
                         baseUrl);
 
         // create test database and schema
-        createSchema(TEST_DB, TEST_SCHEMA);
+        createSchema(TEST_SCHEMA, TEST_PASSWORD);
 
         // create test tables
         // table: helowin.public.t1
         // table: helowin.public.t4
         // table: helowin.public.t5
-        createTable(PostgresTablePath.fromFlinkTableName(TABLE1), getSimpleTable().oracleSchemaSql);
-        createTable(PostgresTablePath.fromFlinkTableName(TABLE4), getSimpleTable().oracleSchemaSql);
-        createTable(PostgresTablePath.fromFlinkTableName(TABLE5), getSimpleTable().oracleSchemaSql);
+        createTable(OracleTablePath.fromFlinkTableName(TABLE1), getSimpleTable().oracleSchemaSql);
+        createTable(OracleTablePath.fromFlinkTableName(TABLE4), getSimpleTable().oracleSchemaSql);
+        createTable(OracleTablePath.fromFlinkTableName(TABLE5), getSimpleTable().oracleSchemaSql);
 
         // table: test.public.t2
         // table: test.test_schema.t3
@@ -77,21 +69,21 @@ public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
         // table: helowin.public.dt2
         createTable(
                 TEST_DB,
-                PostgresTablePath.fromFlinkTableName(TABLE2),
+                OracleTablePath.fromFlinkTableName(TABLE2),
                 getSimpleTable().oracleSchemaSql);
         createTable(
-                TEST_DB, new PostgresTablePath(TEST_SCHEMA, TABLE3), getSimpleTable().oracleSchemaSql);
+                TEST_DB, new OracleTablePath(TEST_SCHEMA, TABLE3), getSimpleTable().oracleSchemaSql);
         createTable(
-                PostgresTablePath.fromFlinkTableName(TABLE_PRIMITIVE_TYPE),
+                OracleTablePath.fromFlinkTableName(TABLE_PRIMITIVE_TYPE),
                 getPrimitiveTable().oracleSchemaSql);
         createTable(
-                PostgresTablePath.fromFlinkTableName(TABLE_PRIMITIVE_TYPE2),
+                OracleTablePath.fromFlinkTableName(TABLE_PRIMITIVE_TYPE2),
                 getPrimitiveTable("test_pk2").oracleSchemaSql);
         createTable(
-                PostgresTablePath.fromFlinkTableName(TABLE_ARRAY_TYPE),
+                OracleTablePath.fromFlinkTableName(TABLE_ARRAY_TYPE),
                 getArrayTable().oracleSchemaSql);
         createTable(
-                PostgresTablePath.fromFlinkTableName(TABLE_SERIAL_TYPE),
+                OracleTablePath.fromFlinkTableName(TABLE_SERIAL_TYPE),
                 getSerialTable().oracleSchemaSql);
 
         executeSQL(
@@ -113,29 +105,64 @@ public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
                         "insert into %s values (%s);", TABLE_SERIAL_TYPE, getSerialTable().values));
     }
 
-    public static void createTable(PostgresTablePath tablePath, String tableSchemaSql)
+    public static void createTable(OracleTablePath tablePath, String tableSchemaSql)
             throws SQLException {
-        executeSQL(
-                OracleCatalog.DEFAULT_DATABASE,
-                String.format("CREATE TABLE %s(%s);", tablePath.getFullPath(), tableSchemaSql));
+        executeTableSQL(String.format("CREATE TABLE %s(%s);", tablePath.getFullPath(), tableSchemaSql));
     }
 
-    public static void createTable(String db, PostgresTablePath tablePath, String tableSchemaSql)
+    public static void createTable(String db, OracleTablePath tablePath, String tableSchemaSql)
             throws SQLException {
         executeSQL(
                 db, String.format("CREATE TABLE %s(%s);", tablePath.getFullPath(), tableSchemaSql));
     }
 
-    public static void createSchema(String db, String schema) throws SQLException {
-        executeSQL(db, String.format("CREATE SCHEMA %s", schema));
+    public static void createSchema(String schema, String userPassword) throws SQLException {
+        executeSQL(String.format("CREATE USER %s IDENTIFIED BY %s DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp", schema, userPassword));
+        executeSQL(String.format("GRANT CONNECT, RESOURCE, CREATE TABLE TO %s",schema));
     }
 
     public static void createDatabase(String database) throws SQLException {
         executeSQL(String.format("CREATE DATABASE %s;", database));
     }
 
-    public static void executeSQL(String sql) throws SQLException {
-        executeSQL("", sql);
+    public static void  executeSQL(String sql) throws SQLException {
+         try (Connection conn =
+                     DriverManager.getConnection(
+                             String.format("%s", baseUrl), TEST_USERNAME, TEST_PWD);
+             Statement statement = conn.createStatement()) {
+            statement.executeUpdate(sql);
+        } catch (SQLException e) {
+            throw e;
+        }
+    }
+
+    public static void  executeTableSQL(String sql) throws SQLException {
+        // 连接数据库并执行查询
+        try (Connection conn = DriverManager.getConnection(
+                String.format("%s", baseUrl), TEST_USERNAME, TEST_PWD);
+             PreparedStatement stmt = conn.prepareStatement("SELECT username FROM all_users WHERE username = 'TEST_SCHEMA'");
+             ResultSet rs = stmt.executeQuery()) {
+
+            // 如果查询到结果，打印结果
+            if (rs.next()) {
+                String username = rs.getString("username");
+                System.out.println("Username: " + username);
+            } else {
+                System.out.println("No such user found.");
+            }
+
+        } catch (SQLException e) {
+            // 处理数据库连接和查询中的异常
+            e.printStackTrace();
+        }
+        try (Connection conn =
+                     DriverManager.getConnection(
+                             String.format("%s", baseUrl), TEST_SCHEMA, TEST_PASSWORD);
+             Statement statement = conn.createStatement()) {
+            statement.executeUpdate(sql);
+        } catch (SQLException e) {
+            throw e;
+        }
     }
 
     public static void executeSQL(String db, String sql) throws SQLException {
@@ -165,7 +192,7 @@ public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
 
     public static OracleCatalogTestBase.TestTable getSimpleTable() {
         return new OracleCatalogTestBase.TestTable(
-                Schema.newBuilder().column("id", DataTypes.INT()).build(), "id integer", "1");
+                Schema.newBuilder().column("id", DataTypes.INT()).build(), "id number", "1");
     }
 
     // oracle doesn't support to use the same primary key name across different tables,

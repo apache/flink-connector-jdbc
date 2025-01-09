@@ -107,13 +107,19 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(pwd));
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(baseUrl));
 
-        JdbcCatalogUtils.validateJdbcUrl(baseUrl);
-
+        if(!baseUrl.toLowerCase().contains("oracle")){
+            JdbcCatalogUtils.validateJdbcUrl(baseUrl);
+            this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
+            this.defaultUrl = this.baseUrl + defaultDatabase;
+        } else {
+            this.baseUrl = baseUrl;
+            this.defaultUrl = this.baseUrl;
+        }
         this.userClassLoader = userClassLoader;
         this.username = username;
         this.pwd = pwd;
-        this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
-        this.defaultUrl = this.baseUrl + defaultDatabase;
+
+
     }
 
     @Override

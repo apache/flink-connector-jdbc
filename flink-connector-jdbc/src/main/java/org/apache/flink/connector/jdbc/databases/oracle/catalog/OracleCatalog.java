@@ -190,15 +190,15 @@ public class OracleCatalog extends AbstractJdbcCatalog {
     }
 
     protected String getSchemaTableName(ObjectPath tablePath) {
-        return PostgresTablePath.fromFlinkTableName(tablePath.getObjectName()).getFullPath();
+        return OracleTablePath.fromFlinkTableName(tablePath.getObjectName()).getFullPath();
     }
 
     protected String getSchemaName(ObjectPath tablePath) {
-        return PostgresTablePath.fromFlinkTableName(tablePath.getObjectName()).getPgSchemaName();
+        return OracleTablePath.fromFlinkTableName(tablePath.getObjectName()).getPgSchemaName();
     }
 
     protected String getTableName(ObjectPath tablePath) {
-        return PostgresTablePath.fromFlinkTableName(tablePath.getObjectName()).getPgTableName();
+        return OracleTablePath.fromFlinkTableName(tablePath.getObjectName()).getPgTableName();
     }
 
 

@@ -24,6 +24,8 @@ import org.apache.flink.connector.jdbc.testutils.databases.oracle.OracleDatabase
 
 import org.apache.flink.connector.jdbc.testutils.databases.oracle.OracleImages;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.containers.OracleContainer;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 
@@ -31,6 +33,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /** Base class for Oracle testing. */
 @ExtendWith(OracleDatabase.class)
 public interface OracleTestBase extends DatabaseTest, OracleImages {
+
+    @Container
+    OracleContainer CONTAINER =
+            new OracleContainer(ORACLE_21)
+                    .withStartupTimeoutSeconds(240)
+                    .withConnectTimeoutSeconds(120)
+                    .usingSid();
 
     @Override
     default DatabaseMetadata getMetadata() {

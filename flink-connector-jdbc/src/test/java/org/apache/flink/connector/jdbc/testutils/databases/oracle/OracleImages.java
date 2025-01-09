@@ -20,5 +20,7 @@ package org.apache.flink.connector.jdbc.testutils.databases.oracle;
 /** Oracle docker images. */
 public interface OracleImages {
     String ORACLE_18 = "gvenzl/oracle-xe:18.4.0-slim";
+    String ORACLE_12 = "gvenzl/oracle-xe:12.4.0-slim";
+    String ORACLE_19 = "goodboy008/oracle-19.3.0-ee";
     String ORACLE_21 = "gvenzl/oracle-xe:21.3.0-slim-faststart";
 }
