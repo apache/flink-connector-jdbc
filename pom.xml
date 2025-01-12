@@ -52,6 +52,7 @@ under the License.
         <module>flink-connector-jdbc-oceanbase</module>
         <module>flink-connector-jdbc-oracle</module>
         <module>flink-connector-jdbc-postgres</module>
+        <module>flink-connector-jdbc-spanner</module>
         <module>flink-connector-jdbc-sqlserver</module>
         <module>flink-connector-jdbc-trino</module>
     </modules>
