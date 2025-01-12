@@ -198,7 +198,7 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
     }
 
     @Test
-    void testReal() throws Exception {
+    protected void testReal() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.getConfig().enableObjectReuse();
         StreamTableEnvironment tEnv =
@@ -290,7 +290,7 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
     }
 
     @Test
-    void testBatchSink() throws Exception {
+    protected void testBatchSink() throws Exception {
         TableEnvironment tEnv = TableEnvironment.create(EnvironmentSettings.inBatchMode());
 
         String tableName = "batchSink";
