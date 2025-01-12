@@ -16,25 +16,27 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.postgres.database.dialect;
+package org.apache.flink.connector.jdbc.utils;
 
-import org.apache.flink.annotation.Internal;
-import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.annotation.PublicEvolving;
 
-/** JDBC converter for PostgreSQL compatible databases. */
-@Internal
-public abstract class CompatiblePostgresDialectConverter extends PostgresDialectConverter {
+import java.time.Duration;
 
-    private static final long serialVersionUID = 1L;
+/**
+ * Settings describing how to do continuous file discovery and enumeration for the file source's
+ * continuous discovery and streaming mode.
+ *
+ * @deprecated Use {@link
+ *     org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings}
+ */
+@PublicEvolving
+@Deprecated
+public final class ContinuousUnBoundingSettings
+        extends org.apache.flink.connector.jdbc.core.datastream.source.config
+                .ContinuousUnBoundingSettings {
 
-    protected CompatiblePostgresDialectConverter(RowType rowType) {
-        super(rowType);
-    }
-
-    protected abstract String compatibleConverterName();
-
-    @Override
-    public String converterName() {
-        return compatibleConverterName();
+    public ContinuousUnBoundingSettings(
+            Duration initialDiscoveryDelay, Duration discoveryInterval) {
+        super(initialDiscoveryDelay, discoveryInterval);
     }
 }

@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.architecture;
+package org.apache.flink.connector.jdbc.architecture;
 
+import org.apache.flink.architecture.TestCodeArchitectureTestBase;
 import org.apache.flink.architecture.common.ImportOptions;
 
 import com.tngtech.archunit.core.importer.ImportOption;
