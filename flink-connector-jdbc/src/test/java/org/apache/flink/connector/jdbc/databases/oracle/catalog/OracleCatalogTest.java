@@ -33,14 +33,14 @@ public class OracleCatalogTest extends OracleCatalogTestBase {
     void testDbExists() {
         assertThat(catalog.databaseExists("nonexistent")).isFalse();
 
-        assertThat(catalog.databaseExists(OracleCatalog.DEFAULT_DATABASE)).isTrue();
+        assertThat(catalog.databaseExists(OracleCatalog.DEFAULT_SCHEMA)).isTrue();
     }
 
     // ------ tables ------
 
     @Test
     void testListTables() throws DatabaseNotExistException {
-        List<String> actual = catalog.listTables(OracleCatalog.DEFAULT_DATABASE);
+        List<String> actual = catalog.listTables(OracleCatalog.DEFAULT_SCHEMA);
 
         assertThat(actual)
                 .isEqualTo(
@@ -66,12 +66,12 @@ public class OracleCatalogTest extends OracleCatalogTestBase {
 
     @Test
     void testTableExists() {
-        assertThat(catalog.tableExists(new ObjectPath(OracleCatalog.DEFAULT_DATABASE, "nonexist"))).isFalse();
+        assertThat(catalog.tableExists(new ObjectPath(OracleCatalog.DEFAULT_SCHEMA, "nonexist"))).isFalse();
 
-        assertThat(catalog.tableExists(new ObjectPath(OracleCatalog.DEFAULT_DATABASE, TABLE1)))
+        assertThat(catalog.tableExists(new ObjectPath(OracleCatalog.DEFAULT_SCHEMA, TABLE1)))
                 .isTrue();
-        assertThat(catalog.tableExists(new ObjectPath(OracleCatalog.DEFAULT_DATABASE, TABLE2))).isTrue();
-        assertThat(catalog.tableExists(new ObjectPath(OracleCatalog.DEFAULT_DATABASE, "TEST_SCHEMA.T3"))).isTrue();
+        assertThat(catalog.tableExists(new ObjectPath(OracleCatalog.DEFAULT_SCHEMA, TABLE2))).isTrue();
+        assertThat(catalog.tableExists(new ObjectPath(OracleCatalog.DEFAULT_SCHEMA, "TEST_SCHEMA.T3"))).isTrue();
     }
 
     @Test
@@ -142,7 +142,7 @@ public class OracleCatalogTest extends OracleCatalogTestBase {
     void testPrimitiveDataTypes() throws TableNotExistException {
         CatalogBaseTable table =
                 catalog.getTable(
-                        new ObjectPath(OracleCatalog.DEFAULT_DATABASE, TABLE_PRIMITIVE_TYPE));
+                        new ObjectPath(OracleCatalog.DEFAULT_SCHEMA, TABLE_PRIMITIVE_TYPE));
         System.out.println(table.getUnresolvedSchema().toString());
         assertThat(table.getUnresolvedSchema()).isEqualTo(getPrimitiveTable().schema);
     }
@@ -151,7 +151,7 @@ public class OracleCatalogTest extends OracleCatalogTestBase {
     void testArrayDataTypes() throws TableNotExistException {
         CatalogBaseTable table =
                 catalog.getTable(
-                        new ObjectPath(OracleCatalog.DEFAULT_DATABASE, TABLE_ARRAY_TYPE));
+                        new ObjectPath(OracleCatalog.DEFAULT_SCHEMA, TABLE_ARRAY_TYPE));
 
         assertThat(table.getUnresolvedSchema()).isEqualTo(getArrayTable().schema);
     }
@@ -160,7 +160,7 @@ public class OracleCatalogTest extends OracleCatalogTestBase {
     public void testSerialDataTypes() throws TableNotExistException {
         CatalogBaseTable table =
                 catalog.getTable(
-                        new ObjectPath(OracleCatalog.DEFAULT_DATABASE, TABLE_SERIAL_TYPE));
+                        new ObjectPath(OracleCatalog.DEFAULT_SCHEMA, TABLE_SERIAL_TYPE));
 
         assertThat(table.getUnresolvedSchema()).isEqualTo(getSerialTable().schema);
     }

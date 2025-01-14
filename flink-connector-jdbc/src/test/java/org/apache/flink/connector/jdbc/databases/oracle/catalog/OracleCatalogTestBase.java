@@ -87,20 +87,20 @@ public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
 //                getSerialTable().oracleSchemaSql);
 
         executeSQL(
-                OracleCatalog.DEFAULT_DATABASE,
+                OracleCatalog.DEFAULT_SCHEMA,
                 String.format(
                         "insert into %s values (%s)", TABLE1, getSimpleTable().values));
         executeSQL(
-                OracleCatalog.DEFAULT_DATABASE,
+                OracleCatalog.DEFAULT_SCHEMA,
                 String.format(
                         "insert into %s values (%s)",
                         TABLE_PRIMITIVE_TYPE, getPrimitiveTable().values));
 //        executeSQL(
-//                OracleCatalog.DEFAULT_DATABASE,
+//                OracleCatalog.DEFAULT_SCHEMA,
 //                String.format(
 //                        "insert into %s values (%s);", TABLE_ARRAY_TYPE, getArrayTable().values));
 //        executeSQL(
-//                OracleCatalog.DEFAULT_DATABASE,
+//                OracleCatalog.DEFAULT_SCHEMA,
 //                String.format(
 //                        "insert into %s values (%s)", TABLE_SERIAL_TYPE, getSerialTable().values));
         System.out.println("success");

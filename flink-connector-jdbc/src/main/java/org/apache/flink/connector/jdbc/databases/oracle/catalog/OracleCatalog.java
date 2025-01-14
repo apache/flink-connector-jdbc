@@ -28,7 +28,7 @@ public class OracleCatalog extends AbstractJdbcCatalog {
 
     private static final Logger LOG = LoggerFactory.getLogger(OracleCatalog.class);
 
-    public static final String DEFAULT_DATABASE = "TEST_SCHEMA";
+    public static final String DEFAULT_SCHEMA = "TEST_SCHEMA";
 
 
     public static final String IDENTIFIER = "jdbc";
