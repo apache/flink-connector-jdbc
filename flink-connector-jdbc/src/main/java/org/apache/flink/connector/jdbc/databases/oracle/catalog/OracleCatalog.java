@@ -28,7 +28,7 @@ public class OracleCatalog extends AbstractJdbcCatalog {
 
     private static final Logger LOG = LoggerFactory.getLogger(OracleCatalog.class);
 
-    public static final String DEFAULT_DATABASE = "helowin";
+    public static final String DEFAULT_DATABASE = "TEST_SCHEMA";
 
 
     public static final String IDENTIFIER = "jdbc";
@@ -120,7 +120,7 @@ public class OracleCatalog extends AbstractJdbcCatalog {
         }
 
         String databaseName = tablePath.getDatabaseName();
-        String dbUrl = baseUrl + databaseName;
+        String dbUrl = baseUrl;
         try(Connection conn = DriverManager.getConnection(dbUrl, username, pwd)) {
             DatabaseMetaData metaData = conn.getMetaData();
             Optional<UniqueConstraint> primaryKey = getPrimaryKey(metaData, databaseName, getSchemaName(tablePath), getTableName(tablePath));
@@ -167,7 +167,7 @@ public class OracleCatalog extends AbstractJdbcCatalog {
 
     protected List<String> extractColumnValuesBySQL(String connUrl, String sql, int columnIndex, Predicate<String> filterFunc, Object... params){
         List<String> columnValues = Lists.newArrayList();
-
+        String sql1 = "SELECT table_name,OWNER FROM sys.all_tables";
         try (Connection conn = DriverManager.getConnection(connUrl, username, pwd);
              PreparedStatement ps = conn.prepareStatement(sql)){
             if (Objects.nonNull(params) && params.length >0){
@@ -177,11 +177,16 @@ public class OracleCatalog extends AbstractJdbcCatalog {
             }
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
+
+//                String username = rs.getString("table_name");
+//                String default_tablespace = rs.getString("OWNER");
+////                String temporary_tablespace = rs.getString("temporary_tablespace");
+//                System.out.println("username:"+username+"OWNER:"+default_tablespace);
                 String columnValue = rs.getString(columnIndex);
                 if (Objects.isNull(filterFunc) || filterFunc.test(columnValue)) {
                     columnValues.add(columnValue);
                 }
-                return columnValues;
+//                return columnValues;
             }
         } catch (Exception ex){
             throw new CatalogException(String.format("The following SQL query could not be executed (%s): %s", connUrl, sql ), ex);

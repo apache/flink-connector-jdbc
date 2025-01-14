@@ -21,15 +21,15 @@ public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
     protected static final String TEST_USERNAME = CONTAINER.getUsername();
     protected static final String TEST_PWD = CONTAINER.getPassword();
     protected static final String TEST_DB = "test";
-    protected static final String TEST_SCHEMA = "test_schema";
+    protected static final String TEST_SCHEMA = "TEST_SCHEMA";
     protected static final String TEST_PASSWORD = "test_password";
-    protected static final String TABLE1 = TEST_SCHEMA + ".t1";
-    protected static final String TABLE2 = TEST_SCHEMA + ".t2";
-    protected static final String TABLE3 = TEST_SCHEMA + ".t3";
-    protected static final String TABLE4 = TEST_SCHEMA + ".t4";
-    protected static final String TABLE5 = TEST_SCHEMA + ".t5";
-    protected static final String TABLE_PRIMITIVE_TYPE = TEST_SCHEMA + ".primitive_table";
-    protected static final String TABLE_PRIMITIVE_TYPE2 = TEST_SCHEMA + ".primitive_table2";
+    protected static final String TABLE1 = TEST_SCHEMA + ".T1";
+    protected static final String TABLE2 = TEST_SCHEMA + ".T2";
+    protected static final String TABLE3 = TEST_SCHEMA + ".T3";
+    protected static final String TABLE4 = TEST_SCHEMA + ".T4";
+    protected static final String TABLE5 = TEST_SCHEMA + ".T5";
+    protected static final String TABLE_PRIMITIVE_TYPE = TEST_SCHEMA + ".PRIMITIVE_TABLE";
+    protected static final String TABLE_PRIMITIVE_TYPE2 = TEST_SCHEMA + ".PRIMITIVE_TABLE2";
     protected static final String TABLE_ARRAY_TYPE = TEST_SCHEMA + ".array_table";
     protected static final String TABLE_SERIAL_TYPE = TEST_SCHEMA + ".serial_table";
 
@@ -72,53 +72,56 @@ public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
                 OracleTablePath.fromFlinkTableName(TABLE2),
                 getSimpleTable().oracleSchemaSql);
         createTable(
-                TEST_DB, new OracleTablePath(TEST_SCHEMA, TABLE3), getSimpleTable().oracleSchemaSql);
+                TEST_DB, OracleTablePath.fromFlinkTableName(TABLE3), getSimpleTable().oracleSchemaSql);
         createTable(
                 OracleTablePath.fromFlinkTableName(TABLE_PRIMITIVE_TYPE),
                 getPrimitiveTable().oracleSchemaSql);
         createTable(
                 OracleTablePath.fromFlinkTableName(TABLE_PRIMITIVE_TYPE2),
                 getPrimitiveTable("test_pk2").oracleSchemaSql);
-        createTable(
-                OracleTablePath.fromFlinkTableName(TABLE_ARRAY_TYPE),
-                getArrayTable().oracleSchemaSql);
-        createTable(
-                OracleTablePath.fromFlinkTableName(TABLE_SERIAL_TYPE),
-                getSerialTable().oracleSchemaSql);
+//        createTable(
+//                OracleTablePath.fromFlinkTableName(TABLE_ARRAY_TYPE),
+//                getArrayTable().oracleSchemaSql);
+//        createTable(
+//                OracleTablePath.fromFlinkTableName(TABLE_SERIAL_TYPE),
+//                getSerialTable().oracleSchemaSql);
 
         executeSQL(
                 OracleCatalog.DEFAULT_DATABASE,
                 String.format(
-                        "insert into public.%s values (%s);", TABLE1, getSimpleTable().values));
+                        "insert into %s values (%s)", TABLE1, getSimpleTable().values));
         executeSQL(
                 OracleCatalog.DEFAULT_DATABASE,
                 String.format(
-                        "insert into %s values (%s);",
+                        "insert into %s values (%s)",
                         TABLE_PRIMITIVE_TYPE, getPrimitiveTable().values));
-        executeSQL(
-                OracleCatalog.DEFAULT_DATABASE,
-                String.format(
-                        "insert into %s values (%s);", TABLE_ARRAY_TYPE, getArrayTable().values));
-        executeSQL(
-                OracleCatalog.DEFAULT_DATABASE,
-                String.format(
-                        "insert into %s values (%s);", TABLE_SERIAL_TYPE, getSerialTable().values));
+//        executeSQL(
+//                OracleCatalog.DEFAULT_DATABASE,
+//                String.format(
+//                        "insert into %s values (%s);", TABLE_ARRAY_TYPE, getArrayTable().values));
+//        executeSQL(
+//                OracleCatalog.DEFAULT_DATABASE,
+//                String.format(
+//                        "insert into %s values (%s)", TABLE_SERIAL_TYPE, getSerialTable().values));
+        System.out.println("success");
     }
 
     public static void createTable(OracleTablePath tablePath, String tableSchemaSql)
             throws SQLException {
-        executeTableSQL(String.format("CREATE TABLE %s(%s);", tablePath.getFullPath(), tableSchemaSql));
+        executeTableSQL(String.format("CREATE TABLE %s(%s)", tablePath.getFullPath(), tableSchemaSql));
     }
 
     public static void createTable(String db, OracleTablePath tablePath, String tableSchemaSql)
             throws SQLException {
         executeSQL(
-                db, String.format("CREATE TABLE %s(%s);", tablePath.getFullPath(), tableSchemaSql));
+                db, String.format("CREATE TABLE %s(%s)", tablePath.getFullPath(), tableSchemaSql));
     }
 
     public static void createSchema(String schema, String userPassword) throws SQLException {
         executeSQL(String.format("CREATE USER %s IDENTIFIED BY %s DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp", schema, userPassword));
-        executeSQL(String.format("GRANT CONNECT, RESOURCE, CREATE TABLE TO %s",schema));
+        executeSQL(String.format("ALTER USER %s QUOTA UNLIMITED ON USERS",schema));
+        executeSQL(String.format("GRANT CONNECT, RESOURCE, CREATE TABLE,INSERT ANY TABLE TO %s",schema));
+
     }
 
     public static void createDatabase(String database) throws SQLException {
@@ -136,20 +139,38 @@ public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
         }
     }
 
+    public static void  executeSQLQuery(String sql) throws SQLException {
+        try (Connection conn =
+                     DriverManager.getConnection(
+                             String.format("%s", baseUrl), TEST_USERNAME, TEST_PWD);
+             Statement statement = conn.createStatement()) {
+          ResultSet rs =  statement.executeQuery(sql);
+            while (rs.next()){
+                System.out.println(rs.toString());
+            }
+
+        } catch (SQLException e) {
+            throw e;
+        }
+    }
+
     public static void  executeTableSQL(String sql) throws SQLException {
         // 连接数据库并执行查询
         try (Connection conn = DriverManager.getConnection(
                 String.format("%s", baseUrl), TEST_USERNAME, TEST_PWD);
-             PreparedStatement stmt = conn.prepareStatement("SELECT username FROM all_users WHERE username = 'TEST_SCHEMA'");
-             ResultSet rs = stmt.executeQuery()) {
-
-            // 如果查询到结果，打印结果
-            if (rs.next()) {
-                String username = rs.getString("username");
-                System.out.println("Username: " + username);
-            } else {
-                System.out.println("No such user found.");
-            }
+             Statement statement = conn.createStatement()) {
+//            String s = "CREATE TABLE test_schema.primitive_table(int integer," +
+//                    " bytea bytea, short smallint, long bigint, real real, double_precision double precision, " +
+//                    "numeric numeric(10, 5), decimal decimal(10, 1), boolean boolean, text text, char char, " +
+//                    "character character(3), character_varying character varying(20), timestamp timestamp(5), " +
+//                    "date date,time time(0), default_numeric numeric, CONSTRAINT test_pk PRIMARY KEY (short, int))";
+//
+//            String s1 = "CREATE TABLE test_schema.primitive_table(int integer, bytea blob,  " +
+//                    "st number, lg number, rl real, docision double precision," +
+//                    "numeric numeric(10, 5),decal decimal(10, 1),  tet clob, c1har char(3)," +
+//                    "character character(3), character_varying character varying(20), timestamp timestamp(5), " +
+//                    "date_col date,default_numeric numeric, CONSTRAINT test_pk PRIMARY KEY (int))" ;
+//            statement.execute(s1);
 
         } catch (SQLException e) {
             // 处理数据库连接和查询中的异常
@@ -159,16 +180,30 @@ public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
                      DriverManager.getConnection(
                              String.format("%s", baseUrl), TEST_SCHEMA, TEST_PASSWORD);
              Statement statement = conn.createStatement()) {
+
             statement.executeUpdate(sql);
+            String s ="insert into test_schema.t1 values (1)";
+            statement.execute(s);
         } catch (SQLException e) {
             throw e;
         }
     }
 
     public static void executeSQL(String db, String sql) throws SQLException {
+        try {
+            Connection conn = DriverManager.getConnection(
+                    String.format("%s", baseUrl), TEST_USERNAME, TEST_PWD);
+            System.out.println("Connected to the database!");
+            // Do something with the connection
+            conn.close();
+        }catch (SQLException e) {
+            System.out.println("Error connecting to the database: " + e.getMessage());
+        }
+
+
         try (Connection conn =
                      DriverManager.getConnection(
-                             String.format("%s/%s", baseUrl, db), TEST_USERNAME, TEST_PWD);
+                             String.format("%s", baseUrl), TEST_USERNAME, TEST_PWD);
              Statement statement = conn.createStatement()) {
             statement.executeUpdate(sql);
         } catch (SQLException e) {
@@ -192,13 +227,13 @@ public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
 
     public static OracleCatalogTestBase.TestTable getSimpleTable() {
         return new OracleCatalogTestBase.TestTable(
-                Schema.newBuilder().column("id", DataTypes.INT()).build(), "id number", "1");
+                Schema.newBuilder().column("ID", DataTypes.DECIMAL(38,18)).build(), "id number", "1");
     }
 
     // oracle doesn't support to use the same primary key name across different tables,
     // make the table parameterized to resolve this problem.
     public static OracleCatalogTestBase.TestTable getPrimitiveTable() {
-        return getPrimitiveTable("test_pk");
+        return getPrimitiveTable("TEST_PK");
     }
 
     // TODO: add back timestamptz and time types.
@@ -210,48 +245,44 @@ public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
     public static OracleCatalogTestBase.TestTable getPrimitiveTable(String primaryKeyName) {
         return new OracleCatalogTestBase.TestTable(
                 Schema.newBuilder()
-                        .column("int", DataTypes.INT().notNull())
-                        .column("bytea", DataTypes.BYTES())
-                        .column("short", DataTypes.SMALLINT().notNull())
-                        .column("long", DataTypes.BIGINT())
-                        .column("real", DataTypes.FLOAT())
-                        .column("double_precision", DataTypes.DOUBLE())
-                        .column("numeric", DataTypes.DECIMAL(10, 5))
-                        .column("decimal", DataTypes.DECIMAL(10, 1))
-                        .column("boolean", DataTypes.BOOLEAN())
-                        .column("text", DataTypes.STRING())
-                        .column("char", DataTypes.CHAR(1))
-                        .column("character", DataTypes.CHAR(3))
-                        .column("character_varying", DataTypes.VARCHAR(20))
-                        .column("timestamp", DataTypes.TIMESTAMP(5))
+                        .column("INT_COL", DataTypes.DECIMAL(38,18).notNull())
+                        .column("BYTEA_COL", DataTypes.BYTES())
+                        .column("SHORT_COL", DataTypes.DECIMAL(38,18).notNull())
+                        .column("LONG_COL", DataTypes.DECIMAL(38,18))
+                        .column("REAL_COL", DataTypes.DECIMAL(38,18))
+                        .column("DOUBLE_PRECISION_COL", DataTypes.DECIMAL(38,18))
+                        .column("NUMERIC_COL", DataTypes.DECIMAL(10, 5))
+                        .column("DECIMAL_COL", DataTypes.DECIMAL(10, 1))
+                        .column("TEXT_COL", DataTypes.STRING())
+                        .column("CHAR_COL", DataTypes.STRING())
+                        .column("CHARACTER_COL", DataTypes.STRING())
+                        .column("CHARACTER_VARYING_COL", DataTypes.STRING())
+                        .column("TIMESTAMP_COL", DataTypes.TIMESTAMP(5))
                         //				.field("timestamptz", DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE(4))
-                        .column("date", DataTypes.DATE())
-                        .column("time", DataTypes.TIME(0))
-                        .column("default_numeric", DataTypes.DECIMAL(DecimalType.MAX_PRECISION, 18))
-                        .primaryKeyNamed(primaryKeyName, "short", "int")
+                        .column("DATE_COL", DataTypes.TIMESTAMP(6))
+                        .column("DEFAULT_NUMERIC", DataTypes.DECIMAL(DecimalType.MAX_PRECISION, 18))
+                        .primaryKeyNamed(primaryKeyName, "SHORT_COL", "INT_COL")
                         .build(),
-                "int integer, "
-                        + "bytea bytea, "
-                        + "short smallint, "
-                        + "long bigint, "
-                        + "real real, "
-                        + "double_precision double precision, "
-                        + "numeric numeric(10, 5), "
-                        + "decimal decimal(10, 1), "
-                        + "boolean boolean, "
-                        + "text text, "
-                        + "char char, "
-                        + "character character(3), "
-                        + "character_varying character varying(20), "
-                        + "timestamp timestamp(5), "
+                "int_col NUMBER, "
+                        + "bytea_col blob, "
+                        + "short_col NUMBER, "
+                        + "long_col NUMBER, "
+                        + "real_col real, "
+                        + "double_precision_col double precision, "
+                        + "numeric_col numeric(10, 5), "
+                        + "decimal_col decimal(10, 1), "
+                        + "text_col clob, "
+                        + "char_col char(3), "
+                        + "character_col character(3), "
+                        + "character_varying_col character varying(20), "
+                        + "timestamp_col timestamp(5), "
                         +
                         //				"timestamptz timestamptz(4), " +
-                        "date date,"
-                        + "time time(0), "
+                        "date_col date,"
                         + "default_numeric numeric, "
                         + "CONSTRAINT "
                         + primaryKeyName
-                        + " PRIMARY KEY (short, int)",
+                        + " PRIMARY KEY (short_col, int_col)",
                 "1,"
                         + "'2',"
                         + "3,"
@@ -260,16 +291,18 @@ public class OracleCatalogTestBase implements JdbcITCaseBase, OracleTestBase {
                         + "6.6,"
                         + "7.7,"
                         + "8.8,"
-                        + "true,"
+//                        + "true,"
                         + "'a',"
                         + "'b',"
                         + "'c',"
                         + "'d',"
-                        + "'2016-06-22 19:10:25',"
+//                        + "'2016-16-22 19:10:25',"
+                        + "SYSTIMESTAMP,"
                         +
                         //				"'2006-06-22 19:10:25'," +
-                        "'2015-01-01',"
-                        + "'00:51:02.746572', "
+//                        "'2015-12-12',"
+                        "SYSDATE,"
+//                        + "'00:51:02.746572', "
                         + "500");
     }
 

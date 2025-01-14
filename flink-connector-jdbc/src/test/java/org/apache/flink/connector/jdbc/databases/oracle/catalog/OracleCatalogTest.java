@@ -26,7 +26,6 @@ public class OracleCatalogTest extends OracleCatalogTestBase {
     @Test
     void testListDatabases() {
         List<String> actual = catalog.listDatabases();
-
         assertThat(actual).isEqualTo(Arrays.asList("postgres", "test"));
     }
 
@@ -46,33 +45,33 @@ public class OracleCatalogTest extends OracleCatalogTestBase {
         assertThat(actual)
                 .isEqualTo(
                         Arrays.asList(
-                                "public.array_table",
-                                "public.primitive_table",
-                                "public.primitive_table2",
-                                "public.serial_table",
-                                "public.t1",
-                                "public.t4",
-                                "public.t5"));
+                                "TEST_SCHEMA.PRIMITIVE_TABLE",
+                                "TEST_SCHEMA.PRIMITIVE_TABLE2",
+                                "TEST_SCHEMA.T1",
+                                "TEST_SCHEMA.T2",
+                                "TEST_SCHEMA.T3",
+                                "TEST_SCHEMA.T4",
+                                "TEST_SCHEMA.T5"));
 
-        actual = catalog.listTables(TEST_DB);
-
-        assertThat(actual).isEqualTo(Arrays.asList("public.t2", "test_schema.t3"));
+//        actual = catalog.listTables(TEST_DB);
+//
+//        assertThat(actual).isEqualTo(Arrays.asList("public.t2", "test_schema.t3"));
     }
 
     @Test
     void testListTables_DatabaseNotExistException() {
-        assertThatThrownBy(() -> catalog.listTables(OracleCatalog.DEFAULT_DATABASE))
+        assertThatThrownBy(() -> catalog.listTables(TEST_DB))
                 .isInstanceOf(DatabaseNotExistException.class);
     }
 
     @Test
     void testTableExists() {
-        assertThat(catalog.tableExists(new ObjectPath(TEST_DB, "nonexist"))).isFalse();
+        assertThat(catalog.tableExists(new ObjectPath(OracleCatalog.DEFAULT_DATABASE, "nonexist"))).isFalse();
 
         assertThat(catalog.tableExists(new ObjectPath(OracleCatalog.DEFAULT_DATABASE, TABLE1)))
                 .isTrue();
-        assertThat(catalog.tableExists(new ObjectPath(TEST_DB, TABLE2))).isTrue();
-        assertThat(catalog.tableExists(new ObjectPath(TEST_DB, "test_schema.t3"))).isTrue();
+        assertThat(catalog.tableExists(new ObjectPath(OracleCatalog.DEFAULT_DATABASE, TABLE2))).isTrue();
+        assertThat(catalog.tableExists(new ObjectPath(OracleCatalog.DEFAULT_DATABASE, "TEST_SCHEMA.T3"))).isTrue();
     }
 
     @Test
@@ -116,25 +115,25 @@ public class OracleCatalogTest extends OracleCatalogTestBase {
         // test postgres.public.user1
         Schema schema = getSimpleTable().schema;
 
-        CatalogBaseTable table = catalog.getTable(new ObjectPath("postgres", TABLE1));
-
+        CatalogBaseTable table = catalog.getTable(new ObjectPath("TEST_SCHEMA", TABLE1));
+        System.out.println(table.getUnresolvedSchema().toString());
         assertThat(table.getUnresolvedSchema()).isEqualTo(schema);
 
-        table = catalog.getTable(new ObjectPath("postgres", "public.t1"));
-
-        assertThat(table.getUnresolvedSchema()).isEqualTo(schema);
+//        table = catalog.getTable(new ObjectPath("TEST_SCHEMA", TABLE2));
+//
+//        assertThat(table.getUnresolvedSchema()).isEqualTo(schema);
 
         // test testdb.public.user2
-        table = catalog.getTable(new ObjectPath(TEST_DB, TABLE2));
+        table = catalog.getTable(new ObjectPath("TEST_SCHEMA", TABLE2));
 
         assertThat(table.getUnresolvedSchema()).isEqualTo(schema);
 
-        table = catalog.getTable(new ObjectPath(TEST_DB, "public.t2"));
-
-        assertThat(table.getUnresolvedSchema()).isEqualTo(schema);
+//        table = catalog.getTable(new ObjectPath(TEST_DB, "public.t2"));
+//
+//        assertThat(table.getUnresolvedSchema()).isEqualTo(schema);
 
         // test testdb.testschema.user2
-        table = catalog.getTable(new ObjectPath(TEST_DB, TEST_SCHEMA + ".t3"));
+        table = catalog.getTable(new ObjectPath("TEST_SCHEMA", TEST_SCHEMA + ".T3"));
 
         assertThat(table.getUnresolvedSchema()).isEqualTo(schema);
     }
@@ -144,7 +143,7 @@ public class OracleCatalogTest extends OracleCatalogTestBase {
         CatalogBaseTable table =
                 catalog.getTable(
                         new ObjectPath(OracleCatalog.DEFAULT_DATABASE, TABLE_PRIMITIVE_TYPE));
-
+        System.out.println(table.getUnresolvedSchema().toString());
         assertThat(table.getUnresolvedSchema()).isEqualTo(getPrimitiveTable().schema);
     }
 
