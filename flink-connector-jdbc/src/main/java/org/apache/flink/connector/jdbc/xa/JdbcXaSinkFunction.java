@@ -36,6 +36,8 @@ import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
+import org.apache.flink.streaming.api.lineage.LineageVertexProvider;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.Preconditions;
 
@@ -129,7 +131,8 @@ import static org.apache.flink.connector.jdbc.xa.JdbcXaSinkFunctionState.of;
 @Internal
 @Deprecated
 public class JdbcXaSinkFunction<T> extends AbstractRichFunction
-        implements CheckpointedFunction,
+        implements LineageVertexProvider,
+                CheckpointedFunction,
                 CheckpointListener,
                 SinkFunction<T>,
                 AutoCloseable,
@@ -369,5 +372,10 @@ public class JdbcXaSinkFunction<T> extends AbstractRichFunction
         this.serializer =
                 JdbcOutputSerializer.of(
                         ((TypeInformation<T>) type).createSerializer(executionConfig));
+    }
+
+    @Override
+    public LineageVertex getLineageVertex() {
+        return null;
     }
 }
