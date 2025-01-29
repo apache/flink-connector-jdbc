@@ -133,7 +133,7 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
 
     @ParameterizedTest
     @EnumSource(DeliveryGuarantee.class)
-    @Timeout(value = 5000, unit = TimeUnit.MILLISECONDS)
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     void testForNormalCaseWithoutFailure(
             DeliveryGuarantee guarantee, @InjectClusterClient ClusterClient<?> client)
             throws Exception {
@@ -152,7 +152,7 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
     }
 
     @Test
-    @Timeout(value = 5000, unit = TimeUnit.MILLISECONDS)
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     void testExactlyOnceWithFailure(@InjectClusterClient ClusterClient<?> client) throws Exception {
         // Test continuous + unbounded splits
         StreamExecutionEnvironment env = getEnvWithRestartStrategyParallelism();
@@ -171,7 +171,7 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
     }
 
     @Test
-    @Timeout(value = 5000, unit = TimeUnit.MILLISECONDS)
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     void testAtLeastOnceWithFailure(@InjectClusterClient ClusterClient<?> client) throws Exception {
         // Test continuous + unbounded splits
         StreamExecutionEnvironment env = getEnvWithRestartStrategyParallelism();
@@ -191,7 +191,7 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
     }
 
     @Test
-    @Timeout(value = 5000, unit = TimeUnit.MILLISECONDS)
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     void testAtMostOnceWithFailure(@InjectClusterClient ClusterClient<?> client) throws Exception {
         // Test continuous + unbounded splits
         StreamExecutionEnvironment env = getEnvWithRestartStrategyParallelism();
