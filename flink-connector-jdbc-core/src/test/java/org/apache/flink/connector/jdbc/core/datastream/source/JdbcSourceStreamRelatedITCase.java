@@ -41,6 +41,7 @@ import org.apache.flink.util.Collector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -60,6 +61,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static org.apache.flink.runtime.jobgraph.tasks.CheckpointCoordinatorConfiguration.MINIMAL_CHECKPOINT_TIME;
@@ -131,6 +133,7 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
 
     @ParameterizedTest
     @EnumSource(DeliveryGuarantee.class)
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     void testForNormalCaseWithoutFailure(
             DeliveryGuarantee guarantee, @InjectClusterClient ClusterClient<?> client)
             throws Exception {
@@ -149,6 +152,7 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
     }
 
     @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     void testExactlyOnceWithFailure(@InjectClusterClient ClusterClient<?> client) throws Exception {
         // Test continuous + unbounded splits
         StreamExecutionEnvironment env = getEnvWithRestartStrategyParallelism();
@@ -167,6 +171,7 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
     }
 
     @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     void testAtLeastOnceWithFailure(@InjectClusterClient ClusterClient<?> client) throws Exception {
         // Test continuous + unbounded splits
         StreamExecutionEnvironment env = getEnvWithRestartStrategyParallelism();
@@ -186,6 +191,7 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
     }
 
     @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
     void testAtMostOnceWithFailure(@InjectClusterClient ClusterClient<?> client) throws Exception {
         // Test continuous + unbounded splits
         StreamExecutionEnvironment env = getEnvWithRestartStrategyParallelism();
