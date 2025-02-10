@@ -24,16 +24,22 @@ import org.apache.flink.api.common.io.InputFormat;
 import org.apache.flink.api.common.io.RichInputFormat;
 import org.apache.flink.api.common.io.statistics.BaseStatistics;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectConverter;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.lineage.DefaultTypeDatasetFacet;
+import org.apache.flink.connector.jdbc.lineage.LineageUtils;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.core.io.GenericInputSplit;
 import org.apache.flink.core.io.InputSplit;
 import org.apache.flink.core.io.InputSplitAssigner;
+import org.apache.flink.streaming.api.lineage.LineageDataset;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
+import org.apache.flink.streaming.api.lineage.LineageVertexProvider;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.util.Preconditions;
 
@@ -51,11 +57,13 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
 
 /** InputFormat for {@link JdbcDynamicTableSource}. */
 @Internal
 public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
-        implements ResultTypeQueryable<RowData> {
+        implements LineageVertexProvider, ResultTypeQueryable<RowData> {
 
     private static final long serialVersionUID = 2L;
     private static final Logger LOG = LoggerFactory.getLogger(JdbcRowDataInputFormat.class);
@@ -294,6 +302,19 @@ public class JdbcRowDataInputFormat extends RichInputFormat<RowData, InputSplit>
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public LineageVertex getLineageVertex() {
+        DefaultTypeDatasetFacet defaultTypeDatasetFacet =
+                new DefaultTypeDatasetFacet(getProducedType());
+        Optional<String> nameOpt = LineageUtils.nameOf(queryTemplate);
+        String namespace = LineageUtils.namespaceOf(connectionProvider);
+        LineageDataset dataset =
+                LineageUtils.datasetOf(
+                        nameOpt.orElse(""), namespace, Arrays.asList(defaultTypeDatasetFacet));
+        return LineageUtils.sourceLineageVertexOf(
+                Boundedness.BOUNDED, Collections.singleton(dataset));
     }
 
     /** Builder for {@link JdbcRowDataInputFormat}. */

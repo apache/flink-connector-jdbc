@@ -56,6 +56,11 @@ under the License.
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>io.openlineage</groupId>
+            <artifactId>openlineage-sql-java</artifactId>
+        </dependency>
+
         <!-- Tests -->
 
         <dependency>
