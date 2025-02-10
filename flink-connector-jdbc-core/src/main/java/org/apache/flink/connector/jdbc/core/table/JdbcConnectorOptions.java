@@ -80,6 +80,8 @@ public class JdbcConnectorOptions {
     // Scan options
     // -----------------------------------------------------------------------------------------
 
+    public static final ConfigOption<Integer> SCAN_PARALLELISM = FactoryUtil.SOURCE_PARALLELISM;
+
     public static final ConfigOption<String> SCAN_PARTITION_COLUMN =
             ConfigOptions.key("scan.partition.column")
                     .stringType()

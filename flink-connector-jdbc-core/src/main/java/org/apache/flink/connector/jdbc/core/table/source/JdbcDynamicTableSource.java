@@ -190,7 +190,7 @@ public class JdbcDynamicTableSource
         builder.setRowDataTypeInfo(
                 runtimeProviderContext.createTypeInformation(physicalRowDataType));
 
-        return InputFormatProvider.of(builder.build());
+        return InputFormatProvider.of(builder.build(), readOptions.getParallelism());
     }
 
     @Override
