@@ -708,7 +708,7 @@ SELECT * FROM given_database.test_table2;
 
 Data Type Mapping
 ----------------
-Flink supports connect to several databases which uses dialect like MySQL, Oracle, PostgreSQL, CrateDB, Derby, SQL Server, Db2, OceanBase and Spanner. The Derby dialect usually used for testing purpose. The field data type mappings from relational databases data types to Flink SQL data types are listed in the following table, the mapping table can help define JDBC table in Flink easily.
+Flink supports the connection to several databases using dialect like MySQL, Oracle, PostgreSQL, CrateDB, Derby, SQL Server, Db2, OceanBase and Spanner. The Derby dialect is usually used for testing purpose. The field data type mappings from relational databases data types to Flink SQL data types are listed in the following table, the mapping table can help define a JDBC table in Flink easily.
 
 <table class="table table-bordered">
     <thead>
