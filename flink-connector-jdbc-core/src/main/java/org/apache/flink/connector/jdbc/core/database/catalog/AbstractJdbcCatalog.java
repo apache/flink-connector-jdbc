@@ -125,17 +125,10 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
         checkNotNull(userClassLoader);
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(baseUrl));
 
-        validateJdbcUrl(baseUrl);
-
         this.userClassLoader = userClassLoader;
+        this.connectionProperties = Preconditions.checkNotNull(connectionProperties);
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
         this.defaultUrl = getDatabaseUrl(defaultDatabase);
-        this.connectionProperties = Preconditions.checkNotNull(connectionProperties);
-        checkArgument(
-                !StringUtils.isNullOrWhitespaceOnly(connectionProperties.getProperty(USER_KEY)));
-        checkArgument(
-                !StringUtils.isNullOrWhitespaceOnly(
-                        connectionProperties.getProperty(PASSWORD_KEY)));
     }
 
     protected String getDatabaseUrl(String databaseName) {
@@ -574,16 +567,6 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
 
     protected String getSchemaTableName(ObjectPath tablePath) {
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * URL has to be without database, like "jdbc:dialect://localhost:1234/" or
-     * "jdbc:dialect://localhost:1234" rather than "jdbc:dialect://localhost:1234/db".
-     */
-    protected static void validateJdbcUrl(String url) {
-        String[] parts = url.trim().split("\\/+");
-
-        checkArgument(parts.length == 2);
     }
 
     @Override
