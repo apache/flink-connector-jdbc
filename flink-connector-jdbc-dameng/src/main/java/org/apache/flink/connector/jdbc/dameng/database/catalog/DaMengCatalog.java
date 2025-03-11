@@ -58,10 +58,8 @@ public class DaMengCatalog
     private static final Set<String> builtinDatabases =
             new HashSet<String>() {
                 {
-                    add("SYS");
-                    add("SYSDBA");
-                    add("SYSAUDITOR");
-                    add("INFORMATION_SCHEMA");
+                    add("SYSOBJECTS");
+                    add("SYSAUDIT");
                 }
             };
 
@@ -102,7 +100,7 @@ public class DaMengCatalog
     public List<String> listDatabases() throws CatalogException {
         return extractColumnValuesBySQL(
                 defaultUrl,
-                "SELECT SCHEMA_NAME FROM ALL_SCHEMAS",
+                "SELECT NAME AS SCHEMA_NAME FROM SYS.SYSOBJECTS",
                 1,
                 dbName -> !builtinDatabases.contains(dbName.toUpperCase()));
     }
