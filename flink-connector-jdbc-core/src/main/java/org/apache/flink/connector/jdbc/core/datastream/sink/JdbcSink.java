@@ -20,8 +20,11 @@ package org.apache.flink.connector.jdbc.core.datastream.sink;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.sink2.Committer;
-import org.apache.flink.api.connector.sink2.StatefulSink;
-import org.apache.flink.api.connector.sink2.TwoPhaseCommittingSink;
+import org.apache.flink.api.connector.sink2.CommitterInitContext;
+import org.apache.flink.api.connector.sink2.Sink;
+import org.apache.flink.api.connector.sink2.SupportsCommitter;
+import org.apache.flink.api.connector.sink2.SupportsWriterState;
+import org.apache.flink.api.connector.sink2.WriterInitContext;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -47,7 +50,9 @@ import java.util.Collections;
  */
 @PublicEvolving
 public class JdbcSink<IN>
-        implements StatefulSink<IN, JdbcWriterState>, TwoPhaseCommittingSink<IN, JdbcCommitable> {
+        implements Sink<IN>,
+                SupportsWriterState<IN, JdbcWriterState>,
+                SupportsCommitter<JdbcCommitable> {
 
     private final DeliveryGuarantee deliveryGuarantee;
     private final JdbcConnectionProvider connectionProvider;
@@ -74,14 +79,28 @@ public class JdbcSink<IN>
 
     @Override
     @Internal
-    public JdbcWriter<IN> createWriter(InitContext context) throws IOException {
+    public JdbcWriter<IN> createWriter(WriterInitContext context) throws IOException {
         return restoreWriter(context, Collections.emptyList());
     }
 
     @Override
     @Internal
+    public Committer<JdbcCommitable> createCommitter(CommitterInitContext committerInitContext)
+            throws IOException {
+        return new JdbcCommitter(deliveryGuarantee, connectionProvider, exactlyOnceOptions);
+    }
+
+    @Override
+    @Internal
+    public SimpleVersionedSerializer<JdbcCommitable> getCommittableSerializer() {
+        return new JdbcCommitableSerializer();
+    }
+
+    @Override
+    @Internal
     public JdbcWriter<IN> restoreWriter(
-            InitContext context, Collection<JdbcWriterState> recoveredState) throws IOException {
+            WriterInitContext context, Collection<JdbcWriterState> recoveredState)
+            throws IOException {
         JdbcOutputSerializer<IN> outputSerializer =
                 JdbcOutputSerializer.of(
                         context.createInputSerializer(), context.isObjectReuseEnabled());
@@ -94,18 +113,6 @@ public class JdbcSink<IN>
                 deliveryGuarantee,
                 recoveredState,
                 context);
-    }
-
-    @Override
-    @Internal
-    public Committer<JdbcCommitable> createCommitter() throws IOException {
-        return new JdbcCommitter(deliveryGuarantee, connectionProvider, exactlyOnceOptions);
-    }
-
-    @Override
-    @Internal
-    public SimpleVersionedSerializer<JdbcCommitable> getCommittableSerializer() {
-        return new JdbcCommitableSerializer();
     }
 
     @Override

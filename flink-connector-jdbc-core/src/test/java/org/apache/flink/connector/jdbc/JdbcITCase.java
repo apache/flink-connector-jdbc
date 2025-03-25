@@ -17,7 +17,6 @@
 
 package org.apache.flink.connector.jdbc;
 
-import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
@@ -25,7 +24,8 @@ import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.streaming.api.functions.sink.legacy.SinkFunction;
+import org.apache.flink.streaming.util.RestartStrategyUtils;
 import org.apache.flink.util.function.FunctionWithException;
 
 import org.junit.jupiter.api.Test;
@@ -70,7 +70,7 @@ public class JdbcITCase extends JdbcTestBase implements JdbcITCaseBase {
     @Test
     void testInsert() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
+        RestartStrategyUtils.configureNoRestartStrategy(env);
         env.setParallelism(1);
         env.fromElements(TEST_DATA)
                 .addSink(
@@ -92,7 +92,7 @@ public class JdbcITCase extends JdbcTestBase implements JdbcITCaseBase {
         configuration.set(OBJECT_REUSE, true);
         StreamExecutionEnvironment env =
                 StreamExecutionEnvironment.getExecutionEnvironment(configuration);
-        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
+        RestartStrategyUtils.configureNoRestartStrategy(env);
         env.setParallelism(1);
 
         AtomicInteger counter = new AtomicInteger(0);

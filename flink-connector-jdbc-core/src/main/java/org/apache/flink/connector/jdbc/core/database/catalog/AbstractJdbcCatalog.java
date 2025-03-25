@@ -305,7 +305,10 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
                     pk -> schemaBuilder.primaryKeyNamed(pk.getName(), pk.getColumns()));
             Schema tableSchema = schemaBuilder.build();
 
-            return CatalogTable.of(tableSchema, null, Lists.newArrayList(), getOptions(tablePath));
+            return CatalogTable.newBuilder()
+                    .schema(tableSchema)
+                    .options(getOptions(tablePath))
+                    .build();
         } catch (Exception e) {
             throw new CatalogException(
                     String.format("Failed getting table %s", tablePath.getFullName()), e);
