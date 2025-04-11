@@ -223,6 +223,14 @@ Connector Options
       <a href="https://jdbc.postgresql.org/documentation/head/query.html#query-with-cursor">Postgres</a>, may require this to be set to false in order to stream results.</td>
     </tr>
     <tr>
+      <td><h5>scan.parallelism</h5></td>
+      <td>optional</td>
+      <td>no</td>
+      <td style="word-wrap: break-word;">(none)</td>
+      <td>Integer</td>
+      <td>Defines the parallelism of the JDBC source operator. If not set, the global default parallelism is used.</td>
+    </tr>
+    <tr>
       <td><h5>lookup.cache</h5></td>
       <td>optional</td>
       <td>yes</td>
