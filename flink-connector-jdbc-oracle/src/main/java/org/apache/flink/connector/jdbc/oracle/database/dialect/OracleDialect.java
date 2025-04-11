@@ -23,14 +23,17 @@ import org.apache.flink.connector.jdbc.core.database.dialect.AbstractDialect;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectConverter;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
-
+import org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.DELETE_OP_COL;
+import org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.DELETE_OP_VAL;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** JDBC dialect for Oracle. */
+/**
+ * JDBC dialect for Oracle.
+ */
 @Internal
 public class OracleDialect extends AbstractDialect {
 
@@ -74,7 +77,6 @@ public class OracleDialect extends AbstractDialect {
     @Override
     public Optional<String> getUpsertStatement(
             String tableName, String[] fieldNames, String[] uniqueKeyFields) {
-
         String sourceFields =
                 Arrays.stream(fieldNames)
                         .map(f -> ":" + f + " " + quoteIdentifier(f))
@@ -90,7 +92,17 @@ public class OracleDialect extends AbstractDialect {
         String updateClause =
                 Arrays.stream(fieldNames)
                         .filter(f -> !uniqueKeyFieldsSet.contains(f))
-                        .map(f -> "t." + quoteIdentifier(f) + "=s." + quoteIdentifier(f))
+                        .map(f -> {
+                            return new StringBuilder()
+                                    .append("t.").append(quoteIdentifier(f)).append("=")
+                                    .append(" CASE WHEN (").append("s.").append(quoteIdentifier(DELETE_OP_COL))
+                                    .append("=").append("'").append(DELETE_OP_VAL).append("')")
+                                    .append(" THEN ").append("t.").append(quoteIdentifier(f))
+                                    .append(" ELSE ").append("s.").append(quoteIdentifier(f)).append(" END")
+                                    .toString();
+                            return "t." + quoteIdentifier(f) + "=" +
+                                    "s." + quoteIdentifier(f);
+                        })
                         .collect(Collectors.joining(", "));
 
         String insertFields =

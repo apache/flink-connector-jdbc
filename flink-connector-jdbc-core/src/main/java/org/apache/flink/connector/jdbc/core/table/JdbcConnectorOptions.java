@@ -30,161 +30,171 @@ import java.time.Duration;
 @PublicEvolving
 public class JdbcConnectorOptions {
 
-    public static final ConfigOption<String> URL =
-            ConfigOptions.key("url")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("The JDBC database URL.");
+        public static final ConfigOption<String> URL = ConfigOptions.key("url")
+                        .stringType()
+                        .noDefaultValue()
+                        .withDescription("The JDBC database URL.");
 
-    public static final ConfigOption<String> TABLE_NAME =
-            ConfigOptions.key("table-name")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("The JDBC table name.");
+        public static final ConfigOption<String> TABLE_NAME = ConfigOptions.key("table-name")
+                        .stringType()
+                        .noDefaultValue()
+                        .withDescription("The JDBC table name.");
 
-    public static final ConfigOption<String> USERNAME =
-            ConfigOptions.key("username")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("The JDBC user name.");
+        public static final ConfigOption<String> USERNAME = ConfigOptions.key("username")
+                        .stringType()
+                        .noDefaultValue()
+                        .withDescription("The JDBC user name.");
 
-    public static final ConfigOption<String> PASSWORD =
-            ConfigOptions.key("password")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("The JDBC password.");
+        public static final ConfigOption<String> PASSWORD = ConfigOptions.key("password")
+                        .stringType()
+                        .noDefaultValue()
+                        .withDescription("The JDBC password.");
 
-    public static final ConfigOption<String> DRIVER =
-            ConfigOptions.key("driver")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription(
-                            "The class name of the JDBC driver to use to connect to this URL. "
-                                    + "If not set, it will automatically be derived from the URL.");
+        public static final ConfigOption<String> DRIVER = ConfigOptions.key("driver")
+                        .stringType()
+                        .noDefaultValue()
+                        .withDescription(
+                                        "The class name of the JDBC driver to use to connect to this URL. "
+                                                        + "If not set, it will automatically be derived from the URL.");
 
-    public static final ConfigOption<String> COMPATIBLE_MODE =
-            ConfigOptions.key("compatible-mode")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("The compatible mode of database.");
+        public static final ConfigOption<String> COMPATIBLE_MODE = ConfigOptions.key("compatible-mode")
+                        .stringType()
+                        .noDefaultValue()
+                        .withDescription("The compatible mode of database.");
 
-    public static final ConfigOption<Duration> MAX_RETRY_TIMEOUT =
-            ConfigOptions.key("connection.max-retry-timeout")
-                    .durationType()
-                    .defaultValue(Duration.ofSeconds(60))
-                    .withDescription("Maximum timeout between retries.");
+        public static final ConfigOption<Duration> MAX_RETRY_TIMEOUT = ConfigOptions.key("connection.max-retry-timeout")
+                        .durationType()
+                        .defaultValue(Duration.ofSeconds(60))
+                        .withDescription("Maximum timeout between retries.");
 
-    public static final ConfigOption<Integer> SINK_PARALLELISM = FactoryUtil.SINK_PARALLELISM;
+        public static final ConfigOption<Integer> SINK_PARALLELISM = FactoryUtil.SINK_PARALLELISM;
 
-    // -----------------------------------------------------------------------------------------
-    // Scan options
-    // -----------------------------------------------------------------------------------------
+        // -----------------------------------------------------------------------------------------
+        // Scan options
+        // -----------------------------------------------------------------------------------------
 
-    public static final ConfigOption<String> SCAN_PARTITION_COLUMN =
-            ConfigOptions.key("scan.partition.column")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription("The column name used for partitioning the input.");
+        public static final ConfigOption<String> SCAN_PARTITION_COLUMN = ConfigOptions.key("scan.partition.column")
+                        .stringType()
+                        .noDefaultValue()
+                        .withDescription("The column name used for partitioning the input.");
 
-    public static final ConfigOption<Integer> SCAN_PARTITION_NUM =
-            ConfigOptions.key("scan.partition.num")
-                    .intType()
-                    .noDefaultValue()
-                    .withDescription("The number of partitions.");
+        public static final ConfigOption<Integer> SCAN_PARTITION_NUM = ConfigOptions.key("scan.partition.num")
+                        .intType()
+                        .noDefaultValue()
+                        .withDescription("The number of partitions.");
 
-    public static final ConfigOption<Long> SCAN_PARTITION_LOWER_BOUND =
-            ConfigOptions.key("scan.partition.lower-bound")
-                    .longType()
-                    .noDefaultValue()
-                    .withDescription("The smallest value of the first partition.");
+        public static final ConfigOption<Long> SCAN_PARTITION_LOWER_BOUND = ConfigOptions
+                        .key("scan.partition.lower-bound")
+                        .longType()
+                        .noDefaultValue()
+                        .withDescription("The smallest value of the first partition.");
 
-    public static final ConfigOption<Long> SCAN_PARTITION_UPPER_BOUND =
-            ConfigOptions.key("scan.partition.upper-bound")
-                    .longType()
-                    .noDefaultValue()
-                    .withDescription("The largest value of the last partition.");
+        public static final ConfigOption<Long> SCAN_PARTITION_UPPER_BOUND = ConfigOptions
+                        .key("scan.partition.upper-bound")
+                        .longType()
+                        .noDefaultValue()
+                        .withDescription("The largest value of the last partition.");
 
-    public static final ConfigOption<Integer> SCAN_FETCH_SIZE =
-            ConfigOptions.key("scan.fetch-size")
-                    .intType()
-                    .defaultValue(0)
-                    .withDescription(
-                            "Gives the reader a hint as to the number of rows that should be fetched "
-                                    + "from the database per round-trip when reading. "
-                                    + "If the value is zero, this hint is ignored.");
+        public static final ConfigOption<Integer> SCAN_FETCH_SIZE = ConfigOptions.key("scan.fetch-size")
+                        .intType()
+                        .defaultValue(0)
+                        .withDescription(
+                                        "Gives the reader a hint as to the number of rows that should be fetched "
+                                                        + "from the database per round-trip when reading. "
+                                                        + "If the value is zero, this hint is ignored.");
 
-    public static final ConfigOption<Boolean> SCAN_AUTO_COMMIT =
-            ConfigOptions.key("scan.auto-commit")
-                    .booleanType()
-                    .defaultValue(true)
-                    .withDescription("Sets whether the driver is in auto-commit mode.");
+        public static final ConfigOption<Boolean> SCAN_AUTO_COMMIT = ConfigOptions.key("scan.auto-commit")
+                        .booleanType()
+                        .defaultValue(true)
+                        .withDescription("Sets whether the driver is in auto-commit mode.");
 
-    // -----------------------------------------------------------------------------------------
-    // Lookup options
-    // -----------------------------------------------------------------------------------------
+        // -----------------------------------------------------------------------------------------
+        // Lookup options
+        // -----------------------------------------------------------------------------------------
 
-    /** @deprecated please use {@link LookupOptions#PARTIAL_CACHE_MAX_ROWS} instead. */
-    @Deprecated
-    public static final ConfigOption<Long> LOOKUP_CACHE_MAX_ROWS =
-            ConfigOptions.key("lookup.cache.max-rows")
-                    .longType()
-                    .defaultValue(-1L)
-                    .withDescription(
-                            "The max number of rows of lookup cache, over this value, the oldest rows will "
-                                    + "be eliminated. \"cache.max-rows\" and \"cache.ttl\" options must all be specified if any of them is "
-                                    + "specified.");
-    /** @deprecated please use {@link LookupOptions#PARTIAL_CACHE_EXPIRE_AFTER_WRITE} instead. */
-    @Deprecated
-    public static final ConfigOption<Duration> LOOKUP_CACHE_TTL =
-            ConfigOptions.key("lookup.cache.ttl")
-                    .durationType()
-                    .defaultValue(Duration.ofSeconds(10))
-                    .withDescription("The cache time to live.");
+        /**
+         * @deprecated please use {@link LookupOptions#PARTIAL_CACHE_MAX_ROWS} instead.
+         */
+        @Deprecated
+        public static final ConfigOption<Long> LOOKUP_CACHE_MAX_ROWS = ConfigOptions.key("lookup.cache.max-rows")
+                        .longType()
+                        .defaultValue(-1L)
+                        .withDescription(
+                                        "The max number of rows of lookup cache, over this value, the oldest rows will "
+                                                        + "be eliminated. \"cache.max-rows\" and \"cache.ttl\" options must all be specified if any of them is "
+                                                        + "specified.");
+        /**
+         * @deprecated please use {@link LookupOptions#PARTIAL_CACHE_EXPIRE_AFTER_WRITE}
+         *             instead.
+         */
+        @Deprecated
+        public static final ConfigOption<Duration> LOOKUP_CACHE_TTL = ConfigOptions.key("lookup.cache.ttl")
+                        .durationType()
+                        .defaultValue(Duration.ofSeconds(10))
+                        .withDescription("The cache time to live.");
 
-    /** @deprecated please use {@link LookupOptions#MAX_RETRIES} instead. */
-    @Deprecated
-    public static final ConfigOption<Integer> LOOKUP_MAX_RETRIES =
-            ConfigOptions.key("lookup.max-retries")
-                    .intType()
-                    .defaultValue(3)
-                    .withDescription("The max retry times if lookup database failed.");
+        /** @deprecated please use {@link LookupOptions#MAX_RETRIES} instead. */
+        @Deprecated
+        public static final ConfigOption<Integer> LOOKUP_MAX_RETRIES = ConfigOptions.key("lookup.max-retries")
+                        .intType()
+                        .defaultValue(3)
+                        .withDescription("The max retry times if lookup database failed.");
 
-    /** @deprecated please use {@link LookupOptions#PARTIAL_CACHE_CACHE_MISSING_KEY} instead. */
-    @Deprecated
-    public static final ConfigOption<Boolean> LOOKUP_CACHE_MISSING_KEY =
-            ConfigOptions.key("lookup.cache.caching-missing-key")
-                    .booleanType()
-                    .defaultValue(true)
-                    .withDescription("Flag to cache missing key. true by default");
+        /**
+         * @deprecated please use {@link LookupOptions#PARTIAL_CACHE_CACHE_MISSING_KEY}
+         *             instead.
+         */
+        @Deprecated
+        public static final ConfigOption<Boolean> LOOKUP_CACHE_MISSING_KEY = ConfigOptions
+                        .key("lookup.cache.caching-missing-key")
+                        .booleanType()
+                        .defaultValue(true)
+                        .withDescription("Flag to cache missing key. true by default");
 
-    // write config options
-    public static final ConfigOption<Integer> SINK_BUFFER_FLUSH_MAX_ROWS =
-            ConfigOptions.key("sink.buffer-flush.max-rows")
-                    .intType()
-                    .defaultValue(100)
-                    .withDescription(
-                            "The flush max size (includes all append, upsert and delete records), over this number"
-                                    + " of records, will flush data.");
+        // write config options
+        public static final ConfigOption<Integer> SINK_BUFFER_FLUSH_MAX_ROWS = ConfigOptions
+                        .key("sink.buffer-flush.max-rows")
+                        .intType()
+                        .defaultValue(100)
+                        .withDescription(
+                                        "The flush max size (includes all append, upsert and delete records), over this number"
+                                                        + " of records, will flush data.");
 
-    public static final ConfigOption<Duration> SINK_BUFFER_FLUSH_INTERVAL =
-            ConfigOptions.key("sink.buffer-flush.interval")
-                    .durationType()
-                    .defaultValue(Duration.ofSeconds(1))
-                    .withDescription(
-                            "The flush interval mills, over this time, asynchronous threads will flush data.");
+        public static final ConfigOption<Duration> SINK_BUFFER_FLUSH_INTERVAL = ConfigOptions
+                        .key("sink.buffer-flush.interval")
+                        .durationType()
+                        .defaultValue(Duration.ofSeconds(1))
+                        .withDescription(
+                                        "The flush interval mills, over this time, asynchronous threads will flush data.");
 
-    public static final ConfigOption<Integer> SINK_MAX_RETRIES =
-            ConfigOptions.key("sink.max-retries")
-                    .intType()
-                    .defaultValue(3)
-                    .withDescription("The max retry times if writing records to database failed.");
+        public static final ConfigOption<Integer> SINK_MAX_RETRIES = ConfigOptions.key("sink.max-retries")
+                        .intType()
+                        .defaultValue(3)
+                        .withDescription("The max retry times if writing records to database failed.");
 
-    public static final ConfigOption<FilterHandlingPolicy> FILTER_HANDLING_POLICY =
-            ConfigOptions.key("filter.handling.policy")
-                    .enumType(FilterHandlingPolicy.class)
-                    .defaultValue(FilterHandlingPolicy.ALWAYS)
-                    .withDescription(
-                            "Fine-grained configuration to control filter push down for jdbc Table/SQL source.");
+        public static final ConfigOption<FilterHandlingPolicy> FILTER_HANDLING_POLICY = ConfigOptions
+                        .key("filter.handling.policy")
+                        .enumType(FilterHandlingPolicy.class)
+                        .defaultValue(FilterHandlingPolicy.ALWAYS)
+                        .withDescription(
+                                        "Fine-grained configuration to control filter push down for jdbc Table/SQL source.");
 
-    protected JdbcConnectorOptions() {}
+        //
+        // handle DWH delete op
+        //
+        public static final ConfigOption<String> DELETE_OP_COL = ConfigOptions
+                        .key("filter.handling.policy")
+                        .stringType()
+                        .noDefaultValue()
+                        .withDescription(
+                                        "Delete OP column name");
+        public static final ConfigOption<String> DELETE_OP_VAL = ConfigOptions
+                        .key("filter.handling.policy")
+                        .stringType()
+                        .noDefaultValue()
+                        .withDescription(
+                                        "Delete OP column value");
+
+        protected JdbcConnectorOptions() {
+        }
 }
