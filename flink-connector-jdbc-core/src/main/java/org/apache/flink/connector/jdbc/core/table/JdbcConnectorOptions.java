@@ -183,13 +183,13 @@ public class JdbcConnectorOptions {
         // handle DWH delete op
         //
         public static final ConfigOption<String> DELETE_OP_COL = ConfigOptions
-                        .key("filter.handling.policy")
+                        .key("delete.op.col")
                         .stringType()
                         .noDefaultValue()
                         .withDescription(
                                         "Delete OP column name");
         public static final ConfigOption<String> DELETE_OP_VAL = ConfigOptions
-                        .key("filter.handling.policy")
+                        .key("delete.op.val")
                         .stringType()
                         .noDefaultValue()
                         .withDescription(
