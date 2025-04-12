@@ -23,17 +23,17 @@ import org.apache.flink.connector.jdbc.core.database.dialect.AbstractDialect;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectConverter;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.DELETE_OP_COL;
-import org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.DELETE_OP_VAL;
+
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * JDBC dialect for Oracle.
- */
+/** JDBC dialect for Oracle. */
 @Internal
 public class OracleDialect extends AbstractDialect {
 
@@ -48,6 +48,11 @@ public class OracleDialect extends AbstractDialect {
     // https://www.techonthenet.com/oracle/datatypes.php
     private static final int MAX_DECIMAL_PRECISION = 38;
     private static final int MIN_DECIMAL_PRECISION = 1;
+    private static final String CONFIG_FILE = "/flink/conf/flink-conf.yaml";
+    private static final String DEL_OP_COL_CONFIG_KEY = "del.op.col";
+    private static String delOpCol;
+    private static final String DEL_OP_VAL_CONFIG_KEY = "del.op.val";
+    private static String delOpVal;
 
     @Override
     public JdbcDialectConverter getRowConverter(RowType rowType) {
@@ -74,9 +79,33 @@ public class OracleDialect extends AbstractDialect {
         return identifier;
     }
 
+    private static void readConfigFile() throws FileNotFoundException {
+        File configFile = new File(CONFIG_FILE);
+        Scanner scanner = new Scanner(configFile);
+        while (scanner.hasNextLine()) {
+            String[] configEntry = scanner.nextLine().split(":");
+            switch (configEntry[0].trim()) {
+                case DEL_OP_COL_CONFIG_KEY:
+                    delOpCol = configEntry[1].trim();
+                    break;
+                case DEL_OP_VAL_CONFIG_KEY:
+                    delOpVal = configEntry[1].trim();
+                    break;
+            }
+        }
+    }
+
     @Override
     public Optional<String> getUpsertStatement(
             String tableName, String[] fieldNames, String[] uniqueKeyFields) {
+        boolean processDelOp;
+        try {
+            readConfigFile();
+            processDelOp = delOpCol != null && delOpVal != null;
+        } catch (FileNotFoundException fnfe) {
+            processDelOp = false;
+        }
+        boolean finalProcessDelOp = processDelOp;
         String sourceFields =
                 Arrays.stream(fieldNames)
                         .map(f -> ":" + f + " " + quoteIdentifier(f))
@@ -89,20 +118,40 @@ public class OracleDialect extends AbstractDialect {
 
         final Set<String> uniqueKeyFieldsSet =
                 Arrays.stream(uniqueKeyFields).collect(Collectors.toSet());
+
         String updateClause =
                 Arrays.stream(fieldNames)
                         .filter(f -> !uniqueKeyFieldsSet.contains(f))
-                        .map(f -> {
-                            return new StringBuilder()
-                                    .append("t.").append(quoteIdentifier(f)).append("=")
-                                    .append(" CASE WHEN (").append("s.").append(quoteIdentifier(DELETE_OP_COL))
-                                    .append("=").append("'").append(DELETE_OP_VAL).append("')")
-                                    .append(" THEN ").append("t.").append(quoteIdentifier(f))
-                                    .append(" ELSE ").append("s.").append(quoteIdentifier(f)).append(" END")
-                                    .toString();
-                            return "t." + quoteIdentifier(f) + "=" +
-                                    "s." + quoteIdentifier(f);
-                        })
+                        .map(
+                                f -> {
+                                    if (finalProcessDelOp) {
+                                        return new StringBuilder()
+                                                .append("t.")
+                                                .append(quoteIdentifier(f))
+                                                .append("=")
+                                                .append(" CASE WHEN (")
+                                                .append("s.")
+                                                .append(quoteIdentifier(delOpCol))
+                                                .append("=")
+                                                .append("'")
+                                                .append(delOpVal)
+                                                .append("')")
+                                                .append(" THEN ")
+                                                .append("t.")
+                                                .append(quoteIdentifier(f))
+                                                .append(" ELSE ")
+                                                .append("s.")
+                                                .append(quoteIdentifier(f))
+                                                .append(" END")
+                                                .toString();
+                                    } else {
+                                        return "t."
+                                                + quoteIdentifier(f)
+                                                + "="
+                                                + "s."
+                                                + quoteIdentifier(f);
+                                    }
+                                })
                         .collect(Collectors.joining(", "));
 
         String insertFields =

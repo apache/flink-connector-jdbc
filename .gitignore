@@ -36,5 +36,4 @@ tools/flink
 tools/flink-*
 tools/releasing/release
 tools/japicmp-output
-flink-connector-jdbc-oracle/.idea/sonarlint/securityhotspotstore/index.pb
-flink-connector-jdbc-oracle/.idea/sonarlint/issuestore/index.pb
+flink-connector-jdbc-oracle/.idea/sonarlint/*
