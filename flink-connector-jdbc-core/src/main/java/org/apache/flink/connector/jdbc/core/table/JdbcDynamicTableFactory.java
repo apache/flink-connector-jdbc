@@ -83,7 +83,7 @@ import static org.apache.flink.connector.jdbc.utils.JdbcUtils.getConnectionPrope
 @Internal
 public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, DynamicTableSinkFactory {
 
-    public static final String IDENTIFIER = "jdbc";
+    public static final String IDENTIFIER = "dwh-jdbc";
 
     @Override
     public DynamicTableSink createDynamicTableSink(Context context) {

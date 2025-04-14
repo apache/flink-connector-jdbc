@@ -20,7 +20,7 @@ Prerequisites:
 ```
 git clone https://github.com/apache/flink-connector-jdbc.git
 cd flink-connector-jdbc
-mvn clean package -DskipTests
+mvn spotless:apply; mvn clean package -DskipTests
 ```
 
 The resulting jars can be found in the `target` directory of the respective module.

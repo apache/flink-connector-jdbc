@@ -29,7 +29,7 @@ import org.apache.flink.table.catalog.CommonCatalogOptions;
 @Internal
 public class JdbcCatalogFactoryOptions {
 
-    public static final String IDENTIFIER = "jdbc";
+    public static final String IDENTIFIER = "dwh-jdbc";
 
     public static final ConfigOption<String> DEFAULT_DATABASE =
             ConfigOptions.key(CommonCatalogOptions.DEFAULT_DATABASE_KEY)
