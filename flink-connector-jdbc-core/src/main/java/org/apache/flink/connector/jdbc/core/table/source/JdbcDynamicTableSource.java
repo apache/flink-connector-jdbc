@@ -179,12 +179,7 @@ public class JdbcDynamicTableSource
         }
 
         if (limit >= 0) {
-            if ("SqlServer".equals(this.dialectName)) {
-                query = query.replace("SELECT",String.format("SELECT TOP %s ",limit));
-            }
-            else{
-                query = String.format("%s %s", query, dialect.getLimitClause(limit));
-            }
+            query = dialect.addLimitClause(query, limit);
         }
 
         LOG.debug("Query generated for JDBC scan: " + query);
