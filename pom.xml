@@ -53,6 +53,7 @@ under the License.
         <module>flink-connector-jdbc-postgres</module>
         <module>flink-connector-jdbc-sqlserver</module>
         <module>flink-connector-jdbc-trino</module>
+        <module>flink-connector-jdbc-gaussdb</module>
     </modules>
 
     <properties>
