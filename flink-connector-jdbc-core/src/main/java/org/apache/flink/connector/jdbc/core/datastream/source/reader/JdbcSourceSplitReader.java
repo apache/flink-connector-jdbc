@@ -105,15 +105,15 @@ public class JdbcSourceSplitReader<T>
         this.config = Preconditions.checkNotNull(config);
         this.typeInformation = Preconditions.checkNotNull(typeInformation);
         this.connectionProvider = Preconditions.checkNotNull(connectionProvider);
-        this.resultSetType = config.get(RESULTSET_TYPE);
-        this.resultSetConcurrency = config.get(RESULTSET_CONCURRENCY);
-        this.resultSetFetchSize = config.get(RESULTSET_FETCH_SIZE);
-        this.autoCommit = config.get(AUTO_COMMIT);
+        this.resultSetType = config.getInteger(RESULTSET_TYPE);
+        this.resultSetConcurrency = config.getInteger(RESULTSET_CONCURRENCY);
+        this.resultSetFetchSize = config.getInteger(RESULTSET_FETCH_SIZE);
+        this.autoCommit = config.getBoolean(AUTO_COMMIT);
         this.deliveryGuarantee = Preconditions.checkNotNull(deliveryGuarantee);
         this.splits = new ArrayDeque<>();
         this.hasNextRecordCurrentSplit = false;
         this.currentSplit = null;
-        int splitReaderFetchBatchSize = config.get(READER_FETCH_BATCH_SIZE);
+        int splitReaderFetchBatchSize = config.getInteger(READER_FETCH_BATCH_SIZE);
         Preconditions.checkArgument(
                 splitReaderFetchBatchSize > 0 && splitReaderFetchBatchSize < Integer.MAX_VALUE);
         this.splitReaderFetchBatchSize = splitReaderFetchBatchSize;

@@ -1,10 +1,8 @@
 package org.apache.flink.connector.jdbc.core.datastream.sink.writer;
 
 import org.apache.flink.api.common.JobID;
-import org.apache.flink.api.common.JobInfo;
-import org.apache.flink.api.common.TaskInfo;
+import org.apache.flink.api.connector.sink2.Sink;
 import org.apache.flink.api.connector.sink2.SinkWriter;
-import org.apache.flink.api.connector.sink2.WriterInitContext;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -16,7 +14,6 @@ import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
-import org.apache.flink.connector.testutils.source.TestingTaskInfo;
 import org.apache.flink.util.StringUtils;
 
 import org.junit.jupiter.api.AfterEach;
@@ -41,7 +38,7 @@ abstract class BaseJdbcWriterTest implements DerbyTestBase {
 
     private static final String JOBID = "6b64d8a9a951e2e8767ae952ad951706";
     private static final String GLOBAL_TID =
-            String.format("%s000000010000000000000000000000000000", JOBID);
+            String.format("%s000000000000000000000000000000000000", JOBID);
     protected static final BooksTable TEST_TABLE = new BooksTable("WriterTable");
 
     protected static final List<BooksTable.BookEntry> BOOKS =
@@ -71,12 +68,8 @@ abstract class BaseJdbcWriterTest implements DerbyTestBase {
     @BeforeEach
     void init() throws Exception {
         // We have to mock this because we have changes between 1.18 and 1.19
-        WriterInitContext sinkContext = Mockito.mock(WriterInitContext.class);
-        JobInfo jobInfo = Mockito.mock(JobInfo.class);
-        doReturn(jobInfo).when(sinkContext).getJobInfo();
-        doReturn(JobID.fromHexString(JOBID)).when(jobInfo).getJobId();
-        TaskInfo taskInfo = new TestingTaskInfo("test_task", 4, 1, 4, 0, "test_subTask", "id");
-        doReturn(taskInfo).when(sinkContext).getTaskInfo();
+        Sink.InitContext sinkContext = Mockito.mock(Sink.InitContext.class);
+        doReturn(JobID.fromHexString(JOBID)).when(sinkContext).getJobId();
 
         JdbcOutputSerializer<BooksTable.BookEntry> outputSerializer =
                 JdbcOutputSerializer.of(
@@ -104,7 +97,7 @@ abstract class BaseJdbcWriterTest implements DerbyTestBase {
     }
 
     protected String withBranch(long checkpointId) {
-        return String.format("00000004000000000000000%s00", checkpointId);
+        return String.format("00000000000000000000000%s00", checkpointId);
     }
 
     protected void checkCommitable(JdbcCommitable actual, String branchExpected) {

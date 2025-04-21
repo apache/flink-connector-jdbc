@@ -19,10 +19,6 @@ package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.JobID;
-import org.apache.flink.api.common.JobInfo;
-import org.apache.flink.api.common.JobInfoImpl;
-import org.apache.flink.api.common.TaskInfo;
-import org.apache.flink.api.common.TaskInfoImpl;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
@@ -53,16 +49,13 @@ public abstract class JdbcTestBase implements DerbyTestBase {
     public static RuntimeContext getRuntimeContext(Boolean reused) {
         ExecutionConfig config = getExecutionConfig(reused);
         RuntimeContext context = Mockito.mock(RuntimeContext.class);
-        doReturn(config.isObjectReuseEnabled()).when(context).isObjectReuseEnabled();
+        doReturn(config).when(context).getExecutionConfig();
         return context;
     }
 
     public static RuntimeContext getRuntimeContext(JobID jobId) {
         RuntimeContext context = getRuntimeContext(false);
-        JobInfo jobInfo = new JobInfoImpl(jobId, "test_jobName");
-        TaskInfo taskInfo = new TaskInfoImpl("test_taskName", 4, 1, 4, 0);
-        doReturn(jobInfo).when(context).getJobInfo();
-        doReturn(taskInfo).when(context).getTaskInfo();
+        doReturn(jobId).when(context).getJobId();
         return context;
     }
 
@@ -78,6 +71,6 @@ public abstract class JdbcTestBase implements DerbyTestBase {
 
     public static <T> TypeSerializer<T> getSerializer(
             TypeInformation<T> type, Boolean objectReused) {
-        return type.createSerializer(getExecutionConfig(objectReused).getSerializerConfig());
+        return type.createSerializer(getExecutionConfig(objectReused));
     }
 }

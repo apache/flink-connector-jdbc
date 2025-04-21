@@ -18,8 +18,8 @@
 
 package org.apache.flink.connector.jdbc.core.table.sink;
 
-import org.apache.flink.api.common.functions.DefaultOpenContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
@@ -37,7 +37,7 @@ import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.table.connector.sink.legacy.SinkFunctionProvider;
+import org.apache.flink.table.connector.sink.SinkFunctionProvider;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.planner.factories.TestValuesTableFactory;
@@ -386,7 +386,7 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
         sinkFunction.setRuntimeContext(new MockStreamingRuntimeContext(true, 1, 0));
         sinkFunction.setInputType(
                 TypeInformation.of(GenericRowData.class), JdbcTestBase.getExecutionConfig(false));
-        sinkFunction.open(new DefaultOpenContext());
+        sinkFunction.open(new Configuration());
         sinkFunction.invoke(GenericRowData.of(1L), SinkContextUtil.forTimestamp(1));
         sinkFunction.invoke(GenericRowData.of(2L), SinkContextUtil.forTimestamp(1));
 

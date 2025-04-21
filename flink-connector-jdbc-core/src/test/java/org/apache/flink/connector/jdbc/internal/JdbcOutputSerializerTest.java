@@ -15,7 +15,7 @@ class JdbcOutputSerializerTest {
     void testSerializer() {
         TypeInformation<Row> typeInformation = TypeInformation.of(Row.class);
         TypeSerializer<Row> typeSerializer =
-                typeInformation.createSerializer(new ExecutionConfig().getSerializerConfig());
+                typeInformation.createSerializer(new ExecutionConfig());
         JdbcOutputSerializer<Row> serializer = JdbcOutputSerializer.of(typeSerializer);
 
         Row original = Row.of(123);

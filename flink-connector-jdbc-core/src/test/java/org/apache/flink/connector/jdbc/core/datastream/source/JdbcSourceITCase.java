@@ -19,13 +19,13 @@
 package org.apache.flink.connector.jdbc.core.datastream.source;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.legacy.SinkFunction;
-import org.apache.flink.streaming.util.RestartStrategyUtils;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,7 +56,7 @@ class JdbcSourceITCase extends JdbcDataTestBase implements JdbcITCaseBase {
     @Test
     void testReadWithoutParallelismWithoutParamsProvider() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(1);
         JdbcSource<TestEntry> jdbcSource =
                 JdbcSource.<TestEntry>builder()
@@ -75,7 +75,7 @@ class JdbcSourceITCase extends JdbcDataTestBase implements JdbcITCaseBase {
     @Test
     void testReadWithoutParallelismWithParamsProvider() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(1);
         JdbcSource<TestEntry> jdbcSource =
                 JdbcSource.<TestEntry>builder()
@@ -97,7 +97,7 @@ class JdbcSourceITCase extends JdbcDataTestBase implements JdbcITCaseBase {
     @Test
     void testReadWithParallelismWithoutParamsProvider() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(2);
         JdbcSource<TestEntry> jdbcSource =
                 JdbcSource.<TestEntry>builder()
@@ -116,7 +116,7 @@ class JdbcSourceITCase extends JdbcDataTestBase implements JdbcITCaseBase {
     @Test
     void testReadWithParallelismWithParamsProvider() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(2);
         JdbcSource<TestEntry> jdbcSource =
                 JdbcSource.<TestEntry>builder()
