@@ -30,65 +30,17 @@ import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProv
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcSlideTimingParameterProvider;
-import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
 import java.io.Serializable;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Objects;
 
-/**
- * A tool is used to build {@link JdbcSource} quickly.
- *
- * <pre><code>
- * JdbcSource&lt;Row> source = JdbcSource.&lt;Row>builder()
- *           .setSql(validSql)
- *           .setResultExtractor(new RowResultExtractor())
- *           .setDBUrl(dbUrl)
- *           .setDriverName(driverName)
- *           .setTypeInformation(new TypeHint&lt;Row>() {}.getTypeInfo())
- *           .setPassword(password)
- *           .setUsername(username)
- *           .build();
- * </code></pre>
- *
- * <p>In order to query the JDBC source in parallel, you need to provide a parameterized query
- * template (i.e. a valid {@link PreparedStatement}) and a {@link JdbcParameterValuesProvider} which
- * provides binding values for the query parameters. E.g.:
- *
- * <pre><code>
- *
- * Serializable[][] queryParameters = new String[2][1];
- * queryParameters[0] = new String[]{"Kumar"};
- * queryParameters[1] = new String[]{"Tan Ah Teck"};
- *
- * JdbcSource&lt;Row> jdbcSource =  JdbcSource.&lt;Row>builder()
- *          .setResultExtractor(new RowResultExtractor())
- *          .setTypeInformation(new TypeHint&lt;Row>() {}.getTypeInfo())
- *          .setPassword(password)
- *          .setUsername(username)
- * 			.setDriverName("org.apache.derby.jdbc.EmbeddedDriver")
- * 			.setDBUrl("jdbc:derby:memory:ebookshop")
- * 			.setSql("select * from books WHERE author = ?")
- * 			.setJdbcParameterValuesProvider(new JdbcGenericParameterValuesProvider(queryParameters))
- *          .build();
- * </code></pre>
- *
- * @see Row
- * @see JdbcParameterValuesProvider
- * @see PreparedStatement
- * @see DriverManager
- * @see JdbcSource
- */
 @PublicEvolving
 public class JdbcSourceBuilder<OUT> {
 
@@ -295,7 +247,7 @@ public class JdbcSourceBuilder<OUT> {
             Preconditions.checkArgument(
                     Objects.nonNull(jdbcParameterValuesProvider)
                             && jdbcParameterValuesProvider
-                                    instanceof JdbcSlideTimingParameterProvider,
+                            instanceof JdbcSlideTimingParameterProvider,
                     INVALID_SLIDE_TIMING_CONTINUOUS_HINT);
         }
 

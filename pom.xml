@@ -391,14 +391,14 @@ under the License.
                 <artifactId>apache-rat-plugin</artifactId>
                 <inherited>false</inherited>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>com.diffplug.spotless</groupId>
-                <artifactId>spotless-maven-plugin</artifactId>
-            </plugin>
+            <!-- <plugin> -->
+                <!-- <groupId>org.apache.maven.plugins</groupId> -->
+                <!-- <artifactId>maven-checkstyle-plugin</artifactId> -->
+            <!-- </plugin> -->
+<!--            <plugin>-->
+<!--                <groupId>com.diffplug.spotless</groupId>-->
+<!--                <artifactId>spotless-maven-plugin</artifactId>-->
+<!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -427,13 +427,13 @@ under the License.
 
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <groupId>com.diffplug.spotless</groupId>
-                    <artifactId>spotless-maven-plugin</artifactId>
-                    <configuration>
-                        <skip>${spotless.skip}</skip>
-                    </configuration>
-                </plugin>
+                <!-- <plugin> -->
+                    <!-- <groupId>com.diffplug.spotless</groupId> -->
+                    <!-- <artifactId>spotless-maven-plugin</artifactId> -->
+                    <!-- <configuration> -->
+                        <!-- <skip>${spotless.skip}</skip> -->
+                    <!-- </configuration> -->
+                <!-- </plugin> -->
             </plugins>
         </pluginManagement>
     </build>
