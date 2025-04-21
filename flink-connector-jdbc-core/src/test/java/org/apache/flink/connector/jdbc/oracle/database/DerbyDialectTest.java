@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.derby.database;
+package org.apache.flink.connector.jdbc.oracle.database;
 
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectTest;
 import org.apache.flink.connector.jdbc.derby.DerbyTestBase;

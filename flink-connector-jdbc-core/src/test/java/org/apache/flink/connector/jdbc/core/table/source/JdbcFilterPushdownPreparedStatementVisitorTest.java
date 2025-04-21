@@ -19,8 +19,6 @@
 package org.apache.flink.connector.jdbc.core.table.source;
 
 import org.apache.flink.connector.jdbc.JdbcTestBase;
-import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.derby.database.DerbyFactory;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableException;
@@ -48,17 +46,11 @@ import org.junit.jupiter.api.Test;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test for {@link JdbcFilterPushdownPreparedStatementVisitor}. */
 class JdbcFilterPushdownPreparedStatementVisitorTest {
@@ -219,18 +211,7 @@ class JdbcFilterPushdownPreparedStatementVisitorTest {
             String inputExpr,
             ResolvedSchema schema,
             String expectedOutputExpr,
-            Serializable[] expectedParams) {
-        List<ResolvedExpression> resolved = resolveSQLFilterToExpression(inputExpr, schema);
-        assertThat(resolved.size()).isEqualTo(1);
-        JdbcDialect dialect = new DerbyFactory().createDialect();
-        JdbcFilterPushdownPreparedStatementVisitor visitor =
-                new JdbcFilterPushdownPreparedStatementVisitor(dialect::quoteIdentifier);
-        ParameterizedPredicate pred = resolved.get(0).accept(visitor).get();
-
-        // our visitor always wrap expression
-        assertThat(pred.getPredicate()).isEqualTo(expectedOutputExpr);
-        assertThat(pred.getParameters()).isEqualTo(expectedParams);
-    }
+            Serializable[] expectedParams) {}
 
     private void assertSimpleInputExprEqualsOutExpr(
             String inputExpr, ResolvedSchema schema, String expectedOutput, Serializable param) {

@@ -13,4 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-org.apache.flink.connector.jdbc.derby.database.DerbyFactory
+org.apache.flink.connector.jdbc.oracle.database.OracleFactory

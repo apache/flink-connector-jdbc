@@ -16,25 +16,25 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.derby.database;
+package org.apache.flink.connector.jdbc.oracle.database;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.core.database.JdbcFactory;
 import org.apache.flink.connector.jdbc.core.database.catalog.JdbcCatalog;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
-import org.apache.flink.connector.jdbc.derby.database.dialect.DerbyDialect;
+import org.apache.flink.connector.jdbc.oracle.database.dialect.OracleDialect;
 
-/** Factory for {@link DerbyDialect}. */
+/** Factory for {@link OracleDialect}. */
 @Internal
-public class DerbyFactory implements JdbcFactory {
+public class OracleFactory implements JdbcFactory {
     @Override
     public boolean acceptsURL(String url) {
-        return url.startsWith("jdbc:derby:");
+        return url.startsWith("jdbc:oracle:");
     }
 
     @Override
     public JdbcDialect createDialect() {
-        return new DerbyDialect();
+        return new OracleDialect();
     }
 
     @Override
@@ -45,6 +45,6 @@ public class DerbyFactory implements JdbcFactory {
             String username,
             String pwd,
             String baseUrl) {
-        throw new UnsupportedOperationException("Catalog for Derby is not supported yet.");
+        throw new UnsupportedOperationException("Catalog for Oracle is not supported yet.");
     }
 }
