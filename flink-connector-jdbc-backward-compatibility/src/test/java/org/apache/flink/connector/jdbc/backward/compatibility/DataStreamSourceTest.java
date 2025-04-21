@@ -19,18 +19,18 @@
 package org.apache.flink.connector.jdbc.backward.compatibility;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
-import org.apache.flink.connector.jdbc.core.datastream.source.JdbcSource;
-import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.postgres.PostgresTestBase;
+import org.apache.flink.connector.jdbc.source.JdbcSource;
+import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.legacy.SinkFunction;
-import org.apache.flink.streaming.util.RestartStrategyUtils;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.test.junit5.MiniClusterExtension;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -101,7 +101,7 @@ public class DataStreamSourceTest implements PostgresTestBase {
     @Test
     void testReadWithoutParallelismWithoutParamsProvider() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(1);
         JdbcSource<JdbcTestFixture.TestEntry> jdbcSource =
                 JdbcSource.<JdbcTestFixture.TestEntry>builder()
@@ -122,7 +122,7 @@ public class DataStreamSourceTest implements PostgresTestBase {
     @Test
     void testReadWithoutParallelismWithParamsProvider() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(1);
         JdbcSource<JdbcTestFixture.TestEntry> jdbcSource =
                 JdbcSource.<JdbcTestFixture.TestEntry>builder()
@@ -146,7 +146,7 @@ public class DataStreamSourceTest implements PostgresTestBase {
     @Test
     void testReadWithParallelismWithoutParamsProvider() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(2);
         JdbcSource<JdbcTestFixture.TestEntry> jdbcSource =
                 JdbcSource.<JdbcTestFixture.TestEntry>builder()
@@ -167,7 +167,7 @@ public class DataStreamSourceTest implements PostgresTestBase {
     @Test
     void testReadWithParallelismWithParamsProvider() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(2);
         JdbcSource<JdbcTestFixture.TestEntry> jdbcSource =
                 JdbcSource.<JdbcTestFixture.TestEntry>builder()

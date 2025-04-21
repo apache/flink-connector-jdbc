@@ -18,16 +18,16 @@
 
 package org.apache.flink.connector.jdbc.backward.compatibility;
 
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.core.datastream.sink.JdbcSink;
+import org.apache.flink.connector.jdbc.JdbcSink;
 import org.apache.flink.connector.jdbc.postgres.PostgresTestBase;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.util.RestartStrategyUtils;
 import org.apache.flink.test.junit5.MiniClusterExtension;
 
 import org.junit.jupiter.api.Test;
@@ -72,7 +72,7 @@ public class DataStreamSinkTest implements PostgresTestBase {
     @Test
     public void testAtLeastOnce() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(1);
 
         assertResult(new ArrayList<>());
@@ -98,7 +98,7 @@ public class DataStreamSinkTest implements PostgresTestBase {
     @Test
     public void testExactlyOnce() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(1);
 
         assertResult(new ArrayList<>());

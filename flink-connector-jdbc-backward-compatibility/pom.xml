@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.apache.flink</groupId>
         <artifactId>flink-connector-jdbc-parent</artifactId>
-        <version>4.0-SNAPSHOT</version>
+        <version>3.3-SNAPSHOT</version>
     </parent>
 
     <groupId>org.apache.flink</groupId>
@@ -17,7 +17,6 @@
     <packaging>jar</packaging>
 
     <properties>
-        <postgres.version>42.7.3</postgres.version>
         <surefire.module.config>
             --add-opens=java.base/java.util=ALL-UNNAMED
             --add-opens=java.base/java.lang=ALL-UNNAMED
@@ -59,28 +58,15 @@
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-jdbc-core</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-jdbc-postgres</artifactId>
+            <artifactId>flink-connector-jdbc</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-jdbc-postgres</artifactId>
+            <artifactId>flink-connector-jdbc</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>${postgres.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

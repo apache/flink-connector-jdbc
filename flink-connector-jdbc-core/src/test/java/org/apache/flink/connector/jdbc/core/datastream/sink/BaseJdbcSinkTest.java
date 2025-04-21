@@ -17,11 +17,11 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.sink;
 
+import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.util.RestartStrategyUtils;
 
 import org.junit.jupiter.api.Test;
 
@@ -62,7 +62,7 @@ public abstract class BaseJdbcSinkTest implements DerbyTestBase {
     @Test
     public void testInsert() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(1);
 
         assertResult(new ArrayList<>());
@@ -82,7 +82,7 @@ public abstract class BaseJdbcSinkTest implements DerbyTestBase {
     @Test
     public void testInsertWithObjectReuse() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRestartStrategy(new RestartStrategies.NoRestartStrategyConfiguration());
         env.setParallelism(1);
 
         assertResult(new ArrayList<>());

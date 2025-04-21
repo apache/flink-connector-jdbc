@@ -20,6 +20,8 @@ package org.apache.flink.connector.jdbc.internal;
 
 import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.DataSet;
+import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -29,8 +31,6 @@ import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnecti
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.split.JdbcNumericBetweenParametersProvider;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.types.Row;
 
 import org.junit.jupiter.api.AfterEach;
@@ -107,7 +107,7 @@ class JdbcFullTest extends JdbcDataTestBase {
     }
 
     private void runTest(boolean exploitParallelism) throws Exception {
-        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        ExecutionEnvironment environment = ExecutionEnvironment.getExecutionEnvironment();
         JdbcInputFormat.JdbcInputFormatBuilder inputBuilder =
                 JdbcInputFormat.buildJdbcInputFormat()
                         .setDrivername(getMetadata().getDriverClass())
@@ -127,7 +127,7 @@ class JdbcFullTest extends JdbcDataTestBase {
                                     new JdbcNumericBetweenParametersProvider(min, max)
                                             .ofBatchSize(fetchSize));
         }
-        DataStreamSource<Row> source = env.createInput(inputBuilder.finish());
+        DataSet<Row> source = environment.createInput(inputBuilder.finish());
 
         // NOTE: in this case (with Derby driver) setSqlTypes could be skipped, but
         // some databases don't null values correctly when no column type was specified
@@ -153,8 +153,8 @@ class JdbcFullTest extends JdbcDataTestBase {
                                             Types.DOUBLE,
                                             Types.INTEGER
                                         }));
-        source.forward().writeUsingOutputFormat(new TestOutputFormat(jdbcOutputFormat));
-        env.execute();
+        source.output(new TestOutputFormat(jdbcOutputFormat));
+        environment.execute();
 
         try (Connection dbConn = DriverManager.getConnection(getMetadata().getJdbcUrl());
                 PreparedStatement statement = dbConn.prepareStatement(SELECT_ALL_NEWBOOKS);
@@ -193,7 +193,7 @@ class JdbcFullTest extends JdbcDataTestBase {
         public void configure(Configuration configuration) {}
 
         @Override
-        public void open(InitializationContext initializationContext) throws IOException {
+        public void open(int i, int i1) throws IOException {
             JdbcOutputSerializer<Row> serializer =
                     JdbcOutputSerializer.of(getSerializer(TypeInformation.of(Row.class), true));
             this.jdbcOutputFormat.open(serializer);

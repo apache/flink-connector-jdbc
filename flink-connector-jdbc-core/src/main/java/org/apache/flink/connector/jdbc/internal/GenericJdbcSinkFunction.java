@@ -20,13 +20,13 @@ package org.apache.flink.connector.jdbc.internal;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.InputTypeConfigurable;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
-import org.apache.flink.streaming.api.functions.sink.legacy.RichSinkFunction;
+import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -45,10 +45,11 @@ public class GenericJdbcSinkFunction<T> extends RichSinkFunction<T>
     }
 
     @Override
-    public void open(OpenContext openContext) throws Exception {
-        super.open(openContext);
+    public void open(Configuration parameters) throws Exception {
+        super.open(parameters);
         // Recheck if execution config change
-        serializer.withObjectReuseEnabled(getRuntimeContext().isObjectReuseEnabled());
+        serializer.withObjectReuseEnabled(
+                getRuntimeContext().getExecutionConfig().isObjectReuseEnabled());
         outputFormat.open(serializer);
     }
 
@@ -75,7 +76,6 @@ public class GenericJdbcSinkFunction<T> extends RichSinkFunction<T>
     public void setInputType(TypeInformation<?> type, ExecutionConfig executionConfig) {
         this.serializer =
                 JdbcOutputSerializer.of(
-                        ((TypeInformation<T>) type)
-                                .createSerializer(executionConfig.getSerializerConfig()));
+                        ((TypeInformation<T>) type).createSerializer(executionConfig));
     }
 }

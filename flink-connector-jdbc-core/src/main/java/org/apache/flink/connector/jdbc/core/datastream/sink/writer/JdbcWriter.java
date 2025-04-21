@@ -18,9 +18,9 @@
 package org.apache.flink.connector.jdbc.core.datastream.sink.writer;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.api.connector.sink2.CommittingSinkWriter;
-import org.apache.flink.api.connector.sink2.InitContext;
-import org.apache.flink.api.connector.sink2.StatefulSinkWriter;
+import org.apache.flink.api.connector.sink2.Sink;
+import org.apache.flink.api.connector.sink2.StatefulSink;
+import org.apache.flink.api.connector.sink2.TwoPhaseCommittingSink;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -55,8 +55,8 @@ import static org.apache.flink.util.Preconditions.checkState;
  */
 @Internal
 public class JdbcWriter<IN>
-        implements StatefulSinkWriter<IN, JdbcWriterState>,
-                CommittingSinkWriter<IN, JdbcCommitable> {
+        implements StatefulSink.StatefulSinkWriter<IN, JdbcWriterState>,
+                TwoPhaseCommittingSink.PrecommittingSinkWriter<IN, JdbcCommitable> {
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcWriter.class);
 
@@ -75,7 +75,7 @@ public class JdbcWriter<IN>
             JdbcOutputSerializer<IN> outputSerializer,
             DeliveryGuarantee deliveryGuarantee,
             Collection<JdbcWriterState> recoveredState,
-            InitContext initContext)
+            Sink.InitContext initContext)
             throws IOException {
 
         this.deliveryGuarantee =
@@ -85,7 +85,9 @@ public class JdbcWriter<IN>
 
         pendingRecords = false;
         this.lastCheckpointId =
-                initContext.getRestoredCheckpointId().orElse(InitContext.INITIAL_CHECKPOINT_ID - 1);
+                initContext
+                        .getRestoredCheckpointId()
+                        .orElse(Sink.InitContext.INITIAL_CHECKPOINT_ID - 1);
 
         checkNotNull(connectionProvider, "connectionProvider must be defined");
 
@@ -104,9 +106,9 @@ public class JdbcWriter<IN>
 
             TransactionId transactionId =
                     TransactionId.create(
-                            initContext.getJobInfo().getJobId().getBytes(),
-                            initContext.getTaskInfo().getIndexOfThisSubtask(),
-                            initContext.getTaskInfo().getNumberOfParallelSubtasks());
+                            initContext.getJobId().getBytes(),
+                            initContext.getSubtaskId(),
+                            initContext.getNumberOfParallelSubtasks());
 
             this.jdbcTransaction =
                     new XaTransaction(

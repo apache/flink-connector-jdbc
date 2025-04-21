@@ -25,7 +25,7 @@ import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOp
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.table.connector.sink.legacy.SinkFunctionProvider;
+import org.apache.flink.table.connector.sink.SinkFunctionProvider;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.types.RowKind;
 
