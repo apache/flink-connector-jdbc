@@ -186,5 +186,19 @@ public class JdbcConnectorOptions {
                     .withDescription(
                             "Fine-grained configuration to control filter push down for jdbc Table/SQL source.");
 
+    //
+    // handle DWH delete op
+    //
+    public static final ConfigOption<String> DELETE_OP_COL =
+            ConfigOptions.key("delete.op.col")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Delete OP column name");
+    public static final ConfigOption<String> DELETE_OP_VAL =
+            ConfigOptions.key("delete.op.val")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Delete OP column value");
+
     protected JdbcConnectorOptions() {}
 }
