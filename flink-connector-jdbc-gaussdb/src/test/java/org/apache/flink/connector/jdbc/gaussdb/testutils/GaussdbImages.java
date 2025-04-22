@@ -20,5 +20,5 @@ package org.apache.flink.connector.jdbc.gaussdb.testutils;
 // import org.testcontainers.utility.DockerImageName;
 /** Gaussdb docker images. */
 public interface GaussdbImages {
-    String IMAGE = "opengauss/opengauss";
+    String IMAGE = "opengauss/opengauss:7.0.0-RC1.B023";
 }
