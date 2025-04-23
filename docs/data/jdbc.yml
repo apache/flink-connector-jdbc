@@ -19,5 +19,5 @@
 version: 4.0.0
 flink_compatibility: ['2.0']
 variants:
-  - maven: flink-connector-jdbc
+  - maven: flink-connector-jdbc-core
     sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-core/$full_version/flink-connector-jdbc-core-$full_version.jar
