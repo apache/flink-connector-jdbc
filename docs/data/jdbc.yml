@@ -16,7 +16,7 @@
 # limitations under the License.
 ################################################################################
 
-version: 3.3.0-SNAPSHOT
+version: 4.1-SNAPSHOT
 variants:
-  - maven: flink-connector-jdbc
-    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc/$full_version/flink-connector-jdbc-$full_version.jar
+  - maven: flink-connector-jdbc-core
+    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-core/$full_version/flink-connector-jdbc-core-$full_version.jar
