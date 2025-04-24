@@ -38,12 +38,27 @@ The JDBC sink operate in upsert mode for exchange UPDATE/DELETE messages with th
 Dependencies
 ------------
 
+When using the JDBC connector, `flink-connector-jdbc-core`, `flink-connector-jdbc-${database}` and the JDBC driver needs to be added to the dependencies.
+
 {{< sql_connector_download_table "jdbc" >}}
 
-The JDBC connector is not part of the binary distribution.
-See how to link with it for cluster execution [here]({{< ref "docs/dev/configuration/overview" >}}).
+The `flink-connector-jdbc-${database}` dependency and a driver dependency are required to connect to a specified database.
 
-A driver dependency is also required to connect to a specified database. Here are drivers currently supported:
+The `flink-connector-jdbc-${database}` dependencies are as follows, whose version should be the same as the `flink-connector-jdbc-core`:
+
+| Database   | Group Id                  | Artifact Id                      | JAR                                                                                               |
+|:-----------|:--------------------------|:---------------------------------|:--------------------------------------------------------------------------------------------------|
+| MySQL      | `org.apache.flink`        | `flink-connector-jdbc-mysql`     | [Download](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-mysql/)     |
+| Oracle     | `org.apache.flink`        | `flink-connector-jdbc-oracle`    | [Download](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-oracle/)    |
+| PostgreSQL | `org.apache.flink`        | `flink-connector-jdbc-postgres`  | [Download](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-postgres/)  |
+| Derby      | `org.apache.flink`        | `flink-connector-jdbc-core`      | [Download](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-core/)      |
+| SQL Server | `org.apache.flink`        | `flink-connector-jdbc-sqlserver` | [Download](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-sqlserver/) |
+| CrateDB    | `org.apache.flink`        | `flink-connector-jdbc-cratedb`   | [Download](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-cratedb/)   |
+| Db2        | `org.apache.flink`        | `flink-connector-jdbc-db2`       | [Download](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-db2/)       | 
+| Trino      | `org.apache.flink`        | `flink-connector-jdbc-trino`     | [Download](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-trino/)     |
+| OceanBase  | `org.apache.flink`        | `flink-connector-jdbc-oceanbase` | [Download](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-oceanbase/) |
+
+Here are drivers currently supported:
 
 | Driver     | Group Id                   | Artifact Id            | JAR                                                                                                                               |
 |:-----------|:---------------------------|:-----------------------|:----------------------------------------------------------------------------------------------------------------------------------|
@@ -58,7 +73,8 @@ A driver dependency is also required to connect to a specified database. Here ar
 | OceanBase  | `com.oceanbase`            | `oceanbase-client`     | [Download](https://repo1.maven.org/maven2/com/oceanbase/oceanbase-client/)                                                        |
 
 
-JDBC connector and drivers are not part of Flink's binary distribution. See how to link with them for cluster execution [here]({{< ref "docs/dev/configuration/overview" >}}).
+JDBC connector and drivers are not part of Flink's binary distribution. 
+See how to link with them for cluster execution [here]({{< ref "docs/dev/configuration/overview" >}}).
 
 
 How to create a JDBC table
