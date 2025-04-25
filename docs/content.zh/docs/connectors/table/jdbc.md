@@ -213,6 +213,14 @@ ON myTopic.key = MyUserTable.id;
       <a href="https://jdbc.postgresql.org/documentation/head/query.html#query-with-cursor">Postgres</a>，可能需要将此设置为 false 以便流化结果。</td>
     </tr>
     <tr>
+      <td><h5>scan.parallelism</h5></td>
+      <td>optional</td>
+      <td>no</td>
+      <td style="word-wrap: break-word;">(none)</td>
+      <td>Integer</td>
+      <td>定义 JDBC source 算子的并行度。默认情况下会使用全局默认并发。</td>
+    </tr>
+    <tr>
       <td><h5>lookup.cache</h5></td>
       <td>可选</td>
       <td style="word-wrap: break-word;">NONE</td>
