@@ -41,9 +41,25 @@ JDBC 连接器允许使用 JDBC 驱动向任意类型的关系型数据库读取
 依赖
 ------------
 
+使用 JDBC 连接器时, `flink-connector-jdbc-core`, `flink-connector-jdbc-${database}` 和对应的 JDBC 驱动需要添加到依赖中。
+
 {{< sql_connector_download_table "jdbc" >}}
 
-JDBC 连接器不是二进制发行版的一部分，请查阅[这里]({{< ref "docs/dev/configuration/overview" >}})了解如何在集群运行中引用 JDBC 连接器。
+连接到对应的数据库时，需要使用对应的 `flink-connector-jdbc-${database}` 依赖和驱动依赖。
+
+支持的 `flink-connector-jdbc-${database}` 依赖如下，其版本需要和 `flink-connector-jdbc-core` 依赖的版本相同：
+
+| Database   | Group Id                  | Artifact Id                      | JAR                                                                                         |
+|:-----------|:--------------------------|:---------------------------------|:--------------------------------------------------------------------------------------------|
+| MySQL      | `org.apache.flink`        | `flink-connector-jdbc-mysql`     | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-mysql/)     |
+| Oracle     | `org.apache.flink`        | `flink-connector-jdbc-oracle`    | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-oracle/)    |
+| PostgreSQL | `org.apache.flink`        | `flink-connector-jdbc-postgres`  | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-postgres/)  |
+| Derby      | `org.apache.flink`        | `flink-connector-jdbc-core`      | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-core/)      |
+| SQL Server | `org.apache.flink`        | `flink-connector-jdbc-sqlserver` | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-sqlserver/) |
+| CrateDB    | `org.apache.flink`        | `flink-connector-jdbc-cratedb`   | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-cratedb/)   |
+| Db2        | `org.apache.flink`        | `flink-connector-jdbc-db2`       | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-db2/)       | 
+| Trino      | `org.apache.flink`        | `flink-connector-jdbc-trino`     | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-trino/)     |
+| OceanBase  | `org.apache.flink`        | `flink-connector-jdbc-oceanbase` | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-oceanbase/) |
 
 在连接到具体数据库时，也需要对应的驱动依赖，目前支持的驱动如下：
 
