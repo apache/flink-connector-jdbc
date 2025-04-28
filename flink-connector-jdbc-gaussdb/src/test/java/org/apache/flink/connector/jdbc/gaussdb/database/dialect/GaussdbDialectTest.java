@@ -57,13 +57,13 @@ class GaussdbDialectTest extends JdbcDialectTest implements GaussdbTestBase {
                 createTestItem("ARRAY<INTEGER>"),
 
                 // Not valid data
-                createTestItem("BINARY", "The PostgreSQL dialect doesn't support type: BINARY(1)."),
+                createTestItem("BINARY", "The Gaussdb dialect doesn't support type: BINARY(1)."),
                 createTestItem(
                         "VARBINARY(10)",
-                        "The PostgreSQL dialect doesn't support type: VARBINARY(10)."),
+                        "The Gaussdb dialect doesn't support type: VARBINARY(10)."),
                 createTestItem(
                         "TIMESTAMP(9) WITHOUT TIME ZONE",
-                        "The precision of field 'f0' is out of the TIMESTAMP precision range [1, 6] supported by PostgreSQL dialect."),
+                        "The precision of field 'f0' is out of the TIMESTAMP precision range [0, 6] supported by Gaussdb dialect."),
                 createTestItem("TIMESTAMP_LTZ(3)", "Unsupported type:TIMESTAMP_LTZ(3)"));
     }
 

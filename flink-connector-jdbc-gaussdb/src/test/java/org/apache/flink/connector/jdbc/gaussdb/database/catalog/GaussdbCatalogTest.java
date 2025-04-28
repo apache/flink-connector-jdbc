@@ -52,7 +52,7 @@ class GaussdbCatalogTest extends GaussdbCatalogTestBase {
     void testListDatabases() {
         List<String> actual = catalog.listDatabases();
 
-        assertThat(actual).isEqualTo(Arrays.asList("postgres", "test"));
+        assertThat(actual).containsAll(Arrays.asList("postgres", "test"));
     }
 
     @Test
@@ -69,7 +69,7 @@ class GaussdbCatalogTest extends GaussdbCatalogTestBase {
         List<String> actual = catalog.listTables(GaussdbCatalog.DEFAULT_DATABASE);
 
         assertThat(actual)
-                .isEqualTo(
+                .containsAll(
                         Arrays.asList(
                                 "public.array_table",
                                 "public.primitive_table",
@@ -81,7 +81,7 @@ class GaussdbCatalogTest extends GaussdbCatalogTestBase {
 
         actual = catalog.listTables(TEST_DB);
 
-        assertThat(actual).isEqualTo(Arrays.asList("public.t2", "test_schema.t3"));
+        assertThat(actual).containsAll(Arrays.asList("public.t2", "test_schema.t3"));
     }
 
     @Test

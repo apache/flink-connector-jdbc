@@ -27,7 +27,12 @@ import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
 
+import com.huawei.gaussdb.jdbc.util.PGbytea;
+import com.huawei.gaussdb.jdbc.util.PGobject;
+
 import java.lang.reflect.Array;
+import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 
 /**
  * Runtime converter that responsible to convert between JDBC object and Flink internal object for
@@ -48,12 +53,24 @@ public class GaussdbDialectConverter extends AbstractDialectConverter {
     public JdbcDeserializationConverter createInternalConverter(LogicalType type) {
         LogicalTypeRoot root = type.getTypeRoot();
 
+        if (root == LogicalTypeRoot.VARBINARY) {
+            return val -> {
+                if (val instanceof PGobject) {
+                    return pgObjectBytes((PGobject) val);
+                }
+                return val;
+            };
+        }
         if (root == LogicalTypeRoot.ARRAY) {
             ArrayType arrayType = (ArrayType) type;
-            return createGaussdbArrayConverter(arrayType);
-        } else {
-            return createPrimitiveConverter(type);
+            return createGaussDBArrayConverter(arrayType);
         }
+
+        return super.createInternalConverter(type);
+    }
+
+    private Object pgObjectBytes(PGobject val) throws SQLException {
+        return PGbytea.toBytes(val.getValue().getBytes(StandardCharsets.US_ASCII));
     }
 
     @Override
@@ -72,8 +89,7 @@ public class GaussdbDialectConverter extends AbstractDialectConverter {
         }
     }
 
-    private JdbcDeserializationConverter createGaussdbArrayConverter(ArrayType arrayType) {
-
+    private JdbcDeserializationConverter createGaussDBArrayConverter(ArrayType arrayType) {
         final Class<?> elementClass =
                 LogicalTypeUtils.toInternalConversionClass(arrayType.getElementType());
         final JdbcDeserializationConverter elementConverter =
@@ -87,12 +103,6 @@ public class GaussdbDialectConverter extends AbstractDialectConverter {
             }
             return new GenericArrayData(array);
         };
-    }
-
-    // Have its own method so that Gaussdb can support primitives that super class doesn't support
-    // in the future
-    private JdbcDeserializationConverter createPrimitiveConverter(LogicalType type) {
-        return super.createInternalConverter(type);
     }
 
     @Override

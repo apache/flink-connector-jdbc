@@ -43,7 +43,8 @@ public class GaussdbDialect extends AbstractDialect {
     // Define MAX/MIN precision of TIMESTAMP type according to Gaussdb docs:
 
     private static final int MAX_TIMESTAMP_PRECISION = 6;
-    private static final int MIN_TIMESTAMP_PRECISION = 1;
+    // TODO: see https://bbs.huaweicloud.com/forum/thread-0234179025026914116-1-1.html
+    private static final int MIN_TIMESTAMP_PRECISION = 0;
 
     // Define MAX/MIN precision of DECIMAL type according to Gaussdb docs:
 

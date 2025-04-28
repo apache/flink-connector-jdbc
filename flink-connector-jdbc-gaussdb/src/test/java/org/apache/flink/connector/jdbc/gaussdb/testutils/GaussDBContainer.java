@@ -95,6 +95,7 @@ public class GaussDBContainer<SELF extends GaussDBContainer<SELF>>
                         return waitStrategy.withStartupTimeout(duration);
                     }
                 });
+        addExposedPort(GAUSSDB_PORT);
     }
 
     /**
@@ -113,8 +114,6 @@ public class GaussDBContainer<SELF extends GaussDBContainer<SELF>>
         // Disable Postgres driver use of java.util.logging to reduce noise at startup time
         withUrlParam("loggerLevel", "OFF");
         withDatabaseName(databaseName);
-        addExposedPorts(GAUSSDB_PORT);
-        addFixedExposedPort(GAUSSDB_PORT, GAUSSDB_PORT);
         addEnv("GS_PORT", String.valueOf(GAUSSDB_PORT));
         addEnv("GS_USERNAME", username);
         addEnv("GS_PASSWORD", password);

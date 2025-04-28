@@ -19,7 +19,8 @@ package org.apache.flink.connector.jdbc.gaussdb.testutils;
 
 import org.apache.flink.connector.jdbc.testutils.DatabaseMetadata;
 
-import org.postgresql.xa.PGXADataSource;
+import com.huawei.gaussdb.jdbc.util.PSQLException;
+import com.huawei.gaussdb.jdbc.xa.PGXADataSource;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import javax.sql.XADataSource;
@@ -78,7 +79,11 @@ public class GaussdbMetadata implements DatabaseMetadata {
         }
 
         PGXADataSource xaDataSource = new PGXADataSource();
-        xaDataSource.setUrl(getJdbcUrl());
+        try {
+            xaDataSource.setUrl(getJdbcUrl());
+        } catch (PSQLException e) {
+            throw new RuntimeException(e);
+        }
         xaDataSource.setUser(getUsername());
         xaDataSource.setPassword(getPassword());
         return xaDataSource;

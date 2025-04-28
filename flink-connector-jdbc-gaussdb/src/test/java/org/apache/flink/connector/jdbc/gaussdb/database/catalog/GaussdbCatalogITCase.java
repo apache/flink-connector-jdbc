@@ -131,7 +131,7 @@ class GaussdbCatalogITCase extends GaussdbCatalogTestBase {
                                 .collect());
         assertThat(results)
                 .hasToString(
-                        "[+I[1, [52, 49], 3, 4, 5.5, 6.6, 7.70000, 8.8, true, a, B, C  , d, 2016-06-22T19:10:25, 2015-01-01, 00:51:03, 500.000000000000000000]]");
+                        "[+I[1, [52, 49], 3, 4, 5.5, 6.6, 7.70000, 8.8, true, a, B, C  , d, 2016-06-22T19:10:25, 2015-01-01T00:00, 00:51:03, 500.000000000000000000]]");
     }
 
     @Test
@@ -144,7 +144,7 @@ class GaussdbCatalogITCase extends GaussdbCatalogTestBase {
 
         assertThat(results)
                 .hasToString(
-                        "[+I[1, [50], 3, 4, 5.5, 6.6, 7.70000, 8.8, true, a, b, c  , d, 2016-06-22T19:10:25, 2015-01-01, 00:51:03, 500.000000000000000000]]");
+                        "[+I[1, [50], 3, 4, 5.5, 6.6, 7.70000, 8.8, true, a, b, c  , d, 2016-06-22T19:10:25, 2015-01-01T00:00, 00:51:03, 500.000000000000000000]]");
     }
 
     @Test
@@ -173,7 +173,7 @@ class GaussdbCatalogITCase extends GaussdbCatalogTestBase {
                                 + "[b  , c  , d  ], "
                                 + "[b, c, d], "
                                 + "[2016-06-22T19:10:25, 2019-06-22T19:10:25], "
-                                + "[2015-01-01, 2020-01-01], "
+                                + "[2015-01-01T00:00, 2020-01-01T00:00], "
                                 + "[00:51:03, 00:59:03], "
                                 + "null, "
                                 + "null]]");

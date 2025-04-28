@@ -37,6 +37,8 @@ public class GaussdbDatabase extends DatabaseExtension implements GaussdbImages 
     private static final GaussDBContainer<?> CONTAINER =
             new GaussdbXaContainer(IMAGE).withMaxConnections(10).withMaxTransactions(50);
 
+    private static final DockerResource RESOURCE = new DockerResource(CONTAINER);
+
     private static GaussdbMetadata metadata;
 
     public static GaussdbMetadata getMetadata() {
@@ -55,14 +57,13 @@ public class GaussdbDatabase extends DatabaseExtension implements GaussdbImages 
 
     @Override
     protected DatabaseResource getResource() {
-        return new DockerResource(CONTAINER);
+        return RESOURCE;
     }
 
     /** {@link GaussDBContainer} with XA enabled (by setting max_prepared_transactions). */
     public static class GaussdbXaContainer extends GaussDBContainer<GaussdbXaContainer> {
         private static final int SUPERUSER_RESERVED_CONNECTIONS = 1;
-        private int maxConnections = SUPERUSER_RESERVED_CONNECTIONS + 1;
-        private int maxTransactions = 1;
+        private volatile boolean started = false;
 
         public GaussdbXaContainer(String dockerImageName) {
             super(DockerImageName.parse(dockerImageName));
@@ -72,19 +73,22 @@ public class GaussdbDatabase extends DatabaseExtension implements GaussdbImages 
             checkArgument(
                     maxConnections > SUPERUSER_RESERVED_CONNECTIONS,
                     "maxConnections should be greater than superuser_reserved_connections");
-            this.maxConnections = maxConnections;
             return this.self();
         }
 
         public GaussdbXaContainer withMaxTransactions(int maxTransactions) {
             checkArgument(maxTransactions > 1, "maxTransactions should be greater 1");
-            this.maxTransactions = maxTransactions;
             return this.self();
         }
 
         @Override
         public void start() {
-            super.start();
+            synchronized (this) {
+                if (!started) {
+                    super.start();
+                    started = true;
+                }
+            }
         }
     }
 }

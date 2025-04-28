@@ -79,6 +79,7 @@ class GaussdbCatalogTestBase implements JdbcITCaseBase, GaussdbTestBase {
                         baseUrl);
 
         // create test database and schema
+        createDatabase(TEST_DB);
         createSchema(TEST_DB, TEST_SCHEMA);
 
         // create test tables
@@ -162,6 +163,8 @@ class GaussdbCatalogTestBase implements JdbcITCaseBase, GaussdbTestBase {
                 GaussdbCatalog.DEFAULT_DATABASE,
                 String.format(
                         "DROP TABLE %s ", GaussdbTablePath.fromFlinkTableName(TABLE_SERIAL_TYPE)));
+
+        executeSQL(GaussdbCatalog.DEFAULT_DATABASE, "drop database " + TEST_DB + ";");
     }
 
     public static void createTable(GaussdbTablePath tablePath, String tableSchemaSql)
@@ -182,7 +185,7 @@ class GaussdbCatalogTestBase implements JdbcITCaseBase, GaussdbTestBase {
     }
 
     public static void createDatabase(String database) throws SQLException {
-        executeSQL(String.format("CREATE DATABASE %s;", database));
+        executeSQL(GaussdbCatalog.DEFAULT_DATABASE, String.format("CREATE DATABASE %s;", database));
     }
 
     public static void executeSQL(String sql) throws SQLException {
@@ -248,7 +251,7 @@ class GaussdbCatalogTestBase implements JdbcITCaseBase, GaussdbTestBase {
                         .column("character_varying", DataTypes.VARCHAR(20))
                         .column("timestamp", DataTypes.TIMESTAMP(5))
                         //				.field("timestamptz", DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE(4))
-                        .column("date", DataTypes.DATE())
+                        .column("date", DataTypes.TIMESTAMP(0))
                         .column("time", DataTypes.TIME(0))
                         .column("default_numeric", DataTypes.DECIMAL(DecimalType.MAX_PRECISION, 18))
                         .primaryKeyNamed(primaryKeyName, "short", "int")
@@ -269,7 +272,7 @@ class GaussdbCatalogTestBase implements JdbcITCaseBase, GaussdbTestBase {
                         + "timestamp timestamp(5), "
                         +
                         //				"timestamptz timestamptz(4), " +
-                        "date date,"
+                        "date timestamp(0),"
                         + "time time(0), "
                         + "default_numeric numeric, "
                         + "CONSTRAINT "
@@ -319,7 +322,7 @@ class GaussdbCatalogTestBase implements JdbcITCaseBase, GaussdbTestBase {
                         .column("timestamp_arr", DataTypes.ARRAY(DataTypes.TIMESTAMP(5)))
                         //				.field("timestamptz_arr",
                         // DataTypes.ARRAY(DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE(4)))
-                        .column("date_arr", DataTypes.ARRAY(DataTypes.DATE()))
+                        .column("date_arr", DataTypes.ARRAY(DataTypes.TIMESTAMP(0)))
                         .column("time_arr", DataTypes.ARRAY(DataTypes.TIME(0)))
                         .column("null_bytea_arr", DataTypes.ARRAY(DataTypes.BYTES()))
                         .column("null_text_arr", DataTypes.ARRAY(DataTypes.STRING()))
@@ -341,7 +344,7 @@ class GaussdbCatalogTestBase implements JdbcITCaseBase, GaussdbTestBase {
                         + "timestamp_arr timestamp(5)[], "
                         +
                         //				"timestamptz_arr timestamptz(4)[], " +
-                        "date_arr date[], "
+                        "date_arr timestamp(0)[], "
                         + "time_arr time(0)[], "
                         + "null_bytea_arr bytea[], "
                         + "null_text_arr text[]",
