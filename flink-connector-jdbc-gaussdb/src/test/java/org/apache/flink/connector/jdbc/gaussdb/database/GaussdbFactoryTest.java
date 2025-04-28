@@ -36,7 +36,11 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Test for {@link JdbcCatalogFactory}. */
+/**
+ * Test for {@link JdbcCatalogFactory}.
+ *
+ * <p>Notes: The source code is based on PostgresFactoryTest.
+ */
 class GaussdbFactoryTest implements GaussdbTestBase {
 
     protected static String baseUrl;

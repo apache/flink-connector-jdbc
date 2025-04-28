@@ -28,7 +28,11 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** The PostgresSql params for {@link JdbcDialectTest}. */
+/**
+ * The PostgresSql params for {@link JdbcDialectTest}.
+ *
+ * <p>Notes: The source code is based on PostgresDialectTest.
+ */
 class GaussdbDialectTest extends JdbcDialectTest implements GaussdbTestBase {
 
     @Override

@@ -24,7 +24,11 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import javax.sql.XADataSource;
 
-/** Gaussdb Metadata. */
+/**
+ * Gaussdb Metadata.
+ *
+ * <p>Notes: The source code is based on PostgresMetadata.
+ */
 public class GaussdbMetadata implements DatabaseMetadata {
 
     private final String username;

@@ -32,7 +32,11 @@ import static org.apache.flink.connector.jdbc.gaussdb.database.catalog.GaussdbCa
 import static org.apache.flink.table.api.config.ExecutionConfigOptions.TABLE_EXEC_RESOURCE_DEFAULT_PARALLELISM;
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** E2E test for {@link GaussdbCatalog}. */
+/**
+ * E2E test for {@link GaussdbCatalog}.
+ *
+ * <p>Notes: The source code is based on PostgresCatalogITCase.
+ */
 class GaussdbCatalogITCase extends GaussdbCatalogTestBase {
 
     private TableEnvironment tEnv;

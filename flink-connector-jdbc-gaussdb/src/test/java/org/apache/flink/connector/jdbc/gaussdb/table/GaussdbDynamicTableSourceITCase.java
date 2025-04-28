@@ -35,7 +35,11 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbTy
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.field;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 
-/** The Table Source ITCase for {@link GaussdbDialect}. */
+/**
+ * The Table Source ITCase for {@link GaussdbDialect}.
+ *
+ * <p>Notes: The source code is based on PostgresDynamicTableSourceITCase.
+ */
 class GaussdbDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
         implements GaussdbTestBase {
 

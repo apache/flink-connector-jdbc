@@ -25,7 +25,11 @@ import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.gaussdb.database.catalog.GaussdbCatalog;
 import org.apache.flink.connector.jdbc.gaussdb.database.dialect.GaussdbDialect;
 
-/** Factory for {@link GaussdbDialect}. */
+/**
+ * Factory for {@link GaussdbDialect}.
+ *
+ * <p>Notes: The source code is based on PostgresFactory.
+ */
 @Internal
 public class GaussdbFactory implements JdbcFactory {
     @Override

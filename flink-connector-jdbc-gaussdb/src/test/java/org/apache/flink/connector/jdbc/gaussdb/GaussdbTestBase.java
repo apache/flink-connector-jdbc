@@ -24,7 +24,11 @@ import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 
-/** Base class for Postgres testing. */
+/**
+ * Base class for Postgres testing.
+ *
+ * <p>Notes: The source code is based on PostgresTestBase.
+ */
 @ExtendWith(GaussdbDatabase.class)
 public interface GaussdbTestBase extends DatabaseTest {
 

@@ -45,7 +45,11 @@ import java.util.Set;
 
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 
-/** Catalog for GaussDB. */
+/**
+ * Catalog for GaussDB.
+ *
+ * <p>Notes: The source code is based on PostgresCatalog.
+ */
 @Internal
 public class GaussdbCatalog extends AbstractJdbcCatalog {
 

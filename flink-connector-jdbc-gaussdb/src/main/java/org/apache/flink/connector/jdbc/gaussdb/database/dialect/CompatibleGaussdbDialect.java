@@ -23,7 +23,11 @@ import org.apache.flink.table.types.logical.RowType;
 
 import java.util.Optional;
 
-/** JDBC dialect for GaussDB compatible databases. */
+/**
+ * JDBC dialect for GaussDB compatible databases.
+ *
+ * <p>Notes: The source code is based on CompatiblePostgresDialect.
+ */
 @PublicEvolving
 public abstract class CompatibleGaussdbDialect extends GaussdbDialect {
 

@@ -23,7 +23,11 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** Test for {@link GaussdbTablePath}. */
+/**
+ * Test for {@link GaussdbTablePath}.
+ *
+ * <p>Notes: The source code is based on PostgresTablePathTest.
+ */
 class GaussdbTablePathTest {
     @Test
     void testToFlinkTableName() {

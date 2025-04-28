@@ -21,7 +21,11 @@ package org.apache.flink.connector.jdbc.gaussdb.database.dialect;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.table.types.logical.RowType;
 
-/** JDBC converter for Gaussdb compatible databases. */
+/**
+ * JDBC converter for Gaussdb compatible databases.
+ *
+ * <p>Notes: The source code is based on CompatiblePostgresDialectConverter.
+ */
 @Internal
 public abstract class CompatibleGaussdbDialectConverter extends GaussdbDialectConverter {
 

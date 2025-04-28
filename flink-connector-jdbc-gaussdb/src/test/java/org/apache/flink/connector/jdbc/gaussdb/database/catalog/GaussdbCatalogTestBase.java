@@ -34,7 +34,11 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-/** Test base for {@link GaussdbCatalog}. */
+/**
+ * Test base for {@link GaussdbCatalog}.
+ *
+ * <p>Notes: The source code is based on PostgresCatalogTestBase.
+ */
 class GaussdbCatalogTestBase implements JdbcITCaseBase, GaussdbTestBase {
 
     private static DatabaseMetadata getStaticMetadata() {

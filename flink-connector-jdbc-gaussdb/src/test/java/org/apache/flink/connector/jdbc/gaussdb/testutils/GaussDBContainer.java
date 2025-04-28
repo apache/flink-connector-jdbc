@@ -31,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Testcontainers implementation for GaussDB. Supported images: {@code
  * opengauss/opengauss:7.0.0-RC1.B023}, {@code pgvector/pgvector} Exposed ports: 8000
+ *
+ * <p>Notes: The source code is based on PostgresContainer.
  */
 public class GaussDBContainer<SELF extends GaussDBContainer<SELF>>
         extends JdbcDatabaseContainer<SELF> {

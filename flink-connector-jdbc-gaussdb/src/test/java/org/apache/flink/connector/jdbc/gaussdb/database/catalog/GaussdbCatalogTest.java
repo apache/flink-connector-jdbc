@@ -32,7 +32,11 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** Test for {@link GaussdbCatalog}. */
+/**
+ * Test for {@link GaussdbCatalog}.
+ *
+ * <p>Notes: The source code is based on PostgresCatalogTest.
+ */
 class GaussdbCatalogTest extends GaussdbCatalogTestBase {
 
     // ------ databases ------

@@ -27,7 +27,11 @@ import org.testcontainers.utility.DockerImageName;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 
-/** A Gaussdb database for testing. */
+/**
+ * A Gaussdb database for testing.
+ *
+ * <p>Notes: The source code is based on PostgresDatabase.
+ */
 public class GaussdbDatabase extends DatabaseExtension implements GaussdbImages {
 
     private static final GaussDBContainer<?> CONTAINER =

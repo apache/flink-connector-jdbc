@@ -22,5 +22,9 @@ import org.apache.flink.connector.jdbc.core.table.sink.JdbcDynamicTableSinkITCas
 import org.apache.flink.connector.jdbc.gaussdb.GaussdbTestBase;
 import org.apache.flink.connector.jdbc.gaussdb.database.dialect.GaussdbDialect;
 
-/** The Table Sink ITCase for {@link GaussdbDialect}. */
+/**
+ * The Table Sink ITCase for {@link GaussdbDialect}.
+ *
+ * <p>Notes: The source code is based on PostgresDynamicTableSinkITCase.
+ */
 class GaussdbDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implements GaussdbTestBase {}

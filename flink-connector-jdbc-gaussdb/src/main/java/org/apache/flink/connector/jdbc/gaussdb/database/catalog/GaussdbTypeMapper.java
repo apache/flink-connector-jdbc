@@ -31,7 +31,11 @@ import org.slf4j.LoggerFactory;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
-/** GaussdbTypeMapper util class. */
+/**
+ * GaussdbTypeMapper util class.
+ *
+ * <p>Notes: The source code is based on PostgresTypeMapper.
+ */
 @Internal
 public class GaussdbTypeMapper implements JdbcCatalogTypeMapper {
 

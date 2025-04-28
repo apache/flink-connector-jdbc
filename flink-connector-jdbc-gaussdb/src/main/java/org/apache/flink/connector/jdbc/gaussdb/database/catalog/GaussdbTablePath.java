@@ -28,6 +28,8 @@ import static org.apache.flink.util.Preconditions.checkArgument;
 /**
  * Table path of GaussDB in Flink. Can be of formats "table_name" or "schema_name.table_name". When
  * it's "table_name", the schema name defaults to "public".
+ *
+ * <p>Notes: The source code is based on PostgresTablePath.
  */
 @Internal
 public class GaussdbTablePath {

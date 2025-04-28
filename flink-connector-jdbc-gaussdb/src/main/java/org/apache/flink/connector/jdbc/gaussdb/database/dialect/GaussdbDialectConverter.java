@@ -32,6 +32,8 @@ import java.lang.reflect.Array;
 /**
  * Runtime converter that responsible to convert between JDBC object and Flink internal object for
  * GaussDB.
+ *
+ * <p>Notes: The source code is based on PostgresDialectConverter.
  */
 @Internal
 public class GaussdbDialectConverter extends AbstractDialectConverter {

@@ -30,7 +30,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** JDBC dialect for Gaussdb. */
+/**
+ * JDBC dialect for Gaussdb.
+ *
+ * <p>Notes: The source code is based on PostgresDialect.
+ */
 @Internal
 public class GaussdbDialect extends AbstractDialect {
 
