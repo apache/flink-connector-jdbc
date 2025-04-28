@@ -132,7 +132,12 @@ public class SqlServerDialect extends AbstractDialect {
 
     @Override
     public String getLimitClause(long limit) {
-        throw new IllegalArgumentException("SqlServerDialect does not support limit clause");
+        return String.format("SELECT TOP %s", limit);
+    }
+
+    @Override
+    public String addLimitClause(String query, long limit) {
+        return query.replace("SELECT", getLimitClause(limit));
     }
 
     @Override
