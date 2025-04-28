@@ -265,4 +265,14 @@ public abstract class AbstractDialect implements JdbcDialect {
             this.max = max;
         }
     }
+
+    /**
+     * The default way of append by origin sql end.
+     * @param query origin query sql
+     * @param limit number of row to emit. The value of the parameter should be non-negative.
+     * @return the entire sql after adding limit clause.
+     */
+    public String addLimitClause(String query, long limit) {
+        return String.format("%s %s", query, getLimitClause(limit));
+    }
 }
