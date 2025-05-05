@@ -7,6 +7,7 @@ scalastyle-output.xml
 .metadata
 .settings
 .project
+.java-version
 .version.properties
 filter.properties
 logs.zip
@@ -27,7 +28,7 @@ out/
 /docs/api
 /docs/.bundle
 /docs/.rubydeps
-/docs/ruby2/.bundle
+/docs/ruby2/.bundleo
 /docs/ruby2/.rubydeps
 /docs/.jekyll-metadata
 *.ipr

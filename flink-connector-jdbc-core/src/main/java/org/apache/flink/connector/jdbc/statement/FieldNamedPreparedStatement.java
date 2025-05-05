@@ -84,6 +84,13 @@ public interface FieldNamedPreparedStatement extends AutoCloseable {
     }
 
     /**
+     * Returns the final prepared query.
+     *
+     * @return prepared query
+     */
+    String getQuery();
+
+    /**
      * Clears the current parameter values immediately.
      *
      * <p>In general, parameter values remain in force for repeated use of a statement. Setting a

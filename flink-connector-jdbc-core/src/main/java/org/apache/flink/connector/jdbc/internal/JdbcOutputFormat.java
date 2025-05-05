@@ -23,6 +23,10 @@ import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
+import org.apache.flink.connector.jdbc.lineage.LineageUtils;
+import org.apache.flink.streaming.api.lineage.LineageDataset;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
+import org.apache.flink.streaming.api.lineage.LineageVertexProvider;
 import org.apache.flink.util.concurrent.ExecutorThreadFactory;
 import org.apache.flink.util.function.SerializableSupplier;
 
@@ -36,6 +40,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -47,7 +53,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 /** A JDBC outputFormat that supports batching records before writing records to database. */
 @Internal
 public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExecutor<JdbcIn>>
-        implements Flushable, AutoCloseable, Serializable {
+        implements LineageVertexProvider, Flushable, AutoCloseable, Serializable {
 
     protected final JdbcConnectionProvider connectionProvider;
 
@@ -246,5 +252,17 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
     @VisibleForTesting
     public Connection getConnection() {
         return connectionProvider.getConnection();
+    }
+
+    @Override
+    public LineageVertex getLineageVertex() {
+        Optional<String> nameOpt =
+                jdbcStatementExecutor == null
+                        ? Optional.empty()
+                        : LineageUtils.tableNameOf(jdbcStatementExecutor.insertSql(), false);
+        String namespace = LineageUtils.namespaceOf(connectionProvider);
+        LineageDataset dataset =
+                LineageUtils.datasetOf(nameOpt.orElse(""), namespace, Collections.emptyList());
+        return LineageUtils.lineageVertexOf(Collections.singleton(dataset));
     }
 }
