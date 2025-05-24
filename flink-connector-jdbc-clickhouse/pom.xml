@@ -82,7 +82,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Oracle tests -->
+        <!-- ClickHouse tests -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>clickhouse</artifactId>
