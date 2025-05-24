@@ -28,7 +28,7 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 
-/** JDBC dialect for Oracle. */
+/** JDBC dialect for ClickHouse. */
 @Internal
 public class ClickHouseDialect extends AbstractDialect {
 

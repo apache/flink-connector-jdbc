@@ -25,7 +25,7 @@ import org.apache.flink.util.FlinkRuntimeException;
 
 import org.testcontainers.clickhouse.ClickHouseContainer;
 
-/** A Oracle database for testing. */
+/** ClickHouse database for testing. */
 public class ClickHouseDatabase extends DatabaseExtension implements ClickHouseImages {
 
     private static final ClickHouseContainer CONTAINER =
