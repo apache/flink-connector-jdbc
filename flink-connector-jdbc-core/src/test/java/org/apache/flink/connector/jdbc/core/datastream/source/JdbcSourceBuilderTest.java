@@ -20,9 +20,12 @@ package org.apache.flink.connector.jdbc.core.datastream.source;
 
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.SqlTemplateSplitEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
+import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
 import org.apache.flink.connector.jdbc.split.JdbcNumericBetweenParametersProvider;
 import org.apache.flink.connector.jdbc.split.JdbcParameterValuesProvider;
@@ -180,5 +183,23 @@ class JdbcSourceBuilderTest {
                                         .build())
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(JdbcSourceBuilder.INVALID_CONTINUOUS_SLIDE_TIMING_HINT);
+    }
+
+    @Test
+    void testSetConnectionProvider() {
+        assertThatThrownBy(() -> JdbcSource.builder().setConnectionProvider(null))
+            .isInstanceOf(NullPointerException.class);
+
+        final JdbcConnectionOptions options =
+            new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                .withUrl(dbUrl)
+                .withDriverName(driverName)
+                .build();
+
+        final JdbcConnectionProvider connectionProvider = new SimpleJdbcConnectionProvider(options);
+
+        JdbcSource<Row> jdbcSource = sourceBuilder.setConnectionProvider(connectionProvider).build();
+
+        assertThat(jdbcSource.getConnectionProvider()).isSameAs(connectionProvider);
     }
 }
