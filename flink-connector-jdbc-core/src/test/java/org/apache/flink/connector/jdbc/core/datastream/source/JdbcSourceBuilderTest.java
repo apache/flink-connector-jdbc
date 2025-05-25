@@ -198,7 +198,7 @@ class JdbcSourceBuilderTest {
 
         final JdbcConnectionProvider connectionProvider = new SimpleJdbcConnectionProvider(options);
 
-        JdbcSource<Row> jdbcSource = sourceBuilder.setConnectionProvider(connectionProvider).build();
+        final JdbcSource<Row> jdbcSource = sourceBuilder.setConnectionProvider(connectionProvider).build();
 
         assertThat(jdbcSource.getConnectionProvider()).isSameAs(connectionProvider);
     }
