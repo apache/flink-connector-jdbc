@@ -267,7 +267,7 @@ public class JdbcSourceBuilder<OUT> {
     }
 
     public JdbcSource<OUT> build() {
-        if(this.connectionProvider == null) {
+        if (this.connectionProvider == null) {
             this.connectionProvider = new SimpleJdbcConnectionProvider(connOptionsBuilder.build());
         }
 

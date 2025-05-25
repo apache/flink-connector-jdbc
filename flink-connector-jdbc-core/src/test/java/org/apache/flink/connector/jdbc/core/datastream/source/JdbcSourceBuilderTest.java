@@ -188,17 +188,18 @@ class JdbcSourceBuilderTest {
     @Test
     void testSetConnectionProvider() {
         assertThatThrownBy(() -> JdbcSource.builder().setConnectionProvider(null))
-            .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class);
 
         final JdbcConnectionOptions options =
-            new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-                .withUrl(dbUrl)
-                .withDriverName(driverName)
-                .build();
+                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                        .withUrl(dbUrl)
+                        .withDriverName(driverName)
+                        .build();
 
         final JdbcConnectionProvider connectionProvider = new SimpleJdbcConnectionProvider(options);
 
-        final JdbcSource<Row> jdbcSource = sourceBuilder.setConnectionProvider(connectionProvider).build();
+        final JdbcSource<Row> jdbcSource =
+                sourceBuilder.setConnectionProvider(connectionProvider).build();
 
         assertThat(jdbcSource.getConnectionProvider()).isSameAs(connectionProvider);
     }
