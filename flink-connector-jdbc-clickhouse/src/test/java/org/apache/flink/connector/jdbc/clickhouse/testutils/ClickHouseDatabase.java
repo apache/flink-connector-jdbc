@@ -30,8 +30,8 @@ public class ClickHouseDatabase extends DatabaseExtension implements ClickHouseI
 
     private static final ClickHouseContainer CONTAINER =
             new ClickHouseContainer(CLICKHOUSE_LATEST)
-                    .withStartupTimeoutSeconds(240)
-                    .withConnectTimeoutSeconds(120);
+                    .withUsername("flink_test_user")
+                    .withPassword("flink_test_password");
 
     private static ClickHouseMetadata metadata;
 
