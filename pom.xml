@@ -45,6 +45,7 @@ under the License.
     <modules>
         <module>flink-connector-jdbc-architecture</module>
         <module>flink-connector-jdbc-core</module>
+        <module>flink-connector-jdbc-clickhouse</module>
         <module>flink-connector-jdbc-cratedb</module>
         <module>flink-connector-jdbc-db2</module>
         <module>flink-connector-jdbc-mysql</module>
@@ -53,7 +54,6 @@ under the License.
         <module>flink-connector-jdbc-postgres</module>
         <module>flink-connector-jdbc-sqlserver</module>
         <module>flink-connector-jdbc-trino</module>
-        <module>flink-connector-jdbc-clickhouse</module>
     </modules>
 
     <properties>
