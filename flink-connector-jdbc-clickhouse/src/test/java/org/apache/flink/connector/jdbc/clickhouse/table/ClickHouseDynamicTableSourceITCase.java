@@ -40,7 +40,7 @@ class ClickHouseDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
     protected TableRow createInputTable() {
         return TableBuilder.tableRow(
                 "jdbDynamicTableSource",
-                TableBuilder.field(
+                TableBuilder.pkField(
                         "id", TableBuilder.dbType("Int32"), DataTypes.BIGINT().notNull()),
                 TableBuilder.field("decimal_col", DataTypes.DECIMAL(10, 4)),
                 TableBuilder.field(
