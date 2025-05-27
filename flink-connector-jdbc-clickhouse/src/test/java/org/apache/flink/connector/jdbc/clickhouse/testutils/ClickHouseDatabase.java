@@ -29,7 +29,7 @@ import org.testcontainers.clickhouse.ClickHouseContainer;
 public class ClickHouseDatabase extends DatabaseExtension implements ClickHouseImages {
 
     private static final ClickHouseContainer CONTAINER =
-            new ClickHouseContainer(CLICKHOUSE_24)
+            new ClickHouseContainer(CLICKHOUSE_LATEST)
                     .withStartupTimeoutSeconds(240)
                     .withConnectTimeoutSeconds(120);
 

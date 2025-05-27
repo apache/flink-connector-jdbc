@@ -38,7 +38,7 @@ class ClickHousePreparedStatementTest {
 
     private final JdbcDialect dialect =
             JdbcFactoryLoader.loadDialect(
-                    "jdbc:clickhouse://localhost:3306/test", getClass().getClassLoader());
+                    "jdbc:clickhouse://localhost:8123/default", getClass().getClassLoader());
     private final String[] fieldNames =
             new String[] {"id", "name", "email", "ts", "field1", "field_2", "__field_3__"};
     private final String[] keyFields = new String[] {"id", "__field_3__"};

@@ -23,6 +23,7 @@ import org.apache.flink.connector.jdbc.core.database.dialect.AbstractDialectConv
 import org.apache.flink.table.data.ArrayData;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.MapData;
+import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.LogicalType;
@@ -66,7 +67,7 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
                 return val -> val;
             case CHAR:
             case VARCHAR:
-                return val -> val.toString();
+                return val -> StringData.fromString((String) val);
             case DATE:
                 return val -> Date.valueOf(LocalDate.ofEpochDay((Integer) val));
             case TIMESTAMP_WITH_TIME_ZONE:

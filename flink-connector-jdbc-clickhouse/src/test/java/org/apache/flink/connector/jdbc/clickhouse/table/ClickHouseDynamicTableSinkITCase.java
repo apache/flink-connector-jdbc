@@ -38,18 +38,6 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
         implements ClickHouseTestBase {
 
     @Override
-    protected TableRow createUpsertOutputTable() {
-        return TableBuilder.tableRow(
-                "dynamicSinkForUpsert",
-                TableBuilder.pkField(
-                        "cnt", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()),
-                TableBuilder.field(
-                        "lencnt", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()),
-                TableBuilder.pkField("cTag", DataTypes.INT().notNull()),
-                TableBuilder.field("ts", TableBuilder.dbType("DateTime64"), DataTypes.TIMESTAMP()));
-    }
-
-    @Override
     protected TableRow createAppendOutputTable() {
         return TableBuilder.tableRow(
                 "dynamicSinkForAppend",
