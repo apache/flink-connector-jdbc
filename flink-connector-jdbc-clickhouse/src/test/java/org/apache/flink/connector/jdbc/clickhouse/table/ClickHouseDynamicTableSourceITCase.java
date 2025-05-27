@@ -64,6 +64,7 @@ class ClickHouseDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
                 TableBuilder.field("clob_col", TableBuilder.dbType("String"), DataTypes.STRING()));
     }
 
+    @Override
     protected List<Row> getTestData() {
         return Arrays.asList(
                 Row.of(
