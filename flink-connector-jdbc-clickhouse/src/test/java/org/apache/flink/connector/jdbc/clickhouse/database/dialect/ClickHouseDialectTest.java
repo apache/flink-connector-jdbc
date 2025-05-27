@@ -49,6 +49,8 @@ class ClickHouseDialectTest extends JdbcDialectTest implements ClickHouseTestBas
 
                 // Not valid data
                 createTestItem("BINARY", "The ClickHouse dialect doesn't support type: BINARY(1)."),
-                createTestItem("VARBINARY(10)", "The ClickHouse dialect doesn't support type: VARBINARY(10)."));
+                createTestItem(
+                        "VARBINARY(10)",
+                        "The ClickHouse dialect doesn't support type: VARBINARY(10)."));
     }
 }
