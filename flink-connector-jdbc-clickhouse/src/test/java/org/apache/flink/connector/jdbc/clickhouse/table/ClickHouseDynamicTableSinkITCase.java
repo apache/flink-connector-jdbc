@@ -39,8 +39,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
         return TableBuilder.tableRow(
                 "dynamicSinkForAppend",
                 TableBuilder.pkField("id", DataTypes.INT().notNull()),
-                TableBuilder.field(
-                        "num", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()),
+                TableBuilder.field("num", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()),
                 TableBuilder.field("ts", TableBuilder.dbType("DateTime64"), DataTypes.TIMESTAMP()));
     }
 
@@ -49,23 +48,13 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
         return TableBuilder.tableRow(
                 "dynamicSinkForBatch",
                 TableBuilder.pkField("NAME", DataTypes.VARCHAR(20).notNull()),
-                TableBuilder.field(
-                        "SCORE", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()));
+                TableBuilder.field("SCORE", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()));
     }
 
     @Override
     protected TableRow createRealOutputTable() {
-        return TableBuilder.tableRow(
-                "REAL_TABLE",
+        return TableBuilder.tableRow("REAL_TABLE",
                 TableBuilder.pkField("real_data", TableBuilder.dbType("Float32"), DataTypes.FLOAT()));
-    }
-
-    @Override
-    protected TableRow createCheckpointOutputTable() {
-        return TableBuilder.tableRow(
-                "checkpointTable",
-                TableBuilder.pkField(
-                        "id", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()));
     }
 
     @Override

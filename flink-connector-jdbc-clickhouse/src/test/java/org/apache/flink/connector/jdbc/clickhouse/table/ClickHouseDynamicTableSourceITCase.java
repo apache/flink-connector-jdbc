@@ -43,24 +43,19 @@ class ClickHouseDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
                 TableBuilder.pkField(
                         "id", TableBuilder.dbType("Int32"), DataTypes.BIGINT().notNull()),
                 TableBuilder.field("decimal_col", DataTypes.DECIMAL(10, 4)),
-                TableBuilder.field(
-                        "timestamp6_col", TableBuilder.dbType("DateTime64(6)"), DataTypes.TIMESTAMP(6)),
+                TableBuilder.field("timestamp6_col",
+                        TableBuilder.dbType("DateTime64(6)"), DataTypes.TIMESTAMP(6)),
                 // other fields
                 TableBuilder.field("float_col", TableBuilder.dbType("Float32"), DataTypes.FLOAT()),
-                TableBuilder.field(
-                        "double_col", TableBuilder.dbType("Float64"), DataTypes.DOUBLE()),
-                TableBuilder.field(
-                        "binary_float_col", TableBuilder.dbType("BFloat16"), DataTypes.FLOAT()),
-                TableBuilder.field(
-                        "binary_double_col", TableBuilder.dbType("BFloat16"), DataTypes.DOUBLE()),
+                TableBuilder.field("double_col", TableBuilder.dbType("Float64"), DataTypes.DOUBLE()),
+                TableBuilder.field("binary_float_col", TableBuilder.dbType("BFloat16"), DataTypes.FLOAT()),
+                TableBuilder.field("binary_double_col", TableBuilder.dbType("BFloat16"), DataTypes.DOUBLE()),
                 TableBuilder.field("char_col", TableBuilder.dbType("String"), DataTypes.CHAR(1)),
-                TableBuilder.field(
-                        "string_col", TableBuilder.dbType("String"), DataTypes.VARCHAR(3)),
-                TableBuilder.field(
-                        "string2_col", TableBuilder.dbType("String"), DataTypes.VARCHAR(30)),
+                TableBuilder.field("string_col", TableBuilder.dbType("String"), DataTypes.VARCHAR(3)),
+                TableBuilder.field("string2_col", TableBuilder.dbType("String"), DataTypes.VARCHAR(30)),
                 TableBuilder.field("date_col", TableBuilder.dbType("Date"), DataTypes.DATE()),
-                TableBuilder.field(
-                        "dt9_col", TableBuilder.dbType("DateTime64(9)"), DataTypes.TIMESTAMP(9)),
+                TableBuilder.field("dt9_col",
+                        TableBuilder.dbType("DateTime64(9)"), DataTypes.TIMESTAMP(9)),
                 TableBuilder.field("clob_col", TableBuilder.dbType("String"), DataTypes.STRING()));
     }
 
