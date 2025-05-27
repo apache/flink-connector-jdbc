@@ -26,14 +26,11 @@ import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;
 
-import org.junit.jupiter.api.Disabled;
-
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
 /** The Table Sink ITCase for {@link ClickHouseDialect}. */
-@Disabled("Not working on jenkins as container not start.")
 class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
         implements ClickHouseTestBase {
 
@@ -41,7 +38,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
     protected TableRow createAppendOutputTable() {
         return TableBuilder.tableRow(
                 "dynamicSinkForAppend",
-                TableBuilder.field("id", DataTypes.INT().notNull()),
+                TableBuilder.pkField("id", DataTypes.INT().notNull()),
                 TableBuilder.field(
                         "num", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()),
                 TableBuilder.field("ts", TableBuilder.dbType("DateTime64"), DataTypes.TIMESTAMP()));
@@ -51,7 +48,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
     protected TableRow createBatchOutputTable() {
         return TableBuilder.tableRow(
                 "dynamicSinkForBatch",
-                TableBuilder.field("NAME", DataTypes.VARCHAR(20).notNull()),
+                TableBuilder.pkField("NAME", DataTypes.VARCHAR(20).notNull()),
                 TableBuilder.field(
                         "SCORE", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()));
     }
@@ -60,14 +57,14 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
     protected TableRow createRealOutputTable() {
         return TableBuilder.tableRow(
                 "REAL_TABLE",
-                TableBuilder.field("real_data", TableBuilder.dbType("Float32"), DataTypes.FLOAT()));
+                TableBuilder.pkField("real_data", TableBuilder.dbType("Float32"), DataTypes.FLOAT()));
     }
 
     @Override
     protected TableRow createCheckpointOutputTable() {
         return TableBuilder.tableRow(
                 "checkpointTable",
-                TableBuilder.field(
+                TableBuilder.pkField(
                         "id", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()));
     }
 

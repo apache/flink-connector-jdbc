@@ -44,7 +44,7 @@ class ClickHouseDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
                         "id", TableBuilder.dbType("Int32"), DataTypes.BIGINT().notNull()),
                 TableBuilder.field("decimal_col", DataTypes.DECIMAL(10, 4)),
                 TableBuilder.field(
-                        "datetime_col", TableBuilder.dbType("DateTime64"), DataTypes.TIMESTAMP(6)),
+                        "timestamp6_col", TableBuilder.dbType("DateTime64(6)"), DataTypes.TIMESTAMP(6)),
                 // other fields
                 TableBuilder.field("float_col", TableBuilder.dbType("Float32"), DataTypes.FLOAT()),
                 TableBuilder.field(
