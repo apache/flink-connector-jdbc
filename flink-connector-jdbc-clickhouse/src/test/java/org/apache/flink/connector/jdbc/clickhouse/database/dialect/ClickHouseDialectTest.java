@@ -42,9 +42,10 @@ class ClickHouseDialectTest extends JdbcDialectTest implements ClickHouseTestBas
                 createTestItem("FLOAT"),
                 createTestItem("DOUBLE"),
                 createTestItem("DATE"),
-                createTestItem("TIMESTAMP_WITHOUT_TIME_ZONE"),
-                createTestItem("TIMESTAMP_WITH_TIME_ZONE"),
-                createTestItem("TIMESTAMP(3)"),
+                createTestItem("BINARY"),
+                createTestItem("VARBINARY"),
+                createTestItem("TIMESTAMP"),
+                createTestItem("TIMESTAMP WITHOUT TIME ZONE"),
                 createTestItem("ARRAY<STRING>"),
                 createTestItem("MAP<STRING, INT>"));
     }
