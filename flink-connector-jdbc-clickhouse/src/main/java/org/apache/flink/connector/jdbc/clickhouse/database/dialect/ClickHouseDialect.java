@@ -66,7 +66,7 @@ public class ClickHouseDialect extends AbstractDialect {
 
     @Override
     public String quoteIdentifier(String identifier) {
-        return "`" + identifier + "`";
+        return identifier;
     }
 
     // ClickHouse does not support Upsert statements
