@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
 import org.apache.flink.types.Row;
 
 import org.junit.jupiter.api.AfterEach;
@@ -280,6 +281,24 @@ class JdbcRowOutputFormatTest extends JdbcDataTestBase {
             }
             assertThat(recordCount).isEqualTo(TEST_DATA.length);
         }
+    }
+
+    @Test
+    void testGetLineageVertex() throws Exception {
+        jdbcOutputFormat =
+                JdbcRowOutputFormat.buildJdbcOutputFormat()
+                        .setDrivername(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setQuery(String.format(INSERT_TEMPLATE, OUTPUT_TABLE))
+                        .finish();
+        JdbcOutputSerializer<Row> serializer =
+                JdbcOutputSerializer.of(getSerializer(TypeInformation.of(Row.class), true));
+        jdbcOutputFormat.open(serializer);
+
+        LineageVertex lineageVertex = jdbcOutputFormat.getLineageVertex();
+        assertThat(lineageVertex.datasets().size()).isEqualTo(1);
+        assertThat(lineageVertex.datasets().get(0).name()).isEqualTo("newbooks");
+        assertThat(lineageVertex.datasets().get(0).namespace()).isEqualTo("derby:memory:test");
     }
 
     @Test

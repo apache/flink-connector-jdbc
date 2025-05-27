@@ -40,6 +40,9 @@ public interface JdbcBatchStatementExecutor<T> {
     /** Close JDBC related statements. */
     void closeStatements() throws SQLException;
 
+    /** return the insert sql of the executor. */
+    String insertSql();
+
     static <T, K> JdbcBatchStatementExecutor<T> keyed(
             String sql, Function<T, K> keyExtractor, JdbcStatementBuilder<K> statementBuilder) {
         return new KeyedBatchStatementExecutor<>(sql, keyExtractor, statementBuilder);
