@@ -42,11 +42,13 @@ class ClickHouseDialectTest extends JdbcDialectTest implements ClickHouseTestBas
                 createTestItem("FLOAT"),
                 createTestItem("DOUBLE"),
                 createTestItem("DATE"),
-                createTestItem("BINARY"),
-                createTestItem("VARBINARY"),
                 createTestItem("TIMESTAMP"),
                 createTestItem("TIMESTAMP WITHOUT TIME ZONE"),
                 createTestItem("ARRAY<STRING>"),
-                createTestItem("MAP<STRING, INT>"));
+                createTestItem("MAP<STRING, INT>"),
+
+                // Not valid data
+                createTestItem("BINARY", "The ClickHouse dialect doesn't support type: BINARY(1)."),
+                createTestItem("VARBINARY(10)", "The ClickHouse dialect doesn't support type: VARBINARY(10)."));
     }
 }
