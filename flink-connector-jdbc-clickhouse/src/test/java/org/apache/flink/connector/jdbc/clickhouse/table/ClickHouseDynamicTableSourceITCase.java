@@ -41,7 +41,7 @@ class ClickHouseDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
         return TableBuilder.tableRow(
                 "jdbDynamicTableSource",
                 TableBuilder.pkField(
-                        "id", TableBuilder.dbType("Int128"), DataTypes.BIGINT().notNull()),
+                        "id", TableBuilder.dbType("Int64"), DataTypes.BIGINT().notNull()),
                 TableBuilder.field(
                         "decimal_col",
                         TableBuilder.dbType("Decimal(10,4)"),
