@@ -26,10 +26,13 @@ import org.apache.flink.table.data.MapData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.logical.ArrayType;
+import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.MapType;
 import org.apache.flink.table.types.logical.RowType;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -74,7 +77,13 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
             case TIMESTAMP_WITHOUT_TIME_ZONE:
                 return val -> ((TimestampData) val).toTimestamp();
             case DECIMAL:
-                return val -> ((DecimalData) val).toBigDecimal();
+                final int precision = ((DecimalType) type).getPrecision();
+                final int scale = ((DecimalType) type).getScale();
+                return val ->
+                        val instanceof BigInteger
+                                ? DecimalData.fromBigDecimal(
+                                        new BigDecimal((BigInteger) val, 0), precision, scale)
+                                : DecimalData.fromBigDecimal((BigDecimal) val, precision, scale);
             case MAP:
                 return val -> (MapData) val;
             case ARRAY:
