@@ -34,7 +34,8 @@ import org.apache.flink.table.types.logical.RowType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Date;
-import java.time.LocalDate;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,10 +73,13 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
             case VARCHAR:
                 return val -> StringData.fromString((String) val);
             case DATE:
-                return val -> Date.valueOf(LocalDate.ofEpochDay((Integer) val));
+                return val -> (int) (((Date) val).toLocalDate().toEpochDay());
             case TIMESTAMP_WITH_TIME_ZONE:
             case TIMESTAMP_WITHOUT_TIME_ZONE:
-                return val -> ((TimestampData) val).toTimestamp();
+                return val ->
+                        val instanceof LocalDateTime
+                                ? TimestampData.fromLocalDateTime((LocalDateTime) val)
+                                : TimestampData.fromTimestamp((Timestamp) val);
             case DECIMAL:
                 final int precision = ((DecimalType) type).getPrecision();
                 final int scale = ((DecimalType) type).getScale();
@@ -126,12 +130,19 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
             case VARCHAR:
                 return value.toString();
             case DATE:
-                return Date.valueOf(LocalDate.ofEpochDay((Integer) value));
+                return ((Date) value).toLocalDate().toEpochDay();
             case TIMESTAMP_WITH_TIME_ZONE:
             case TIMESTAMP_WITHOUT_TIME_ZONE:
-                return ((TimestampData) value).toTimestamp();
+                return value instanceof LocalDateTime
+                        ? TimestampData.fromLocalDateTime((LocalDateTime) value)
+                        : TimestampData.fromTimestamp((Timestamp) value);
             case DECIMAL:
-                return ((DecimalData) value).toBigDecimal();
+                final int precision = ((DecimalType) type).getPrecision();
+                final int scale = ((DecimalType) type).getScale();
+                return value instanceof BigInteger
+                        ? DecimalData.fromBigDecimal(
+                                new BigDecimal((BigInteger) value, 0), precision, scale)
+                        : DecimalData.fromBigDecimal((BigDecimal) value, precision, scale);
             case ARRAY:
                 LogicalType elementType =
                         ((ArrayType) type)
