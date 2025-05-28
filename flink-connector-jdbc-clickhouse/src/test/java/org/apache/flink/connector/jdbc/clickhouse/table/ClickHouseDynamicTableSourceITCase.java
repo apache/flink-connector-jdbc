@@ -55,9 +55,9 @@ class ClickHouseDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
                 TableBuilder.field(
                         "double_col", TableBuilder.dbType("Float64"), DataTypes.DOUBLE()),
                 TableBuilder.field(
-                        "binary_float_col", TableBuilder.dbType("BFloat16"), DataTypes.FLOAT()),
+                        "binary_float_col", TableBuilder.dbType("Float32"), DataTypes.FLOAT()),
                 TableBuilder.field(
-                        "binary_double_col", TableBuilder.dbType("BFloat16"), DataTypes.DOUBLE()),
+                        "binary_double_col", TableBuilder.dbType("Float64"), DataTypes.DOUBLE()),
                 TableBuilder.field("char_col", TableBuilder.dbType("String"), DataTypes.CHAR(1)),
                 TableBuilder.field(
                         "string_col", TableBuilder.dbType("String"), DataTypes.VARCHAR(3)),
