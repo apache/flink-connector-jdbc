@@ -54,6 +54,9 @@ labelPRBasedOnFilePath:
   component=JDBC/Trino:
     - flink-connector-jdbc-trino/**/*
 
+  component=JDBC/ClickHouse:
+    - flink-connector-jdbc-clickhouse/**/*
+
 ###### IssueLink Adder #################################################################################################
 # Insert Issue (Jira/Github etc) link in PR description based on the Issue ID in PR title.
 insertIssueLinkInPrDescription:
