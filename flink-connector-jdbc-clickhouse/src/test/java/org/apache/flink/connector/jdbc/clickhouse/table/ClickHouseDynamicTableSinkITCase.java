@@ -43,7 +43,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                 "dynamicSinkForAppend",
                 TableBuilder.pkField("id", DataTypes.INT().notNull()),
                 TableBuilder.field(
-                        "num", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()),
+                        "num", TableBuilder.dbType("Int64"), DataTypes.BIGINT().notNull()),
                 TableBuilder.field(
                         "ts", TableBuilder.dbType("DateTime64(6)"), DataTypes.TIMESTAMP()));
     }
@@ -54,7 +54,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                 "dynamicSinkForBatch",
                 TableBuilder.pkField("NAME", DataTypes.VARCHAR(20).notNull()),
                 TableBuilder.field(
-                        "SCORE", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()));
+                        "SCORE", TableBuilder.dbType("Int64"), DataTypes.BIGINT().notNull()));
     }
 
     @Override
