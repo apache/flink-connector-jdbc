@@ -59,7 +59,9 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
                 return null;
             case BOOLEAN:
             case TINYINT:
+                return val -> ((Integer) val).byteValue();
             case SMALLINT:
+                return val -> val instanceof Integer ? ((Integer) val).shortValue() : val;
             case INTEGER:
             case INTERVAL_YEAR_MONTH:
             case BIGINT:
@@ -116,7 +118,9 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
         switch (type.getTypeRoot()) {
             case BOOLEAN:
             case TINYINT:
+                return ((Integer) value).byteValue();
             case SMALLINT:
+                return value instanceof Integer ? ((Integer) value).shortValue() : value;
             case INTEGER:
             case INTERVAL_YEAR_MONTH:
             case BIGINT:
