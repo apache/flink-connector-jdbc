@@ -25,6 +25,7 @@ import org.apache.flink.connector.jdbc.testutils.tables.TableBuilder;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;
+
 import org.junit.jupiter.api.Disabled;
 
 import java.math.BigDecimal;
@@ -43,7 +44,8 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                 TableBuilder.pkField("id", DataTypes.INT().notNull()),
                 TableBuilder.field(
                         "num", TableBuilder.dbType("Int256"), DataTypes.BIGINT().notNull()),
-                TableBuilder.field("ts", TableBuilder.dbType("DateTime64(6)"), DataTypes.TIMESTAMP()));
+                TableBuilder.field(
+                        "ts", TableBuilder.dbType("DateTime64(6)"), DataTypes.TIMESTAMP()));
     }
 
     @Override
