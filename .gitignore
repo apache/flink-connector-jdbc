@@ -7,6 +7,7 @@ scalastyle-output.xml
 .metadata
 .settings
 .project
+.java-version
 .version.properties
 filter.properties
 logs.zip

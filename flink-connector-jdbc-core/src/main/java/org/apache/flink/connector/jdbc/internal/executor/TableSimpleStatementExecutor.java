@@ -61,6 +61,11 @@ public final class TableSimpleStatementExecutor implements JdbcBatchStatementExe
     }
 
     @Override
+    public String insertSql() {
+        return st.getQuery();
+    }
+
+    @Override
     public void executeBatch() throws SQLException {
         st.executeBatch();
     }
