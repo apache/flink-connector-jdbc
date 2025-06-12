@@ -51,7 +51,7 @@ class CrateDBDialectTest extends JdbcDialectTest implements CrateDBTestBase {
                 createTestItem("BINARY", "The CrateDB dialect doesn't support type: BINARY(1)."),
                 createTestItem(
                         "TIMESTAMP(9) WITHOUT TIME ZONE",
-                        "The precision of field 'f0' is out of the TIMESTAMP precision range [1, 6] supported by CrateDB dialect."),
+                        "The precision of field 'f0' is out of the TIMESTAMP precision range [0, 6] supported by CrateDB dialect."),
                 createTestItem("TIMESTAMP_LTZ(3)", "Unsupported type:TIMESTAMP_LTZ(3)"));
     }
 }
