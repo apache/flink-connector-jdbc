@@ -76,7 +76,6 @@
             <groupId>com.huaweicloud.gaussdb</groupId>
             <artifactId>gaussdbjdbc</artifactId>
             <version>506.0.0.b058-jdk7</version>
-<!--            <scope>provided</scope>-->
         </dependency>
 
         <!-- Assertions test dependencies -->
