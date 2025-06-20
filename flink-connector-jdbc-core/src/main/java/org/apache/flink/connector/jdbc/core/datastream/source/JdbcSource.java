@@ -162,18 +162,23 @@ public class JdbcSource<OUT>
     }
 
     @VisibleForTesting
-    public TypeInformation<OUT> getTypeInformation() {
+    TypeInformation<OUT> getTypeInformation() {
         return typeInformation;
     }
 
     @VisibleForTesting
-    public Configuration getConfiguration() {
+    Configuration getConfiguration() {
         return configuration;
     }
 
     @VisibleForTesting
-    public ResultExtractor<OUT> getResultExtractor() {
+    ResultExtractor<OUT> getResultExtractor() {
         return resultExtractor;
+    }
+
+    @VisibleForTesting
+    JdbcConnectionProvider getConnectionProvider() {
+        return connectionProvider;
     }
 
     @VisibleForTesting
