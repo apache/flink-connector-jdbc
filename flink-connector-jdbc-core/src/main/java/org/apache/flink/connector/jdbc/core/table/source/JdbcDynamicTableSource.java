@@ -179,7 +179,7 @@ public class JdbcDynamicTableSource
         }
 
         if (limit >= 0) {
-            query = String.format("%s %s", query, dialect.getLimitClause(limit));
+            query = dialect.addLimitClause(query, limit);
         }
 
         LOG.debug("Query generated for JDBC scan: " + query);

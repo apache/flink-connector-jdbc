@@ -91,4 +91,11 @@ class SqlServerPreparedStatementTest {
                         "SELECT id, name, email, ts, field1, field_2, __field_3__ FROM tbl "
                                 + "WHERE id = :id AND __field_3__ = :__field_3__");
     }
+
+    @Test
+    void testLimitStatement() {
+        String selectStmt = dialect.addLimitClause("SELECT * FROM TBL", 10);
+        assertThat(selectStmt)
+                .isEqualTo("SELECT TOP 10 * FROM TBL");
+    }
 }
