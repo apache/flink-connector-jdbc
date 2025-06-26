@@ -62,6 +62,11 @@ public final class TableBufferedStatementExecutor implements JdbcBatchStatementE
     }
 
     @Override
+    public String insertSql() {
+        return statementExecutor.insertSql();
+    }
+
+    @Override
     public void closeStatements() throws SQLException {
         statementExecutor.closeStatements();
     }

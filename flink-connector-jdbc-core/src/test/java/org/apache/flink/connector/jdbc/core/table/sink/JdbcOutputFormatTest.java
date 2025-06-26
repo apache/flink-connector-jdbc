@@ -25,6 +25,7 @@ import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
@@ -369,6 +370,39 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
             }
             assertThat(recordCount).isEqualTo(TEST_DATA.length);
         }
+    }
+
+    @Test
+    void testGetLineageVertex() throws Exception {
+        InternalJdbcConnectionOptions jdbcOptions =
+                InternalJdbcConnectionOptions.builder()
+                        .setDriverName(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setTableName(OUTPUT_TABLE)
+                        .build();
+        JdbcDmlOptions dmlOptions =
+                JdbcDmlOptions.builder()
+                        .withTableName(jdbcOptions.getTableName())
+                        .withDialect(jdbcOptions.getDialect())
+                        .withFieldNames(fieldNames)
+                        .build();
+
+        outputFormat =
+                new JdbcOutputFormatBuilder()
+                        .setJdbcOptions(jdbcOptions)
+                        .setFieldDataTypes(fieldDataTypes)
+                        .setJdbcDmlOptions(dmlOptions)
+                        .setJdbcExecutionOptions(JdbcExecutionOptions.builder().build())
+                        .build();
+
+        JdbcOutputSerializer<RowData> serializer =
+                JdbcOutputSerializer.of(getSerializer(TypeInformation.of(RowData.class), true));
+        outputFormat.open(serializer);
+
+        LineageVertex lineageVertex = outputFormat.getLineageVertex();
+        assertThat(lineageVertex.datasets().size()).isEqualTo(1);
+        assertThat(lineageVertex.datasets().get(0).name()).isEqualTo("newbooks");
+        assertThat(lineageVertex.datasets().get(0).namespace()).isEqualTo("derby:memory:test");
     }
 
     @Test
