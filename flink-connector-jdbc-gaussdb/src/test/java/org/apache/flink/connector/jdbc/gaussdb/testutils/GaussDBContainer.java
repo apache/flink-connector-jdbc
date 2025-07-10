@@ -49,9 +49,9 @@ public class GaussDBContainer<SELF extends GaussDBContainer<SELF>>
 
     public static final Integer GAUSSDB_PORT = 8000;
 
-    public static final String DEFAULT_USER_NAME = "flink_jdbc_test";
+    public static final String DEFAULT_USER_NAME = "flink";
 
-    public static final String DEFAULT_PASSWORD = "Flink_jdbc_test@123";
+    public static final String DEFAULT_PASSWORD = "Enmo@123";
 
     private String databaseName = "postgres";
 
