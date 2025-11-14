@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.statement;
 import org.apache.flink.annotation.PublicEvolving;
 
 import java.math.BigDecimal;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -253,6 +254,21 @@ public interface FieldNamedPreparedStatement extends AutoCloseable {
      * @see PreparedStatement#setObject(int, Object)
      */
     void setObject(int fieldIndex, Object x) throws SQLException;
+
+    /**
+     * Sets the designated parameter to the given <code>java.sql.Array</code> object. The driver
+     * converts this to an SQL <code>ARRAY</code> value when it sends it to the database.
+     *
+     * @see PreparedStatement#setArray(int, Array)
+     */
+    void setArray(int fieldIndex, Array x) throws SQLException;
+
+    /**
+     * Factory method for creating Array objects.
+     *
+     * @see Connection#createArrayOf(String, Object[])
+     */
+    Array createArrayOf(String typeName, Object[] elements) throws SQLException;
 
     /**
      * Releases this <code>Statement</code> object's database and JDBC resources immediately instead
