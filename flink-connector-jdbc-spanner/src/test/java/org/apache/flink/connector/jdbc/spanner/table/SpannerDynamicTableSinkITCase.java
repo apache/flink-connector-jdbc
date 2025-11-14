@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.spanner.table;
 import org.apache.flink.connector.jdbc.core.table.sink.JdbcDynamicTableSinkITCase;
 import org.apache.flink.connector.jdbc.spanner.SpannerTestBase;
 import org.apache.flink.connector.jdbc.spanner.database.dialect.SpannerDialect;
+import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.DataTypes;
@@ -97,6 +98,27 @@ class SpannerDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implement
                 field("email", dbType("STRING(255)"), DataTypes.VARCHAR(255)),
                 field("balance", dbType("NUMERIC"), DataTypes.DECIMAL(18, 2)),
                 field("balance2", dbType("NUMERIC"), DataTypes.DECIMAL(18, 2)));
+    }
+
+    protected final TableRow arrayOutputTable = createArrayOutputTable();
+
+    protected TableRow createArrayOutputTable() {
+        return spannerTableRow(
+                "ARRAY_TABLE",
+                pkField("id", dbType("INT64 NOT NULL"), DataTypes.INT().notNull()),
+                field("int_arr", dbType("ARRAY<INT64>"), DataTypes.ARRAY(DataTypes.BIGINT())),
+                field("str_arr", dbType("ARRAY<STRING(MAX)>"), DataTypes.ARRAY(DataTypes.STRING())),
+                field(
+                        "dec_arr",
+                        dbType("ARRAY<NUMERIC>"),
+                        DataTypes.ARRAY(DataTypes.DECIMAL(10, 2))));
+    }
+
+    @Override
+    public List<TableManaged> getManagedTables() {
+        List<TableManaged> tables = new java.util.ArrayList<>(super.getManagedTables());
+        tables.add(arrayOutputTable);
+        return tables;
     }
 
     @Override
@@ -214,5 +236,39 @@ class SpannerDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implement
                         Row.of("c", "Kim", 42L),
                         Row.of("d", "Kim", 42L),
                         Row.of("e", "Bob", 1L));
+    }
+
+    @Test
+    void testArray() throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.getConfig().enableObjectReuse();
+        StreamTableEnvironment tEnv =
+                StreamTableEnvironment.create(env, EnvironmentSettings.inStreamingMode());
+
+        String tableName = "arraySink";
+        tEnv.executeSql(arrayOutputTable.getCreateQueryForFlink(getMetadata(), tableName));
+
+        tEnv.executeSql(
+                        String.format(
+                                "INSERT INTO %s VALUES "
+                                        + "(1, ARRAY[1, 2, 3], ARRAY['a', 'b', 'c'], "
+                                        + "ARRAY[CAST(1.1 AS DECIMAL(10, 2)), CAST(2.2 AS DECIMAL(10, 2))]), "
+                                        + "(2, ARRAY[4, 5], ARRAY['x', 'y'], "
+                                        + "ARRAY[CAST(3.3 AS DECIMAL(10, 2))])",
+                                tableName))
+                .await();
+
+        assertThat(arrayOutputTable.selectAllTable(getMetadata()))
+                .containsExactlyInAnyOrder(
+                        Row.of(
+                                1,
+                                new Long[] {1L, 2L, 3L},
+                                new String[] {"a", "b", "c"},
+                                new BigDecimal[] {new BigDecimal("1.1"), new BigDecimal("2.2")}),
+                        Row.of(
+                                2,
+                                new Long[] {4L, 5L},
+                                new String[] {"x", "y"},
+                                new BigDecimal[] {new BigDecimal("3.3")}));
     }
 }

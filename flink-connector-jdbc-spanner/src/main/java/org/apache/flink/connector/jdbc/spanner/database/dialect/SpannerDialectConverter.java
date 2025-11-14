@@ -20,11 +20,14 @@ package org.apache.flink.connector.jdbc.spanner.database.dialect;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.core.database.dialect.AbstractDialectConverter;
+import org.apache.flink.table.data.ArrayData;
 import org.apache.flink.table.data.GenericArrayData;
 import org.apache.flink.table.types.logical.ArrayType;
+import org.apache.flink.table.types.logical.DecimalType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.types.logical.TimestampType;
 import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
 
 import java.lang.reflect.Array;
@@ -63,13 +66,23 @@ public class SpannerDialectConverter extends AbstractDialectConverter {
     protected JdbcSerializationConverter createNullableExternalConverter(LogicalType type) {
         LogicalTypeRoot root = type.getTypeRoot();
         if (root == LogicalTypeRoot.ARRAY) {
-            // TODO: FieldNamedPreparedStatement needs to support
-            //  the setArray and createArrayOf methods.
+            ArrayType arrayType = (ArrayType) type;
+            LogicalType elementType = arrayType.getElementType();
+            String typeName = getSpannerArrayTypeName(elementType);
+
             return (val, index, statement) -> {
-                throw new IllegalStateException(
-                        String.format(
-                                "Writing ARRAY type is not yet supported in JDBC:%s.",
-                                converterName()));
+                ArrayData arrayData = val.getArray(index);
+                int size = arrayData.size();
+                Object[] elements = new Object[size];
+
+                // Convert each element
+                for (int i = 0; i < size; i++) {
+                    elements[i] = extractArrayElement(arrayData, i, elementType);
+                }
+
+                // Create JDBC Array and set it
+                java.sql.Array jdbcArray = statement.createArrayOf(typeName, elements);
+                statement.setArray(index, jdbcArray);
             };
         } else {
             return super.createNullableExternalConverter(type);
@@ -90,5 +103,95 @@ public class SpannerDialectConverter extends AbstractDialectConverter {
             }
             return new GenericArrayData(array);
         };
+    }
+
+    /**
+     * Get Spanner array type name from Flink LogicalType.
+     *
+     * @param elementType The element type of the array
+     * @return Spanner type name for the array elements
+     */
+    private String getSpannerArrayTypeName(LogicalType elementType) {
+        switch (elementType.getTypeRoot()) {
+            case BOOLEAN:
+                return "BOOL";
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
+                return "INT64";
+            case FLOAT:
+                return "FLOAT32";
+            case DOUBLE:
+                return "FLOAT64";
+            case DECIMAL:
+                return "NUMERIC";
+            case CHAR:
+            case VARCHAR:
+                return "STRING";
+            case BINARY:
+            case VARBINARY:
+                return "BYTES";
+            case DATE:
+                return "DATE";
+            case TIMESTAMP_WITHOUT_TIME_ZONE:
+            case TIMESTAMP_WITH_TIME_ZONE:
+                return "TIMESTAMP";
+            default:
+                throw new UnsupportedOperationException(
+                        String.format(
+                                "Unsupported array element type for Spanner: %s", elementType));
+        }
+    }
+
+    /**
+     * Extract an element from ArrayData based on the element type.
+     *
+     * @param arrayData The array data
+     * @param index The index of the element
+     * @param elementType The type of the element
+     * @return The extracted element value
+     */
+    private Object extractArrayElement(ArrayData arrayData, int index, LogicalType elementType) {
+        if (arrayData.isNullAt(index)) {
+            return null;
+        }
+
+        switch (elementType.getTypeRoot()) {
+            case BOOLEAN:
+                return arrayData.getBoolean(index);
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
+                // Spanner arrays use INT64, which is Long in Java
+                return arrayData.getLong(index);
+            case FLOAT:
+                return arrayData.getFloat(index);
+            case DOUBLE:
+                return arrayData.getDouble(index);
+            case DECIMAL:
+                DecimalType decimalType = (DecimalType) elementType;
+                return arrayData
+                        .getDecimal(index, decimalType.getPrecision(), decimalType.getScale())
+                        .toBigDecimal();
+            case CHAR:
+            case VARCHAR:
+                return arrayData.getString(index).toString();
+            case BINARY:
+            case VARBINARY:
+                return arrayData.getBinary(index);
+            case DATE:
+                return java.sql.Date.valueOf(
+                        java.time.LocalDate.ofEpochDay(arrayData.getInt(index)));
+            case TIMESTAMP_WITHOUT_TIME_ZONE:
+            case TIMESTAMP_WITH_TIME_ZONE:
+                TimestampType timestampType = (TimestampType) elementType;
+                return arrayData.getTimestamp(index, timestampType.getPrecision()).toTimestamp();
+            default:
+                throw new UnsupportedOperationException(
+                        String.format(
+                                "Unsupported array element type for Spanner: %s", elementType));
+        }
     }
 }
