@@ -46,13 +46,13 @@ class SpannerDialectTest extends JdbcDialectTest implements SpannerTestBase {
                 createTestItem("TIMESTAMP(9) WITHOUT TIME ZONE"),
                 createTestItem("VARBINARY"),
                 createTestItem("ARRAY<INTEGER>"),
+                createTestItem("TIMESTAMP_LTZ(3)"),
 
                 // Not valid data
                 createTestItem("TIME", "The Spanner dialect doesn't support type: TIME(0)."),
                 createTestItem("BINARY", "The Spanner dialect doesn't support type: BINARY(1)."),
                 createTestItem(
                         "VARBINARY(10)",
-                        "The Spanner dialect doesn't support type: VARBINARY(10)."),
-                createTestItem("TIMESTAMP_LTZ(3)", "Unsupported type:TIMESTAMP_LTZ(3)"));
+                        "The Spanner dialect doesn't support type: VARBINARY(10)."));
     }
 }
