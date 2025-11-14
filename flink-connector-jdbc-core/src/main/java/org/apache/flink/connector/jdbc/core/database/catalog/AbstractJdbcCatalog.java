@@ -132,7 +132,20 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
     }
 
     protected String getDatabaseUrl(String databaseName) {
-        return baseUrl + databaseName;
+        // Check if base-url contains query parameters
+        int questionMarkIndex = baseUrl.indexOf('?');
+
+        if (questionMarkIndex == -1) {
+            // No parameters: traditional baseUrl + databaseName
+            return baseUrl + databaseName;
+        }
+
+        // Parameters present: insert database name before '?'
+        // Example: "jdbc:postgresql://localhost:5432/?sslmode=require"
+        //       -> "jdbc:postgresql://localhost:5432/mydb?sslmode=require"
+        String urlWithoutParams = baseUrl.substring(0, questionMarkIndex);
+        String params = baseUrl.substring(questionMarkIndex);
+        return urlWithoutParams + databaseName + params;
     }
 
     @Override
