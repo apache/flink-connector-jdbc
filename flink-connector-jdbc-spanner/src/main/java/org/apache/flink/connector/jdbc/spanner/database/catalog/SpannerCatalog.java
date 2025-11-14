@@ -141,16 +141,6 @@ public class SpannerCatalog extends AbstractJdbcCatalog {
     }
 
     @Override
-    protected String getDatabaseUrl(String databaseName) {
-        String databaseUrl = baseUrl + databaseName;
-        if (connectionProperties.containsKey("autoConfigEmulator")) {
-            databaseUrl +=
-                    ";autoConfigEmulator=" + connectionProperties.getProperty("autoConfigEmulator");
-        }
-        return databaseUrl;
-    }
-
-    @Override
     protected Optional<UniqueConstraint> getPrimaryKey(
             DatabaseMetaData metaData, String database, String schema, String table)
             throws SQLException {
