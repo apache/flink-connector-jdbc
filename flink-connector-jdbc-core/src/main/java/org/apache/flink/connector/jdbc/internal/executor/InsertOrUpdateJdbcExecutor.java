@@ -108,6 +108,11 @@ public final class InsertOrUpdateJdbcExecutor<R, K, V> implements JdbcBatchState
         }
     }
 
+    @Override
+    public String insertSql() {
+        return insertSQL;
+    }
+
     private void processOneRowInBatch(K pk, V row) throws SQLException {
         if (exist(pk)) {
             updateSetter.accept(updateStatement, row);
