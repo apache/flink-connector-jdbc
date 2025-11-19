@@ -30,13 +30,9 @@ jobs:
     strategy:
       matrix:
         flink_branches: [{
-          flink: 2.2-SNAPSHOT,
+          flink: 2.1-SNAPSHOT,
           jdk: '17',
           branch: main
-        }, {
-          flink: 2.1.1,
-          jdk: '17',
-          branch: v4.0
         }, {
           flink: 2.0.1,
           jdk: '17',
@@ -48,7 +44,7 @@ jobs:
         }, {
           flink: 1.19.3,
           jdk: '8, 11, 17, 21',
-          branch: v3.2
+          branch: v3.3
         }]
     uses: apache/flink-connector-shared-utils/.github/workflows/ci.yml@ci_utils
     with:
