@@ -28,7 +28,7 @@ jobs:
   compile_and_test:
     strategy:
       matrix:
-        flink: [2.0.0]
+        flink: [2.0.1, 2.1.1]
         jdk: [ '17' ]
     uses: apache/flink-connector-shared-utils/.github/workflows/ci.yml@ci_utils
     with:
