@@ -44,7 +44,10 @@ public class FieldNamedPreparedStatementImpl implements FieldNamedPreparedStatem
     private final String query;
 
     private FieldNamedPreparedStatementImpl(
-            Connection connection, PreparedStatement statement, int[][] indexMapping, String query) {
+            Connection connection,
+            PreparedStatement statement,
+            int[][] indexMapping,
+            String query) {
         this.connection = connection;
         this.statement = statement;
         this.indexMapping = indexMapping;
