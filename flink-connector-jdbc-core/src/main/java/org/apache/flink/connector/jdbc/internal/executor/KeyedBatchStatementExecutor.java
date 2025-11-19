@@ -80,6 +80,11 @@ class KeyedBatchStatementExecutor<T, K> implements JdbcBatchStatementExecutor<T>
     }
 
     @Override
+    public String insertSql() {
+        return sql;
+    }
+
+    @Override
     public void closeStatements() throws SQLException {
         if (st != null) {
             st.close();

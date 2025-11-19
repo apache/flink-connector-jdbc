@@ -41,12 +41,19 @@ public class FieldNamedPreparedStatementImpl implements FieldNamedPreparedStatem
     private final Connection connection;
     private final PreparedStatement statement;
     private final int[][] indexMapping;
+    private final String query;
 
     private FieldNamedPreparedStatementImpl(
-            Connection connection, PreparedStatement statement, int[][] indexMapping) {
+            Connection connection, PreparedStatement statement, int[][] indexMapping, String query) {
         this.connection = connection;
         this.statement = statement;
         this.indexMapping = indexMapping;
+        this.query = query;
+    }
+
+    @Override
+    public String getQuery() {
+        return query;
     }
 
     @Override
@@ -237,7 +244,7 @@ public class FieldNamedPreparedStatementImpl implements FieldNamedPreparedStatem
         }
 
         return new FieldNamedPreparedStatementImpl(
-                connection, connection.prepareStatement(parsedSQL), indexMapping);
+                connection, connection.prepareStatement(parsedSQL), indexMapping, parsedSQL);
     }
 
     /**
