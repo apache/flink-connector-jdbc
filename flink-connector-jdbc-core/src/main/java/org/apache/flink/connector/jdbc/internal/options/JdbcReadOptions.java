@@ -33,6 +33,7 @@ public class JdbcReadOptions implements Serializable {
 
     private final int fetchSize;
     private final boolean autoCommit;
+    private final Integer parallelism;
 
     private JdbcReadOptions(
             String query,
@@ -41,7 +42,8 @@ public class JdbcReadOptions implements Serializable {
             Long partitionUpperBound,
             Integer numPartitions,
             int fetchSize,
-            boolean autoCommit) {
+            boolean autoCommit,
+            Integer parallelism) {
         this.query = query;
         this.partitionColumnName = partitionColumnName;
         this.partitionLowerBound = partitionLowerBound;
@@ -50,6 +52,7 @@ public class JdbcReadOptions implements Serializable {
 
         this.fetchSize = fetchSize;
         this.autoCommit = autoCommit;
+        this.parallelism = parallelism;
     }
 
     public Optional<String> getQuery() {
@@ -80,6 +83,10 @@ public class JdbcReadOptions implements Serializable {
         return autoCommit;
     }
 
+    public Integer getParallelism() {
+        return parallelism;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -94,7 +101,8 @@ public class JdbcReadOptions implements Serializable {
                     && Objects.equals(partitionUpperBound, options.partitionUpperBound)
                     && Objects.equals(numPartitions, options.numPartitions)
                     && Objects.equals(fetchSize, options.fetchSize)
-                    && Objects.equals(autoCommit, options.autoCommit);
+                    && Objects.equals(autoCommit, options.autoCommit)
+                    && Objects.equals(parallelism, options.parallelism);
         } else {
             return false;
         }
@@ -110,6 +118,7 @@ public class JdbcReadOptions implements Serializable {
 
         protected int fetchSize = 0;
         protected boolean autoCommit = true;
+        protected Integer scanParallelism;
 
         /** optional, SQL query statement for this JDBC source. */
         public Builder setQuery(String query) {
@@ -159,6 +168,12 @@ public class JdbcReadOptions implements Serializable {
             return this;
         }
 
+        /** optional, source scan parallelism. */
+        public Builder setParallelism(int scanParallelism) {
+            this.scanParallelism = scanParallelism;
+            return this;
+        }
+
         public JdbcReadOptions build() {
             return new JdbcReadOptions(
                     query,
@@ -167,7 +182,8 @@ public class JdbcReadOptions implements Serializable {
                     partitionUpperBound,
                     numPartitions,
                     fetchSize,
-                    autoCommit);
+                    autoCommit,
+                    scanParallelism);
         }
     }
 }
