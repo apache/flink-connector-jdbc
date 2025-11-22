@@ -124,13 +124,15 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
                 config.get(URL),
                 config.get(COMPATIBLE_MODE),
                 context.getClassLoader());
+        final String tableIdentifier = context.getObjectIdentifier().asSummaryString();
         return new JdbcDynamicTableSource(
                 getJdbcOptions(helper.getOptions(), context.getClassLoader()),
                 getJdbcReadOptions(helper.getOptions()),
                 helper.getOptions().get(LookupOptions.MAX_RETRIES),
                 getLookupCache(config),
                 helper.getOptions().get(FILTER_HANDLING_POLICY),
-                context.getPhysicalRowDataType());
+                context.getPhysicalRowDataType(),
+                tableIdentifier);
     }
 
     private static void validateDataTypeWithJdbcDialect(
