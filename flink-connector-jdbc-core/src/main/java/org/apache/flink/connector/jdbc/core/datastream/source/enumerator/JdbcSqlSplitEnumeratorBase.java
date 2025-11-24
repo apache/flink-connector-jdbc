@@ -29,13 +29,9 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.function.Supplier;
 
-/**
- * Base class for jdbc sql split enumerator.
- *
- * @param <SplitT> JDBC split type.
- */
+/** Base class for jdbc sql split enumerator. */
 @PublicEvolving
-public abstract class JdbcSqlSplitEnumeratorBase<SplitT> implements AutoCloseable, Serializable {
+public abstract class JdbcSqlSplitEnumeratorBase implements AutoCloseable, Serializable {
     private final char[] currentId = "0000000000".toCharArray();
 
     protected @Nullable Serializable optionalSqlSplitEnumeratorState;
@@ -73,20 +69,16 @@ public abstract class JdbcSqlSplitEnumeratorBase<SplitT> implements AutoCloseabl
     public abstract List<JdbcSourceSplit> enumerateSplits(@Nonnull Supplier<Boolean> splitGettable)
             throws IOException;
 
-    /**
-     * A provider to create or restore a JDBC sql splits enumerator.
-     *
-     * @param <SplitT> Split type.
-     */
+    /** A provider to create or restore a JDBC sql splits enumerator. */
     @PublicEvolving
-    public interface Provider<SplitT> extends Serializable {
+    public interface Provider extends Serializable {
 
         /**
          * Called when init the provider without state.
          *
          * @return An instance of {@link JdbcSqlSplitEnumeratorBase}.
          */
-        JdbcSqlSplitEnumeratorBase<SplitT> create();
+        JdbcSqlSplitEnumeratorBase create();
 
         /**
          * Called when restore the provider without state.
@@ -94,8 +86,7 @@ public abstract class JdbcSqlSplitEnumeratorBase<SplitT> implements AutoCloseabl
          * @param optionalSqlSplitEnumeratorState The state defined by users.
          * @return An instance of {@link JdbcSqlSplitEnumeratorBase}.
          */
-        JdbcSqlSplitEnumeratorBase<SplitT> restore(
-                @Nullable Serializable optionalSqlSplitEnumeratorState);
+        JdbcSqlSplitEnumeratorBase restore(@Nullable Serializable optionalSqlSplitEnumeratorState);
     }
 
     public void open() {}

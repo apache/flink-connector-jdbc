@@ -71,7 +71,7 @@ public class JdbcSource<OUT>
     private final @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings;
 
     private final Configuration configuration;
-    private final JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> sqlSplitEnumeratorProvider;
+    private final JdbcSqlSplitEnumeratorBase.Provider sqlSplitEnumeratorProvider;
 
     protected JdbcConnectionProvider connectionProvider;
     private final ResultExtractor<OUT> resultExtractor;
@@ -80,7 +80,7 @@ public class JdbcSource<OUT>
     JdbcSource(
             Configuration configuration,
             JdbcConnectionProvider connectionProvider,
-            JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> sqlSplitEnumeratorProvider,
+            JdbcSqlSplitEnumeratorBase.Provider sqlSplitEnumeratorProvider,
             ResultExtractor<OUT> resultExtractor,
             TypeInformation<OUT> typeInformation,
             @Nullable DeliveryGuarantee deliveryGuarantee,
@@ -167,7 +167,7 @@ public class JdbcSource<OUT>
     // ---- Visible for testing methods. ---
 
     @VisibleForTesting
-    public JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> getSqlSplitEnumeratorProvider() {
+    public JdbcSqlSplitEnumeratorBase.Provider getSqlSplitEnumeratorProvider() {
         return sqlSplitEnumeratorProvider;
     }
 

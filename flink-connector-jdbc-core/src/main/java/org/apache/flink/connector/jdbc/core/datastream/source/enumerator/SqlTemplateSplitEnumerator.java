@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /** A split enumerator based on sql-parameters grains. */
-public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> {
+public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase {
 
     public static final Logger LOG = LoggerFactory.getLogger(SqlTemplateSplitEnumerator.class);
 
@@ -106,7 +106,7 @@ public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase
 
     /** The {@link TemplateSqlSplitEnumeratorProvider} for {@link SqlTemplateSplitEnumerator}. */
     public static class TemplateSqlSplitEnumeratorProvider
-            implements JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> {
+            implements JdbcSqlSplitEnumeratorBase.Provider {
 
         private String sqlTemplate;
 
@@ -135,13 +135,13 @@ public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase
         }
 
         @Override
-        public JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> create() {
+        public JdbcSqlSplitEnumeratorBase create() {
             return new SqlTemplateSplitEnumerator(
                     this.optionalSqlSplitEnumeratorState, sqlTemplate, parameterValuesProvider);
         }
 
         @Override
-        public JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> restore(
+        public JdbcSqlSplitEnumeratorBase restore(
                 @Nullable Serializable optionalSqlSplitEnumeratorState) {
             return new SqlTemplateSplitEnumerator(
                     optionalSqlSplitEnumeratorState, sqlTemplate, parameterValuesProvider);

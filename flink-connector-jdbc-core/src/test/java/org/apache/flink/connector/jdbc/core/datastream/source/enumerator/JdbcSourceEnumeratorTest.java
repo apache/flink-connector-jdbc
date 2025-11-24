@@ -108,7 +108,7 @@ class JdbcSourceEnumeratorTest {
 
         return new JdbcSourceEnumerator(
                 context,
-                new JdbcSqlSplitEnumeratorBase<JdbcSourceSplit>(null) {
+                new JdbcSqlSplitEnumeratorBase(null) {
                     @Override
                     public @Nonnull List<JdbcSourceSplit> enumerateSplits(
                             @Nonnull Supplier<Boolean> splitGettable) throws IOException {

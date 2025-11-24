@@ -50,12 +50,12 @@ public class JdbcSourceEnumerator
     private final Boundedness boundedness;
     private final LinkedHashMap<Integer, String> readersAwaitingSplit;
     private final List<JdbcSourceSplit> unassigned;
-    private final JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> sqlSplitEnumerator;
+    private final JdbcSqlSplitEnumeratorBase sqlSplitEnumerator;
     private final @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings;
 
     public JdbcSourceEnumerator(
             SplitEnumeratorContext<JdbcSourceSplit> context,
-            JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> sqlSplitEnumerator,
+            JdbcSqlSplitEnumeratorBase sqlSplitEnumerator,
             ContinuousUnBoundingSettings continuousUnBoundingSettings,
             List<JdbcSourceSplit> unassigned) {
         this.context = Preconditions.checkNotNull(context);
