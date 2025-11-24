@@ -59,6 +59,14 @@ public interface JdbcDialect extends Serializable {
     String getLimitClause(long limit);
 
     /**
+     * Get the way of add limit clause.
+     * @param query origin query sql
+     * @param limit number of row to emit. The value of the parameter should be non-negative.
+     * @return the entire sql after adding limit clause.
+     */
+    String addLimitClause(String query, long limit);
+
+    /**
      * Check if this dialect instance support a specific data type in table schema.
      *
      * @param rowType the physical table datatype of a row in the database table.
@@ -154,4 +162,5 @@ public interface JdbcDialect extends Serializable {
     default String appendDefaultUrlProperties(String url) {
         return url;
     }
+
 }
