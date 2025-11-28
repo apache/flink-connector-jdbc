@@ -87,7 +87,7 @@ public class JdbcSourceEnumerator
         } else {
             context.callAsync(
                     () ->
-                            splitterEnumerator.hasFinishSplits()
+                            splitterEnumerator.isAllSplitsFinished()
                                     ? Collections.emptyList()
                                     : splitterEnumerator.enumerateSplits(),
                     (List<JdbcSourceSplit> splits, Throwable error) ->

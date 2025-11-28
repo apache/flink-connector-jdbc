@@ -114,7 +114,7 @@ class JdbcSourceEnumeratorTest {
                     public void close() {}
 
                     @Override
-                    public boolean hasFinishSplits() {
+                    public boolean isAllSplitsFinished() {
                         return false;
                     }
 

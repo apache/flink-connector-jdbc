@@ -44,7 +44,7 @@ public class PreparedSplitterEnumerator implements SplitterEnumerator {
 
     private final String sqlTemplate;
     private final Serializable[][] sqlParameters;
-    private Boolean finished;
+    private boolean finished;
 
     protected PreparedSplitterEnumerator(String sqlTemplate, Serializable[][] sqlParameters) {
         this.sqlTemplate = Preconditions.checkNotNull(sqlTemplate);
@@ -68,7 +68,7 @@ public class PreparedSplitterEnumerator implements SplitterEnumerator {
     public void close() {}
 
     @Override
-    public boolean hasFinishSplits() {
+    public boolean isAllSplitsFinished() {
         return this.finished;
     }
 

@@ -52,7 +52,7 @@ public class SlideTimingSplitterEnumerator extends PreparedSplitterEnumerator {
     }
 
     @Override
-    public boolean hasFinishSplits() {
+    public boolean isAllSplitsFinished() {
         return false;
     }
 
