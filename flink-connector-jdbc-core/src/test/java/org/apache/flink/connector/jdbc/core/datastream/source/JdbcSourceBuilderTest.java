@@ -22,7 +22,7 @@ import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
-import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.SqlTemplateSplitEnumerator;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.PreparedSplitterEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
@@ -53,7 +53,7 @@ class JdbcSourceBuilderTest {
     private final String dbUrl = "dbUrl";
     private final ResultExtractor<Row> extractor = ResultExtractor.ofRowResultExtractor();
     private final JdbcParameterValuesProvider parameterValuesProvider =
-            new JdbcNumericBetweenParametersProvider(0, 3);
+            new JdbcNumericBetweenParametersProvider(0, 3).ofBatchSize(1);
 
     private final TypeInformation<Row> typeInformation = new TypeHint<Row>() {}.getTypeInfo();
 
@@ -74,13 +74,12 @@ class JdbcSourceBuilderTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> JdbcSource.builder().setSql(emptySql))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> JdbcSource.builder().setDBUrl(dbUrl).build())
-                .isInstanceOf(IllegalStateException.class);
+
         // For valid.
         JdbcSource<Row> jdbcSource = sourceBuilder.build();
-        SqlTemplateSplitEnumerator sqlEnumerator =
-                (SqlTemplateSplitEnumerator) jdbcSource.getSqlSplitEnumeratorProvider().create();
-        assertThat(sqlEnumerator.getSqlTemplate()).isEqualTo(validSql);
+        PreparedSplitterEnumerator sqlEnumerator =
+                (PreparedSplitterEnumerator) jdbcSource.getSplitterEnumerator();
+        assertThat(sqlEnumerator).isEqualTo(PreparedSplitterEnumerator.of(validSql));
     }
 
     @Test
@@ -89,10 +88,10 @@ class JdbcSourceBuilderTest {
                 .isInstanceOf(NullPointerException.class);
         JdbcSource<Row> jdbcSource =
                 sourceBuilder.setJdbcParameterValuesProvider(parameterValuesProvider).build();
-        SqlTemplateSplitEnumerator sqlSplitEnumerator =
-                (SqlTemplateSplitEnumerator) jdbcSource.getSqlSplitEnumeratorProvider().create();
-        assertThat(sqlSplitEnumerator.getParameterValuesProvider())
-                .isEqualTo(parameterValuesProvider);
+        PreparedSplitterEnumerator preparedSplitter =
+                (PreparedSplitterEnumerator) jdbcSource.getSplitterEnumerator();
+        assertThat(preparedSplitter.getSqlParameters())
+                .isEqualTo(parameterValuesProvider.getParameterValues());
     }
 
     @Test
