@@ -37,3 +37,4 @@ tools/flink
 tools/flink-*
 tools/releasing/release
 tools/japicmp-output
+.vscode/
