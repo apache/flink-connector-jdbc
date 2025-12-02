@@ -42,7 +42,11 @@ public class PostgresMetadata implements DatabaseMetadata {
     public PostgresMetadata(JdbcDatabaseContainer<?> container, boolean hasXaEnabled) {
         this.username = container.getUsername();
         this.password = container.getPassword();
-        this.url = container.getJdbcUrl();
+        String baseUrl = container.getJdbcUrl();
+        this.url =
+                baseUrl.contains("?")
+                        ? baseUrl + "&stringtype=unspecified"
+                        : baseUrl + "?stringtype=unspecified";
         this.driver = container.getDriverClassName();
         this.version = container.getDockerImageName();
         this.xaEnabled = hasXaEnabled;

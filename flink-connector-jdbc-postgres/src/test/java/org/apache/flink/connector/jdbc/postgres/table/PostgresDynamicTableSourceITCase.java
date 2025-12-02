@@ -44,6 +44,8 @@ class PostgresDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
         return tableRow(
                 "jdbDynamicTableSource",
                 field("id", DataTypes.BIGINT().notNull()),
+                // uuid test field
+                field("uid_col", dbType("uuid"), DataTypes.STRING().notNull()),
                 field("decimal_col", DataTypes.DECIMAL(10, 4)),
                 field("timestamp6_col", DataTypes.TIMESTAMP(6)),
                 // other fields
@@ -53,9 +55,14 @@ class PostgresDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
     }
 
     protected List<Row> getTestData() {
+
+        String uuid1 = "123e4567-e89b-12d3-a456-426614174000";
+        String uuid2 = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+
         return Arrays.asList(
                 Row.of(
                         1L,
+                        uuid1,
                         BigDecimal.valueOf(100.1234),
                         LocalDateTime.parse("2020-01-01T15:35:00.123456"),
                         1.175E-37F,
@@ -63,6 +70,7 @@ class PostgresDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
                         LocalTime.parse("15:35")),
                 Row.of(
                         2L,
+                        uuid2,
                         BigDecimal.valueOf(101.1234),
                         LocalDateTime.parse("2020-01-01T15:36:01.123456"),
                         -1.175E-37F,

@@ -173,7 +173,7 @@ public abstract class AbstractDialectConverter implements JdbcDialectConverter {
                                 : TimestampData.fromTimestamp((Timestamp) val);
             case CHAR:
             case VARCHAR:
-                return val -> StringData.fromString((String) val);
+                return val -> StringData.fromString(val == null ? null : val.toString());
             case BINARY:
             case VARBINARY:
                 return val -> val;
