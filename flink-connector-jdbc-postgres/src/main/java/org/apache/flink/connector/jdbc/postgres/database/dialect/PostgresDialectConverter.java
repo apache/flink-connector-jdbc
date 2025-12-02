@@ -28,7 +28,7 @@ import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
 
 import java.lang.reflect.Array;
-
+import java.util.UUID;
 /**
  * Runtime converter that responsible to convert between JDBC object and Flink internal object for
  * PostgreSQL.

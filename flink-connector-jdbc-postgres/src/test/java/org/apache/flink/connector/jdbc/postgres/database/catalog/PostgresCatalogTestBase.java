@@ -55,6 +55,7 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
     protected static final String TABLE_PRIMITIVE_TYPE2 = "primitive_table2";
     protected static final String TABLE_ARRAY_TYPE = "array_table";
     protected static final String TABLE_SERIAL_TYPE = "serial_table";
+    protected static final String TABLE_UUID_TYPE = "uuid_table";
 
     protected static String baseUrl;
     protected static PostgresCatalog catalog;
@@ -108,6 +109,9 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
         createTable(
                 PostgresTablePath.fromFlinkTableName(TABLE_SERIAL_TYPE),
                 getSerialTable().pgSchemaSql);
+        createTable(
+                PostgresTablePath.fromFlinkTableName(TABLE_UUID_TYPE),
+                getUuidTable().pgSchemaSql);
 
         executeSQL(
                 PostgresCatalog.DEFAULT_DATABASE,
@@ -126,6 +130,10 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
                 PostgresCatalog.DEFAULT_DATABASE,
                 String.format(
                         "insert into %s values (%s);", TABLE_SERIAL_TYPE, getSerialTable().values));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format(
+                        "insert into %s values (%s);", TABLE_UUID_TYPE, getUuidTable().values));
     }
 
     @AfterAll
@@ -162,6 +170,10 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
                 PostgresCatalog.DEFAULT_DATABASE,
                 String.format(
                         "DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE_SERIAL_TYPE)));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format(
+                        "DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE_UUID_TYPE)));
     }
 
     public static void createTable(PostgresTablePath tablePath, String tableSchemaSql)
@@ -392,5 +404,21 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
                         + "2147483647,"
                         + "9223372036854775807,"
                         + "9223372036854775807");
+    }
+
+    public static TestTable getUuidTable() {
+        String uuid1 = "123e4567-e89b-12d3-a456-426614174000";
+
+        return new TestTable(
+                Schema.newBuilder()
+                        .column("id", DataTypes.INT())
+                        .column("uid_col", DataTypes.VARCHAR(36))
+                        .build(),
+                "id INT, "
+                        + "uid_col UUID",
+                String.format(
+                        "1, '%s'",
+                        uuid1)
+        );
     }
 }
