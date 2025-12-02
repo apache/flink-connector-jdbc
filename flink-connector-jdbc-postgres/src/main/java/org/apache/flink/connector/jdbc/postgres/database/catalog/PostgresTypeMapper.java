@@ -84,6 +84,8 @@ public class PostgresTypeMapper implements JdbcCatalogTypeMapper {
     private static final String PG_CHARACTER_ARRAY = "_character";
     private static final String PG_CHARACTER_VARYING = "varchar";
     private static final String PG_CHARACTER_VARYING_ARRAY = "_varchar";
+    private static final String PG_UUID = "uuid";
+    private static final String PG_UUID_ARRAY = "_uuid";
 
     @Override
     public DataType mapping(ObjectPath tablePath, ResultSetMetaData metadata, int colIndex)
@@ -176,6 +178,10 @@ public class PostgresTypeMapper implements JdbcCatalogTypeMapper {
                 return DataTypes.DATE();
             case PG_DATE_ARRAY:
                 return DataTypes.ARRAY(DataTypes.DATE());
+            case PG_UUID:
+                return DataTypes.VARCHAR(36);
+            case PG_UUID_ARRAY:
+                return DataTypes.ARRAY(DataTypes.VARCHAR(36));
             default:
                 return null;
         }

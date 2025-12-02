@@ -73,7 +73,8 @@ class PostgresCatalogTest extends PostgresCatalogTestBase {
                                 "public.serial_table",
                                 "public.t1",
                                 "public.t4",
-                                "public.t5"));
+                                "public.t5",
+                                "public.uuid_table"));
 
         actual = catalog.listTables(TEST_DB);
 
@@ -185,5 +186,13 @@ class PostgresCatalogTest extends PostgresCatalogTestBase {
                         new ObjectPath(PostgresCatalog.DEFAULT_DATABASE, TABLE_SERIAL_TYPE));
 
         assertThat(table.getUnresolvedSchema()).isEqualTo(getSerialTable().schema);
+    }
+
+    @Test
+    void testUuidDataTypes() throws TableNotExistException {
+        CatalogBaseTable table =
+                catalog.getTable(
+                        new ObjectPath(PostgresCatalog.DEFAULT_DATABASE, TABLE_UUID_TYPE));
+        assertThat(table.getUnresolvedSchema()).isEqualTo(getUuidTable().schema);
     }
 }
