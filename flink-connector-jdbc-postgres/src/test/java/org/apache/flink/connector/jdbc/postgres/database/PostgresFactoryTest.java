@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,7 +42,7 @@ class PostgresFactoryTest implements PostgresTestBase {
 
     protected static String baseUrl;
     protected static JdbcCatalog catalog;
-
+    protected static final String DATABASE_OPTIONS = "stringtype=unspecified";
     protected static final String TEST_CATALOG_NAME = "mypg";
 
     @BeforeEach
@@ -58,6 +59,7 @@ class PostgresFactoryTest implements PostgresTestBase {
                         PostgresCatalog.DEFAULT_DATABASE,
                         getMetadata().getUsername(),
                         getMetadata().getPassword(),
+                        DATABASE_OPTIONS,
                         baseUrl,
                         null);
     }
@@ -70,6 +72,7 @@ class PostgresFactoryTest implements PostgresTestBase {
                 JdbcCatalogFactoryOptions.DEFAULT_DATABASE.key(), PostgresCatalog.DEFAULT_DATABASE);
         options.put(JdbcCatalogFactoryOptions.USERNAME.key(), getMetadata().getUsername());
         options.put(JdbcCatalogFactoryOptions.PASSWORD.key(), getMetadata().getPassword());
+        options.put(JdbcCatalogFactoryOptions.DATABASE_OPTIONS.key(), DATABASE_OPTIONS);
         options.put(JdbcCatalogFactoryOptions.BASE_URL.key(), baseUrl);
 
         final Catalog actualCatalog =

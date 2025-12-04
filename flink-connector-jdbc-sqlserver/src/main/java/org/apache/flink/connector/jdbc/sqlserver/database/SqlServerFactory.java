@@ -44,6 +44,7 @@ public class SqlServerFactory implements JdbcFactory {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl) {
         throw new UnsupportedOperationException("Catalog for SqlServer is not supported yet.");
     }

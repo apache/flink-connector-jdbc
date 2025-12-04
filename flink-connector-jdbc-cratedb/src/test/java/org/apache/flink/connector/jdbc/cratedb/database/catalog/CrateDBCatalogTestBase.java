@@ -44,6 +44,7 @@ class CrateDBCatalogTestBase implements JdbcITCaseBase, CrateDBTestBase {
     public static final Logger LOG = LoggerFactory.getLogger(CrateDBCatalogTestBase.class);
 
     protected static final String TEST_CATALOG_NAME = "mycratedb";
+    protected static final String DATABASE_OPTIONS = "";
     protected static final String TEST_USERNAME = CONTAINER.getUsername();
     protected static final String TEST_PWD = CONTAINER.getPassword();
     protected static final String TEST_SCHEMA = "test_schema";
@@ -74,6 +75,7 @@ class CrateDBCatalogTestBase implements JdbcITCaseBase, CrateDBTestBase {
                         CrateDBCatalog.DEFAULT_DATABASE,
                         TEST_USERNAME,
                         TEST_PWD,
+                        DATABASE_OPTIONS,
                         baseUrl);
 
         // create test tables

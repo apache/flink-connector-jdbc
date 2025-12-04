@@ -53,6 +53,7 @@ public abstract class OceanBaseCatalogITCaseBase implements JdbcITCaseBase, Data
     private final String catalogName;
     private final OceanBaseCompatibleMode compatibleMode;
     private final String defaultDatabase;
+    private static final String DATABASE_OPTIONS = ""; // "?serverTimezone=Asia/Seoul";
 
     public OceanBaseCatalogITCaseBase(
             String catalogName, OceanBaseCompatibleMode compatibleMode, String defaultDatabase) {
@@ -90,11 +91,12 @@ public abstract class OceanBaseCatalogITCaseBase implements JdbcITCaseBase, Data
                         catalogName,
                         compatibleMode,
                         defaultDatabase,
+                        getMetadata().getUsername(),
+                        getMetadata().getPassword(),
+                        DATABASE_OPTIONS,
                         getMetadata()
                                 .getJdbcUrl()
-                                .substring(0, getMetadata().getJdbcUrl().lastIndexOf("/")),
-                        getBriefAuthProperties(
-                                getMetadata().getUsername(), getMetadata().getPassword()));
+                                .substring(0, getMetadata().getJdbcUrl().lastIndexOf("/")));
 
         tEnv = TableEnvironment.create(EnvironmentSettings.inStreamingMode());
         tEnv.getConfig().set(TABLE_EXEC_RESOURCE_DEFAULT_PARALLELISM, 1);

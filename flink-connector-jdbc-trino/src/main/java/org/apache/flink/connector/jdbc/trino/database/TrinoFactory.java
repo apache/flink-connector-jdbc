@@ -44,6 +44,7 @@ public class TrinoFactory implements JdbcFactory {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl) {
         throw new UnsupportedOperationException("Catalog for Trino is not supported yet.");
     }

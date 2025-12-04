@@ -45,8 +45,9 @@ public class CrateDBFactory implements JdbcFactory {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl) {
         return new CrateDBCatalog(
-                classLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+                classLoader, catalogName, defaultDatabase, username, pwd, dbOptions, baseUrl);
     }
 }

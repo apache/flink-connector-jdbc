@@ -34,6 +34,7 @@ public class JdbcConnectionOptions implements Serializable {
 
     public static final String USER_KEY = "user";
     public static final String PASSWORD_KEY = "password";
+    public static final String DATABASE_OPTIONS = "database-options";
 
     private static final long serialVersionUID = 1L;
 
@@ -81,6 +82,14 @@ public class JdbcConnectionOptions implements Serializable {
     @Nonnull
     public Properties getProperties() {
         return properties;
+    }
+
+    @Nonnull
+    public static Properties addDataBaseOptions(Properties result, String dbOptions) {
+        if (Objects.nonNull(dbOptions)) {
+            result.put(DATABASE_OPTIONS, dbOptions);
+        }
+        return result;
     }
 
     @Nonnull

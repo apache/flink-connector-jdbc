@@ -36,6 +36,7 @@ import static org.apache.flink.connector.jdbc.core.database.catalog.factory.Jdbc
 import static org.apache.flink.connector.jdbc.core.database.catalog.factory.JdbcCatalogFactoryOptions.DEFAULT_DATABASE;
 import static org.apache.flink.connector.jdbc.core.database.catalog.factory.JdbcCatalogFactoryOptions.PASSWORD;
 import static org.apache.flink.connector.jdbc.core.database.catalog.factory.JdbcCatalogFactoryOptions.USERNAME;
+import static org.apache.flink.connector.jdbc.core.database.catalog.factory.JdbcCatalogFactoryOptions.DATABASE_OPTIONS;
 import static org.apache.flink.table.factories.FactoryUtil.PROPERTY_VERSION;
 
 /** Factory for {@link JdbcCatalog}. */
@@ -61,6 +62,7 @@ public class JdbcCatalogFactory implements CatalogFactory {
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         final Set<ConfigOption<?>> options = new HashSet<>();
+        options.add(DATABASE_OPTIONS);
         options.add(PROPERTY_VERSION);
         options.add(COMPATIBLE_MODE);
         return options;
@@ -78,6 +80,7 @@ public class JdbcCatalogFactory implements CatalogFactory {
                 helper.getOptions().get(JdbcCatalogFactoryOptions.DEFAULT_DATABASE),
                 helper.getOptions().get(JdbcCatalogFactoryOptions.USERNAME),
                 helper.getOptions().get(JdbcCatalogFactoryOptions.PASSWORD),
+                helper.getOptions().get(JdbcCatalogFactoryOptions.DATABASE_OPTIONS),
                 helper.getOptions().get(JdbcCatalogFactoryOptions.BASE_URL),
                 helper.getOptions().get(JdbcCatalogFactoryOptions.COMPATIBLE_MODE));
     }
