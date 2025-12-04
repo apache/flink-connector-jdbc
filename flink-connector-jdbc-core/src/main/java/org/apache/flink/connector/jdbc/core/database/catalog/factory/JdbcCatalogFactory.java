@@ -80,8 +80,8 @@ public class JdbcCatalogFactory implements CatalogFactory {
                 helper.getOptions().get(JdbcCatalogFactoryOptions.DEFAULT_DATABASE),
                 helper.getOptions().get(JdbcCatalogFactoryOptions.USERNAME),
                 helper.getOptions().get(JdbcCatalogFactoryOptions.PASSWORD),
+                helper.getOptions().get(JdbcCatalogFactoryOptions.DATABASE_OPTIONS),
                 helper.getOptions().get(JdbcCatalogFactoryOptions.BASE_URL),
-                helper.getOptions().get(JdbcCatalogFactoryOptions.COMPATIBLE_MODE),
-                helper.getOptions().get(JdbcCatalogFactoryOptions.DATABASE_OPTIONS));
+                helper.getOptions().get(JdbcCatalogFactoryOptions.COMPATIBLE_MODE));
     }
 }

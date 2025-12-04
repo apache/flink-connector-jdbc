@@ -110,7 +110,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
                 catalogName,
                 defaultDatabase,
                 baseUrl,
-                addDBOptions(getBriefAuthProperties(username, pwd), dbOptions));
+                addDataBaseOptions(getBriefAuthProperties(username, pwd), dbOptions));
     }
 
     public AbstractJdbcCatalog(

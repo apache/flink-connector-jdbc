@@ -44,6 +44,20 @@ public class Db2Factory implements JdbcFactory {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
+            String baseUrl,
+            String compatibleMode) {
+        return JdbcFactory.super.createCatalog(classLoader, catalogName, defaultDatabase, username, pwd, dbOptions, baseUrl, compatibleMode);
+    }
+
+    @Override
+    public JdbcCatalog createCatalog(
+            ClassLoader classLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String dbOptions,
             String baseUrl) {
         throw new UnsupportedOperationException("Catalog for DB2 is not supported yet.");
     }

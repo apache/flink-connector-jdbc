@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.addDataBaseOptions;
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 
 /** Catalog for CrateDB. */
@@ -70,23 +71,20 @@ public class CrateDBCatalog extends PostgresCatalog {
                 userClassLoader,
                 catalogName,
                 defaultDatabase,
-                dbOptions,
                 baseUrl,
-                getBriefAuthProperties(username, pwd));
+                addDataBaseOptions(getBriefAuthProperties(username, pwd), dbOptions));
     }
 
     public CrateDBCatalog(
             ClassLoader userClassLoader,
             String catalogName,
             String defaultDatabase,
-            String dbOptions,
             String baseUrl,
             Properties connecProperties) {
         super(
                 userClassLoader,
                 catalogName,
                 defaultDatabase,
-                dbOptions,
                 baseUrl,
                 new CrateDBTypeMapper(),
                 connecProperties);

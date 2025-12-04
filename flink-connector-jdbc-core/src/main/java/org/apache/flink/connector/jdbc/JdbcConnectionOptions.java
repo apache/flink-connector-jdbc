@@ -85,12 +85,10 @@ public class JdbcConnectionOptions implements Serializable {
     }
 
     @Nonnull
-    public static Properties addDBOptions(Properties result, String dbOptions) {
-
+    public static Properties addDataBaseOptions(Properties result, String dbOptions) {
         if (Objects.nonNull(dbOptions)) {
             result.put(DATABASE_OPTIONS, dbOptions);
         }
-
         return result;
     }
 

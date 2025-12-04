@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.addDBOptions;
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.addDataBaseOptions;
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 
 /** Catalog for PostgreSQL. */
@@ -91,7 +91,7 @@ public class PostgresCatalog extends AbstractJdbcCatalog {
                 catalogName,
                 defaultDatabase,
                 baseUrl,
-                addDBOptions(getBriefAuthProperties(username, pwd), dbOptions));
+                addDataBaseOptions(getBriefAuthProperties(username, pwd), dbOptions));
     }
 
     public PostgresCatalog(

@@ -68,6 +68,7 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase, DatabaseTest {
     private static final String TEST_CATALOG_NAME = "mysql_catalog";
     private static final String TEST_DB = "test";
     private static final String TEST_DB2 = "test2";
+    private static final String DATABASE_OPTIONS = "?serverTimezone=Asia/Seoul";
 
     private static final TableRow TABLE_ALL_TYPES = createTableAllTypeTable("t_all_types");
     private static final TableRow TABLE_ALL_TYPES_SINK =
@@ -304,7 +305,7 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase, DatabaseTest {
                         TEST_DB,
                         getMetadata().getUsername(),
                         getMetadata().getPassword(),
-                        null,
+                        DATABASE_OPTIONS,
                         getMetadata()
                                 .getJdbcUrl()
                                 .substring(0, getMetadata().getJdbcUrl().lastIndexOf("/")));

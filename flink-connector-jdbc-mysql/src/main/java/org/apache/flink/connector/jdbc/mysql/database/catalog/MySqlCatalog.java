@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.addDataBaseOptions;
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 
 /** Catalog for MySQL. */
@@ -77,19 +78,17 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
                 userClassLoader,
                 catalogName,
                 defaultDatabase,
-                dbOptions,
                 baseUrl,
-                getBriefAuthProperties(username, pwd));
+                addDataBaseOptions(getBriefAuthProperties(username, pwd), dbOptions));
     }
 
     public MySqlCatalog(
             ClassLoader userClassLoader,
             String catalogName,
             String defaultDatabase,
-            String dbOptions,
             String baseUrl,
             Properties connectionProperties) {
-        super(userClassLoader, catalogName, defaultDatabase, dbOptions, baseUrl, connectionProperties);
+        super(userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
 
         String driverVersion =
                 Preconditions.checkNotNull(getDriverVersion(), "Driver version must not be null.");

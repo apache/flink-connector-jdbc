@@ -42,6 +42,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.addDataBaseOptions;
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 
 /** Catalog for OceanBase. */
@@ -77,9 +78,9 @@ public class OceanBaseCatalog extends AbstractJdbcCatalog {
                 catalogName,
                 compatibleMode,
                 defaultDatabase,
-                dbOptions,
                 baseUrl,
-                getBriefAuthProperties(username, pwd));
+                addDataBaseOptions(getBriefAuthProperties(username, pwd), dbOptions)
+        );
     }
 
     public OceanBaseCatalog(
@@ -87,10 +88,9 @@ public class OceanBaseCatalog extends AbstractJdbcCatalog {
             String catalogName,
             OceanBaseCompatibleMode compatibleMode,
             String defaultDatabase,
-            String dbOptions,
             String baseUrl,
             Properties connectionProperties) {
-        super(userClassLoader, catalogName, defaultDatabase, dbOptions, baseUrl, connectionProperties);
+        super(userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
         this.compatibleMode = compatibleMode;
         this.dialectTypeMapper = new OceanBaseTypeMapper(compatibleMode);
     }
