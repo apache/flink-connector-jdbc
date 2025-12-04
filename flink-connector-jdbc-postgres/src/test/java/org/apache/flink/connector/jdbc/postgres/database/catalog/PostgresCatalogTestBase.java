@@ -42,6 +42,7 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
     }
 
     protected static final String TEST_CATALOG_NAME = "mypg";
+    protected static final String DATABASE_OPTIONS = "stringtype=unspecified";
     protected static final String TEST_USERNAME = getStaticMetadata().getUsername();
     protected static final String TEST_PWD = getStaticMetadata().getPassword();
     protected static final String TEST_DB = "test";
@@ -73,6 +74,7 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
                         PostgresCatalog.DEFAULT_DATABASE,
                         TEST_USERNAME,
                         TEST_PWD,
+                        DATABASE_OPTIONS,
                         baseUrl);
 
         // create test database and schema

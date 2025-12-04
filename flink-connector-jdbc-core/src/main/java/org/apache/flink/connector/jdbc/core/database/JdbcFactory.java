@@ -70,6 +70,7 @@ public interface JdbcFactory {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl);
 
     default JdbcCatalog createCatalog(
@@ -78,10 +79,11 @@ public interface JdbcFactory {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl,
             String compatibleMode) {
         if (StringUtils.isNullOrWhitespaceOnly(compatibleMode)) {
-            return createCatalog(classLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+            return createCatalog(classLoader, catalogName, defaultDatabase, username, pwd, dbOptions, baseUrl);
         }
         throw new UnsupportedOperationException(
                 "Not supported option 'compatible-mode' with value: " + compatibleMode);

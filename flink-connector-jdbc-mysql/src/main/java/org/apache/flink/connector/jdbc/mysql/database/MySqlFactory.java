@@ -45,7 +45,8 @@ public class MySqlFactory implements JdbcFactory {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl) {
-        return new MySqlCatalog(classLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+        return new MySqlCatalog(classLoader, catalogName, defaultDatabase, username, pwd, dbOptions, baseUrl);
     }
 }

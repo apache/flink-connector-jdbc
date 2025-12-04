@@ -304,6 +304,7 @@ abstract class MySqlCatalogTestBase implements JdbcITCaseBase, DatabaseTest {
                         TEST_DB,
                         getMetadata().getUsername(),
                         getMetadata().getPassword(),
+                        null,
                         getMetadata()
                                 .getJdbcUrl()
                                 .substring(0, getMetadata().getJdbcUrl().lastIndexOf("/")));

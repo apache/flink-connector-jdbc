@@ -64,11 +64,13 @@ public class CrateDBCatalog extends PostgresCatalog {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl) {
         this(
                 userClassLoader,
                 catalogName,
                 defaultDatabase,
+                dbOptions,
                 baseUrl,
                 getBriefAuthProperties(username, pwd));
     }
@@ -77,12 +79,14 @@ public class CrateDBCatalog extends PostgresCatalog {
             ClassLoader userClassLoader,
             String catalogName,
             String defaultDatabase,
+            String dbOptions,
             String baseUrl,
             Properties connecProperties) {
         super(
                 userClassLoader,
                 catalogName,
                 defaultDatabase,
+                dbOptions,
                 baseUrl,
                 new CrateDBTypeMapper(),
                 connecProperties);

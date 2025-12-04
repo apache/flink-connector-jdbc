@@ -52,9 +52,10 @@ public class OceanBaseFactory implements JdbcFactory {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl) {
         return createCatalog(
-                classLoader, catalogName, defaultDatabase, username, pwd, baseUrl, null);
+                classLoader, catalogName, defaultDatabase, username, pwd, dbOptions, baseUrl, null);
     }
 
     @Override
@@ -64,6 +65,7 @@ public class OceanBaseFactory implements JdbcFactory {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl,
             String compatibleMode) {
         return new OceanBaseCatalog(
@@ -73,6 +75,7 @@ public class OceanBaseFactory implements JdbcFactory {
                 defaultDatabase,
                 username,
                 pwd,
+                dbOptions,
                 baseUrl);
     }
 }

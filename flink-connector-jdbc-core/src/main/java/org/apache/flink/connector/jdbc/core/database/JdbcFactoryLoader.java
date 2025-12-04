@@ -83,6 +83,28 @@ public final class JdbcFactoryLoader {
                         defaultDatabase,
                         username,
                         pwd,
+                        null,
+                        baseUrl,
+                        compatibleMode);
+    }
+
+    public static JdbcCatalog loadCatalog(
+            ClassLoader classLoader,
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String dbOptions,
+            String baseUrl,
+            String compatibleMode) {
+        return load(baseUrl, classLoader)
+                .createCatalog(
+                        classLoader,
+                        catalogName,
+                        defaultDatabase,
+                        username,
+                        pwd,
+                        dbOptions,
                         baseUrl,
                         compatibleMode);
     }

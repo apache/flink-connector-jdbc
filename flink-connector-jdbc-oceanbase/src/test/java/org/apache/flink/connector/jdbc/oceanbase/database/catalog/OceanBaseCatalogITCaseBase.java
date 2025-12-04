@@ -90,6 +90,7 @@ public abstract class OceanBaseCatalogITCaseBase implements JdbcITCaseBase, Data
                         catalogName,
                         compatibleMode,
                         defaultDatabase,
+                        null,
                         getMetadata()
                                 .getJdbcUrl()
                                 .substring(0, getMetadata().getJdbcUrl().lastIndexOf("/")),

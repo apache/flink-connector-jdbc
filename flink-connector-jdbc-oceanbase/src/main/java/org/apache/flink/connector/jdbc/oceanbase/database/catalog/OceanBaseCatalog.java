@@ -70,12 +70,14 @@ public class OceanBaseCatalog extends AbstractJdbcCatalog {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl) {
         this(
                 userClassLoader,
                 catalogName,
                 compatibleMode,
                 defaultDatabase,
+                dbOptions,
                 baseUrl,
                 getBriefAuthProperties(username, pwd));
     }
@@ -85,9 +87,10 @@ public class OceanBaseCatalog extends AbstractJdbcCatalog {
             String catalogName,
             OceanBaseCompatibleMode compatibleMode,
             String defaultDatabase,
+            String dbOptions,
             String baseUrl,
             Properties connectionProperties) {
-        super(userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
+        super(userClassLoader, catalogName, defaultDatabase, dbOptions, baseUrl, connectionProperties);
         this.compatibleMode = compatibleMode;
         this.dialectTypeMapper = new OceanBaseTypeMapper(compatibleMode);
     }

@@ -40,6 +40,9 @@ public class JdbcCatalogFactoryOptions {
 
     public static final ConfigOption<String> PASSWORD = JdbcConnectorOptions.PASSWORD;
 
+    public static final ConfigOption<String> DATABASE_OPTIONS =
+            ConfigOptions.key("database-options").stringType().defaultValue(null);
+
     public static final ConfigOption<String> BASE_URL =
             ConfigOptions.key("base-url").stringType().noDefaultValue();
 

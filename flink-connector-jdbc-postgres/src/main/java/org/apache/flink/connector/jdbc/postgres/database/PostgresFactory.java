@@ -45,8 +45,9 @@ public class PostgresFactory implements JdbcFactory {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl) {
         return new PostgresCatalog(
-                classLoader, catalogName, defaultDatabase, username, pwd, baseUrl);
+                classLoader, catalogName, defaultDatabase, username, pwd, dbOptions, baseUrl);
     }
 }

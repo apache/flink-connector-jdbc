@@ -71,11 +71,13 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl) {
         this(
                 userClassLoader,
                 catalogName,
                 defaultDatabase,
+                dbOptions,
                 baseUrl,
                 getBriefAuthProperties(username, pwd));
     }
@@ -84,9 +86,10 @@ public class MySqlCatalog extends AbstractJdbcCatalog {
             ClassLoader userClassLoader,
             String catalogName,
             String defaultDatabase,
+            String dbOptions,
             String baseUrl,
             Properties connectionProperties) {
-        super(userClassLoader, catalogName, defaultDatabase, baseUrl, connectionProperties);
+        super(userClassLoader, catalogName, defaultDatabase, dbOptions, baseUrl, connectionProperties);
 
         String driverVersion =
                 Preconditions.checkNotNull(getDriverVersion(), "Driver version must not be null.");

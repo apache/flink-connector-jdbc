@@ -75,9 +75,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Predicate;
 
-import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.PASSWORD_KEY;
-import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.USER_KEY;
-import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.*;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.PASSWORD;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.TABLE_NAME;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.URL;
@@ -105,13 +103,14 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl) {
         this(
                 userClassLoader,
                 catalogName,
                 defaultDatabase,
                 baseUrl,
-                getBriefAuthProperties(username, pwd));
+                addDBOptions(getBriefAuthProperties(username, pwd), dbOptions));
     }
 
     public AbstractJdbcCatalog(
@@ -129,8 +128,8 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
 
         this.userClassLoader = userClassLoader;
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
-        this.defaultUrl = getDatabaseUrl(defaultDatabase);
         this.connectionProperties = Preconditions.checkNotNull(connectionProperties);
+        this.defaultUrl = getDatabaseUrl(defaultDatabase);
         checkArgument(
                 !StringUtils.isNullOrWhitespaceOnly(connectionProperties.getProperty(USER_KEY)));
         checkArgument(
@@ -139,7 +138,26 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
     }
 
     protected String getDatabaseUrl(String databaseName) {
-        return baseUrl + databaseName;
+
+        if(this.connectionProperties.getProperty(DATABASE_OPTIONS) == null ||
+                this.connectionProperties.getProperty(DATABASE_OPTIONS).trim().isEmpty()) {
+            return baseUrl + databaseName;
+        }
+        String n_options =
+                this.connectionProperties.getProperty(DATABASE_OPTIONS).startsWith("?") ?
+                        this.connectionProperties.getProperty(DATABASE_OPTIONS) :
+                        "?" + this.connectionProperties.getProperty(DATABASE_OPTIONS);
+        String delimiter = databaseName.equals("db2") ? "&" : ";";
+        if(n_options.split(delimiter).length == 0) {
+            throw new IllegalArgumentException("Invalid JDBC parameter option: " + n_options);
+        }
+        for (String option : n_options.split(delimiter)) {
+            String[] item = option.split("=");
+            if (item.length != 2 || item[0].isEmpty() || item[1].isEmpty()) {
+                throw new IllegalArgumentException("Invalid JDBC parameter option: " + option);
+            }
+        }
+        return baseUrl + databaseName + n_options;
     }
 
     @Override

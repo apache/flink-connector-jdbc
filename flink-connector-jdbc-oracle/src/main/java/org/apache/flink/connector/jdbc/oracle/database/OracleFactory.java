@@ -44,6 +44,7 @@ public class OracleFactory implements JdbcFactory {
             String defaultDatabase,
             String username,
             String pwd,
+            String dbOptions,
             String baseUrl) {
         throw new UnsupportedOperationException("Catalog for Oracle is not supported yet.");
     }
