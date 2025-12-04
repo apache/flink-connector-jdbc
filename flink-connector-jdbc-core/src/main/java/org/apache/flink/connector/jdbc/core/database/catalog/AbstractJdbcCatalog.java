@@ -73,6 +73,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.PASSWORD_KEY;
@@ -92,10 +93,19 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 public abstract class AbstractJdbcCatalog extends AbstractCatalog implements JdbcCatalog {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractJdbcCatalog.class);
+    public static final String NO_DATABASES_HINT =
+            "No default database specified. Please set a database name.";
+    public static final String DATABASE_NOT_UNIQUE_HINT =
+            "Cannot uniquely identify the database name. \n"
+                    + "Please specify a database name using one of these methods: \n"
+                    + "\t (1) Match 'default-database' and database name in 'base-url'. \n"
+                    + "\t (2) Use only 'default-database' without database name in 'base-url'. \n "
+                    + "\t (3) Omit 'default-database' and include database name in 'base-url'.";
 
     protected final ClassLoader userClassLoader;
     protected final String baseUrl;
     protected final String defaultUrl;
+    protected final Function<String, String> urlFunction;
     protected final Properties connectionProperties;
 
     @Deprecated
@@ -120,26 +130,21 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
             String defaultDatabase,
             String baseUrl,
             Properties connectionProperties) {
-        super(catalogName, defaultDatabase);
+        super(catalogName, validateJdbcUrl(baseUrl, defaultDatabase));
 
         checkNotNull(userClassLoader);
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(baseUrl));
 
-        validateJdbcUrl(baseUrl);
-
         this.userClassLoader = userClassLoader;
+        this.urlFunction = calculateUrlFunction(baseUrl);
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
-        this.defaultUrl = getDatabaseUrl(defaultDatabase);
         this.connectionProperties = Preconditions.checkNotNull(connectionProperties);
+        this.defaultUrl = this.urlFunction.apply(defaultDatabase);
         checkArgument(
                 !StringUtils.isNullOrWhitespaceOnly(connectionProperties.getProperty(USER_KEY)));
         checkArgument(
                 !StringUtils.isNullOrWhitespaceOnly(
                         connectionProperties.getProperty(PASSWORD_KEY)));
-    }
-
-    protected String getDatabaseUrl(String databaseName) {
-        return baseUrl + databaseName;
     }
 
     @Override
@@ -274,7 +279,8 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
         String databaseName = tablePath.getDatabaseName();
 
         try (Connection conn =
-                DriverManager.getConnection(getDatabaseUrl(databaseName), connectionProperties)) {
+                DriverManager.getConnection(
+                        this.urlFunction.apply(databaseName), connectionProperties)) {
             DatabaseMetaData metaData = conn.getMetaData();
             Optional<UniqueConstraint> primaryKey =
                     getPrimaryKey(
@@ -315,7 +321,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
     protected Map<String, String> getOptions(ObjectPath tablePath) {
         Map<String, String> props = new HashMap<>();
         props.put(CONNECTOR.key(), IDENTIFIER);
-        props.put(URL.key(), getDatabaseUrl(tablePath.getDatabaseName()));
+        props.put(URL.key(), this.urlFunction.apply(tablePath.getDatabaseName()));
         props.put(USERNAME.key(), connectionProperties.getProperty(USER_KEY));
         props.put(PASSWORD.key(), connectionProperties.getProperty(PASSWORD_KEY));
         props.put(TABLE_NAME.key(), getSchemaTableName(tablePath));
@@ -576,14 +582,60 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
         throw new UnsupportedOperationException();
     }
 
+    private Function<String, String> calculateUrlFunction(String url) {
+        final String[] parts;
+        final int questionMarkIndex = url.indexOf('?');
+        if (questionMarkIndex == -1) {
+            parts = url.split("/+", 3);
+            return dbName -> parts.length == 3 ? url.trim() : url.trim() + "/" + dbName;
+        } else {
+            String withoutParams = url.substring(0, questionMarkIndex);
+            String prefix = withoutParams.substring(0, withoutParams.lastIndexOf('/') + 1);
+            return dbName ->
+                    dbName == null ? url : prefix + dbName + "?" + url.substring(questionMarkIndex);
+        }
+    }
+
     /**
      * URL has to be without database, like "jdbc:dialect://localhost:1234/" or
      * "jdbc:dialect://localhost:1234" rather than "jdbc:dialect://localhost:1234/db".
      */
-    protected static void validateJdbcUrl(String url) {
-        String[] parts = url.trim().split("\\/+");
+    protected static String validateJdbcUrl(String url, String defaultDatabase) {
+        String trimmedUrl = url.trim();
+        String processedUrl =
+                trimmedUrl.endsWith("/")
+                        ? trimmedUrl.substring(0, trimmedUrl.length() - 1)
+                        : trimmedUrl;
+        String[] parts = processedUrl.split("/+", 3);
+        String database;
 
-        checkArgument(parts.length == 2);
+        int questionMark = trimmedUrl.indexOf('?');
+        if (questionMark == -1) {
+            if (defaultDatabase == null) {
+                checkArgument(parts.length > 2, NO_DATABASES_HINT);
+                database = parts[2];
+            } else {
+                checkArgument(
+                        parts.length == 2
+                                || (parts.length == 3 && defaultDatabase.equals(parts[2])),
+                        DATABASE_NOT_UNIQUE_HINT);
+                database = defaultDatabase;
+            }
+        } else {
+            checkArgument(
+                    parts.length > 2 && !parts[2].startsWith("?"),
+                    "Please set a database name in base-url option.");
+            questionMark = parts[2].indexOf('?');
+            if (defaultDatabase == null) {
+                database = parts[2].substring(0, questionMark);
+            } else {
+                checkArgument(
+                        defaultDatabase.equals(parts[2].substring(0, questionMark)),
+                        DATABASE_NOT_UNIQUE_HINT);
+                database = defaultDatabase;
+            }
+        }
+        return database;
     }
 
     @Override
