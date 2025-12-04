@@ -75,7 +75,11 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Predicate;
 
-import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.*;
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.USER_KEY;
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.PASSWORD_KEY;
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.DATABASE_OPTIONS;
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
+import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.addDataBaseOptions;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.PASSWORD;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.TABLE_NAME;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.URL;
