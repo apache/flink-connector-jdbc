@@ -151,7 +151,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
                 this.connectionProperties.getProperty(DATABASE_OPTIONS).startsWith("?") ?
                         this.connectionProperties.getProperty(DATABASE_OPTIONS) :
                         "?" + this.connectionProperties.getProperty(DATABASE_OPTIONS);
-        String delimiter = databaseName.equals("db2") ? "&" : ";";
+        String delimiter = databaseName.equals("db2") ? ";" : "&";
         if(n_options.split(delimiter).length == 0) {
             throw new IllegalArgumentException("Invalid JDBC parameter option: " + n_options);
         }
