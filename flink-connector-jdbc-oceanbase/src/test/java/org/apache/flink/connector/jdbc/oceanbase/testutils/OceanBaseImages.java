@@ -20,5 +20,5 @@ package org.apache.flink.connector.jdbc.oceanbase.testutils;
 
 /** OceanBase docker images. */
 public interface OceanBaseImages {
-    String OCEANBASE_CE_4 = "oceanbase/oceanbase-ce:4.2.1-lts";
+    String OCEANBASE_CE_4 = "oceanbase/oceanbase-ce:4.3.3.1-101000012024102216";
 }

@@ -56,7 +56,10 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
                             "/root/boot/init.d/init.sql")
                     .waitingFor(
                             Wait.forLogMessage(".*boot success!.*", 1)
-                                    .withStartupTimeout(Duration.ofMinutes(3)))
+                                    .withStartupTimeout(Duration.ofMinutes(5)))
+                    .withMode(OceanBaseCEContainer.Mode.MINI)
+                    .withEnv("OB_DATAFILE_SIZE", "2G")
+                    .withEnv("OB_LOG_DISK_SIZE", "4G")
                     .withLogConsumer(new Slf4jLogConsumer(LOG));
 
     private static OceanBaseMetadata metadata;
