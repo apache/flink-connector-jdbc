@@ -149,6 +149,7 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
                 .addSink(new TestingSinkFunction());
         waitExpectation(client, env, () -> collectedRecords.size() >= TESTING_ENTRIES_SIZE);
 
+        assertThat(collectedRecords.size()).isEqualTo(testEntries.size());
         assertThat(collectedRecords).containsExactlyInAnyOrderElementsOf(testEntries);
     }
 

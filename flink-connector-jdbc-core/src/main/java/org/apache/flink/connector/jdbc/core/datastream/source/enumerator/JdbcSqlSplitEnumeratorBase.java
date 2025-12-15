@@ -34,6 +34,7 @@ import java.util.function.Supplier;
  *
  * @param <SplitT> JDBC split type.
  */
+@Deprecated
 @PublicEvolving
 public abstract class JdbcSqlSplitEnumeratorBase<SplitT> implements AutoCloseable, Serializable {
     private final char[] currentId = "0000000000".toCharArray();
@@ -78,6 +79,7 @@ public abstract class JdbcSqlSplitEnumeratorBase<SplitT> implements AutoCloseabl
      *
      * @param <SplitT> Split type.
      */
+    @Deprecated
     @PublicEvolving
     public interface Provider<SplitT> extends Serializable {
 

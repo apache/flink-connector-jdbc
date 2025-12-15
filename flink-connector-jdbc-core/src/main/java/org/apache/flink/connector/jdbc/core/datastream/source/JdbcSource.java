@@ -35,7 +35,8 @@ import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSou
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSourceEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSourceEnumeratorState;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSqlSplitEnumeratorBase;
-import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.SqlTemplateSplitEnumerator;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.JdbcSqlSplitterEnumerator;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.SplitterEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.JdbcSourceReader;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.JdbcSourceSplitReader;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
@@ -71,12 +72,13 @@ public class JdbcSource<OUT>
     private final @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings;
 
     private final Configuration configuration;
-    private final JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> sqlSplitEnumeratorProvider;
+    private final SplitterEnumerator splitterEnumerator;
 
     protected JdbcConnectionProvider connectionProvider;
     private final ResultExtractor<OUT> resultExtractor;
     private final DeliveryGuarantee deliveryGuarantee;
 
+    @Deprecated
     JdbcSource(
             Configuration configuration,
             JdbcConnectionProvider connectionProvider,
@@ -85,9 +87,27 @@ public class JdbcSource<OUT>
             TypeInformation<OUT> typeInformation,
             @Nullable DeliveryGuarantee deliveryGuarantee,
             @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings) {
+        this(
+                configuration,
+                connectionProvider,
+                new JdbcSqlSplitterEnumerator(sqlSplitEnumeratorProvider),
+                resultExtractor,
+                typeInformation,
+                deliveryGuarantee,
+                continuousUnBoundingSettings);
+    }
+
+    JdbcSource(
+            Configuration configuration,
+            JdbcConnectionProvider connectionProvider,
+            SplitterEnumerator splitterEnumerator,
+            ResultExtractor<OUT> resultExtractor,
+            TypeInformation<OUT> typeInformation,
+            @Nullable DeliveryGuarantee deliveryGuarantee,
+            @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings) {
         this.configuration = Preconditions.checkNotNull(configuration);
         this.connectionProvider = Preconditions.checkNotNull(connectionProvider);
-        this.sqlSplitEnumeratorProvider = Preconditions.checkNotNull(sqlSplitEnumeratorProvider);
+        this.splitterEnumerator = Preconditions.checkNotNull(splitterEnumerator);
         this.resultExtractor = Preconditions.checkNotNull(resultExtractor);
         this.deliveryGuarantee =
                 Objects.isNull(deliveryGuarantee) ? DeliveryGuarantee.NONE : deliveryGuarantee;
@@ -125,7 +145,8 @@ public class JdbcSource<OUT>
             SplitEnumeratorContext<JdbcSourceSplit> enumContext) throws Exception {
         return new JdbcSourceEnumerator(
                 enumContext,
-                sqlSplitEnumeratorProvider.create(),
+                splitterEnumerator,
+                connectionProvider,
                 continuousUnBoundingSettings,
                 new ArrayList<>());
     }
@@ -139,7 +160,8 @@ public class JdbcSource<OUT>
                 checkpoint.getOptionalUserDefinedSplitEnumeratorState();
         return new JdbcSourceEnumerator(
                 enumContext,
-                sqlSplitEnumeratorProvider.restore(optionalUserDefinedSplitEnumeratorState),
+                splitterEnumerator.restoreState(optionalUserDefinedSplitEnumeratorState),
+                connectionProvider,
                 continuousUnBoundingSettings,
                 checkpoint.getRemainingSplits());
     }
@@ -167,8 +189,8 @@ public class JdbcSource<OUT>
     // ---- Visible for testing methods. ---
 
     @VisibleForTesting
-    public JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> getSqlSplitEnumeratorProvider() {
-        return sqlSplitEnumeratorProvider;
+    public SplitterEnumerator getSplitterEnumerator() {
+        return splitterEnumerator;
     }
 
     @VisibleForTesting
@@ -204,7 +226,7 @@ public class JdbcSource<OUT>
         return boundedness == that.boundedness
                 && Objects.equals(typeInformation, that.typeInformation)
                 && Objects.equals(configuration, that.configuration)
-                && Objects.equals(sqlSplitEnumeratorProvider, that.sqlSplitEnumeratorProvider)
+                && Objects.equals(splitterEnumerator, that.splitterEnumerator)
                 && Objects.equals(connectionProvider, that.connectionProvider)
                 && Objects.equals(resultExtractor, that.resultExtractor)
                 && deliveryGuarantee == that.deliveryGuarantee
@@ -215,9 +237,8 @@ public class JdbcSource<OUT>
     public LineageVertex getLineageVertex() {
         DefaultTypeDatasetFacet defaultTypeDatasetFacet =
                 new DefaultTypeDatasetFacet(getTypeInformation());
-        SqlTemplateSplitEnumerator enumerator =
-                (SqlTemplateSplitEnumerator) sqlSplitEnumeratorProvider.create();
-        Optional<String> nameOpt = LineageUtils.tableNameOf(enumerator.getSqlTemplate(), true);
+        Optional<String> nameOpt =
+                LineageUtils.tableNameOf(splitterEnumerator.lineageQueries(), true);
         String namespace = LineageUtils.namespaceOf(connectionProvider);
         LineageDataset dataset =
                 LineageUtils.datasetOf(

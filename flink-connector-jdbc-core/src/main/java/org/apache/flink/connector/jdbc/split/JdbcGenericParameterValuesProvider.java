@@ -27,6 +27,7 @@ import java.io.Serializable;
  * This splits generator actually does nothing but wrapping the query parameters computed by the
  * user before creating the {@link JdbcInputFormat} instance.
  */
+@Deprecated
 @PublicEvolving
 public class JdbcGenericParameterValuesProvider implements JdbcParameterValuesProvider {
 

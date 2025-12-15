@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /** A split enumerator based on sql-parameters grains. */
+@Deprecated
 public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> {
 
     public static final Logger LOG = LoggerFactory.getLogger(SqlTemplateSplitEnumerator.class);
@@ -105,6 +106,7 @@ public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase
     }
 
     /** The {@link TemplateSqlSplitEnumeratorProvider} for {@link SqlTemplateSplitEnumerator}. */
+    @Deprecated
     public static class TemplateSqlSplitEnumeratorProvider
             implements JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> {
 
