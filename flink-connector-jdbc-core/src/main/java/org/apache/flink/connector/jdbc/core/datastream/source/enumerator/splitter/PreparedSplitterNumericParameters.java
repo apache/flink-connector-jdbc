@@ -16,63 +16,34 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.split;
+package org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.util.Preconditions;
 
 import java.io.Serializable;
 
 /**
- * This query parameters generator is an helper class to parameterize from/to queries on a numeric
- * column. The generated array of from/to values will be equally sized to fetchSize (apart from the
+ * This query parameters generator is a helper class to parameterize from/to queries on a numeric
+ * column. The generated array of from/to values will be equally sized to batchSize (apart from the
  * last one), ranging from minVal up to maxVal.
- *
- * <p>For example, if there's a table <CODE>BOOKS</CODE> with a numeric PK <CODE>id</CODE>, using a
- * query like:
- *
- * <PRE>
- * SELECT * FROM BOOKS WHERE id BETWEEN ? AND ?
- * </PRE>
- *
- * <p>You can take advantage of this class to automatically generate the parameters of the BETWEEN
- * clause, based on the passed constructor parameters.
  */
-@Deprecated
-public class JdbcNumericBetweenParametersProvider implements JdbcParameterValuesProvider {
+@Internal
+public class PreparedSplitterNumericParameters implements Serializable {
 
     private final long minVal;
     private final long maxVal;
-
     private long batchSize;
     private int batchNum;
 
-    /**
-     * NumericBetweenParametersProviderJdbc constructor.
-     *
-     * @param minVal the lower bound of the produced "from" values
-     * @param maxVal the upper bound of the produced "to" values
-     */
-    public JdbcNumericBetweenParametersProvider(long minVal, long maxVal) {
-        Preconditions.checkArgument(minVal <= maxVal, "minVal must not be larger than maxVal");
+    public PreparedSplitterNumericParameters(long minVal, long maxVal) {
         this.minVal = minVal;
         this.maxVal = maxVal;
+        this.batchNum = 0;
+        this.batchSize = 0;
     }
 
-    /**
-     * NumericBetweenParametersProviderJdbc constructor.
-     *
-     * @param fetchSize the max distance between the produced from/to pairs
-     * @param minVal the lower bound of the produced "from" values
-     * @param maxVal the upper bound of the produced "to" values
-     */
-    public JdbcNumericBetweenParametersProvider(long fetchSize, long minVal, long maxVal) {
-        Preconditions.checkArgument(minVal <= maxVal, "minVal must not be larger than maxVal");
-        this.minVal = minVal;
-        this.maxVal = maxVal;
-        ofBatchSize(fetchSize);
-    }
-
-    public JdbcNumericBetweenParametersProvider ofBatchSize(long batchSize) {
+    public PreparedSplitterNumericParameters withBatchSize(long batchSize) {
         Preconditions.checkArgument(batchSize > 0, "Batch size must be positive");
 
         long maxElemCount = (maxVal - minVal) + 1;
@@ -84,7 +55,7 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
         return this;
     }
 
-    public JdbcNumericBetweenParametersProvider ofBatchNum(int batchNum) {
+    public PreparedSplitterNumericParameters withBatchNum(int batchNum) {
         Preconditions.checkArgument(batchNum > 0, "Batch number must be positive");
 
         long maxElemCount = (maxVal - minVal) + 1;
@@ -96,11 +67,10 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
         return this;
     }
 
-    @Override
     public Serializable[][] getParameterValues() {
         Preconditions.checkState(
                 batchSize > 0,
-                "Batch size and batch number must be positive. Have you called `ofBatchSize` or `ofBatchNum`?");
+                "Batch size and batch number must be positive. Have you called `withBatchSize` or `withBatchNum`?");
 
         long maxElemCount = (maxVal - minVal) + 1;
         long bigBatchNum = maxElemCount - (batchSize - 1) * batchNum;
@@ -113,20 +83,5 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
             start = end + 1;
         }
         return parameters;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        JdbcNumericBetweenParametersProvider that = (JdbcNumericBetweenParametersProvider) o;
-        return minVal == that.minVal
-                && maxVal == that.maxVal
-                && batchSize == that.batchSize
-                && batchNum == that.batchNum;
     }
 }

@@ -24,7 +24,10 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSqlSplitEnumeratorBase;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.SqlTemplateSplitEnumerator;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.JdbcSqlSplitterEnumerator;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.SplitterEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
@@ -51,7 +54,7 @@ import java.util.Objects;
  *
  * <pre><code>
  * JdbcSource&lt;Row> source = JdbcSource.&lt;Row>builder()
- *           .setSql(validSql)
+ *           .setSplitter(PreparedSplitterEnumerator.of(validSql))
  *           .setResultExtractor(new RowResultExtractor())
  *           .setDBUrl(dbUrl)
  *           .setDriverName(driverName)
@@ -67,6 +70,7 @@ import java.util.Objects;
  *
  * <pre><code>
  *
+ * String query = "select * from books WHERE author = ?"
  * Serializable[][] queryParameters = new String[2][1];
  * queryParameters[0] = new String[]{"Kumar"};
  * queryParameters[1] = new String[]{"Tan Ah Teck"};
@@ -78,13 +82,12 @@ import java.util.Objects;
  *          .setUsername(username)
  * 			.setDriverName("org.apache.derby.jdbc.EmbeddedDriver")
  * 			.setDBUrl("jdbc:derby:memory:ebookshop")
- * 			.setSql("select * from books WHERE author = ?")
- * 			.setJdbcParameterValuesProvider(new JdbcGenericParameterValuesProvider(queryParameters))
+ *          .setSplitter(PreparedSplitterEnumerator.of(query, queryParameters))
  *          .build();
  * </code></pre>
  *
  * @see Row
- * @see JdbcParameterValuesProvider
+ * @see SplitterEnumerator
  * @see PreparedStatement
  * @see DriverManager
  * @see JdbcSource
@@ -118,7 +121,7 @@ public class JdbcSourceBuilder<OUT> {
     private JdbcParameterValuesProvider jdbcParameterValuesProvider;
     private @Nullable Serializable optionalSqlSplitEnumeratorState;
     private ResultExtractor<OUT> resultExtractor;
-
+    private SplitterEnumerator splitterEnumerator;
     private JdbcConnectionProvider connectionProvider;
 
     JdbcSourceBuilder() {
@@ -132,6 +135,12 @@ public class JdbcSourceBuilder<OUT> {
         this.autoCommit = true;
     }
 
+    public JdbcSourceBuilder<OUT> setSplitter(SplitterEnumerator splitterEnumerator) {
+        this.splitterEnumerator = splitterEnumerator;
+        return this;
+    }
+
+    @Deprecated
     public JdbcSourceBuilder<OUT> setSql(@Nonnull String sql) {
         Preconditions.checkArgument(
                 !StringUtils.isNullOrWhitespaceOnly(sql),
@@ -197,6 +206,7 @@ public class JdbcSourceBuilder<OUT> {
      * If the value was set as an instance of {@link JdbcSlideTimingParameterProvider}, it's
      * required to specify the {@link #continuousUnBoundingSettings}.
      */
+    @Deprecated
     public JdbcSourceBuilder<OUT> setJdbcParameterValuesProvider(
             @Nonnull JdbcParameterValuesProvider parameterValuesProvider) {
         this.jdbcParameterValuesProvider = Preconditions.checkNotNull(parameterValuesProvider);
@@ -289,36 +299,52 @@ public class JdbcSourceBuilder<OUT> {
                 JdbcSourceOptions.READER_FETCH_BATCH_SIZE, splitReaderFetchBatchSize);
         this.configuration.set(JdbcSourceOptions.AUTO_COMMIT, autoCommit);
 
-        Preconditions.checkState(
-                !StringUtils.isNullOrWhitespaceOnly(sql), "'sql' mustn't be null or empty.");
         Preconditions.checkNotNull(resultExtractor, "'resultExtractor' mustn't be null.");
         Preconditions.checkNotNull(typeInformation, "'typeInformation' mustn't be null.");
 
-        if (Objects.nonNull(continuousUnBoundingSettings)) {
-            Preconditions.checkArgument(
-                    Objects.nonNull(jdbcParameterValuesProvider)
-                            && jdbcParameterValuesProvider
-                                    instanceof JdbcSlideTimingParameterProvider,
-                    INVALID_SLIDE_TIMING_CONTINUOUS_HINT);
-        }
+        if (this.splitterEnumerator == null) {
+            Preconditions.checkState(
+                    !StringUtils.isNullOrWhitespaceOnly(sql), "'sql' mustn't be null or empty.");
 
-        if (Objects.nonNull(jdbcParameterValuesProvider)
-                && jdbcParameterValuesProvider instanceof JdbcSlideTimingParameterProvider) {
-            Preconditions.checkArgument(
-                    Objects.nonNull(continuousUnBoundingSettings),
-                    INVALID_CONTINUOUS_SLIDE_TIMING_HINT);
+            if (Objects.nonNull(continuousUnBoundingSettings)) {
+                Preconditions.checkArgument(
+                        Objects.nonNull(jdbcParameterValuesProvider)
+                                && jdbcParameterValuesProvider
+                                        instanceof JdbcSlideTimingParameterProvider,
+                        INVALID_SLIDE_TIMING_CONTINUOUS_HINT);
+            }
+
+            if (Objects.nonNull(jdbcParameterValuesProvider)
+                    && jdbcParameterValuesProvider instanceof JdbcSlideTimingParameterProvider) {
+                Preconditions.checkArgument(
+                        Objects.nonNull(continuousUnBoundingSettings),
+                        INVALID_CONTINUOUS_SLIDE_TIMING_HINT);
+            }
+
+            this.splitterEnumerator =
+                    getSplitter(sql, jdbcParameterValuesProvider, optionalSqlSplitEnumeratorState);
         }
 
         return new JdbcSource<>(
                 configuration,
                 connectionProvider,
-                new SqlTemplateSplitEnumerator.TemplateSqlSplitEnumeratorProvider()
-                        .setOptionalSqlSplitEnumeratorState(optionalSqlSplitEnumeratorState)
-                        .setSqlTemplate(sql)
-                        .setParameterValuesProvider(jdbcParameterValuesProvider),
+                splitterEnumerator,
                 resultExtractor,
                 typeInformation,
                 deliveryGuarantee,
                 continuousUnBoundingSettings);
+    }
+
+    private SplitterEnumerator getSplitter(
+            String sqlTemplate,
+            JdbcParameterValuesProvider parameterProvider,
+            Serializable userDefinedState) {
+        JdbcSqlSplitEnumeratorBase.Provider<?> provider =
+                new SqlTemplateSplitEnumerator.TemplateSqlSplitEnumeratorProvider()
+                        .setOptionalSqlSplitEnumeratorState(userDefinedState)
+                        .setSqlTemplate(sqlTemplate)
+                        .setParameterValuesProvider(parameterProvider);
+
+        return new JdbcSqlSplitterEnumerator(provider);
     }
 }

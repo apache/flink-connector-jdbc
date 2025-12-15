@@ -28,6 +28,7 @@ import java.io.Serializable;
  * run (i.e. splits). Each query will be parameterized using a row of the matrix provided by each
  * {@link JdbcParameterValuesProvider} implementation.
  */
+@Deprecated
 @PublicEvolving
 public interface JdbcParameterValuesProvider extends Serializable {
 

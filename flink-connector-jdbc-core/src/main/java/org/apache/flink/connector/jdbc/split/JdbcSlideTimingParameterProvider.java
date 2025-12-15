@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** The parameters provider generate parameters by slide timing window strategy. */
+@Deprecated
 @PublicEvolving
 public class JdbcSlideTimingParameterProvider implements JdbcParameterValuesProvider {
 

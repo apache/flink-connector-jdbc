@@ -32,8 +32,8 @@ import io.openlineage.sql.DbTableMeta;
 import io.openlineage.sql.OpenLineageSql;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +56,11 @@ public class LineageUtils {
     }
 
     public static Optional<String> tableNameOf(String query, boolean isSource) {
-        return OpenLineageSql.parse(Arrays.asList(query))
+        return tableNameOf(Collections.singletonList(query), isSource);
+    }
+
+    public static Optional<String> tableNameOf(List<String> queries, boolean isSource) {
+        return OpenLineageSql.parse(queries)
                 .map(
                         sqlMeta ->
                                 isSource
