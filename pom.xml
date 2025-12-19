@@ -70,7 +70,7 @@ under the License.
         <japicmp.referenceVersion>3.0.0-1.16</japicmp.referenceVersion>
 
         <slf4j.version>1.7.36</slf4j.version>
-        <log4j.version>2.17.2</log4j.version>
+        <log4j.version>2.25.3</log4j.version>
 
         <flink.parent.artifactId>flink-connector-jdbc-parent</flink.parent.artifactId>
         <surefire.module.config>
