@@ -20,11 +20,13 @@ package org.apache.flink.connector.jdbc.core.datastream.source;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.legacy.SinkFunction;
+import org.apache.flink.streaming.api.lineage.SourceLineageVertex;
 import org.apache.flink.streaming.util.RestartStrategyUtils;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -133,6 +135,27 @@ class JdbcSourceITCase extends JdbcDataTestBase implements JdbcITCaseBase {
                 .addSink(new TestingSinkFunction());
         env.execute();
         assertThat(collectedRecords).containsExactlyInAnyOrder(TEST_DATA);
+    }
+
+    @Test
+    void testGetLineageVertex() {
+        JdbcSource<TestEntry> jdbcSource =
+                JdbcSource.<TestEntry>builder()
+                        .setTypeInformation(TypeInformation.of(TestEntry.class))
+                        .setSql(sql + " where id >= ? and id <= ?")
+                        .setJdbcParameterValuesProvider(
+                                new JdbcGenericParameterValuesProvider(
+                                        new Serializable[][] {{1001, 1005}, {1006, 1010}}))
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setDriverName(getMetadata().getDriverClass())
+                        .setResultExtractor(extractor)
+                        .build();
+
+        SourceLineageVertex lineageVertex = (SourceLineageVertex) jdbcSource.getLineageVertex();
+        assertThat(lineageVertex.boundedness()).isEqualTo(Boundedness.BOUNDED);
+        assertThat(lineageVertex.datasets().size()).isEqualTo(1);
+        assertThat(lineageVertex.datasets().get(0).name()).isEqualTo("books");
+        assertThat(lineageVertex.datasets().get(0).namespace()).isEqualTo("derby:memory:test");
     }
 
     /** A sink function to collect the records. */

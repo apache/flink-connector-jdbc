@@ -37,11 +37,16 @@ import org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriterSta
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.statements.JdbcQueryStatement;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
+import org.apache.flink.connector.jdbc.lineage.LineageUtils;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
+import org.apache.flink.streaming.api.lineage.LineageDataset;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
+import org.apache.flink.streaming.api.lineage.LineageVertexProvider;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 
 /**
  * Flink Sink to produce data into a jdbc database.
@@ -50,7 +55,8 @@ import java.util.Collections;
  */
 @PublicEvolving
 public class JdbcSink<IN>
-        implements Sink<IN>,
+        implements LineageVertexProvider,
+                Sink<IN>,
                 SupportsWriterState<IN, JdbcWriterState>,
                 SupportsCommitter<JdbcCommitable> {
 
@@ -119,5 +125,14 @@ public class JdbcSink<IN>
     @Internal
     public SimpleVersionedSerializer<JdbcWriterState> getWriterStateSerializer() {
         return new JdbcWriterStateSerializer();
+    }
+
+    @Override
+    public LineageVertex getLineageVertex() {
+        Optional<String> nameOpt = LineageUtils.tableNameOf(queryStatement.query(), false);
+        String namespace = LineageUtils.namespaceOf(connectionProvider);
+        LineageDataset dataset =
+                LineageUtils.datasetOf(nameOpt.orElse(""), namespace, Collections.emptyList());
+        return LineageUtils.lineageVertexOf(Collections.singleton(dataset));
     }
 }

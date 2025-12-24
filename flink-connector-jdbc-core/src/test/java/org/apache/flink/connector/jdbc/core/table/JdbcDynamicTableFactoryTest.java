@@ -91,7 +91,8 @@ class JdbcDynamicTableFactoryTest {
                         LookupOptions.MAX_RETRIES.defaultValue(),
                         null,
                         FilterHandlingPolicy.NEVER,
-                        SCHEMA.toPhysicalRowDataType());
+                        SCHEMA.toPhysicalRowDataType(),
+                        "anonymous");
         assertThat(actualSource).isEqualTo(expectedSource);
 
         // validation for sink
@@ -149,7 +150,8 @@ class JdbcDynamicTableFactoryTest {
                         LookupOptions.MAX_RETRIES.defaultValue(),
                         null,
                         JdbcConnectorOptions.FILTER_HANDLING_POLICY.defaultValue(),
-                        SCHEMA.toPhysicalRowDataType());
+                        SCHEMA.toPhysicalRowDataType(),
+                        "anonymous");
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -178,7 +180,8 @@ class JdbcDynamicTableFactoryTest {
                         10,
                         DefaultLookupCache.fromConfig(Configuration.fromMap(properties)),
                         JdbcConnectorOptions.FILTER_HANDLING_POLICY.defaultValue(),
-                        SCHEMA.toPhysicalRowDataType());
+                        SCHEMA.toPhysicalRowDataType(),
+                        "anonymous");
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -207,7 +210,8 @@ class JdbcDynamicTableFactoryTest {
                                 .expireAfterWrite(Duration.ofSeconds(10))
                                 .build(),
                         JdbcConnectorOptions.FILTER_HANDLING_POLICY.defaultValue(),
-                        SCHEMA.toPhysicalRowDataType());
+                        SCHEMA.toPhysicalRowDataType(),
+                        "anonymous");
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -393,7 +397,8 @@ class JdbcDynamicTableFactoryTest {
                                 .expireAfterWrite(Duration.ofSeconds(10))
                                 .build(),
                         JdbcConnectorOptions.FILTER_HANDLING_POLICY.defaultValue(),
-                        SCHEMA.toPhysicalRowDataType());
+                        SCHEMA.toPhysicalRowDataType(),
+                        "anonymous");
 
         assertThat(actual).isEqualTo(expected);
     }

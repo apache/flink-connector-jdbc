@@ -149,4 +149,8 @@ public class SimpleJdbcConnectionProvider implements JdbcConnectionProvider, Ser
         closeConnection();
         return getOrEstablishConnection();
     }
+
+    public String getDbURL() {
+        return this.jdbcOptions.getDbURL();
+    }
 }

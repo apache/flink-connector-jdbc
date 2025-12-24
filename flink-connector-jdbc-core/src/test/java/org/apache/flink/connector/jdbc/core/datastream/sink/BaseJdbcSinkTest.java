@@ -21,6 +21,7 @@ import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
 import org.apache.flink.streaming.util.RestartStrategyUtils;
 
 import org.junit.jupiter.api.Test;
@@ -106,6 +107,19 @@ public abstract class BaseJdbcSinkTest implements DerbyTestBase {
         env.execute();
 
         assertResult(BOOKS);
+    }
+
+    @Test
+    public void testGetLineageVertex() {
+        JdbcSink<?> sink =
+                finishSink(
+                        new JdbcSinkBuilder<BooksTable.BookEntry>()
+                                .withQueryStatement(
+                                        TEST_TABLE.getInsertIntoQuery(),
+                                        TEST_TABLE.getStatementBuilder()));
+
+        LineageVertex lineageVertex = sink.getLineageVertex();
+        assertThat(lineageVertex.datasets().size()).isEqualTo(1);
     }
 
     private void assertResult(List<BooksTable.BookEntry> expected) throws SQLException {
