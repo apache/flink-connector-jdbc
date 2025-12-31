@@ -19,5 +19,5 @@ package org.apache.flink.connector.jdbc.clickhouse.testutils;
 
 /** ClickHouse docker images. */
 public interface ClickHouseImages {
-    String CLICKHOUSE_LATEST = "clickhouse/clickhouse-server";
+    String CLICKHOUSE_LATEST = "clickhouse/clickhouse-server:24.3";
 }
