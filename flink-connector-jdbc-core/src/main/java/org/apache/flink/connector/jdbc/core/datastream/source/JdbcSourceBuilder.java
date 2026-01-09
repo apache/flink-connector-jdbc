@@ -140,6 +140,7 @@ public class JdbcSourceBuilder<OUT> {
         return this;
     }
 
+    /** @deprecated Use {@link #setSplitter(SplitterEnumerator)} instead. */
     @Deprecated
     public JdbcSourceBuilder<OUT> setSql(@Nonnull String sql) {
         Preconditions.checkArgument(
@@ -205,6 +206,8 @@ public class JdbcSourceBuilder<OUT> {
     /**
      * If the value was set as an instance of {@link JdbcSlideTimingParameterProvider}, it's
      * required to specify the {@link #continuousUnBoundingSettings}.
+     *
+     * @deprecated Use {@link #setSplitter(SplitterEnumerator)} instead.
      */
     @Deprecated
     public JdbcSourceBuilder<OUT> setJdbcParameterValuesProvider(

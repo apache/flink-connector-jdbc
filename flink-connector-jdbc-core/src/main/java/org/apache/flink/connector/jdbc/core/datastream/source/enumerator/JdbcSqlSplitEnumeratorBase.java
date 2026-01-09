@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.core.datastream.source.enumerator;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.SplitterEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 
 import javax.annotation.Nonnull;
@@ -33,6 +34,7 @@ import java.util.function.Supplier;
  * Base class for jdbc sql split enumerator.
  *
  * @param <SplitT> JDBC split type.
+ * @deprecated Use {@link SplitterEnumerator} instead.
  */
 @Deprecated
 @PublicEvolving

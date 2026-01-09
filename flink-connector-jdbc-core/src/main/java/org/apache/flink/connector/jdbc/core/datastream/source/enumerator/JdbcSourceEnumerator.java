@@ -85,13 +85,7 @@ public class JdbcSourceEnumerator
                     continuousUnBoundingSettings.getInitialDiscoveryDelay().toMillis(),
                     continuousUnBoundingSettings.getDiscoveryInterval().toMillis());
         } else {
-            context.callAsync(
-                    () ->
-                            splitterEnumerator.isAllSplitsFinished()
-                                    ? Collections.emptyList()
-                                    : splitterEnumerator.enumerateSplits(),
-                    (List<JdbcSourceSplit> splits, Throwable error) ->
-                            this.unassigned.addAll(splits));
+            unassigned.addAll(splitterEnumerator.enumerateSplits());
         }
     }
 
