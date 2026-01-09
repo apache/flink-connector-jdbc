@@ -59,19 +59,21 @@ public class PreparedSplitterEnumerator extends SqlSplitterEnumerator {
 
     public static PreparedSplitterEnumerator of(
             String sqlTemplate, long minValue, long maxValue, long batchSize) {
-        Serializable[][] parameters =
-                new PreparedSplitterNumericParameters(minValue, maxValue)
-                        .withBatchSize(batchSize)
-                        .getParameterValues();
-        return new PreparedSplitterEnumerator(sqlTemplate, parameters);
+        PreparedSplitterNumericParameters parameters =
+                new PreparedSplitterNumericParameters(minValue, maxValue).withBatchSize(batchSize);
+        return of(sqlTemplate, parameters);
     }
 
     public static PreparedSplitterEnumerator of(
             String sqlTemplate, long minValue, long maxValue, int batchNum) {
-        Serializable[][] parameters =
-                new PreparedSplitterNumericParameters(minValue, maxValue)
-                        .withBatchNum(batchNum)
-                        .getParameterValues();
+        PreparedSplitterNumericParameters parameters =
+                new PreparedSplitterNumericParameters(minValue, maxValue).withBatchNum(batchNum);
+        return of(sqlTemplate, parameters);
+    }
+
+    public static PreparedSplitterEnumerator of(
+            String sqlTemplate, PreparedSplitterNumericParameters numericParameters) {
+        Serializable[][] parameters = numericParameters.getParameterValues();
         return new PreparedSplitterEnumerator(sqlTemplate, parameters);
     }
 

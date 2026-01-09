@@ -10,7 +10,13 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-/** A split enumerator for JdbcSqlSplitEnumeratorBase. */
+/**
+ * A splitter enumerator for JdbcSqlSplitEnumeratorBase.
+ *
+ * <p>This class is used to allow the retrofit of existing implementations of
+ * JdbcSqlSplitEnumeratorBase to the new SplitterEnumerator interface. It delegates the split
+ * enumeration to the underlying JdbcSqlSplitEnumeratorBase instance.
+ */
 @Deprecated
 @Internal
 public class JdbcSqlSplitterEnumerator implements SplitterEnumerator {

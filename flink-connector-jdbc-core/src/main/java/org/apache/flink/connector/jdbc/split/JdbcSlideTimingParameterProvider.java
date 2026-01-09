@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.split;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.SlideTimingSplitterEnumerator;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -27,7 +28,14 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-/** The parameters provider generate parameters by slide timing window strategy. */
+/**
+ * The parameters provider generate parameters by slide timing window strategy.
+ *
+ * @deprecated Use {@link SlideTimingSplitterEnumerator} instead. As example:
+ *     SlideTimingSplitterEnumerator.builder() .setSqlTemplate(query) .setStartMills(startMills)
+ *     .setSlideSpanMills(slideSpanMills) .setSlideStepMills(slideStepMills)
+ *     .setSplitGenerateDelayMillis(splitGenerateDelayMillis) .build();
+ */
 @Deprecated
 @PublicEvolving
 public class JdbcSlideTimingParameterProvider implements JdbcParameterValuesProvider {
