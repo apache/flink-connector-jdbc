@@ -105,6 +105,31 @@ public class SpannerCatalog extends AbstractJdbcCatalog {
         this.dialectTypeMapper = new SpannerTypeMapper();
     }
 
+    @Override
+    protected String getDatabaseUrl(String databaseName) {
+        // Spanner JDBC URL uses semicolon for parameters instead of question mark
+        // Handle semicolon params the same way AbstractJdbcCatalog handles '?' params
+        // Example: "jdbc:cloudspanner://host/projects/.../databases/;autoConfigEmulator=true"
+        //       -> "jdbc:cloudspanner://host/projects/.../databases/mydb;autoConfigEmulator=true"
+        int semiColonIndex = baseUrl.indexOf(';');
+
+        if (semiColonIndex == -1) {
+            // No parameters: traditional baseUrl + databaseName
+            return baseUrl + databaseName;
+        }
+
+        // Parameters present: insert database name before ';'
+        String urlWithoutParams = baseUrl.substring(0, semiColonIndex);
+        String params = baseUrl.substring(semiColonIndex);
+
+        // Remove trailing '/' from params if AbstractJdbcCatalog added it
+        if (params.endsWith("/")) {
+            params = params.substring(0, params.length() - 1);
+        }
+
+        return urlWithoutParams + databaseName + params;
+    }
+
     private ConnectionOptions getConnectionOptions() {
         return ConnectionOptions.newBuilder().setUri(defaultUrl.replace("jdbc:", "")).build();
     }
@@ -218,10 +243,7 @@ public class SpannerCatalog extends AbstractJdbcCatalog {
                     pk -> schemaBuilder.primaryKeyNamed(pk.getName(), pk.getColumns()));
             Schema tableSchema = schemaBuilder.build();
 
-            return CatalogTable.newBuilder()
-                    .schema(tableSchema)
-                    .options(getOptions(tablePath))
-                    .build();
+            return CatalogTable.of(tableSchema, null, Lists.newArrayList(), getOptions(tablePath));
         } catch (Exception e) {
             throw new CatalogException(
                     String.format("Failed getting table %s", tablePath.getFullName()), e);

@@ -152,13 +152,20 @@ class SpannerCatalogTestBase implements JdbcITCaseBase, SpannerTestBase {
     @BeforeAll
     static void beforeAll() throws SQLException {
         String jdbcUrl = SpannerDatabase.getMetadata().getJdbcUrl();
-        baseUrl = jdbcUrl.substring(0, jdbcUrl.lastIndexOf("/"));
+        // Preserve connection parameters in baseUrl with '/' before ';'
+        // Example: jdbc:cloudspanner://host/.../databases/testdb;autoConfigEmulator=true
+        //       -> jdbc:cloudspanner://host/.../databases/;autoConfigEmulator=true
+        int semiColonIndex = jdbcUrl.indexOf(';');
+        String params = semiColonIndex != -1 ? jdbcUrl.substring(semiColonIndex) : "";
+        String urlWithoutParams =
+                semiColonIndex != -1 ? jdbcUrl.substring(0, semiColonIndex) : jdbcUrl;
+        // Include trailing '/' before params so database name can be inserted
+        baseUrl = urlWithoutParams.substring(0, urlWithoutParams.lastIndexOf("/") + 1) + params;
         metadata = SpannerDatabase.getMetadata();
 
         Properties props =
                 JdbcConnectionOptions.getBriefAuthProperties(
                         metadata.getUsername(), metadata.getPassword());
-        props.put("autoConfigEmulator", "true");
         catalog =
                 new SpannerCatalog(
                         Thread.currentThread().getContextClassLoader(),
