@@ -16,27 +16,21 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.core.database.catalog;
+package org.apache.flink.connector.jdbc.spanner.database.lineage;
 
-import org.junit.jupiter.api.Test;
+import org.apache.flink.annotation.Internal;
+import org.apache.flink.connector.jdbc.lineage.JdbcLocationExtractorFactory;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import io.openlineage.client.utils.jdbc.JdbcExtractor;
+import io.openlineage.client.utils.jdbc.OverridingJdbcExtractor;
 
-/** Test for {@link AbstractJdbcCatalog}. */
-class AbstractJdbcCatalogTest {
+/** Implementation of {@link JdbcLocationExtractorFactory} for Spanner. */
+@Internal
+public class SpannerLocationExtractorFactory implements JdbcLocationExtractorFactory {
 
-    @Test
-    void testJdbcUrl() {
-        AbstractJdbcCatalog.validateJdbcUrl("jdbc:dialect://localhost:1234/");
-        AbstractJdbcCatalog.validateJdbcUrl("jdbc:dialect://localhost:1234");
-    }
-
-    @Test
-    void testInvalidJdbcUrl() {
-        assertThatThrownBy(
-                        () ->
-                                AbstractJdbcCatalog.validateJdbcUrl(
-                                        "jdbc:dialect://localhost:1234/db"))
-                .isInstanceOf(IllegalArgumentException.class);
+    @Override
+    public JdbcExtractor createExtractor() {
+        // TODO: Replace with SpannerJdbcExtractor when OpenLineage adds native Spanner support
+        return new OverridingJdbcExtractor("cloudspanner", "9010");
     }
 }
