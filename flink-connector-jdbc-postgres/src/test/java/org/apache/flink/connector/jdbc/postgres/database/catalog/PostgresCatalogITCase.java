@@ -193,4 +193,24 @@ class PostgresCatalogITCase extends PostgresCatalogTestBase {
                                 + "9223372036854775807, "
                                 + "9223372036854775807]]");
     }
+
+    @Test
+    void testUuidTypes() {
+        List<Row> results =
+                CollectionUtil.iteratorToList(
+                        tEnv.sqlQuery(String.format("select * from %s", TABLE_UUID_TYPE))
+                                .execute()
+                                .collect());
+        assertThat(results).hasToString("[+I[1, 123e4567-e89b-12d3-a456-426614174000]]");
+    }
+
+    @Test
+    void testNullUuidTypes() {
+        List<Row> results =
+                CollectionUtil.iteratorToList(
+                        tEnv.sqlQuery(String.format("select * from %s", TABLE_UUID_TYPE2))
+                                .execute()
+                                .collect());
+        assertThat(results).hasToString("[+I[1, null]]");
+    }
 }

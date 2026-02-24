@@ -34,6 +34,8 @@ class PostgresDialectTest extends JdbcDialectTest implements PostgresTestBase {
     @Override
     protected List<TestItem> testData() {
         return Arrays.asList(
+                createTestItem("STRING"),
+                createTestItem("ARRAY<STRING>"),
                 createTestItem("CHAR"),
                 createTestItem("VARCHAR"),
                 createTestItem("BOOLEAN"),
