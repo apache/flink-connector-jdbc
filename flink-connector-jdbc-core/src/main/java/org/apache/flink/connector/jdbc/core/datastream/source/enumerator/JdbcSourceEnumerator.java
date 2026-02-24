@@ -23,7 +23,9 @@ import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.SplitterEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
+import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
@@ -50,16 +52,18 @@ public class JdbcSourceEnumerator
     private final Boundedness boundedness;
     private final LinkedHashMap<Integer, String> readersAwaitingSplit;
     private final List<JdbcSourceSplit> unassigned;
-    private final JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> sqlSplitEnumerator;
+    private final SplitterEnumerator splitterEnumerator;
     private final @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings;
+    private final JdbcConnectionProvider connectionProvider;
 
     public JdbcSourceEnumerator(
             SplitEnumeratorContext<JdbcSourceSplit> context,
-            JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> sqlSplitEnumerator,
+            SplitterEnumerator splitterEnumerator,
+            JdbcConnectionProvider connectionProvider,
             ContinuousUnBoundingSettings continuousUnBoundingSettings,
             List<JdbcSourceSplit> unassigned) {
         this.context = Preconditions.checkNotNull(context);
-        this.sqlSplitEnumerator = Preconditions.checkNotNull(sqlSplitEnumerator);
+        this.splitterEnumerator = Preconditions.checkNotNull(splitterEnumerator);
         this.continuousUnBoundingSettings = continuousUnBoundingSettings;
         this.boundedness =
                 Objects.isNull(continuousUnBoundingSettings)
@@ -67,30 +71,27 @@ public class JdbcSourceEnumerator
                         : Boundedness.CONTINUOUS_UNBOUNDED;
         this.unassigned = Preconditions.checkNotNull(unassigned);
         this.readersAwaitingSplit = new LinkedHashMap<>();
+        this.connectionProvider = connectionProvider;
     }
 
     @Override
     public void start() {
-        sqlSplitEnumerator.open();
+        splitterEnumerator.start(connectionProvider);
         if (boundedness == Boundedness.CONTINUOUS_UNBOUNDED
                 && Objects.nonNull(continuousUnBoundingSettings)) {
             context.callAsync(
-                    () -> sqlSplitEnumerator.enumerateSplits(() -> 1024 - unassigned.size() > 0),
+                    () -> splitterEnumerator.enumerateSplits(() -> 1024 - unassigned.size() > 0),
                     this::processNewSplits,
                     continuousUnBoundingSettings.getInitialDiscoveryDelay().toMillis(),
                     continuousUnBoundingSettings.getDiscoveryInterval().toMillis());
         } else {
-            try {
-                unassigned.addAll(sqlSplitEnumerator.enumerateSplits(() -> true));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            unassigned.addAll(splitterEnumerator.enumerateSplits());
         }
     }
 
     @Override
     public void close() throws IOException {
-        sqlSplitEnumerator.close();
+        splitterEnumerator.close();
     }
 
     @Override
@@ -136,7 +137,7 @@ public class JdbcSourceEnumerator
                 Collections.emptyList(),
                 Collections.emptyList(),
                 new ArrayList<>(unassigned),
-                sqlSplitEnumerator.optionalSqlSplitEnumeratorState);
+                splitterEnumerator.serializableState());
     }
 
     private Optional<JdbcSourceSplit> getNextSplit() {

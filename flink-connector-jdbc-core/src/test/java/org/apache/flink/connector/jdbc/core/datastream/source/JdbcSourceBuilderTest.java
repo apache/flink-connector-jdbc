@@ -22,8 +22,10 @@ import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
-import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.SqlTemplateSplitEnumerator;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.JdbcSqlSplitterEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
+import org.apache.flink.connector.jdbc.core.datastream.source.split.CheckpointedOffset;
+import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
@@ -53,7 +55,7 @@ class JdbcSourceBuilderTest {
     private final String dbUrl = "dbUrl";
     private final ResultExtractor<Row> extractor = ResultExtractor.ofRowResultExtractor();
     private final JdbcParameterValuesProvider parameterValuesProvider =
-            new JdbcNumericBetweenParametersProvider(0, 3);
+            new JdbcNumericBetweenParametersProvider(0, 3).ofBatchSize(1);
 
     private final TypeInformation<Row> typeInformation = new TypeHint<Row>() {}.getTypeInfo();
 
@@ -74,13 +76,15 @@ class JdbcSourceBuilderTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> JdbcSource.builder().setSql(emptySql))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> JdbcSource.builder().setDBUrl(dbUrl).build())
-                .isInstanceOf(IllegalStateException.class);
+
         // For valid.
         JdbcSource<Row> jdbcSource = sourceBuilder.build();
-        SqlTemplateSplitEnumerator sqlEnumerator =
-                (SqlTemplateSplitEnumerator) jdbcSource.getSqlSplitEnumeratorProvider().create();
-        assertThat(sqlEnumerator.getSqlTemplate()).isEqualTo(validSql);
+        assertThat(jdbcSource.getSplitterEnumerator())
+                .isInstanceOf(JdbcSqlSplitterEnumerator.class);
+        JdbcSqlSplitterEnumerator sqlEnumerator =
+                (JdbcSqlSplitterEnumerator) jdbcSource.getSplitterEnumerator();
+
+        assertThat(sqlEnumerator.lineageQueries()).containsExactly(validSql);
     }
 
     @Test
@@ -89,10 +93,32 @@ class JdbcSourceBuilderTest {
                 .isInstanceOf(NullPointerException.class);
         JdbcSource<Row> jdbcSource =
                 sourceBuilder.setJdbcParameterValuesProvider(parameterValuesProvider).build();
-        SqlTemplateSplitEnumerator sqlSplitEnumerator =
-                (SqlTemplateSplitEnumerator) jdbcSource.getSqlSplitEnumeratorProvider().create();
-        assertThat(sqlSplitEnumerator.getParameterValuesProvider())
-                .isEqualTo(parameterValuesProvider);
+        assertThat(jdbcSource.getSplitterEnumerator())
+                .isInstanceOf(JdbcSqlSplitterEnumerator.class);
+        JdbcSqlSplitterEnumerator sqlEnumerator =
+                (JdbcSqlSplitterEnumerator) jdbcSource.getSplitterEnumerator();
+        assertThat(sqlEnumerator.enumerateSplits())
+                .containsExactly(
+                        new JdbcSourceSplit(
+                                "0000000001",
+                                validSql,
+                                new Serializable[] {0L, 0L},
+                                new CheckpointedOffset()),
+                        new JdbcSourceSplit(
+                                "0000000002",
+                                validSql,
+                                new Serializable[] {1L, 1L},
+                                new CheckpointedOffset()),
+                        new JdbcSourceSplit(
+                                "0000000003",
+                                validSql,
+                                new Serializable[] {2L, 2L},
+                                new CheckpointedOffset()),
+                        new JdbcSourceSplit(
+                                "0000000004",
+                                validSql,
+                                new Serializable[] {3L, 3L},
+                                new CheckpointedOffset()));
     }
 
     @Test

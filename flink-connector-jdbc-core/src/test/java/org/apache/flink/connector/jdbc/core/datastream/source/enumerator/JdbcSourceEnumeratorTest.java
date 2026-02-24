@@ -19,21 +19,19 @@
 package org.apache.flink.connector.jdbc.core.datastream.source.enumerator;
 
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.SplitterEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.CheckpointedOffset;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
+import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.testutils.source.reader.TestingSplitEnumeratorContext;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.annotation.Nonnull;
-
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -108,13 +106,39 @@ class JdbcSourceEnumeratorTest {
 
         return new JdbcSourceEnumerator(
                 context,
-                new JdbcSqlSplitEnumeratorBase<JdbcSourceSplit>(null) {
+                new SplitterEnumerator() {
                     @Override
-                    public @Nonnull List<JdbcSourceSplit> enumerateSplits(
-                            @Nonnull Supplier<Boolean> splitGettable) throws IOException {
+                    public void start(JdbcConnectionProvider connectionProvider) {}
+
+                    @Override
+                    public void close() {}
+
+                    @Override
+                    public boolean isAllSplitsFinished() {
+                        return false;
+                    }
+
+                    @Override
+                    public List<JdbcSourceSplit> enumerateSplits() {
                         return Collections.emptyList();
                     }
+
+                    @Override
+                    public List<String> lineageQueries() {
+                        return Collections.emptyList();
+                    }
+
+                    @Override
+                    public Serializable serializableState() {
+                        return null;
+                    }
+
+                    @Override
+                    public SplitterEnumerator restoreState(Serializable state) {
+                        return null;
+                    }
                 },
+                null,
                 null,
                 Arrays.stream(splits).collect(Collectors.toList()));
     }
