@@ -48,6 +48,16 @@ public class OceanBaseDatabase extends DatabaseExtension implements OceanBaseIma
     private static final OceanBaseCEContainer CONTAINER =
             new OceanBaseCEContainer(OCEANBASE_CE_4)
                     .withPassword("123456")
+                    // Resource Strategy: mini ensures lowest possible footprint
+                    .withEnv("MODE", "mini")
+                    // Memory Optimization: Lower limit manually
+                    .withEnv("OB_MEMORY_LIMIT", "2G")
+                    .withEnv("OB_SYSTEM_MEMORY", "1G")
+                    // Storage Optimization: Minimize pre-allocated file sizes
+                    .withEnv("OB_DATAFILE_SIZE", "1G")
+                    .withEnv("OB_LOG_DISK_SIZE", "2G")
+                    // Performance: Align with GitHub Runner's 2-core limit
+                    .withEnv("OB_CPU_COUNT", "2")
                     .withUrlParam("useSSL", "false")
                     .withUrlParam("serverTimezone", ZONE_OFFSET)
                     .withCopyToContainer(
