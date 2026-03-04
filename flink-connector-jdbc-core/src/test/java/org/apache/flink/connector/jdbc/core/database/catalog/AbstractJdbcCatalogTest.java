@@ -26,9 +26,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AbstractJdbcCatalogTest {
 
     @Test
-    void testJdbcUrl() {
-        AbstractJdbcCatalog.validateJdbcUrl("jdbc:dialect://localhost:1234/");
-        AbstractJdbcCatalog.validateJdbcUrl("jdbc:dialect://localhost:1234");
+    void testValidJdbcUrl() {
+        AbstractJdbcCatalog.validateJdbcUrl("jdbc:dialect://localhost:1234/db", "db");
+        AbstractJdbcCatalog.validateJdbcUrl("jdbc:dialect://localhost:1234/db", null);
+        AbstractJdbcCatalog.validateJdbcUrl("jdbc:dialect://localhost:1234/", "db");
+        AbstractJdbcCatalog.validateJdbcUrl("jdbc:dialect://localhost:1234", "db");
     }
 
     @Test
@@ -36,7 +38,26 @@ class AbstractJdbcCatalogTest {
         assertThatThrownBy(
                         () ->
                                 AbstractJdbcCatalog.validateJdbcUrl(
-                                        "jdbc:dialect://localhost:1234/db"))
-                .isInstanceOf(IllegalArgumentException.class);
+                                        "jdbc:dialect://localhost:1234", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(AbstractJdbcCatalog.NO_DATABASES_HINT);
+        assertThatThrownBy(
+                        () ->
+                                AbstractJdbcCatalog.validateJdbcUrl(
+                                        "jdbc:dialect://localhost:1234/", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(AbstractJdbcCatalog.NO_DATABASES_HINT);
+        assertThatThrownBy(
+                        () ->
+                                AbstractJdbcCatalog.validateJdbcUrl(
+                                        "jdbc:dialect://localhost:1234/db", ""))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(AbstractJdbcCatalog.DATABASE_NOT_UNIQUE_HINT);
+        assertThatThrownBy(
+                        () ->
+                                AbstractJdbcCatalog.validateJdbcUrl(
+                                        "jdbc:dialect://localhost:1234/db", "not_db"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(AbstractJdbcCatalog.DATABASE_NOT_UNIQUE_HINT);
     }
 }

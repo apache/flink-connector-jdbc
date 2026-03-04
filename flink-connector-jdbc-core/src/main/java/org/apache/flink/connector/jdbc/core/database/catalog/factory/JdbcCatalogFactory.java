@@ -51,7 +51,6 @@ public class JdbcCatalogFactory implements CatalogFactory {
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
         final Set<ConfigOption<?>> options = new HashSet<>();
-        options.add(DEFAULT_DATABASE);
         options.add(USERNAME);
         options.add(PASSWORD);
         options.add(BASE_URL);
@@ -61,6 +60,7 @@ public class JdbcCatalogFactory implements CatalogFactory {
     @Override
     public Set<ConfigOption<?>> optionalOptions() {
         final Set<ConfigOption<?>> options = new HashSet<>();
+        options.add(DEFAULT_DATABASE);
         options.add(PROPERTY_VERSION);
         options.add(COMPATIBLE_MODE);
         return options;
