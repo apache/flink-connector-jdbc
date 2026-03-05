@@ -155,6 +155,8 @@ public class PostgresTypeMapper implements JdbcCatalogTypeMapper {
                 return DataTypes.ARRAY(DataTypes.CHAR(precision));
             case PG_CHARACTER_VARYING:
                 return DataTypes.VARCHAR(precision);
+            case PG_UUID:
+                return DataTypes.VARCHAR(36);
             case PG_CHARACTER_VARYING_ARRAY:
                 return DataTypes.ARRAY(DataTypes.VARCHAR(precision));
             case PG_TEXT:
