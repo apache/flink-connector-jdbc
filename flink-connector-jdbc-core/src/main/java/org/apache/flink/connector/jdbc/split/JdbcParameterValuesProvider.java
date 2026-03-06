@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.split;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.JdbcInputFormat;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.SplitterEnumerator;
 
 import java.io.Serializable;
 
@@ -27,7 +28,10 @@ import java.io.Serializable;
  * This interface is used by the {@link JdbcInputFormat} to compute the list of parallel query to
  * run (i.e. splits). Each query will be parameterized using a row of the matrix provided by each
  * {@link JdbcParameterValuesProvider} implementation.
+ *
+ * @deprecated Use {@link SplitterEnumerator} instead.
  */
+@Deprecated
 @PublicEvolving
 public interface JdbcParameterValuesProvider extends Serializable {
 
