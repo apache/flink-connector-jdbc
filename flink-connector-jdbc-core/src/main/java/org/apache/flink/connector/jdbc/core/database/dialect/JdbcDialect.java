@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.core.database.dialect;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.core.database.JdbcFactory;
 import org.apache.flink.table.api.ValidationException;
+import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 
 import java.io.Serializable;
@@ -153,5 +154,56 @@ public interface JdbcDialect extends Serializable {
      */
     default String appendDefaultUrlProperties(String url) {
         return url;
+    }
+
+    /**
+     * Generates a batch insert statement using database-specific bulk insert optimizations (e.g.,
+     * PostgreSQL's UNNEST). If supported, provides significant performance improvements for bulk
+     * inserts.
+     *
+     * @param tableName the target table name
+     * @param fieldNames array of field names
+     * @param fieldTypes array of SQL type names (e.g., "INTEGER", "VARCHAR")
+     * @return Optional containing the optimized batch insert SQL, or empty if not supported
+     */
+    default Optional<String> getBatchInsertStatement(
+            String tableName, String[] fieldNames, String[] fieldTypes) {
+        return Optional.empty();
+    }
+
+    /**
+     * Generates a batch upsert statement using database-specific bulk insert optimizations with
+     * conflict handling (e.g., PostgreSQL's UNNEST with ON CONFLICT).
+     *
+     * @param tableName the target table name
+     * @param fieldNames array of field names
+     * @param fieldTypes array of SQL type names (e.g., "INTEGER", "VARCHAR")
+     * @param uniqueKeyFields array of unique key field names for conflict detection
+     * @return Optional containing the optimized batch upsert SQL, or empty if not supported
+     */
+    default Optional<String> getBatchUpsertStatement(
+            String tableName,
+            String[] fieldNames,
+            String[] fieldTypes,
+            String[] uniqueKeyFields) {
+        return Optional.empty();
+    }
+
+    /**
+     * Get the database-specific type name for array creation from Flink's logical type.
+     *
+     * <p>Used for creating SQL arrays via {@code Connection.createArrayOf(typeName, values)} and
+     * for type casting in SQL (e.g., PostgreSQL's {@code ?::typename[]}).
+     *
+     * @param logicalType the Flink logical type
+     * @return the database-specific type name for array operations
+     * @throws UnsupportedOperationException if the type is not supported for array operations
+     */
+    default String getArrayTypeName(LogicalType logicalType) {
+        throw new UnsupportedOperationException(
+                String.format(
+                        "Array type name mapping for type %s is not supported by dialect: %s",
+                        logicalType,
+                        dialectName()));
     }
 }
