@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Function;
 
 import static org.apache.flink.connector.jdbc.JdbcConnectionOptions.getBriefAuthProperties;
 
@@ -101,33 +102,35 @@ public class SpannerCatalog extends AbstractJdbcCatalog {
             String defaultDatabase,
             String baseUrl,
             Properties connectProperties) {
-        super(userClassLoader, catalogName, defaultDatabase, baseUrl, connectProperties);
+        // Use the protected constructor to skip validateJdbcUrl, which does not support
+        // Spanner's deep path URL structure (e.g., /projects/.../databases/).
+        super(userClassLoader, catalogName, defaultDatabase, baseUrl, connectProperties, true);
         this.dialectTypeMapper = new SpannerTypeMapper();
     }
 
     @Override
-    protected String getDatabaseUrl(String databaseName) {
-        // Spanner JDBC URL uses semicolon for parameters instead of question mark
-        // Handle semicolon params the same way AbstractJdbcCatalog handles '?' params
-        // Example: "jdbc:cloudspanner://host/projects/.../databases/;autoConfigEmulator=true"
-        //       -> "jdbc:cloudspanner://host/projects/.../databases/mydb;autoConfigEmulator=true"
-        int semiColonIndex = baseUrl.indexOf(';');
-
+    protected Function<String, String> calculateUrlFunction(String url) {
+        // Spanner JDBC URLs use semicolons for parameters instead of question marks.
+        // Example: "jdbc:cloudspanner://host/.../databases/;autoConfigEmulator=true"
+        //       -> urlFunction("mydb") -> "jdbc:cloudspanner://host/.../databases/mydb;autoConfigEmulator=true"
+        int semiColonIndex = url.indexOf(';');
         if (semiColonIndex == -1) {
-            // No parameters: traditional baseUrl + databaseName
-            return baseUrl + databaseName;
+            // No semicolon params
+            String trimmed = url.trim();
+            String prefix = trimmed.endsWith("/") ? trimmed : trimmed + "/";
+            return dbName -> prefix + dbName;
         }
+        // Has semicolon params: split into prefix and params
+        String urlWithoutParams = url.substring(0, semiColonIndex);
+        String params = url.substring(semiColonIndex);
+        String prefix = urlWithoutParams.endsWith("/") ? urlWithoutParams : urlWithoutParams + "/";
+        return dbName -> prefix + dbName + params;
+    }
 
-        // Parameters present: insert database name before ';'
-        String urlWithoutParams = baseUrl.substring(0, semiColonIndex);
-        String params = baseUrl.substring(semiColonIndex);
-
-        // Remove trailing '/' from params if AbstractJdbcCatalog added it
-        if (params.endsWith("/")) {
-            params = params.substring(0, params.length() - 1);
-        }
-
-        return urlWithoutParams + databaseName + params;
+    @Override
+    protected void validateConnectionProperties(Properties connectionProperties) {
+        // Spanner uses Google Cloud credentials, not traditional username/password.
+        // Skip the parent's USER_KEY/PASSWORD_KEY validation.
     }
 
     private ConnectionOptions getConnectionOptions() {
@@ -137,7 +140,9 @@ public class SpannerCatalog extends AbstractJdbcCatalog {
     private SpannerOptions getSpannerOptions(ConnectionOptions options) {
         SpannerOptions.Builder builder =
                 SpannerOptions.newBuilder().setProjectId(options.getProjectId());
-        if (options.getHost().contains("localhost")) {
+        // Detect the emulator via the driver's own flag (set by ";autoConfigEmulator=true") rather
+        // than string-matching the host, so emulator hosts other than "localhost" also work.
+        if (options.isAutoConfigEmulator()) {
             builder.setEmulatorHost(options.getHost());
         } else {
             builder.setHost(options.getHost());
@@ -206,7 +211,8 @@ public class SpannerCatalog extends AbstractJdbcCatalog {
         String databaseName = tablePath.getDatabaseName();
 
         try (Connection conn =
-                DriverManager.getConnection(getDatabaseUrl(databaseName), connectionProperties)) {
+                DriverManager.getConnection(
+                        this.urlFunction.apply(databaseName), connectionProperties)) {
             DatabaseMetaData metaData = conn.getMetaData();
             Optional<UniqueConstraint> primaryKey =
                     getPrimaryKey(
@@ -220,30 +226,33 @@ public class SpannerCatalog extends AbstractJdbcCatalog {
             // The INFORMATION_SCHEMA.COLUMNS table is used to retrieve nullability.
             Map<String, Boolean> nullables = getColumnNullables(conn, tablePath);
 
-            PreparedStatement ps =
+            try (PreparedStatement ps =
                     conn.prepareStatement(
-                            String.format("SELECT * FROM %s;", getSchemaTableName(tablePath)));
+                            String.format("SELECT * FROM %s;", getSchemaTableName(tablePath)))) {
+                ResultSetMetaData resultSetMetaData = ps.getMetaData();
 
-            ResultSetMetaData resultSetMetaData = ps.getMetaData();
+                String[] columnNames = new String[resultSetMetaData.getColumnCount()];
+                DataType[] types = new DataType[resultSetMetaData.getColumnCount()];
 
-            String[] columnNames = new String[resultSetMetaData.getColumnCount()];
-            DataType[] types = new DataType[resultSetMetaData.getColumnCount()];
-
-            for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
-                final String columnName = resultSetMetaData.getColumnName(i);
-                columnNames[i - 1] = columnName;
-                types[i - 1] = fromJDBCType(tablePath, resultSetMetaData, i);
-                if (!nullables.getOrDefault(columnName, true)) {
-                    types[i - 1] = types[i - 1].notNull();
+                for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+                    final String columnName = resultSetMetaData.getColumnName(i);
+                    columnNames[i - 1] = columnName;
+                    types[i - 1] = fromJDBCType(tablePath, resultSetMetaData, i);
+                    if (!nullables.getOrDefault(columnName, true)) {
+                        types[i - 1] = types[i - 1].notNull();
+                    }
                 }
+
+                Schema.Builder schemaBuilder = Schema.newBuilder().fromFields(columnNames, types);
+                primaryKey.ifPresent(
+                        pk -> schemaBuilder.primaryKeyNamed(pk.getName(), pk.getColumns()));
+                Schema tableSchema = schemaBuilder.build();
+
+                return CatalogTable.newBuilder()
+                        .schema(tableSchema)
+                        .options(getOptions(tablePath))
+                        .build();
             }
-
-            Schema.Builder schemaBuilder = Schema.newBuilder().fromFields(columnNames, types);
-            primaryKey.ifPresent(
-                    pk -> schemaBuilder.primaryKeyNamed(pk.getName(), pk.getColumns()));
-            Schema tableSchema = schemaBuilder.build();
-
-            return CatalogTable.of(tableSchema, null, Lists.newArrayList(), getOptions(tablePath));
         } catch (Exception e) {
             throw new CatalogException(
                     String.format("Failed getting table %s", tablePath.getFullName()), e);
@@ -281,7 +290,7 @@ public class SpannerCatalog extends AbstractJdbcCatalog {
             throw new DatabaseNotExistException(getName(), databaseName);
         }
 
-        final String url = getDatabaseUrl(databaseName);
+        final String url = this.urlFunction.apply(databaseName);
         try (Connection conn = DriverManager.getConnection(url, connectionProperties)) {
             // get all schemas
             List<String> schemas;

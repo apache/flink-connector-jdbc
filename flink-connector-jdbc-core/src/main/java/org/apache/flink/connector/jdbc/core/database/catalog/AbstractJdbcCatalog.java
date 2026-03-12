@@ -130,7 +130,30 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
             String defaultDatabase,
             String baseUrl,
             Properties connectionProperties) {
-        super(catalogName, validateJdbcUrl(baseUrl, defaultDatabase));
+        this(
+                userClassLoader,
+                catalogName,
+                validateJdbcUrl(baseUrl, defaultDatabase),
+                baseUrl,
+                connectionProperties,
+                false);
+    }
+
+    /**
+     * Protected constructor that allows subclasses to skip URL validation. Subclasses with
+     * non-standard JDBC URL formats (e.g., Spanner's deep path structure) can use this constructor
+     * to provide the default database directly without going through {@link #validateJdbcUrl}.
+     *
+     * @param skipUrlValidation unused, exists only to differentiate the constructor signature
+     */
+    protected AbstractJdbcCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String baseUrl,
+            Properties connectionProperties,
+            boolean skipUrlValidation) {
+        super(catalogName, defaultDatabase);
 
         checkNotNull(userClassLoader);
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(baseUrl));
@@ -141,6 +164,10 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
         this.connectionProperties = Preconditions.checkNotNull(connectionProperties);
         this.defaultUrl = this.urlFunction.apply(defaultDatabase);
 
+        validateConnectionProperties(connectionProperties);
+    }
+
+    protected void validateConnectionProperties(Properties connectionProperties) {
         checkArgument(
                 !StringUtils.isNullOrWhitespaceOnly(connectionProperties.getProperty(USER_KEY)));
         checkArgument(
@@ -586,7 +613,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
         throw new UnsupportedOperationException();
     }
 
-    private Function<String, String> calculateUrlFunction(String url) {
+    protected Function<String, String> calculateUrlFunction(String url) {
         final String[] parts;
         final int questionMarkIndex = url.indexOf('?');
         if (questionMarkIndex == -1) {
