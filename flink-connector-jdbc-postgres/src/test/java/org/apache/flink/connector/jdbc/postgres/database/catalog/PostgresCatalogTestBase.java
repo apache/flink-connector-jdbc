@@ -26,6 +26,9 @@ import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.types.logical.DecimalType;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
@@ -57,12 +60,14 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
     protected static final String TABLE_SERIAL_TYPE = "serial_table";
     protected static final String TABLE_UUID_TYPE = "uuid_table";
     protected static final String TABLE_UUID_TYPE2 = "uuid_table2";
+    protected static final String TABLE_JSON_TYPE = "json_table";
+    protected static final String TABLE_JSONB_TYPE = "jsonb_table";
 
     protected static String baseUrl;
     protected static PostgresCatalog catalog;
 
     @BeforeAll
-    static void init() throws SQLException {
+    static void init() throws SQLException, JsonProcessingException {
         // jdbc:postgresql://localhost:50807/postgres?user=postgres
         String jdbcUrl = getStaticMetadata().getJdbcUrl();
         // jdbc:postgresql://localhost:50807/
@@ -115,6 +120,11 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
         createTable(
                 PostgresTablePath.fromFlinkTableName(TABLE_UUID_TYPE2),
                 getNullUuidTable().pgSchemaSql);
+        createTable(
+                PostgresTablePath.fromFlinkTableName(TABLE_JSON_TYPE), getJsonTable().pgSchemaSql);
+        createTable(
+                PostgresTablePath.fromFlinkTableName(TABLE_JSONB_TYPE),
+                getJsonbTable().pgSchemaSql);
 
         executeSQL(
                 PostgresCatalog.DEFAULT_DATABASE,
@@ -142,6 +152,14 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
                 String.format(
                         "insert into %s values (%s);",
                         TABLE_UUID_TYPE2, getNullUuidTable().values));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format(
+                        "insert into %s values (%s);", TABLE_JSON_TYPE, getJsonTable().values));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format(
+                        "insert into %s values (%s);", TABLE_JSONB_TYPE, getJsonbTable().values));
     }
 
     @AfterAll
@@ -186,6 +204,14 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
                 PostgresCatalog.DEFAULT_DATABASE,
                 String.format(
                         "DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE_UUID_TYPE2)));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format(
+                        "DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE_JSON_TYPE)));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format(
+                        "DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE_JSONB_TYPE)));
     }
 
     public static void createTable(PostgresTablePath tablePath, String tableSchemaSql)
@@ -438,5 +464,34 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
                         .build(),
                 "id INT, " + "uid_col UUID",
                 "1, NULL");
+    }
+
+    public static String transformPGJsonb(String json) {
+        return json.replaceAll(":", ": ").replaceAll(",", ", ");
+    }
+
+    public static TestTable getJsonTable() throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode =
+                mapper.readTree(
+                        "\"test1\":{\"test1-1\":\"testValue\",\"test1-2\":1,\"test1-3\":[\"test1-3-1\",\"test1-3-2\"]}, 2, \"test2\"");
+
+        return new TestTable(
+                Schema.newBuilder().column("json_col", DataTypes.STRING()).build(),
+                "json_col JSON",
+                String.format("'%s'", jsonNode.toString()));
+    }
+
+    public static TestTable getJsonbTable() throws JsonProcessingException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode =
+                mapper.readTree(
+                        "\"test1\":{\"test1-1\":\"testValue\",\"test1-2\":1,\"test1-3\":[\"test1-3-1\",\"test1-3-2\"]}, 2, \"test2\"");
+
+        return new TestTable(
+                Schema.newBuilder().column("jsonb_col", DataTypes.STRING()).build(),
+                "jsonb_col JSONB",
+                String.format("'%s'", jsonNode.toString()));
     }
 }

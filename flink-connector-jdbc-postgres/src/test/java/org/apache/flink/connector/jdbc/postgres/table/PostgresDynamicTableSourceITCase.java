@@ -25,10 +25,15 @@ import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbType;
@@ -51,30 +56,54 @@ class PostgresDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
                 // other fields
                 field("real_col", dbType("REAL"), DataTypes.FLOAT()),
                 field("double_col", dbType("DOUBLE PRECISION"), DataTypes.DOUBLE()),
-                field("time_col", dbType("TIME"), DataTypes.TIME()));
+                field("time_col", dbType("TIME"), DataTypes.TIME()),
+                field("json_col", dbType("JSON"), DataTypes.STRING()),
+                field("jsonb_col", dbType("JSONB"), DataTypes.STRING()));
+    }
+
+    private JsonNode toJson(String json) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readTree(json);
+    }
+
+    private String transformPGJsonb(String json) {
+        return json.replaceAll(":", ": ").replaceAll(",", ", ");
     }
 
     protected List<Row> getTestData() {
 
         String uuid1 = "123e4567-e89b-12d3-a456-426614174000";
         String uuid2 = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+        String json =
+                "\"test1\":{\"test1-1\":\"testValue\",\"test1-2\":1,\"test1-3\":[\"test1-3-1\",\"test1-3-2\"]}, 2, \"test2\"";
 
-        return Arrays.asList(
-                Row.of(
-                        1L,
-                        uuid1,
-                        BigDecimal.valueOf(100.1234),
-                        LocalDateTime.parse("2020-01-01T15:35:00.123456"),
-                        1.175E-37F,
-                        1.79769E308D,
-                        LocalTime.parse("15:35")),
-                Row.of(
-                        2L,
-                        uuid2,
-                        BigDecimal.valueOf(101.1234),
-                        LocalDateTime.parse("2020-01-01T15:36:01.123456"),
-                        -1.175E-37F,
-                        -1.79769E308,
-                        LocalTime.parse("15:36:01")));
+        try {
+            JsonNode jsonNode = toJson(json);
+
+            return Arrays.asList(
+                    Row.of(
+                            1L,
+                            uuid1,
+                            BigDecimal.valueOf(100.1234),
+                            LocalDateTime.parse("2020-01-01T15:35:00.123456"),
+                            1.175E-37F,
+                            1.79769E308D,
+                            LocalTime.parse("15:35"),
+                            jsonNode.toString(),
+                            transformPGJsonb(jsonNode.toString())),
+                    Row.of(
+                            2L,
+                            uuid2,
+                            BigDecimal.valueOf(101.1234),
+                            LocalDateTime.parse("2020-01-01T15:36:01.123456"),
+                            -1.175E-37F,
+                            -1.79769E308,
+                            LocalTime.parse("15:36:01"),
+                            jsonNode.toString(),
+                            transformPGJsonb(jsonNode.toString())));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return Collections.emptyList();
     }
 }
