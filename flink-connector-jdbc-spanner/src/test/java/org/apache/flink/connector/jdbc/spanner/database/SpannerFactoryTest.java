@@ -48,7 +48,12 @@ class SpannerFactoryTest implements SpannerTestBase {
     @BeforeEach
     void setup() {
         String jdbcUrl = getMetadata().getJdbcUrl();
-        baseUrl = jdbcUrl.substring(0, jdbcUrl.lastIndexOf("/"));
+        // Preserve semicolon parameters in baseUrl (e.g., ;autoConfigEmulator=true)
+        int semiColonIndex = jdbcUrl.indexOf(';');
+        String params = semiColonIndex != -1 ? jdbcUrl.substring(semiColonIndex) : "";
+        String urlWithoutParams =
+                semiColonIndex != -1 ? jdbcUrl.substring(0, semiColonIndex) : jdbcUrl;
+        baseUrl = urlWithoutParams.substring(0, urlWithoutParams.lastIndexOf("/") + 1) + params;
         catalog =
                 JdbcFactoryLoader.loadCatalog(
                         Thread.currentThread().getContextClassLoader(),
