@@ -24,6 +24,7 @@ import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -68,6 +69,8 @@ class PostgresCatalogTest extends PostgresCatalogTestBase {
                 .isEqualTo(
                         Arrays.asList(
                                 "public.array_table",
+                                "public.json_table",
+                                "public.jsonb_table",
                                 "public.primitive_table",
                                 "public.primitive_table2",
                                 "public.serial_table",
@@ -202,5 +205,20 @@ class PostgresCatalogTest extends PostgresCatalogTestBase {
                 catalog.getTable(
                         new ObjectPath(PostgresCatalog.DEFAULT_DATABASE, TABLE_UUID_TYPE2));
         assertThat(table.getUnresolvedSchema()).isEqualTo(getNullUuidTable().schema);
+    }
+
+    @Test
+    void testJsonDataTypes() throws TableNotExistException, JsonProcessingException {
+        CatalogBaseTable table =
+                catalog.getTable(new ObjectPath(PostgresCatalog.DEFAULT_DATABASE, TABLE_JSON_TYPE));
+        assertThat(table.getUnresolvedSchema()).isEqualTo(getJsonTable().schema);
+    }
+
+    @Test
+    void testJsonbDataTypes() throws TableNotExistException, JsonProcessingException {
+        CatalogBaseTable table =
+                catalog.getTable(
+                        new ObjectPath(PostgresCatalog.DEFAULT_DATABASE, TABLE_JSONB_TYPE));
+        assertThat(table.getUnresolvedSchema()).isEqualTo(getJsonbTable().schema);
     }
 }
