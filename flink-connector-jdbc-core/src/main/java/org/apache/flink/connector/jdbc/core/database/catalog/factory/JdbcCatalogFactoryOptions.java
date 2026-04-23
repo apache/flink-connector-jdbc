@@ -34,7 +34,7 @@ public class JdbcCatalogFactoryOptions {
     public static final ConfigOption<String> DEFAULT_DATABASE =
             ConfigOptions.key(CommonCatalogOptions.DEFAULT_DATABASE_KEY)
                     .stringType()
-                    .noDefaultValue();
+                    .defaultValue(null);
 
     public static final ConfigOption<String> USERNAME = JdbcConnectorOptions.USERNAME;
 
