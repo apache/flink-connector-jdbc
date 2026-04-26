@@ -30,14 +30,20 @@ public class ClickHouseJdbcExtractor implements JdbcExtractor {
     public ClickHouseJdbcExtractor() {}
 
     private JdbcExtractor delegate() {
-        return new OverridingJdbcExtractor("clickhouse", "8443");
+        return new OverridingJdbcExtractor("clickhouse", "8123");
     }
 
+    @Override
     public boolean isDefinedAt(String jdbcUri) {
-        return this.delegate().isDefinedAt(jdbcUri);
+        return jdbcUri.startsWith("ch:") || jdbcUri.startsWith("clickhouse:");
     }
 
+    @Override
     public JdbcLocation extract(String rawUri, Properties properties) throws URISyntaxException {
-        return this.delegate().extract(rawUri, properties);
+        // Normalize scheme and remove protocol prefix
+        String normalizedUri =
+                rawUri.replaceFirst("^ch:", "clickhouse:")
+                        .replaceFirst("^clickhouse:(https?|grpc)://", "clickhouse://");
+        return delegate().extract(normalizedUri, properties);
     }
 }

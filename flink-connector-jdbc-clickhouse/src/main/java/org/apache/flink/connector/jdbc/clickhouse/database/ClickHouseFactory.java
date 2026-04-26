@@ -29,7 +29,7 @@ import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
 public class ClickHouseFactory implements JdbcFactory {
     @Override
     public boolean acceptsURL(String url) {
-        return url.startsWith("jdbc:clickhouse:");
+        return url.startsWith("jdbc:clickhouse:") || url.startsWith("jdbc:ch:");
     }
 
     @Override
