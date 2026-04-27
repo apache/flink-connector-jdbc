@@ -143,7 +143,14 @@ public class JdbcSourceSplitReader<T>
                 recordAndOffsetBuilder.add(
                         currentSplit, new RecordAndOffset<>(record, ++currentSplitOffset, 0));
                 batch--;
-                hasNextRecordCurrentSplit = resultSet.next();
+                // Check if ResultSet is still open before calling next()
+                // This is needed for databases like Derby where ResultSet might be closed
+                // when autocommit is disabled
+                if (!resultSet.isClosed()) {
+                    hasNextRecordCurrentSplit = resultSet.next();
+                } else {
+                    hasNextRecordCurrentSplit = false;
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
