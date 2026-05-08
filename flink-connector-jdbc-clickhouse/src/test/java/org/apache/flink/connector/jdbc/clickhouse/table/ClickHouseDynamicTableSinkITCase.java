@@ -23,11 +23,6 @@ import org.apache.flink.connector.jdbc.clickhouse.database.dialect.ClickHouseDia
 import org.apache.flink.connector.jdbc.core.table.sink.JdbcDynamicTableSinkITCase;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.table.api.DataTypes;
-import org.apache.flink.types.Row;
-
-import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
 
 import static org.apache.flink.connector.jdbc.clickhouse.ClickHouseTestBase.tableRow;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.dbType;
@@ -84,28 +79,5 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
     @Override
     protected TableRow createCheckpointOutputTable() {
         return tableRow("checkpointTable", field("id", DataTypes.BIGINT().notNull()));
-    }
-
-    @Override
-    protected List<Row> testUserData() {
-        return Arrays.asList(
-                Row.of(
-                        "user1",
-                        "Tom",
-                        "tom123@gmail.com",
-                        new BigDecimal("8.10"),
-                        new BigDecimal("16.20")),
-                Row.of(
-                        "user3",
-                        "Bailey",
-                        "bailey@qq.com",
-                        new BigDecimal("9.99"),
-                        new BigDecimal("19.98")),
-                Row.of(
-                        "user4",
-                        "Tina",
-                        "tina@gmail.com",
-                        new BigDecimal("11.30"),
-                        new BigDecimal("22.60")));
     }
 }

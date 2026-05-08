@@ -26,6 +26,7 @@ import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -42,12 +43,21 @@ class ClickHouseDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
     protected TableRow createInputTable() {
         return tableRow(
                 "jdbDynamicTableSource",
-                field("id", DataTypes.BIGINT().notNull()),
-                field("decimal_col", DataTypes.DECIMAL(10, 4)),
-                field("timestamp6_col", DataTypes.TIMESTAMP(6)),
-                // other fields
-                field("real_col", dbType("Float32"), DataTypes.FLOAT()),
-                field("double_col", dbType("Float64"), DataTypes.DOUBLE()));
+                field("id", dbType("Int64"), DataTypes.BIGINT().notNull()),
+                field("decimal_col", dbType("Decimal(10, 4)"), DataTypes.DECIMAL(10, 4)),
+                field("timestamp6_col", dbType("DateTime64(6)"), DataTypes.TIMESTAMP(6)),
+                field("int_col", dbType("Int32"), DataTypes.INT()),
+                field("smallint_col", dbType("Int16"), DataTypes.SMALLINT()),
+                field("tinyint_col", dbType("Int8"), DataTypes.TINYINT()),
+                field("bigint_col", dbType("Int64"), DataTypes.BIGINT()),
+                field("float_col", dbType("Float32"), DataTypes.FLOAT()),
+                field("double_col", dbType("Float64"), DataTypes.DOUBLE()),
+                field("string_col", dbType("String"), DataTypes.STRING()),
+                field("date_col", dbType("Date"), DataTypes.DATE()),
+                field("timestamp_col", dbType("DateTime(0)"), DataTypes.TIMESTAMP()),
+                field("nullable_bool_col", dbType("Nullable(Bool)"), DataTypes.BOOLEAN()),
+                field("nullable_int_col", dbType("Nullable(Int32)"), DataTypes.INT()),
+                field("nullable_string_col", dbType("Nullable(String)"), DataTypes.STRING()));
     }
 
     @Override
@@ -57,19 +67,33 @@ class ClickHouseDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
                         1L,
                         BigDecimal.valueOf(100.1234),
                         LocalDateTime.parse("2020-01-01T15:35:00.123456"),
+                        42,
+                        (short) 11,
+                        (byte) 1,
+                        999L,
                         1.175E-37F,
-                        1.79769E308D),
+                        1.79769E308D,
+                        "hello",
+                        LocalDate.parse("2020-01-01"),
+                        LocalDateTime.parse("2020-01-01T15:35:00"),
+                        true,
+                        null,
+                        null),
                 Row.of(
                         2L,
                         BigDecimal.valueOf(101.1234),
                         LocalDateTime.parse("2020-01-01T15:36:01.123456"),
+                        -42,
+                        (short) -7,
+                        (byte) -2,
+                        -999L,
                         -1.175E-37F,
-                        -1.79769E308));
-    }
-
-    @Override
-    public String timestampFilterExpression() {
-        return "timestamp6_col > TO_TIMESTAMP_LTZ('2020-01-01 15:35:00') "
-                + "AND timestamp6_col < TO_TIMESTAMP_LTZ('2020-01-01 15:35:01')";
+                        -1.79769E308D,
+                        "world",
+                        LocalDate.parse("2020-01-01"),
+                        LocalDateTime.parse("2020-01-01T15:36:01"),
+                        null,
+                        123,
+                        "optional"));
     }
 }
