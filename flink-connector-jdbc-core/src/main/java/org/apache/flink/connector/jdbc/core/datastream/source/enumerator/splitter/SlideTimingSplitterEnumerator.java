@@ -23,9 +23,6 @@ import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.util.Preconditions;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -37,24 +34,23 @@ import java.util.Objects;
 /** A split enumerator based on sql-parameters grains. */
 @PublicEvolving
 public class SlideTimingSplitterEnumerator extends SqlSplitterEnumerator {
-    public static final Logger LOG = LoggerFactory.getLogger(SlideTimingSplitterEnumerator.class);
 
-    private final long slideStepMills;
-    private final long slideSpanMills;
+    private final long slideStepMillis;
+    private final long slideSpanMillis;
     private final long splitGenerateDelayMillis;
 
-    private @Nonnull Long startMills;
+    private @Nonnull Long startMillis;
 
     protected SlideTimingSplitterEnumerator(
             String sqlTemplate,
             Long startMills,
-            long slideSpanMills,
-            long slideStepMills,
+            long slideSpanMillis,
+            long slideStepMillis,
             long splitGenerateDelayMillis) {
         super(sqlTemplate);
-        this.startMills = Preconditions.checkNotNull(startMills);
-        this.slideStepMills = slideStepMills;
-        this.slideSpanMills = slideSpanMills;
+        this.startMillis = Preconditions.checkNotNull(startMills);
+        this.slideStepMillis = slideStepMillis;
+        this.slideSpanMillis = slideSpanMillis;
         this.splitGenerateDelayMillis = splitGenerateDelayMillis;
     }
 
@@ -72,23 +68,23 @@ public class SlideTimingSplitterEnumerator extends SqlSplitterEnumerator {
     @VisibleForTesting
     public Serializable[][] getSqlParameters() {
         List<Serializable[]> tmpList = new ArrayList<>();
-        while (nextSplitAvailable(startMills)) {
-            Serializable[] params = new Serializable[] {startMills, startMills + slideSpanMills};
+        while (nextSplitAvailable(startMillis)) {
+            Serializable[] params = new Serializable[] {startMillis, startMillis + slideSpanMillis};
             tmpList.add(params);
-            startMills += slideStepMills;
+            startMillis += slideStepMillis;
         }
         return tmpList.toArray(new Serializable[0][]);
     }
 
     @Override
     public @Nullable Serializable serializableState() {
-        return this.startMills;
+        return this.startMillis;
     }
 
     @Override
     public SlideTimingSplitterEnumerator restoreState(Serializable state) {
         Preconditions.checkArgument((Long) state > 0L);
-        this.startMills = (Long) state;
+        this.startMillis = (Long) state;
         return this;
     }
 
@@ -96,7 +92,7 @@ public class SlideTimingSplitterEnumerator extends SqlSplitterEnumerator {
         final long delayedNextSpanStartMillis = nextSpanStartMillis + splitGenerateDelayMillis;
         final long currentAvailableMillis = currentAvailableMillis();
         return currentAvailableMillis >= delayedNextSpanStartMillis
-                && (currentAvailableMillis - delayedNextSpanStartMillis >= slideSpanMills);
+                && (currentAvailableMillis - delayedNextSpanStartMillis >= slideSpanMillis);
     }
 
     private Long currentAvailableMillis() {
@@ -112,20 +108,20 @@ public class SlideTimingSplitterEnumerator extends SqlSplitterEnumerator {
             return false;
         }
         SlideTimingSplitterEnumerator that = (SlideTimingSplitterEnumerator) o;
-        return slideStepMills == that.slideStepMills
-                && slideSpanMills == that.slideSpanMills
+        return slideStepMillis == that.slideStepMillis
+                && slideSpanMillis == that.slideSpanMillis
                 && splitGenerateDelayMillis == that.splitGenerateDelayMillis
-                && Objects.equals(startMills, that.startMills);
+                && Objects.equals(startMillis, that.startMillis);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(
                 super.hashCode(),
-                slideStepMills,
-                slideSpanMills,
+                slideStepMillis,
+                slideSpanMillis,
                 splitGenerateDelayMillis,
-                startMills);
+                startMillis);
     }
 
     public static SlideTimingSplitterEnumeratorBuilder builder() {

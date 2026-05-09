@@ -23,9 +23,6 @@ import org.apache.flink.connector.jdbc.core.datastream.source.split.Checkpointed
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.util.Preconditions;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +31,6 @@ import java.util.Objects;
 
 /** A sql base template split enumerator. */
 public abstract class SqlSplitterEnumerator implements SplitterEnumerator {
-    public static final Logger LOG = LoggerFactory.getLogger(SqlSplitterEnumerator.class);
 
     private final char[] currentId = "0000000000".toCharArray();
 

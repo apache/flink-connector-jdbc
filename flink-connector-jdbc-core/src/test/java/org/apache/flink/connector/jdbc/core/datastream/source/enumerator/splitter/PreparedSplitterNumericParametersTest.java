@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter;
 
 import org.junit.jupiter.api.Test;
@@ -98,9 +116,9 @@ class PreparedSplitterNumericParametersTest {
                         .getParameterValues();
 
         long[][] expected = {
-            new long[] {2260418954055131340L, 2798685988449068491L},
-            new long[] {2798685988449068492L, 3336953022843005643L},
-            new long[] {3336953022843005644L, 3875220057236942795L}
+            new long[] {2260418954055131340L, 2798685988449068510L},
+            new long[] {2798685988449068511L, 3336953022843005680L},
+            new long[] {3336953022843005681L, 3875220057236942850L}
         };
         check(expected, parameters);
     }

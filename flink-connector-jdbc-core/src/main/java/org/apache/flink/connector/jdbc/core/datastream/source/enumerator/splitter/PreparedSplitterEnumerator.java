@@ -24,9 +24,6 @@ import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSp
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.util.Preconditions;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.annotation.Nullable;
 
 import java.io.Serializable;
@@ -37,7 +34,6 @@ import java.util.Objects;
 /** A split enumerator based on sql-parameters grains. */
 @PublicEvolving
 public class PreparedSplitterEnumerator extends SqlSplitterEnumerator {
-    public static final Logger LOG = LoggerFactory.getLogger(PreparedSplitterEnumerator.class);
 
     private final Serializable[][] sqlParameters;
     private boolean finished;

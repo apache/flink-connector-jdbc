@@ -63,7 +63,7 @@ public class PreparedSplitterNumericParameters implements Serializable {
             batchNum = (int) maxElemCount;
         }
         this.batchNum = batchNum;
-        this.batchSize = new Double(Math.ceil((double) maxElemCount / batchNum)).longValue();
+        this.batchSize = (maxElemCount + batchNum - 1) / batchNum;
         return this;
     }
 

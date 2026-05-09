@@ -305,6 +305,13 @@ public class JdbcSourceBuilder<OUT> {
         Preconditions.checkNotNull(resultExtractor, "'resultExtractor' mustn't be null.");
         Preconditions.checkNotNull(typeInformation, "'typeInformation' mustn't be null.");
 
+        Preconditions.checkArgument(
+                !(this.splitterEnumerator == null && sql == null),
+                "No splitter or query defined, one must be defined");
+        Preconditions.checkArgument(
+                !(this.splitterEnumerator != null && sql != null),
+                "Splitter and query defined, use only one of them");
+
         if (this.splitterEnumerator == null) {
             Preconditions.checkState(
                     !StringUtils.isNullOrWhitespaceOnly(sql), "'sql' mustn't be null or empty.");
