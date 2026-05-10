@@ -28,161 +28,71 @@ class SlideTimingSplitterEnumeratorTest {
 
     @Test
     void testBuilderWithValidParameters() {
-        SlideTimingSplitterEnumerator enumerator =
-                SlideTimingSplitterEnumerator.builder()
-                        .setSqlTemplate("SELECT * FROM table WHERE time >= ? AND time < ?")
-                        .setStartMills(1000L)
-                        .setSlideSpanMills(500L)
-                        .setSlideStepMills(100L)
-                        .setSplitGenerateDelayMillis(0L)
-                        .build();
+        SlideTimingSplitterEnumerator enumerator = defaultEnumerator();
 
         assertThat(enumerator).isNotNull();
     }
 
     @Test
     void testBuilderWithInvalidStartMills() {
-        assertThatThrownBy(
-                        () ->
-                                SlideTimingSplitterEnumerator.builder()
-                                        .setSqlTemplate(
-                                                "SELECT * FROM table WHERE time >= ? AND time < ?")
-                                        .setStartMills(0L)
-                                        .setSlideSpanMills(500L)
-                                        .setSlideStepMills(100L)
-                                        .setSplitGenerateDelayMillis(0L)
-                                        .build())
+        assertThatThrownBy(() -> createEnumerator(0L, 500L, 100L))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void testBuilderWithInvalidSlideSpanMillsAndStepMills() {
-        assertThatThrownBy(
-                        () ->
-                                SlideTimingSplitterEnumerator.builder()
-                                        .setSqlTemplate(
-                                                "SELECT * FROM table WHERE time >= ? AND time < ?")
-                                        .setStartMills(1000L)
-                                        .setSlideSpanMills(0L)
-                                        .setSlideStepMills(0L)
-                                        .setSplitGenerateDelayMillis(0L)
-                                        .build())
+        assertThatThrownBy(() -> createEnumerator(1000L, 0L, 0L))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void testBuilderWithNegativeSplitGenerateDelayMillis() {
-        assertThatThrownBy(
-                        () ->
-                                SlideTimingSplitterEnumerator.builder()
-                                        .setSqlTemplate(
-                                                "SELECT * FROM table WHERE time >= ? AND time < ?")
-                                        .setStartMills(1000L)
-                                        .setSlideSpanMills(500L)
-                                        .setSlideStepMills(100L)
-                                        .setSplitGenerateDelayMillis(-1L)
-                                        .build())
+        assertThatThrownBy(() -> createEnumerator(1000L, 500L, 100L, -1L))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void testEquals() {
-        SlideTimingSplitterEnumerator enumerator1 =
-                SlideTimingSplitterEnumerator.builder()
-                        .setSqlTemplate("SELECT * FROM table WHERE time >= ? AND time < ?")
-                        .setStartMills(1000L)
-                        .setSlideSpanMills(500L)
-                        .setSlideStepMills(100L)
-                        .setSplitGenerateDelayMillis(0L)
-                        .build();
+        SlideTimingSplitterEnumerator enumerator1 = defaultEnumerator();
 
-        SlideTimingSplitterEnumerator enumerator2 =
-                SlideTimingSplitterEnumerator.builder()
-                        .setSqlTemplate("SELECT * FROM table WHERE time >= ? AND time < ?")
-                        .setStartMills(1000L)
-                        .setSlideSpanMills(500L)
-                        .setSlideStepMills(100L)
-                        .setSplitGenerateDelayMillis(0L)
-                        .build();
+        SlideTimingSplitterEnumerator enumerator2 = defaultEnumerator();
 
         assertThat(enumerator1).isEqualTo(enumerator2);
     }
 
     @Test
     void testHashCode() {
-        SlideTimingSplitterEnumerator enumerator1 =
-                SlideTimingSplitterEnumerator.builder()
-                        .setSqlTemplate("SELECT * FROM table WHERE time >= ? AND time < ?")
-                        .setStartMills(1000L)
-                        .setSlideSpanMills(500L)
-                        .setSlideStepMills(100L)
-                        .setSplitGenerateDelayMillis(0L)
-                        .build();
+        SlideTimingSplitterEnumerator enumerator1 = defaultEnumerator();
 
-        SlideTimingSplitterEnumerator enumerator2 =
-                SlideTimingSplitterEnumerator.builder()
-                        .setSqlTemplate("SELECT * FROM table WHERE time >= ? AND time < ?")
-                        .setStartMills(1000L)
-                        .setSlideSpanMills(500L)
-                        .setSlideStepMills(100L)
-                        .setSplitGenerateDelayMillis(0L)
-                        .build();
+        SlideTimingSplitterEnumerator enumerator2 = defaultEnumerator();
 
         assertThat(enumerator1.hashCode()).isEqualTo(enumerator2.hashCode());
     }
 
     @Test
     void testStart() {
-        SlideTimingSplitterEnumerator enumerator =
-                SlideTimingSplitterEnumerator.builder()
-                        .setSqlTemplate("SELECT * FROM table WHERE time >= ? AND time < ?")
-                        .setStartMills(1000L)
-                        .setSlideSpanMills(500L)
-                        .setSlideStepMills(100L)
-                        .setSplitGenerateDelayMillis(0L)
-                        .build();
+        SlideTimingSplitterEnumerator enumerator = defaultEnumerator();
 
         assertThatCode(() -> enumerator.start(null)).doesNotThrowAnyException();
     }
 
     @Test
     void testClose() {
-        SlideTimingSplitterEnumerator enumerator =
-                SlideTimingSplitterEnumerator.builder()
-                        .setSqlTemplate("SELECT * FROM table WHERE time >= ? AND time < ?")
-                        .setStartMills(1000L)
-                        .setSlideSpanMills(500L)
-                        .setSlideStepMills(100L)
-                        .setSplitGenerateDelayMillis(0L)
-                        .build();
+        SlideTimingSplitterEnumerator enumerator = defaultEnumerator();
 
         assertThatCode(enumerator::close).doesNotThrowAnyException();
     }
 
     @Test
     void testIsAllSplitsFinished() {
-        SlideTimingSplitterEnumerator enumerator =
-                SlideTimingSplitterEnumerator.builder()
-                        .setSqlTemplate("SELECT * FROM table WHERE time >= ? AND time < ?")
-                        .setStartMills(1000L)
-                        .setSlideSpanMills(500L)
-                        .setSlideStepMills(100L)
-                        .setSplitGenerateDelayMillis(0L)
-                        .build();
+        SlideTimingSplitterEnumerator enumerator = defaultEnumerator();
 
         assertThat(enumerator.isAllSplitsFinished()).isFalse();
     }
 
     @Test
     void testRestoreState() {
-        SlideTimingSplitterEnumerator enumerator =
-                SlideTimingSplitterEnumerator.builder()
-                        .setSqlTemplate("SELECT * FROM table WHERE time >= ? AND time < ?")
-                        .setStartMills(1000L)
-                        .setSlideSpanMills(500L)
-                        .setSlideStepMills(100L)
-                        .setSplitGenerateDelayMillis(0L)
-                        .build();
+        SlideTimingSplitterEnumerator enumerator = defaultEnumerator();
 
         SlideTimingSplitterEnumerator restored = enumerator.restoreState(2000L);
         assertThat(restored).isNotNull();
@@ -190,15 +100,28 @@ class SlideTimingSplitterEnumeratorTest {
 
     @Test
     void testSerializableState() {
-        SlideTimingSplitterEnumerator enumerator =
-                SlideTimingSplitterEnumerator.builder()
-                        .setSqlTemplate("SELECT * FROM table WHERE time >= ? AND time < ?")
-                        .setStartMills(1000L)
-                        .setSlideSpanMills(500L)
-                        .setSlideStepMills(100L)
-                        .setSplitGenerateDelayMillis(0L)
-                        .build();
+        SlideTimingSplitterEnumerator enumerator = defaultEnumerator();
 
         assertThat(enumerator.serializableState()).isNotNull();
+    }
+
+    SlideTimingSplitterEnumerator defaultEnumerator() {
+        return createEnumerator(1000L, 500L, 100L);
+    }
+
+    SlideTimingSplitterEnumerator createEnumerator(
+            Long startMillis, Long slideSpanMillis, Long slideStepMillis) {
+        return createEnumerator(startMillis, slideSpanMillis, slideStepMillis, 0L);
+    }
+
+    SlideTimingSplitterEnumerator createEnumerator(
+            Long startMillis, Long slideSpanMillis, Long slideStepMillis, Long splitDelayMillis) {
+        return SlideTimingSplitterEnumerator.builder()
+                .setSqlTemplate("SELECT * FROM table WHERE time >= ? AND time < ?")
+                .setStartMillis(startMillis)
+                .setSlideSpanMillis(slideSpanMillis)
+                .setSlideStepMillis(slideStepMillis)
+                .setSplitGenerateDelayMillis(splitDelayMillis)
+                .build();
     }
 }

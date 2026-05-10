@@ -43,12 +43,12 @@ public class SlideTimingSplitterEnumerator extends SqlSplitterEnumerator {
 
     protected SlideTimingSplitterEnumerator(
             String sqlTemplate,
-            Long startMills,
+            Long startMillis,
             long slideSpanMillis,
             long slideStepMillis,
             long splitGenerateDelayMillis) {
         super(sqlTemplate);
-        this.startMillis = Preconditions.checkNotNull(startMills);
+        this.startMillis = Preconditions.checkNotNull(startMillis);
         this.slideStepMillis = slideStepMillis;
         this.slideSpanMillis = slideSpanMillis;
         this.splitGenerateDelayMillis = splitGenerateDelayMillis;
@@ -131,9 +131,9 @@ public class SlideTimingSplitterEnumerator extends SqlSplitterEnumerator {
     /** A slide split enumerator builder. */
     public static class SlideTimingSplitterEnumeratorBuilder {
         private String sqlTemplate;
-        private Long startMills;
-        private Long slideSpanMills;
-        private Long slideStepMills;
+        private Long startMillis;
+        private Long slideSpanMillis;
+        private Long slideStepMillis;
         private Long splitGenerateDelayMillis;
 
         public SlideTimingSplitterEnumeratorBuilder setSqlTemplate(String sqlTemplate) {
@@ -141,18 +141,18 @@ public class SlideTimingSplitterEnumerator extends SqlSplitterEnumerator {
             return this;
         }
 
-        public SlideTimingSplitterEnumeratorBuilder setStartMills(Long startMills) {
-            this.startMills = startMills;
+        public SlideTimingSplitterEnumeratorBuilder setStartMillis(Long startMillis) {
+            this.startMillis = startMillis;
             return this;
         }
 
-        public SlideTimingSplitterEnumeratorBuilder setSlideSpanMills(Long slideSpanMills) {
-            this.slideSpanMills = slideSpanMills;
+        public SlideTimingSplitterEnumeratorBuilder setSlideSpanMillis(Long slideSpanMillis) {
+            this.slideSpanMillis = slideSpanMillis;
             return this;
         }
 
-        public SlideTimingSplitterEnumeratorBuilder setSlideStepMills(Long slideStepMills) {
-            this.slideStepMills = slideStepMills;
+        public SlideTimingSplitterEnumeratorBuilder setSlideStepMillis(Long slideStepMillis) {
+            this.slideStepMillis = slideStepMillis;
             return this;
         }
 
@@ -163,18 +163,18 @@ public class SlideTimingSplitterEnumerator extends SqlSplitterEnumerator {
         }
 
         public SlideTimingSplitterEnumerator build() {
-            Preconditions.checkArgument(startMills > 0L, "'startMillis' must be greater than 0. ");
+            Preconditions.checkArgument(startMillis > 0L, "'startMillis' must be greater than 0. ");
             Preconditions.checkArgument(
-                    slideSpanMills > 0 || slideStepMills > 0,
-                    "parameters must satisfy slideSpanMills > 0 and slideStepMills > 0");
+                    slideSpanMillis > 0 || slideStepMillis > 0,
+                    "parameters must satisfy slideSpanMillis > 0 and slideStepMillis > 0");
             Preconditions.checkArgument(
                     splitGenerateDelayMillis >= 0L,
                     "parameters must satisfy splitGenerateDelayMillis >= 0");
             return new SlideTimingSplitterEnumerator(
                     sqlTemplate,
-                    startMills,
-                    slideSpanMills,
-                    slideStepMills,
+                    startMillis,
+                    slideSpanMillis,
+                    slideStepMillis,
                     splitGenerateDelayMillis);
         }
     }
