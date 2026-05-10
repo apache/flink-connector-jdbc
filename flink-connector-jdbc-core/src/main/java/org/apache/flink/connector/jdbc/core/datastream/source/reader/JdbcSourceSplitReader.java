@@ -145,10 +145,16 @@ public class JdbcSourceSplitReader<T>
                 batch--;
                 // Check if ResultSet is still open before calling next()
                 // This is needed for databases like Derby where ResultSet might be closed
-                // when autocommit is disabled
-                if (!resultSet.isClosed()) {
-                    hasNextRecordCurrentSplit = resultSet.next();
-                } else {
+                // when autocommit is disabled. Also handles PostgreSQL where isClosed()
+                // throws exception if connection is closed.
+                try {
+                    if (!resultSet.isClosed()) {
+                        hasNextRecordCurrentSplit = resultSet.next();
+                    } else {
+                        hasNextRecordCurrentSplit = false;
+                    }
+                } catch (SQLException sqlEx) {
+                    // ResultSet or connection is closed - treat as no more records
                     hasNextRecordCurrentSplit = false;
                 }
             } catch (Exception e) {
