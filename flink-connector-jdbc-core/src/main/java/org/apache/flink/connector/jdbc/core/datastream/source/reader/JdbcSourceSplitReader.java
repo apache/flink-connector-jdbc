@@ -139,14 +139,27 @@ public class JdbcSourceSplitReader<T>
         int batch = this.splitReaderFetchBatchSize;
         while (batch > 0 && hasNextRecordCurrentSplit) {
             try {
+                // Check if ResultSet is still open before extracting data
+                // This is needed for databases like Derby where ResultSet might be closed
+                // when autocommit is disabled. Also handles PostgreSQL where isClosed()
+                // throws exception if connection is closed.
+                try {
+                    if (resultSet.isClosed()) {
+                        hasNextRecordCurrentSplit = false;
+                        break;
+                    }
+                } catch (SQLException sqlEx) {
+                    // ResultSet or connection is closed - treat as no more records
+                    hasNextRecordCurrentSplit = false;
+                    break;
+                }
+
                 T record = resultExtractor.extract(resultSet);
                 recordAndOffsetBuilder.add(
                         currentSplit, new RecordAndOffset<>(record, ++currentSplitOffset, 0));
                 batch--;
+
                 // Check if ResultSet is still open before calling next()
-                // This is needed for databases like Derby where ResultSet might be closed
-                // when autocommit is disabled. Also handles PostgreSQL where isClosed()
-                // throws exception if connection is closed.
                 try {
                     if (!resultSet.isClosed()) {
                         hasNextRecordCurrentSplit = resultSet.next();
