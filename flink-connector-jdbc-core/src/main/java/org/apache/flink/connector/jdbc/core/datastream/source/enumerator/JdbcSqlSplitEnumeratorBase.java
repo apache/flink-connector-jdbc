@@ -47,6 +47,10 @@ public abstract class JdbcSqlSplitEnumeratorBase<SplitT> implements AutoCloseabl
         this.optionalSqlSplitEnumeratorState = optionalSqlSplitEnumeratorState;
     }
 
+    public Serializable enumeratorState() {
+        return this.optionalSqlSplitEnumeratorState;
+    }
+
     protected final String getNextId() {
         // because we just increment numbers, we increment the char representation directly,
         // rather than incrementing an integer and converting it to a string representation

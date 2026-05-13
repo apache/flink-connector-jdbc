@@ -84,7 +84,7 @@ public class JdbcSqlSplitterEnumerator implements SplitterEnumerator {
 
     @Override
     public Serializable serializableState() {
-        return null;
+        return base.enumeratorState();
     }
 
     @Override
