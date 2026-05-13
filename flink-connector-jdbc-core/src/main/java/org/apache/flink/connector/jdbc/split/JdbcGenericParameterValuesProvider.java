@@ -20,13 +20,18 @@ package org.apache.flink.connector.jdbc.split;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.jdbc.JdbcInputFormat;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.PreparedSplitterEnumerator;
 
 import java.io.Serializable;
 
 /**
  * This splits generator actually does nothing but wrapping the query parameters computed by the
  * user before creating the {@link JdbcInputFormat} instance.
+ *
+ * @deprecated Use {@link PreparedSplitterEnumerator} instead. As example:
+ *     PreparedSplitterEnumerator.of(query, parameters).
  */
+@Deprecated
 @PublicEvolving
 public class JdbcGenericParameterValuesProvider implements JdbcParameterValuesProvider {
 
