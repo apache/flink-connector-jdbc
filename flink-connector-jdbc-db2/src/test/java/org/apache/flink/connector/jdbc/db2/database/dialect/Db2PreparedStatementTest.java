@@ -74,7 +74,7 @@ class Db2PreparedStatementTest {
         String upsertStmt = dialect.getUpsertStatement(tableName, fieldNames, keyFields).get();
         assertThat(upsertStmt)
                 .isEqualTo(
-                        "MERGE INTO tbl AS TARGET USING TABLE (VALUES ( :id, :name, :email, :ts, :field1, :field_2, :__field_3__ )) AS SOURCE ( id, name, email, ts, field1, field_2, __field_3__ ) ON (TARGET.id= SOURCE.id AND TARGET.__field_3__= SOURCE.__field_3__) WHEN MATCHED THEN UPDATE SET TARGET.name= SOURCE.name, TARGET.email= SOURCE.email, TARGET.ts= SOURCE.ts, TARGET.field1= SOURCE.field1, TARGET.field_2= SOURCE.field_2 WHEN NOT MATCHED THEN INSERT (id, name, email, ts, field1, field_2, __field_3__) VALUES (SOURCE.id, SOURCE.name, SOURCE.email, SOURCE.ts, SOURCE.field1, SOURCE.field_2, SOURCE.__field_3__);");
+                        "MERGE INTO tbl AS TARGET USING TABLE (VALUES ( :id, :name, :email, :ts, :field1, :field_2, :__field_3__ )) AS SOURCE ( id, name, email, ts, field1, field_2, __field_3__ ) ON (TARGET.id= SOURCE.id AND TARGET.__field_3__= SOURCE.__field_3__) WHEN MATCHED THEN UPDATE SET TARGET.name= SOURCE.name, TARGET.email= SOURCE.email, TARGET.ts= SOURCE.ts, TARGET.field1= SOURCE.field1, TARGET.field_2= SOURCE.field_2 WHEN NOT MATCHED THEN INSERT (id, name, email, ts, field1, field_2, __field_3__) VALUES (SOURCE.id, SOURCE.name, SOURCE.email, SOURCE.ts, SOURCE.field1, SOURCE.field_2, SOURCE.__field_3__)").doesNotEndWith(";");
     }
 
     @Test
