@@ -23,6 +23,9 @@ import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.CollectionUtil;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -212,5 +215,38 @@ class PostgresCatalogITCase extends PostgresCatalogTestBase {
                                 .execute()
                                 .collect());
         assertThat(results).hasToString("[+I[1, null]]");
+    }
+
+    @Test
+    void testJsonTypes() throws JsonProcessingException {
+
+        List<Row> results =
+                CollectionUtil.iteratorToList(
+                        tEnv.sqlQuery(String.format("select * from %s", TABLE_JSON_TYPE))
+                                .execute()
+                                .collect());
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode expectedJson =
+                mapper.readTree(
+                        "\"test1\":{\"test1-1\":\"testValue\",\"test1-2\":1,\"test1-3\":[\"test1-3-1\",\"test1-3-2\"]}, 2, \"test2\"");
+
+        assertThat(results).hasToString("[+I[" + expectedJson.toString() + "]]");
+    }
+
+    @Test
+    void testJsonbTypes() throws JsonProcessingException {
+        List<Row> results =
+                CollectionUtil.iteratorToList(
+                        tEnv.sqlQuery(String.format("select * from %s", TABLE_JSONB_TYPE))
+                                .execute()
+                                .collect());
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode expectedJson =
+                mapper.readTree(
+                        "\"test1\":{\"test1-1\":\"testValue\",\"test1-2\":1,\"test1-3\":[\"test1-3-1\",\"test1-3-2\"]}, 2, \"test2\"");
+
+        assertThat(results).hasToString("[+I[" + transformPGJsonb(expectedJson.toString()) + "]]");
     }
 }
