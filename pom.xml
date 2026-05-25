@@ -66,7 +66,7 @@ under the License.
         <assertj.version>3.24.2</assertj.version>
         <testcontainers.version>1.20.1</testcontainers.version>
         <mockito.version>3.12.4</mockito.version>
-        <openlineage.version>1.32.0</openlineage.version>
+        <openlineage.version>1.47.1</openlineage.version>
         <commons.io.version>2.20.0</commons.io.version>
 
         <japicmp.referenceVersion>3.0.0-1.16</japicmp.referenceVersion>
@@ -236,6 +236,24 @@ under the License.
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>4.5.13</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.httpcomponents.core5</groupId>
+                <artifactId>httpcore5</artifactId>
+                <version>5.3.4</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.httpcomponents.core5</groupId>
+                <artifactId>httpcore5-h2</artifactId>
+                <version>5.3.4</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>5.4.4</version>
             </dependency>
 
             <dependency>

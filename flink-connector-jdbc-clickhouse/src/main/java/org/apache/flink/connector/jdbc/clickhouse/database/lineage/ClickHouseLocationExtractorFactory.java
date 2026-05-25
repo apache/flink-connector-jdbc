@@ -21,6 +21,7 @@ package org.apache.flink.connector.jdbc.clickhouse.database.lineage;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.lineage.JdbcLocationExtractorFactory;
 
+import io.openlineage.client.utils.jdbc.ClickHouseJdbcExtractor;
 import io.openlineage.client.utils.jdbc.JdbcExtractor;
 
 /** Implementation of {@link JdbcLocationExtractorFactory} for ClickHouse. */
