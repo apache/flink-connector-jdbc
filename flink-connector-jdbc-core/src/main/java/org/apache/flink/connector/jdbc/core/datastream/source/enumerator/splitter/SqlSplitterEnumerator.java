@@ -50,14 +50,13 @@ public abstract class SqlSplitterEnumerator implements SplitterEnumerator {
     @Override
     public List<JdbcSourceSplit> enumerateSplits() {
         Serializable[][] params = getSqlParameters();
+        if (params == null || params.length == 0) {
+            return Collections.emptyList();
+        }
         int paramLength = params.length;
         List<JdbcSourceSplit> splitList = new ArrayList<>(paramLength);
-        if (paramLength == 0) {
-            splitList.add(createSplit(null));
-        } else {
-            for (Serializable[] paramArr : params) {
-                splitList.add(createSplit(paramArr));
-            }
+        for (Serializable[] paramArr : params) {
+            splitList.add(createSplit(paramArr));
         }
         return splitList;
     }

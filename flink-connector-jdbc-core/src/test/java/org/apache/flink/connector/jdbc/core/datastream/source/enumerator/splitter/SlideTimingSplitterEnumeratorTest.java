@@ -20,6 +20,8 @@ package org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitt
 
 import org.junit.jupiter.api.Test;
 
+import java.io.Serializable;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -49,6 +51,19 @@ class SlideTimingSplitterEnumeratorTest {
     void testBuilderWithNegativeSplitGenerateDelayMillis() {
         assertThatThrownBy(() -> createEnumerator(1000L, 500L, 100L, -1L))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void testEnumerateSplitsWithNoParameters() {
+        SlideTimingSplitterEnumerator enumerator =
+                new SlideTimingSplitterEnumerator(
+                        "SELECT * FROM table WHERE time >= ? AND time < ?", 1000L, 500L, 100L, 0L) {
+                    @Override
+                    public Serializable[][] getSqlParameters() {
+                        return new Serializable[0][0];
+                    }
+                };
+        assertThat(enumerator.enumerateSplits()).isEmpty();
     }
 
     @Test
