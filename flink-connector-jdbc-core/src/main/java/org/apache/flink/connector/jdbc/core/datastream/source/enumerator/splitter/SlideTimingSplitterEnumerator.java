@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitt
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.util.Preconditions;
 
@@ -52,6 +53,11 @@ public class SlideTimingSplitterEnumerator extends SqlSplitterEnumerator {
         this.slideStepMillis = slideStepMillis;
         this.slideSpanMillis = slideSpanMillis;
         this.splitGenerateDelayMillis = splitGenerateDelayMillis;
+    }
+
+    @Override
+    public Boundedness getBoundedness() {
+        return Boundedness.CONTINUOUS_UNBOUNDED;
     }
 
     @Override
@@ -165,7 +171,7 @@ public class SlideTimingSplitterEnumerator extends SqlSplitterEnumerator {
         public SlideTimingSplitterEnumerator build() {
             Preconditions.checkArgument(startMillis > 0L, "'startMillis' must be greater than 0. ");
             Preconditions.checkArgument(
-                    slideSpanMillis > 0 || slideStepMillis > 0,
+                    slideSpanMillis > 0 && slideStepMillis > 0,
                     "parameters must satisfy slideSpanMillis > 0 and slideStepMillis > 0");
             Preconditions.checkArgument(
                     splitGenerateDelayMillis >= 0L,

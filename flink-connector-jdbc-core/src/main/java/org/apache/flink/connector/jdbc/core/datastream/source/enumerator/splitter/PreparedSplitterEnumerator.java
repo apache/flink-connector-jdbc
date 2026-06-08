@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitt
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.util.Preconditions;
@@ -27,6 +28,7 @@ import org.apache.flink.util.Preconditions;
 import javax.annotation.Nullable;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -36,7 +38,7 @@ import java.util.Objects;
 public class PreparedSplitterEnumerator extends SqlSplitterEnumerator {
 
     private final Serializable[][] sqlParameters;
-    private boolean finished;
+    private volatile boolean finished;
 
     protected PreparedSplitterEnumerator(String sqlTemplate, Serializable[][] sqlParameters) {
         super(Preconditions.checkNotNull(sqlTemplate));
@@ -74,13 +76,18 @@ public class PreparedSplitterEnumerator extends SqlSplitterEnumerator {
     }
 
     @Override
+    public Boundedness getBoundedness() {
+        return Boundedness.BOUNDED;
+    }
+
+    @Override
     public void start(JdbcConnectionProvider connectionProvider) {}
 
     @Override
     public void close() {}
 
     @Override
-    public boolean isAllSplitsFinished() {
+    public synchronized boolean isAllSplitsFinished() {
         return this.finished;
     }
 
@@ -90,7 +97,10 @@ public class PreparedSplitterEnumerator extends SqlSplitterEnumerator {
     }
 
     @Override
-    public List<JdbcSourceSplit> enumerateSplits() {
+    public synchronized List<JdbcSourceSplit> enumerateSplits() {
+        if (finished) {
+            return new ArrayList<>();
+        }
         List<JdbcSourceSplit> splitList = super.enumerateSplits();
         this.finished = true;
         return splitList;

@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.source.enumerator;
 
+import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.SplitterEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.CheckpointedOffset;
@@ -108,6 +109,11 @@ class JdbcSourceEnumeratorTest {
                 context,
                 new SplitterEnumerator() {
                     @Override
+                    public Boundedness getBoundedness() {
+                        return Boundedness.BOUNDED;
+                    }
+
+                    @Override
                     public void start(JdbcConnectionProvider connectionProvider) {}
 
                     @Override
@@ -115,7 +121,7 @@ class JdbcSourceEnumeratorTest {
 
                     @Override
                     public boolean isAllSplitsFinished() {
-                        return false;
+                        return true;
                     }
 
                     @Override
@@ -138,7 +144,6 @@ class JdbcSourceEnumeratorTest {
                         return null;
                     }
                 },
-                null,
                 null,
                 Arrays.stream(splits).collect(Collectors.toList()));
     }

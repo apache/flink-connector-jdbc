@@ -332,7 +332,11 @@ public class JdbcSourceBuilder<OUT> {
             }
 
             this.splitterEnumerator =
-                    getSplitter(sql, jdbcParameterValuesProvider, optionalSqlSplitEnumeratorState);
+                    getSplitter(
+                            sql,
+                            jdbcParameterValuesProvider,
+                            optionalSqlSplitEnumeratorState,
+                            continuousUnBoundingSettings);
         }
 
         return new JdbcSource<>(
@@ -341,20 +345,20 @@ public class JdbcSourceBuilder<OUT> {
                 splitterEnumerator,
                 resultExtractor,
                 typeInformation,
-                deliveryGuarantee,
-                continuousUnBoundingSettings);
+                deliveryGuarantee);
     }
 
     private SplitterEnumerator getSplitter(
             String sqlTemplate,
             JdbcParameterValuesProvider parameterProvider,
-            Serializable userDefinedState) {
+            Serializable userDefinedState,
+            @Nullable ContinuousUnBoundingSettings continuousSettings) {
         JdbcSqlSplitEnumeratorBase.Provider<?> provider =
                 new SqlTemplateSplitEnumerator.TemplateSqlSplitEnumeratorProvider()
                         .setOptionalSqlSplitEnumeratorState(userDefinedState)
                         .setSqlTemplate(sqlTemplate)
                         .setParameterValuesProvider(parameterProvider);
 
-        return new JdbcSqlSplitterEnumerator(provider);
+        return new JdbcSqlSplitterEnumerator(provider, continuousSettings);
     }
 }

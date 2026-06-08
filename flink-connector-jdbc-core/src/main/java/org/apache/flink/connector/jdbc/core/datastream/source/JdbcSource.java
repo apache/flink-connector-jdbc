@@ -67,9 +67,7 @@ public class JdbcSource<OUT>
                 Source<OUT, JdbcSourceSplit, JdbcSourceEnumeratorState>,
                 ResultTypeQueryable<OUT> {
 
-    private final Boundedness boundedness;
     private final TypeInformation<OUT> typeInformation;
-    private final @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings;
 
     private final Configuration configuration;
     private final SplitterEnumerator splitterEnumerator;
@@ -90,11 +88,11 @@ public class JdbcSource<OUT>
         this(
                 configuration,
                 connectionProvider,
-                new JdbcSqlSplitterEnumerator(sqlSplitEnumeratorProvider),
+                new JdbcSqlSplitterEnumerator(
+                        sqlSplitEnumeratorProvider, continuousUnBoundingSettings),
                 resultExtractor,
                 typeInformation,
-                deliveryGuarantee,
-                continuousUnBoundingSettings);
+                deliveryGuarantee);
     }
 
     JdbcSource(
@@ -103,8 +101,7 @@ public class JdbcSource<OUT>
             SplitterEnumerator splitterEnumerator,
             ResultExtractor<OUT> resultExtractor,
             TypeInformation<OUT> typeInformation,
-            @Nullable DeliveryGuarantee deliveryGuarantee,
-            @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings) {
+            @Nullable DeliveryGuarantee deliveryGuarantee) {
         this.configuration = Preconditions.checkNotNull(configuration);
         this.connectionProvider = Preconditions.checkNotNull(connectionProvider);
         this.splitterEnumerator = Preconditions.checkNotNull(splitterEnumerator);
@@ -112,16 +109,11 @@ public class JdbcSource<OUT>
         this.deliveryGuarantee =
                 Objects.isNull(deliveryGuarantee) ? DeliveryGuarantee.NONE : deliveryGuarantee;
         this.typeInformation = Preconditions.checkNotNull(typeInformation);
-        this.continuousUnBoundingSettings = continuousUnBoundingSettings;
-        this.boundedness =
-                Objects.isNull(continuousUnBoundingSettings)
-                        ? Boundedness.BOUNDED
-                        : Boundedness.CONTINUOUS_UNBOUNDED;
     }
 
     @Override
     public Boundedness getBoundedness() {
-        return boundedness;
+        return splitterEnumerator.getBoundedness();
     }
 
     @Override
@@ -144,11 +136,7 @@ public class JdbcSource<OUT>
     public SplitEnumerator<JdbcSourceSplit, JdbcSourceEnumeratorState> createEnumerator(
             SplitEnumeratorContext<JdbcSourceSplit> enumContext) throws Exception {
         return new JdbcSourceEnumerator(
-                enumContext,
-                splitterEnumerator,
-                connectionProvider,
-                continuousUnBoundingSettings,
-                new ArrayList<>());
+                enumContext, splitterEnumerator, connectionProvider, new ArrayList<>());
     }
 
     @Override
@@ -162,7 +150,6 @@ public class JdbcSource<OUT>
                 enumContext,
                 splitterEnumerator.restoreState(optionalUserDefinedSplitEnumeratorState),
                 connectionProvider,
-                continuousUnBoundingSettings,
                 checkpoint.getRemainingSplits());
     }
 
@@ -223,14 +210,12 @@ public class JdbcSource<OUT>
             return false;
         }
         JdbcSource<?> that = (JdbcSource<?>) o;
-        return boundedness == that.boundedness
-                && Objects.equals(typeInformation, that.typeInformation)
+        return Objects.equals(typeInformation, that.typeInformation)
                 && Objects.equals(configuration, that.configuration)
                 && Objects.equals(splitterEnumerator, that.splitterEnumerator)
                 && Objects.equals(connectionProvider, that.connectionProvider)
                 && Objects.equals(resultExtractor, that.resultExtractor)
-                && deliveryGuarantee == that.deliveryGuarantee
-                && Objects.equals(continuousUnBoundingSettings, that.continuousUnBoundingSettings);
+                && deliveryGuarantee == that.deliveryGuarantee;
     }
 
     @Override
@@ -243,6 +228,6 @@ public class JdbcSource<OUT>
         LineageDataset dataset =
                 LineageUtils.datasetOf(
                         nameOpt.orElse(""), namespace, Arrays.asList(defaultTypeDatasetFacet));
-        return LineageUtils.sourceLineageVertexOf(boundedness, Collections.singleton(dataset));
+        return LineageUtils.sourceLineageVertexOf(getBoundedness(), Collections.singleton(dataset));
     }
 }

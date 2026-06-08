@@ -18,11 +18,9 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.source.enumerator;
 
-import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
-import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.SplitterEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
@@ -37,11 +35,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** JDBC source enumerator. */
 public class JdbcSourceEnumerator
@@ -49,44 +45,27 @@ public class JdbcSourceEnumerator
     private static final Logger LOG = LoggerFactory.getLogger(JdbcSourceEnumerator.class);
 
     private final SplitEnumeratorContext<JdbcSourceSplit> context;
-    private final Boundedness boundedness;
-    private final LinkedHashMap<Integer, String> readersAwaitingSplit;
     private final List<JdbcSourceSplit> unassigned;
     private final SplitterEnumerator splitterEnumerator;
-    private final @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings;
     private final JdbcConnectionProvider connectionProvider;
+    private final List<Integer> readersWaitingForSplits = new ArrayList<>();
+    private final AtomicInteger asyncCallsPending = new AtomicInteger(0);
 
     public JdbcSourceEnumerator(
             SplitEnumeratorContext<JdbcSourceSplit> context,
             SplitterEnumerator splitterEnumerator,
             JdbcConnectionProvider connectionProvider,
-            ContinuousUnBoundingSettings continuousUnBoundingSettings,
             List<JdbcSourceSplit> unassigned) {
         this.context = Preconditions.checkNotNull(context);
         this.splitterEnumerator = Preconditions.checkNotNull(splitterEnumerator);
-        this.continuousUnBoundingSettings = continuousUnBoundingSettings;
-        this.boundedness =
-                Objects.isNull(continuousUnBoundingSettings)
-                        ? Boundedness.BOUNDED
-                        : Boundedness.CONTINUOUS_UNBOUNDED;
         this.unassigned = Preconditions.checkNotNull(unassigned);
-        this.readersAwaitingSplit = new LinkedHashMap<>();
         this.connectionProvider = connectionProvider;
     }
 
     @Override
     public void start() {
         splitterEnumerator.start(connectionProvider);
-        if (boundedness == Boundedness.CONTINUOUS_UNBOUNDED
-                && Objects.nonNull(continuousUnBoundingSettings)) {
-            context.callAsync(
-                    () -> splitterEnumerator.enumerateSplits(() -> 1024 - unassigned.size() > 0),
-                    this::processNewSplits,
-                    continuousUnBoundingSettings.getInitialDiscoveryDelay().toMillis(),
-                    continuousUnBoundingSettings.getDiscoveryInterval().toMillis());
-        } else {
-            unassigned.addAll(splitterEnumerator.enumerateSplits());
-        }
+        preDiscoverSplits();
     }
 
     @Override
@@ -101,11 +80,20 @@ public class JdbcSourceEnumerator
 
     @Override
     public void handleSplitRequest(int subtask, @Nullable String hostname) {
-        if (boundedness == Boundedness.BOUNDED) {
-            assignSplitsForBounded(subtask, hostname);
+        if (!context.registeredReaders().containsKey(subtask)) {
+            LOG.warn("Ignoring split request from unregistered reader {}", subtask);
+            return;
+        }
+        final Optional<JdbcSourceSplit> nextSplit = getNextSplit();
+        if (nextSplit.isPresent()) {
+            context.assignSplit(nextSplit.get(), subtask);
+            LOG.info("Assigned split to subtask {} : {}", subtask, nextSplit.get());
+            preDiscoverSplits();
         } else {
-            readersAwaitingSplit.put(subtask, hostname);
-            assignSplitsForUnbounded();
+            if (!readersWaitingForSplits.contains(subtask)) {
+                readersWaitingForSplits.add(subtask);
+            }
+            preDiscoverSplits();
         }
     }
 
@@ -116,18 +104,13 @@ public class JdbcSourceEnumerator
 
     @Override
     public void addSplitsBack(List<JdbcSourceSplit> splits, int subtaskId) {
-        LOG.debug("File Source Enumerator adds splits back: {}", splits);
+        LOG.debug("Source Enumerator adds splits back: {}", splits);
         unassigned.addAll(splits);
-        if (boundedness == Boundedness.BOUNDED) {
-            context.registeredReaders()
-                    .keySet()
-                    .forEach(subTask -> assignSplitsForBounded(subTask, null));
-        } else if (boundedness == Boundedness.CONTINUOUS_UNBOUNDED) {
-            if (context.registeredReaders().containsKey(subtaskId)) {
-                readersAwaitingSplit.put(subtaskId, null);
-            }
-            assignSplitsForUnbounded();
+        if (context.registeredReaders().containsKey(subtaskId)
+                && !readersWaitingForSplits.contains(subtaskId)) {
+            readersWaitingForSplits.add(subtaskId);
         }
+        preDiscoverSplits();
     }
 
     @Override
@@ -150,58 +133,64 @@ public class JdbcSourceEnumerator
         return Optional.of(next);
     }
 
-    private void assignSplitsForBounded(int subtask, @Nullable String hostname) {
-        if (!context.registeredReaders().containsKey(subtask)) {
-            return;
+    private void preDiscoverSplits() {
+        int targetParallelism = context.currentParallelism();
+        while (asyncCallsPending.get() < targetParallelism
+                && !splitterEnumerator.isAllSplitsFinished()) {
+            asyncCallsPending.incrementAndGet();
+            context.callAsync(() -> splitterEnumerator.enumerateSplits(), this::onSplitsDiscovered);
         }
-        if (LOG.isInfoEnabled()) {
-            final String hostInfo =
-                    hostname == null ? "(no host locality info)" : "(on host '" + hostname + "')";
-            LOG.info("Subtask {} {} is requesting a Jdbc source split", subtask, hostInfo);
-        }
-        final Optional<JdbcSourceSplit> nextSplit = getNextSplit();
-        if (nextSplit.isPresent()) {
-            final JdbcSourceSplit split = nextSplit.get();
-            context.assignSplit(split, subtask);
-            LOG.info("Assigned split to subtask {} : {}", subtask, split);
-        } else {
-            context.signalNoMoreSplits(subtask);
-            LOG.info("No more splits available for subtask {}", subtask);
-        }
+
+        signalNoMoreSplitsIfDone();
     }
 
-    private void processNewSplits(List<JdbcSourceSplit> splits, Throwable error) {
+    private void onSplitsDiscovered(List<JdbcSourceSplit> splits, Throwable error) {
+        asyncCallsPending.decrementAndGet();
         if (error != null) {
-            LOG.error("Failed to enumerate sql splits.", error);
+            LOG.error("Failed to discover splits.", error);
+            preDiscoverSplits();
             return;
         }
-        this.unassigned.addAll(splits);
 
-        assignSplitsForUnbounded();
+        if (splits != null && !splits.isEmpty()) {
+            assignOrBuffer(splits);
+            preDiscoverSplits();
+        } else if (!splitterEnumerator.isAllSplitsFinished()) {
+            preDiscoverSplits();
+        } else {
+            signalNoMoreSplitsIfDone();
+        }
     }
 
-    private void assignSplitsForUnbounded() {
-        final Iterator<Map.Entry<Integer, String>> awaitingReader =
-                readersAwaitingSplit.entrySet().iterator();
-
-        while (awaitingReader.hasNext()) {
-            final Map.Entry<Integer, String> nextAwaiting = awaitingReader.next();
-
-            // if the reader that requested another split has failed in the meantime, remove
-            // it from the list of waiting readers
-            if (!context.registeredReaders().containsKey(nextAwaiting.getKey())) {
-                awaitingReader.remove();
-                continue;
-            }
-
-            final int awaitingSubtask = nextAwaiting.getKey();
-            final Optional<JdbcSourceSplit> nextSplit = getNextSplit();
-            if (nextSplit.isPresent()) {
-                context.assignSplit(nextSplit.get(), awaitingSubtask);
-                awaitingReader.remove();
+    private void assignOrBuffer(List<JdbcSourceSplit> splits) {
+        for (JdbcSourceSplit split : splits) {
+            if (!readersWaitingForSplits.isEmpty()) {
+                int subtaskId = readersWaitingForSplits.remove(0);
+                if (context.registeredReaders().containsKey(subtaskId)) {
+                    LOG.info(
+                            "Assigning discovered split {} to waiting subtask {}",
+                            split,
+                            subtaskId);
+                    context.assignSplit(split, subtaskId);
+                } else {
+                    unassigned.add(split);
+                }
             } else {
-                break;
+                unassigned.add(split);
             }
+        }
+    }
+
+    private void signalNoMoreSplitsIfDone() {
+        if (asyncCallsPending.get() == 0
+                && splitterEnumerator.isAllSplitsFinished()
+                && unassigned.isEmpty()
+                && !readersWaitingForSplits.isEmpty()) {
+            for (int subtaskId : readersWaitingForSplits) {
+                context.signalNoMoreSplits(subtaskId);
+                LOG.info("No more splits available for subtask {}", subtaskId);
+            }
+            readersWaitingForSplits.clear();
         }
     }
 }

@@ -19,14 +19,20 @@
 package org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter;
 
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.api.connector.source.Boundedness;
+import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSqlSplitEnumeratorBase;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.SqlTemplateSplitEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 
+import javax.annotation.Nullable;
+
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A splitter enumerator for JdbcSqlSplitEnumeratorBase.
@@ -39,13 +45,28 @@ import java.util.List;
 @Internal
 public class JdbcSqlSplitterEnumerator implements SplitterEnumerator {
     private final JdbcSqlSplitEnumeratorBase.Provider<?> provider;
+    private final Boundedness boundedness;
+    private final @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings;
     private JdbcSqlSplitEnumeratorBase<?> base;
-    private boolean finished;
+    private volatile boolean finished;
+    private volatile boolean initialDelayApplied;
 
-    public JdbcSqlSplitterEnumerator(JdbcSqlSplitEnumeratorBase.Provider<?> provider) {
+    public JdbcSqlSplitterEnumerator(
+            JdbcSqlSplitEnumeratorBase.Provider<?> provider,
+            @Nullable ContinuousUnBoundingSettings continuousUnBoundingSettings) {
         this.provider = provider;
         this.base = provider.create();
         this.finished = false;
+        this.boundedness =
+                Objects.nonNull(continuousUnBoundingSettings)
+                        ? Boundedness.CONTINUOUS_UNBOUNDED
+                        : Boundedness.BOUNDED;
+        this.continuousUnBoundingSettings = continuousUnBoundingSettings;
+    }
+
+    @Override
+    public Boundedness getBoundedness() {
+        return boundedness;
     }
 
     @Override
@@ -59,15 +80,40 @@ public class JdbcSqlSplitterEnumerator implements SplitterEnumerator {
     }
 
     @Override
-    public boolean isAllSplitsFinished() {
+    public synchronized boolean isAllSplitsFinished() {
+        if (boundedness == Boundedness.CONTINUOUS_UNBOUNDED) {
+            return false;
+        }
         return this.finished;
     }
 
     @Override
-    public List<JdbcSourceSplit> enumerateSplits() {
+    public synchronized List<JdbcSourceSplit> enumerateSplits() {
         try {
-            this.finished = true;
-            return base.enumerateSplits(() -> true);
+            if (finished) {
+                return new ArrayList<>();
+            }
+            if (boundedness == Boundedness.CONTINUOUS_UNBOUNDED && !initialDelayApplied) {
+                initialDelayApplied = true;
+                Duration delayMs = continuousUnBoundingSettings.getInitialDiscoveryDelay();
+                if (delayMs != null) {
+                    Thread.sleep(delayMs.toMillis());
+                }
+            }
+            List<JdbcSourceSplit> splits = base.enumerateSplits(() -> true);
+            if (boundedness == Boundedness.BOUNDED) {
+                this.finished = true;
+            }
+            if (boundedness == Boundedness.CONTINUOUS_UNBOUNDED && splits.isEmpty()) {
+                Duration throttleMs = continuousUnBoundingSettings.getDiscoveryInterval();
+                if (throttleMs != null) {
+                    Thread.sleep(throttleMs.toMillis());
+                }
+            }
+            return splits;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new ArrayList<>();
         } catch (Exception e) {
             throw new RuntimeException("Error enumerating splits", e);
         }
