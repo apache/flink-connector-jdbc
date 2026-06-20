@@ -30,8 +30,8 @@ import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -115,7 +115,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                         "tom123@gmail.com",
                         new BigDecimal("8.10"),
                         new BigDecimal("16.20"),
-                        Timestamp.valueOf("1999-06-08 10:12:11.301"),
+                        LocalDateTime.parse("1999-06-08T10:12:11.301"),
                         Arrays.asList("tom3@gmail.com", "tom5@gmail.com"),
                         Arrays.asList(81723, 12315),
                         new HashMap<Integer, String>() {
@@ -131,7 +131,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                         "bailey@qq.com",
                         new BigDecimal("9.99"),
                         new BigDecimal("19.98"),
-                        Timestamp.valueOf("1999-12-11 20:22:11.301"),
+                        LocalDateTime.parse("1999-12-11T20:22:11.301"),
                         Arrays.asList("bll3@gmail.com", "bll5@gmail.com"),
                         Arrays.asList(81623, 22371),
                         new HashMap<Integer, String>() {
@@ -147,7 +147,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                         "tina@gmail.com",
                         new BigDecimal("11.30"),
                         new BigDecimal("22.60"),
-                        Timestamp.valueOf("2001-01-01 00:11:44.124"),
+                        LocalDateTime.parse("2001-01-01T00:11:44.124"),
                         Arrays.asList("tina1@gmail.com", "tina6@gmail.com"),
                         Arrays.asList(12415, 66423),
                         new HashMap<Integer, String>() {
@@ -172,7 +172,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                         "tom123@gmail.com",
                                         new BigDecimal("8.10"),
                                         new BigDecimal("16.20"),
-                                        Timestamp.valueOf("1999-06-08 10:12:11.301"),
+                                        LocalDateTime.parse("1999-06-08T10:12:11.301"),
                                         Arrays.asList("tom3@gmail.com", "tom5@gmail.com"),
                                         Arrays.asList(81723, 12315),
                                         new HashMap<Integer, String>() {
@@ -189,7 +189,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                         "bailey@qq.com",
                                         new BigDecimal("9.99"),
                                         new BigDecimal("19.98"),
-                                        Timestamp.valueOf("1999-12-11 20:22:11.301"),
+                                        LocalDateTime.parse("1999-12-11T20:22:11.301"),
                                         Arrays.asList("bll3@gmail.com", "bll5@gmail.com"),
                                         Arrays.asList(81623, 22371),
                                         new HashMap<Integer, String>() {
@@ -206,7 +206,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                         "tina@gmail.com",
                                         new BigDecimal("11.30"),
                                         new BigDecimal("22.60"),
-                                        Timestamp.valueOf("2001-01-01 00:11:44.124"),
+                                        LocalDateTime.parse("2001-01-01T00:11:44.124"),
                                         Arrays.asList("tina1@gmail.com", "tina6@gmail.com"),
                                         Arrays.asList(12415, 66423),
                                         new HashMap<Integer, String>() {
