@@ -36,7 +36,9 @@ import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
 import java.lang.reflect.Array;
 import java.sql.Date;
 import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,15 +73,16 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
 
     @Override
     public JdbcSerializationConverter createExternalConverter(LogicalType type) {
-        switch (type.getTypeRoot()) {
-            case MAP:
-                return (val, index, statement) ->
-                        statement.setObject(index, toExternalSerializer(val.getMap(index), type));
-            case ARRAY:
-                return (val, index, statement) ->
-                        statement.setObject(index, toExternalSerializer(val.getArray(index), type));
-            default:
-                return super.createExternalConverter(type);
+        LogicalTypeRoot root = type.getTypeRoot();
+
+        if (root == LogicalTypeRoot.ARRAY) {
+            return (val, index, statement) ->
+                    statement.setObject(index, toExternalSerializer(val.getArray(index), type));
+        } else if (root == LogicalTypeRoot.MAP) {
+            return (val, index, statement) ->
+                    statement.setObject(index, toExternalSerializer(val.getMap(index), type));
+        } else {
+            return super.createExternalConverter(type);
         }
     }
 
@@ -102,11 +105,6 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
                 return value instanceof Number ? ((Number) value).floatValue() : value;
             case DOUBLE:
                 return value instanceof Number ? ((Number) value).doubleValue() : value;
-            case BINARY:
-            case VARBINARY:
-                throw new UnsupportedOperationException(
-                        "BINARY/VARBINARY types are not supported by ClickHouse dialect. "
-                                + "Use STRING instead.");
             case CHAR:
             case VARCHAR:
                 return value.toString();
@@ -120,14 +118,8 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
             case DECIMAL:
                 return ((DecimalData) value).toBigDecimal();
             case ARRAY:
-                LogicalType elementType =
-                        ((ArrayType) type)
-                                .getChildren().stream()
-                                        .findFirst()
-                                        .orElseThrow(
-                                                () ->
-                                                        new RuntimeException(
-                                                                "Unknown array element type"));
+                ArrayType arrayType = (ArrayType) type;
+                final LogicalType elementType = arrayType.getElementType();
                 ArrayData.ElementGetter elementGetter = ArrayData.createElementGetter(elementType);
                 ArrayData arrayData = ((ArrayData) value);
                 Object[] objectArray = new Object[arrayData.size()];
@@ -162,10 +154,11 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
     private JdbcDeserializationConverter createClickHouseArrayConverter(ArrayType arrayType) {
         final LogicalType elementType = arrayType.getElementType();
         final Class<?> elementClass = LogicalTypeUtils.toInternalConversionClass(elementType);
-        final JdbcDeserializationConverter elementConverter = createNullableInternalConverter(elementType);
+        final JdbcDeserializationConverter elementConverter =
+                createNullableInternalConverter(elementType);
         return val -> {
-            java.sql.Array pgArray = (java.sql.Array) val;
-            Object[] in = (Object[]) pgArray.getArray();
+            java.sql.Array chArray = (java.sql.Array) val;
+            Object[] in = (Object[]) chArray.getArray();
             final Object[] converted = (Object[]) Array.newInstance(elementClass, in.length);
             for (int i = 0; i < in.length; i++) {
                 converted[i] = elementConverter.deserialize(in[i]);
@@ -193,7 +186,46 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
     }
 
     private JdbcDeserializationConverter createPrimitiveConverter(LogicalType type) {
-        return super.createInternalConverter(type);
+        switch (type.getTypeRoot()) {
+            case TINYINT:
+                return val -> val instanceof Number ? ((Number) val).byteValue() : val;
+            case SMALLINT:
+                return val -> val instanceof Number ? ((Number) val).shortValue() : val;
+            case INTEGER:
+            case INTERVAL_YEAR_MONTH:
+                return val -> val instanceof Number ? ((Number) val).intValue() : val;
+            case BIGINT:
+            case INTERVAL_DAY_TIME:
+                return val -> val instanceof Number ? ((Number) val).longValue() : val;
+            case FLOAT:
+                return val -> val instanceof Number ? ((Number) val).floatValue() : val;
+            case DOUBLE:
+                return val -> val instanceof Number ? ((Number) val).doubleValue() : val;
+            case DATE:
+                return val ->
+                        val instanceof Date
+                                ? (int) (((Date) val).toLocalDate().toEpochDay())
+                                : val instanceof LocalDate
+                                        ? (int) ((LocalDate) val).toEpochDay()
+                                        : val;
+            case TIME_WITHOUT_TIME_ZONE:
+                return val ->
+                        val instanceof Time
+                                ? (int) (((Time) val).toLocalTime().toNanoOfDay() / 1_000_000L)
+                                : val instanceof LocalTime
+                                        ? (int) (((LocalTime) val).toNanoOfDay() / 1_000_000L)
+                                        : val;
+            case TIMESTAMP_WITH_TIME_ZONE:
+            case TIMESTAMP_WITHOUT_TIME_ZONE:
+                return val ->
+                        val instanceof LocalDateTime
+                                ? TimestampData.fromLocalDateTime((LocalDateTime) val)
+                                : val instanceof Timestamp
+                                        ? TimestampData.fromTimestamp((Timestamp) val)
+                                        : val;
+            default:
+                return super.createInternalConverter(type);
+        }
     }
 
     @Override
