@@ -31,7 +31,9 @@ import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.MapType;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
 
+import java.lang.reflect.Array;
 import java.sql.Date;
 import java.sql.Time;
 import java.time.LocalDate;
@@ -158,24 +160,15 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
     }
 
     private JdbcDeserializationConverter createClickHouseArrayConverter(ArrayType arrayType) {
-        final LogicalType elementType =
-                arrayType.getChildren().stream()
-                        .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Unknown array element type"));
-        final JdbcDeserializationConverter elementConverter =
-                createNullableInternalConverter(elementType);
+        final LogicalType elementType = arrayType.getElementType();
+        final Class<?> elementClass = LogicalTypeUtils.toInternalConversionClass(elementType);
+        final JdbcDeserializationConverter elementConverter = createNullableInternalConverter(elementType);
         return val -> {
-            Object[] raw;
-            if (val instanceof java.sql.Array) {
-                raw = (Object[]) ((java.sql.Array) val).getArray();
-            } else if (val instanceof Object[]) {
-                raw = (Object[]) val;
-            } else {
-                throw new RuntimeException("Unsupported array type: " + val.getClass());
-            }
-            Object[] converted = new Object[raw.length];
-            for (int i = 0; i < raw.length; i++) {
-                converted[i] = elementConverter.deserialize(raw[i]);
+            java.sql.Array pgArray = (java.sql.Array) val;
+            Object[] in = (Object[]) pgArray.getArray();
+            final Object[] converted = (Object[]) Array.newInstance(elementClass, in.length);
+            for (int i = 0; i < in.length; i++) {
+                converted[i] = elementConverter.deserialize(in[i]);
             }
             return new GenericArrayData(converted);
         };
