@@ -30,8 +30,8 @@ import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -124,7 +124,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                 put(444, "B");
                             }
                         },
-                        Date.valueOf("2026-05-05")),
+                        LocalDate.parse("2026-05-05")),
                 Row.of(
                         "user3",
                         "Bailey",
@@ -140,7 +140,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                 put(666, "D");
                             }
                         },
-                        Date.valueOf("2026-05-10")),
+                        LocalDate.parse("2026-05-10")),
                 Row.of(
                         "user4",
                         "Tina",
@@ -156,7 +156,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                 put(222, "N");
                             }
                         },
-                        Date.valueOf("2026-01-05")));
+                        LocalDate.parse("2026-01-05")));
     }
 
     @Override
@@ -181,7 +181,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                                 put(444, "B");
                                             }
                                         },
-                                        Date.valueOf("2026-05-05")),
+                                        LocalDate.parse("2026-05-05")),
                                 Row.ofKind(
                                         RowKind.INSERT,
                                         "user3",
@@ -198,7 +198,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                                 put(666, "D");
                                             }
                                         },
-                                        Date.valueOf("2026-05-10")),
+                                        LocalDate.parse("2026-05-10")),
                                 Row.ofKind(
                                         RowKind.INSERT,
                                         "user4",
@@ -215,7 +215,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                                 put(222, "N");
                                             }
                                         },
-                                        Date.valueOf("2026-01-05"))));
+                                        LocalDate.parse("2026-01-05"))));
 
         String userTableLogs = "user_logs";
         tEnv.executeSql(

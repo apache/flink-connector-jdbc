@@ -221,10 +221,10 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
             case TIMESTAMP_WITH_TIME_ZONE:
             case TIMESTAMP_WITHOUT_TIME_ZONE:
                 return val ->
-                        val instanceof LocalDateTime
-                                ? TimestampData.fromLocalDateTime((LocalDateTime) val)
-                                : val instanceof Timestamp
-                                        ? TimestampData.fromTimestamp((Timestamp) val)
+                        val instanceof Timestamp
+                                ? TimestampData.fromTimestamp((Timestamp) val)
+                                : val instanceof LocalDateTime
+                                        ? TimestampData.fromLocalDateTime((LocalDateTime) val)
                                         : val;
             default:
                 return super.createInternalConverter(type);
