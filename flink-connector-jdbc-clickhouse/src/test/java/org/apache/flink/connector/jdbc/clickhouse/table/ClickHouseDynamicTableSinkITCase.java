@@ -69,7 +69,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
     protected TableRow createBatchOutputTable() {
         return tableRow(
                 "dynamicSinkForBatch",
-                field("NAME", dbType("FixedString(20)"), DataTypes.VARCHAR(20).notNull()),
+                field("NAME", dbType("String"), DataTypes.VARCHAR(20).notNull()),
                 field("SCORE", dbType("Int64"), DataTypes.BIGINT().notNull()));
     }
 
@@ -88,8 +88,8 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
     protected TableRow createUserOutputTable() {
         return tableRow(
                 "USER_TABLE",
-                pkField("user_id", dbType("FixedString(20)"), DataTypes.VARCHAR(20).notNull()),
-                pkField("user_name", dbType("FixedString(20)"), DataTypes.VARCHAR(20).notNull()),
+                pkField("user_id", dbType("String"), DataTypes.VARCHAR(20).notNull()),
+                pkField("user_name", dbType("String"), DataTypes.VARCHAR(20).notNull()),
                 field("email", dbType("String"), DataTypes.VARCHAR(255)),
                 field("balance", dbType("Decimal(18, 2)"), DataTypes.DECIMAL(18, 2)),
                 field("balance2", dbType("Decimal(18, 2)"), DataTypes.DECIMAL(18, 2)),
