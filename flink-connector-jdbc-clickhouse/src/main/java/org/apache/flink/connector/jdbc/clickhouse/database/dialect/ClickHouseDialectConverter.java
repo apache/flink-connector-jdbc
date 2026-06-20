@@ -151,6 +151,7 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
         }
     }
 
+    // creating separate array converter
     private JdbcDeserializationConverter createClickHouseArrayConverter(ArrayType arrayType) {
         final LogicalType elementType = arrayType.getElementType();
         final Class<?> elementClass = LogicalTypeUtils.toInternalConversionClass(elementType);
@@ -167,6 +168,7 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
         };
     }
 
+    // creating separate map converter
     private JdbcDeserializationConverter createClickHouseMapConverter(MapType mapType) {
         final LogicalType keyType = mapType.getKeyType();
         final LogicalType valueType = mapType.getValueType();
@@ -185,6 +187,7 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
         };
     }
 
+    // some types should be properly handled for clickhouse
     private JdbcDeserializationConverter createPrimitiveConverter(LogicalType type) {
         switch (type.getTypeRoot()) {
             case TINYINT:

@@ -26,8 +26,8 @@ import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.planner.factories.TestValuesTableFactory;
-import org.apache.flink.table.planner.runtime.utils.TestData;
 import org.apache.flink.types.Row;
+import org.apache.flink.types.RowKind;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -162,7 +162,60 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
     @Override
     protected void testReadingFromChangelogSource() throws Exception {
         TableEnvironment tEnv = TableEnvironment.create(EnvironmentSettings.newInstance().build());
-        String dataId = TestValuesTableFactory.registerData(TestData.userChangelog());
+        String dataId =
+                TestValuesTableFactory.registerData(
+                        Arrays.asList(
+                                Row.ofKind(
+                                        RowKind.INSERT,
+                                        "user1",
+                                        "Tom",
+                                        "tom123@gmail.com",
+                                        new BigDecimal("8.10"),
+                                        new BigDecimal("16.20"),
+                                        Timestamp.valueOf("1999-06-08 10:12:11.301"),
+                                        Arrays.asList("tom3@gmail.com", "tom5@gmail.com"),
+                                        Arrays.asList(81723, 12315),
+                                        new HashMap<Integer, String>() {
+                                            {
+                                                put(333, "A");
+                                                put(444, "B");
+                                            }
+                                        },
+                                        Date.valueOf("2026-05-05")),
+                                Row.ofKind(
+                                        RowKind.INSERT,
+                                        "user3",
+                                        "Bailey",
+                                        "bailey@qq.com",
+                                        new BigDecimal("9.99"),
+                                        new BigDecimal("19.98"),
+                                        Timestamp.valueOf("1999-12-11 20:22:11.301"),
+                                        Arrays.asList("bll3@gmail.com", "bll5@gmail.com"),
+                                        Arrays.asList(81623, 22371),
+                                        new HashMap<Integer, String>() {
+                                            {
+                                                put(111, "C");
+                                                put(666, "D");
+                                            }
+                                        },
+                                        Date.valueOf("2026-05-10")),
+                                Row.ofKind(
+                                        RowKind.INSERT,
+                                        "user4",
+                                        "Tina",
+                                        "tina@gmail.com",
+                                        new BigDecimal("11.30"),
+                                        new BigDecimal("22.60"),
+                                        Timestamp.valueOf("2001-01-01 00:11:44.124"),
+                                        Arrays.asList("tina1@gmail.com", "tina6@gmail.com"),
+                                        Arrays.asList(12415, 66423),
+                                        new HashMap<Integer, String>() {
+                                            {
+                                                put(999, "X");
+                                                put(222, "N");
+                                            }
+                                        },
+                                        Date.valueOf("2026-01-05"))));
 
         String userTableLogs = "user_logs";
         tEnv.executeSql(
