@@ -30,8 +30,8 @@ import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -92,7 +92,6 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                 pkField("user_name", dbType("String"), DataTypes.VARCHAR(20).notNull()),
                 field("email", dbType("String"), DataTypes.VARCHAR(255)),
                 field("balance", dbType("Decimal(18, 2)"), DataTypes.DECIMAL(18, 2)),
-                field("balance2", dbType("Decimal(18, 2)"), DataTypes.DECIMAL(18, 2)),
                 field("entry_dttm", dbType("DateTime64(3)"), DataTypes.TIMESTAMP()),
                 field(
                         "other_emails_array",
@@ -103,7 +102,8 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                         "add_info_map",
                         dbType("Map(Int32, String)"),
                         DataTypes.MAP(DataTypes.INT(), DataTypes.STRING())),
-                field("last_log_date", dbType("Date"), DataTypes.DATE()));
+                field("last_log_date", dbType("Date"), DataTypes.DATE()),
+                field("balance2", dbType("Decimal(18, 2)"), DataTypes.DECIMAL(18, 2)));
     }
 
     @Override
@@ -114,8 +114,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                         "Tom",
                         "tom123@gmail.com",
                         new BigDecimal("8.10"),
-                        new BigDecimal("16.20"),
-                        LocalDateTime.parse("1999-06-08T10:12:11.301"),
+                        Timestamp.valueOf("1999-06-08 10:12:11.301"),
                         Arrays.asList("tom3@gmail.com", "tom5@gmail.com"),
                         Arrays.asList(81723, 12315),
                         new HashMap<Integer, String>() {
@@ -124,14 +123,14 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                 put(444, "B");
                             }
                         },
-                        LocalDate.parse("2026-05-05")),
+                        Date.valueOf("2026-05-05"),
+                        new BigDecimal("16.20")),
                 Row.of(
                         "user3",
                         "Bailey",
                         "bailey@qq.com",
                         new BigDecimal("9.99"),
-                        new BigDecimal("19.98"),
-                        LocalDateTime.parse("1999-12-11T20:22:11.301"),
+                        Timestamp.valueOf("1999-12-11 20:22:11.301"),
                         Arrays.asList("bll3@gmail.com", "bll5@gmail.com"),
                         Arrays.asList(81623, 22371),
                         new HashMap<Integer, String>() {
@@ -140,14 +139,14 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                 put(666, "D");
                             }
                         },
-                        LocalDate.parse("2026-05-10")),
+                        Date.valueOf("2026-05-10"),
+                        new BigDecimal("19.98")),
                 Row.of(
                         "user4",
                         "Tina",
                         "tina@gmail.com",
                         new BigDecimal("11.30"),
-                        new BigDecimal("22.60"),
-                        LocalDateTime.parse("2001-01-01T00:11:44.124"),
+                        Timestamp.valueOf("2001-01-01 00:11:44.124"),
                         Arrays.asList("tina1@gmail.com", "tina6@gmail.com"),
                         Arrays.asList(12415, 66423),
                         new HashMap<Integer, String>() {
@@ -156,7 +155,8 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                 put(222, "N");
                             }
                         },
-                        LocalDate.parse("2026-01-05")));
+                        Date.valueOf("2026-01-05"),
+                        new BigDecimal("22.60")));
     }
 
     @Override
@@ -171,8 +171,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                         "Tom",
                                         "tom123@gmail.com",
                                         new BigDecimal("8.10"),
-                                        new BigDecimal("16.20"),
-                                        LocalDateTime.parse("1999-06-08T10:12:11.301"),
+                                        Timestamp.valueOf("1999-06-08 10:12:11.301"),
                                         Arrays.asList("tom3@gmail.com", "tom5@gmail.com"),
                                         Arrays.asList(81723, 12315),
                                         new HashMap<Integer, String>() {
@@ -181,15 +180,14 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                                 put(444, "B");
                                             }
                                         },
-                                        LocalDate.parse("2026-05-05")),
+                                        Date.valueOf("2026-05-05")),
                                 Row.ofKind(
                                         RowKind.INSERT,
                                         "user3",
                                         "Bailey",
                                         "bailey@qq.com",
                                         new BigDecimal("9.99"),
-                                        new BigDecimal("19.98"),
-                                        LocalDateTime.parse("1999-12-11T20:22:11.301"),
+                                        Timestamp.valueOf("1999-12-11 20:22:11.301"),
                                         Arrays.asList("bll3@gmail.com", "bll5@gmail.com"),
                                         Arrays.asList(81623, 22371),
                                         new HashMap<Integer, String>() {
@@ -198,15 +196,14 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                                 put(666, "D");
                                             }
                                         },
-                                        LocalDate.parse("2026-05-10")),
+                                        Date.valueOf("2026-05-10")),
                                 Row.ofKind(
                                         RowKind.INSERT,
                                         "user4",
                                         "Tina",
                                         "tina@gmail.com",
                                         new BigDecimal("11.30"),
-                                        new BigDecimal("22.60"),
-                                        LocalDateTime.parse("2001-01-01T00:11:44.124"),
+                                        Timestamp.valueOf("2001-01-01 00:11:44.124"),
                                         Arrays.asList("tina1@gmail.com", "tina6@gmail.com"),
                                         Arrays.asList(12415, 66423),
                                         new HashMap<Integer, String>() {
@@ -215,7 +212,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                                 put(222, "N");
                                             }
                                         },
-                                        LocalDate.parse("2026-01-05"))));
+                                        Date.valueOf("2026-01-05"))));
 
         String userTableLogs = "user_logs";
         tEnv.executeSql(
@@ -225,12 +222,12 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                 + "  user_name STRING, "
                                 + "  email STRING, "
                                 + "  balance DECIMAL(18,2), "
-                                + "  balance2 AS balance * 2, "
                                 + "  entry_dttm TIMESTAMP(3), "
                                 + "  other_emails_array ARRAY<STRING>, "
                                 + "  other_ids_array ARRAY<INT>, "
                                 + "  add_info_map MAP<INT, STRING>, "
-                                + "  last_log_date DATE "
+                                + "  last_log_date DATE, "
+                                + "  balance2 AS balance * 2 "
                                 + ") WITH ( "
                                 + " 'connector' = 'values', "
                                 + " 'data-id' = '%s', "
