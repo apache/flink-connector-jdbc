@@ -24,6 +24,7 @@ import org.apache.flink.util.Preconditions;
 import java.io.Serializable;
 
 /** Combine 2 {@link JdbcParameterValuesProvider} into 1. */
+@Deprecated
 @Internal
 public class CompositeJdbcParameterValuesProvider implements JdbcParameterValuesProvider {
     JdbcParameterValuesProvider a;

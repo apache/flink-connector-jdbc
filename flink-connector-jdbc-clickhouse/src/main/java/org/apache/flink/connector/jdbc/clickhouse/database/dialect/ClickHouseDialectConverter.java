@@ -35,7 +35,6 @@ import org.apache.flink.table.types.logical.RowType;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Array;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -89,12 +88,18 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
                 return val -> StringData.fromString((String) val);
             case DATE:
                 return val ->
-                        val instanceof Date ? (int) (((Date) val).toLocalDate().toEpochDay()) : val;
+                        val instanceof Date
+                                ? (int) (((Date) val).toLocalDate().toEpochDay())
+                                : val instanceof LocalDate
+                                        ? (int) ((LocalDate) val).toEpochDay()
+                                        : val;
             case TIME_WITHOUT_TIME_ZONE:
                 return val ->
                         val instanceof Time
                                 ? (int) (((Time) val).toLocalTime().toNanoOfDay() / 1_000_000L)
-                                : val;
+                                : val instanceof LocalTime
+                                        ? (int) (((LocalTime) val).toNanoOfDay() / 1_000_000L)
+                                        : val;
             case TIMESTAMP_WITH_TIME_ZONE:
             case TIMESTAMP_WITHOUT_TIME_ZONE:
                 return val ->
@@ -123,7 +128,14 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
                 final JdbcDeserializationConverter elementConverter =
                         createInternalConverter(elementType);
                 return val -> {
-                    Object[] raw = (Object[]) ((Array) val).getArray();
+                    Object[] raw;
+                    if (val instanceof java.sql.Array) {
+                        raw = (Object[]) ((java.sql.Array) val).getArray();
+                    } else if (val instanceof Object[]) {
+                        raw = (Object[]) val;
+                    } else {
+                        throw new RuntimeException("Unsupported array type: " + val.getClass());
+                    }
                     Object[] converted = new Object[raw.length];
                     for (int i = 0; i < raw.length; i++) {
                         converted[i] = raw[i] == null ? null : elementConverter.deserialize(raw[i]);
