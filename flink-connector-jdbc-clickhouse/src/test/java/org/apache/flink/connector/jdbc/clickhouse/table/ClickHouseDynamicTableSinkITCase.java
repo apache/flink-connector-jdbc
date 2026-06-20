@@ -115,8 +115,8 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                         "tom123@gmail.com",
                         new BigDecimal("8.10"),
                         LocalDateTime.parse("1999-06-08T10:12:11.301"),
-                        new String[]{"tom3@gmail.com", "tom5@gmail.com"},
-                        new Integer[]{81723, 12315},
+                        new String[] {"tom3@gmail.com", "tom5@gmail.com"},
+                        new Integer[] {81723, 12315},
                         new HashMap<Integer, String>() {
                             {
                                 put(333, "A");
@@ -131,8 +131,8 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                         "bailey@qq.com",
                         new BigDecimal("9.99"),
                         LocalDateTime.parse("1999-12-11T20:22:11.301"),
-                        new String[]{"bll3@gmail.com", "bll5@gmail.com"},
-                        new Integer[]{81623, 22371},
+                        new String[] {"bll3@gmail.com", "bll5@gmail.com"},
+                        new Integer[] {81623, 22371},
                         new HashMap<Integer, String>() {
                             {
                                 put(111, "C");
@@ -147,8 +147,8 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                         "tina@gmail.com",
                         new BigDecimal("11.30"),
                         LocalDateTime.parse("2001-01-01T00:11:44.124"),
-                        new String[]{"tina1@gmail.com", "tina6@gmail.com"},
-                        new Integer[]{12415, 66423},
+                        new String[] {"tina1@gmail.com", "tina6@gmail.com"},
+                        new Integer[] {12415, 66423},
                         new HashMap<Integer, String>() {
                             {
                                 put(999, "X");
@@ -172,8 +172,8 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                         "tom123@gmail.com",
                                         new BigDecimal("8.10"),
                                         LocalDateTime.parse("1999-06-08T10:12:11.301"),
-                                        new String[]{"tom3@gmail.com", "tom5@gmail.com"},
-                                        new Integer[]{81723, 12315},
+                                        new String[] {"tom3@gmail.com", "tom5@gmail.com"},
+                                        new Integer[] {81723, 12315},
                                         new HashMap<Integer, String>() {
                                             {
                                                 put(333, "A");
@@ -188,8 +188,8 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                         "bailey@qq.com",
                                         new BigDecimal("9.99"),
                                         LocalDateTime.parse("1999-12-11T20:22:11.301"),
-                                        new String[]{"bll3@gmail.com", "bll5@gmail.com"},
-                                        new Integer[]{81623, 22371},
+                                        new String[] {"bll3@gmail.com", "bll5@gmail.com"},
+                                        new Integer[] {81623, 22371},
                                         new HashMap<Integer, String>() {
                                             {
                                                 put(111, "C");
@@ -204,8 +204,8 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                         "tina@gmail.com",
                                         new BigDecimal("11.30"),
                                         LocalDateTime.parse("2001-01-01T00:11:44.124"),
-                                        new String[]{"tina1@gmail.com", "tina6@gmail.com"},
-                                        new Integer[]{12415, 66423},
+                                        new String[] {"tina1@gmail.com", "tina6@gmail.com"},
+                                        new Integer[] {12415, 66423},
                                         new HashMap<Integer, String>() {
                                             {
                                                 put(999, "X");
