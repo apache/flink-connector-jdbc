@@ -27,11 +27,7 @@ import org.apache.flink.table.data.GenericMapData;
 import org.apache.flink.table.data.MapData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
-import org.apache.flink.table.types.logical.ArrayType;
-import org.apache.flink.table.types.logical.DecimalType;
-import org.apache.flink.table.types.logical.LogicalType;
-import org.apache.flink.table.types.logical.MapType;
-import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.types.logical.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -59,109 +55,17 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
 
     @Override
     public JdbcDeserializationConverter createInternalConverter(LogicalType type) {
-        switch (type.getTypeRoot()) {
-            case NULL:
-                return null;
-            case BOOLEAN:
-                return val -> val;
-            case TINYINT:
-                return val -> val instanceof Number ? ((Number) val).byteValue() : val;
-            case SMALLINT:
-                return val -> val instanceof Number ? ((Number) val).shortValue() : val;
-            case INTEGER:
-            case INTERVAL_YEAR_MONTH:
-                return val -> val instanceof Number ? ((Number) val).intValue() : val;
-            case BIGINT:
-            case INTERVAL_DAY_TIME:
-                return val -> val instanceof Number ? ((Number) val).longValue() : val;
-            case FLOAT:
-                return val -> val instanceof Number ? ((Number) val).floatValue() : val;
-            case DOUBLE:
-                return val -> val instanceof Number ? ((Number) val).doubleValue() : val;
-            case BINARY:
-            case VARBINARY:
-                throw new UnsupportedOperationException(
-                        "BINARY/VARBINARY types are not supported by ClickHouse dialect. "
-                                + "Use STRING instead.");
-            case CHAR:
-            case VARCHAR:
-                return val -> StringData.fromString((String) val);
-            case DATE:
-                return val ->
-                        val instanceof Date
-                                ? (int) (((Date) val).toLocalDate().toEpochDay())
-                                : val instanceof LocalDate
-                                        ? (int) ((LocalDate) val).toEpochDay()
-                                        : val;
-            case TIME_WITHOUT_TIME_ZONE:
-                return val ->
-                        val instanceof Time
-                                ? (int) (((Time) val).toLocalTime().toNanoOfDay() / 1_000_000L)
-                                : val instanceof LocalTime
-                                        ? (int) (((LocalTime) val).toNanoOfDay() / 1_000_000L)
-                                        : val;
-            case TIMESTAMP_WITH_TIME_ZONE:
-            case TIMESTAMP_WITHOUT_TIME_ZONE:
-                return val ->
-                        val instanceof LocalDateTime
-                                ? TimestampData.fromLocalDateTime((LocalDateTime) val)
-                                : val instanceof Timestamp
-                                        ? TimestampData.fromTimestamp((Timestamp) val)
-                                        : val;
-            case DECIMAL:
-                final int precision = ((DecimalType) type).getPrecision();
-                final int scale = ((DecimalType) type).getScale();
-                return val ->
-                        val instanceof BigInteger
-                                ? DecimalData.fromBigDecimal(
-                                        new BigDecimal((BigInteger) val, 0), precision, scale)
-                                : DecimalData.fromBigDecimal((BigDecimal) val, precision, scale);
-            case ARRAY:
-                final LogicalType elementType =
-                        ((ArrayType) type)
-                                .getChildren().stream()
-                                        .findFirst()
-                                        .orElseThrow(
-                                                () ->
-                                                        new RuntimeException(
-                                                                "Unknown array element type"));
-                final JdbcDeserializationConverter elementConverter =
-                        createInternalConverter(elementType);
-                return val -> {
-                    Object[] raw;
-                    if (val instanceof java.sql.Array) {
-                        raw = (Object[]) ((java.sql.Array) val).getArray();
-                    } else if (val instanceof Object[]) {
-                        raw = (Object[]) val;
-                    } else {
-                        throw new RuntimeException("Unsupported array type: " + val.getClass());
-                    }
-                    Object[] converted = new Object[raw.length];
-                    for (int i = 0; i < raw.length; i++) {
-                        converted[i] = raw[i] == null ? null : elementConverter.deserialize(raw[i]);
-                    }
-                    return new GenericArrayData(converted);
-                };
-            case MAP:
-                final LogicalType keyType = ((MapType) type).getKeyType();
-                final LogicalType valueType = ((MapType) type).getValueType();
-                final JdbcDeserializationConverter keyConverter = createInternalConverter(keyType);
-                final JdbcDeserializationConverter valueConverter =
-                        createInternalConverter(valueType);
-                return val -> {
-                    Map<?, ?> rawMap = (Map<?, ?>) val;
-                    Map<Object, Object> result = new HashMap<>(rawMap.size());
-                    for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
-                        Object k = entry.getKey();
-                        Object v = entry.getValue();
-                        result.put(
-                                k == null ? null : keyConverter.deserialize(k),
-                                v == null ? null : valueConverter.deserialize(v));
-                    }
-                    return new GenericMapData(result);
-                };
-            default:
-                return super.createInternalConverter(type);
+        LogicalTypeRoot root = type.getTypeRoot();
+
+        if (root == LogicalTypeRoot.ARRAY) {
+            ArrayType arrayType = (ArrayType) type;
+            return createClickHouseArrayConverter(arrayType);
+        } else if (root == LogicalTypeRoot.MAP){
+            MapType mapType = (MapType) type;
+            return createClickHouseMapConverter(mapType);
+        }
+        else {
+            return createPrimitiveConverter(type);
         }
     }
 
@@ -180,7 +84,7 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
     }
 
     // adding support to MAP and ARRAY types
-    public static Object toExternalSerializer(Object value, LogicalType type) {
+    private static Object toExternalSerializer(Object value, LogicalType type) {
         switch (type.getTypeRoot()) {
             case BOOLEAN:
                 return value;
@@ -212,18 +116,9 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
                 return Time.valueOf(LocalTime.ofNanoOfDay((int) value * 1_000_000L));
             case TIMESTAMP_WITH_TIME_ZONE:
             case TIMESTAMP_WITHOUT_TIME_ZONE:
-                return value instanceof LocalDateTime
-                        ? TimestampData.fromLocalDateTime((LocalDateTime) value)
-                        : value instanceof Timestamp
-                                ? TimestampData.fromTimestamp((Timestamp) value)
-                                : value;
+                return ((TimestampData) value).toTimestamp();
             case DECIMAL:
-                final int precision = ((DecimalType) type).getPrecision();
-                final int scale = ((DecimalType) type).getScale();
-                return value instanceof BigInteger
-                        ? DecimalData.fromBigDecimal(
-                                new BigDecimal((BigInteger) value, 0), precision, scale)
-                        : DecimalData.fromBigDecimal((BigDecimal) value, precision, scale);
+                return ((DecimalData) value).toBigDecimal();
             case ARRAY:
                 LogicalType elementType =
                         ((ArrayType) type)
@@ -262,6 +157,58 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
             default:
                 throw new UnsupportedOperationException("Unsupported type:" + type);
         }
+    }
+
+    private JdbcDeserializationConverter createClickHouseArrayConverter(ArrayType arrayType){
+        final LogicalType elementType =
+                ((ArrayType) arrayType)
+                        .getChildren().stream()
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new RuntimeException(
+                                                "Unknown array element type"));
+        final JdbcDeserializationConverter elementConverter =
+                createNullableInternalConverter(elementType);
+        return val -> {
+            Object[] raw;
+            if (val instanceof java.sql.Array) {
+                raw = (Object[]) ((java.sql.Array) val).getArray();
+            } else if (val instanceof Object[]) {
+                raw = (Object[]) val;
+            } else {
+                throw new RuntimeException("Unsupported array type: " + val.getClass());
+            }
+            Object[] converted = new Object[raw.length];
+            for (int i = 0; i < raw.length; i++) {
+                converted[i] = elementConverter.deserialize(raw[i]);
+            }
+            return new GenericArrayData(converted);
+        };
+    }
+
+    private JdbcDeserializationConverter createClickHouseMapConverter(MapType mapType){
+        final LogicalType keyType = ((MapType) mapType).getKeyType();
+        final LogicalType valueType = ((MapType) mapType).getValueType();
+        final JdbcDeserializationConverter keyConverter = createNullableInternalConverter(keyType);
+        final JdbcDeserializationConverter valueConverter =
+                createNullableInternalConverter(valueType);
+        return val -> {
+            Map<?, ?> rawMap = (Map<?, ?>) val;
+            Map<Object, Object> result = new HashMap<>(rawMap.size());
+            for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+                Object k = entry.getKey();
+                Object v = entry.getValue();
+                result.put(
+                        k == keyConverter.deserialize(k),
+                        v == valueConverter.deserialize(v));
+            }
+            return new GenericMapData(result);
+        };
+    }
+
+    private JdbcDeserializationConverter createPrimitiveConverter(LogicalType type) {
+        return super.createInternalConverter(type);
     }
 
     @Override
