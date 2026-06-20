@@ -30,8 +30,8 @@ import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 
 import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -114,7 +114,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                         "Tom",
                         "tom123@gmail.com",
                         new BigDecimal("8.10"),
-                        Timestamp.valueOf("1999-06-08 10:12:11.301"),
+                        LocalDateTime.parse("1999-06-08T10:12:11.301"),
                         Arrays.asList("tom3@gmail.com", "tom5@gmail.com"),
                         Arrays.asList(81723, 12315),
                         new HashMap<Integer, String>() {
@@ -123,14 +123,14 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                 put(444, "B");
                             }
                         },
-                        Date.valueOf("2026-05-05"),
+                        LocalDate.parse("2026-05-05"),
                         new BigDecimal("16.20")),
                 Row.of(
                         "user3",
                         "Bailey",
                         "bailey@qq.com",
                         new BigDecimal("9.99"),
-                        Timestamp.valueOf("1999-12-11 20:22:11.301"),
+                        LocalDateTime.parse("1999-12-11T20:22:11.301"),
                         Arrays.asList("bll3@gmail.com", "bll5@gmail.com"),
                         Arrays.asList(81623, 22371),
                         new HashMap<Integer, String>() {
@@ -139,14 +139,14 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                 put(666, "D");
                             }
                         },
-                        Date.valueOf("2026-05-10"),
+                        LocalDate.parse("2026-05-10"),
                         new BigDecimal("19.98")),
                 Row.of(
                         "user4",
                         "Tina",
                         "tina@gmail.com",
                         new BigDecimal("11.30"),
-                        Timestamp.valueOf("2001-01-01 00:11:44.124"),
+                        LocalDateTime.parse("2001-01-01T00:11:44.124"),
                         Arrays.asList("tina1@gmail.com", "tina6@gmail.com"),
                         Arrays.asList(12415, 66423),
                         new HashMap<Integer, String>() {
@@ -155,7 +155,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                 put(222, "N");
                             }
                         },
-                        Date.valueOf("2026-01-05"),
+                        LocalDate.parse("2026-01-05"),
                         new BigDecimal("22.60")));
     }
 
@@ -171,7 +171,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                         "Tom",
                                         "tom123@gmail.com",
                                         new BigDecimal("8.10"),
-                                        Timestamp.valueOf("1999-06-08 10:12:11.301"),
+                                        LocalDateTime.parse("1999-06-08T10:12:11.301"),
                                         Arrays.asList("tom3@gmail.com", "tom5@gmail.com"),
                                         Arrays.asList(81723, 12315),
                                         new HashMap<Integer, String>() {
@@ -180,14 +180,14 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                                 put(444, "B");
                                             }
                                         },
-                                        Date.valueOf("2026-05-05")),
+                                        LocalDate.parse("2026-05-05")),
                                 Row.ofKind(
                                         RowKind.INSERT,
                                         "user3",
                                         "Bailey",
                                         "bailey@qq.com",
                                         new BigDecimal("9.99"),
-                                        Timestamp.valueOf("1999-12-11 20:22:11.301"),
+                                        LocalDateTime.parse("1999-12-11T20:22:11.301"),
                                         Arrays.asList("bll3@gmail.com", "bll5@gmail.com"),
                                         Arrays.asList(81623, 22371),
                                         new HashMap<Integer, String>() {
@@ -196,14 +196,14 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                                 put(666, "D");
                                             }
                                         },
-                                        Date.valueOf("2026-05-10")),
+                                        LocalDate.parse("2026-05-10")),
                                 Row.ofKind(
                                         RowKind.INSERT,
                                         "user4",
                                         "Tina",
                                         "tina@gmail.com",
                                         new BigDecimal("11.30"),
-                                        Timestamp.valueOf("2001-01-01 00:11:44.124"),
+                                        LocalDateTime.parse("2001-01-01T00:11:44.124"),
                                         Arrays.asList("tina1@gmail.com", "tina6@gmail.com"),
                                         Arrays.asList(12415, 66423),
                                         new HashMap<Integer, String>() {
@@ -212,7 +212,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
                                                 put(222, "N");
                                             }
                                         },
-                                        Date.valueOf("2026-01-05"))));
+                                        LocalDate.parse("2026-01-05"))));
 
         String userTableLogs = "user_logs";
         tEnv.executeSql(
