@@ -181,7 +181,7 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
             for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
                 Object k = entry.getKey();
                 Object v = entry.getValue();
-                result.put(k == keyConverter.deserialize(k), v == valueConverter.deserialize(v));
+                result.put(keyConverter.deserialize(k), valueConverter.deserialize(v));
             }
             return new GenericMapData(result);
         };
