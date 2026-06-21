@@ -78,6 +78,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
 
     @Override
     protected TableRow createCheckpointOutputTable() {
-        return tableRow("checkpointTable", field("id", dbType("Int64"), DataTypes.BIGINT().notNull()));
+        return tableRow(
+                "checkpointTable", field("id", dbType("Int64"), DataTypes.BIGINT().notNull()));
     }
 }

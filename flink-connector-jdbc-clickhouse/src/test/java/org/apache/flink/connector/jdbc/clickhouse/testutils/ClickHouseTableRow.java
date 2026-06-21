@@ -18,124 +18,16 @@
 
 package org.apache.flink.connector.jdbc.clickhouse.testutils;
 
-import org.apache.flink.connector.jdbc.testutils.functions.JdbcResultSetBuilder;
 import org.apache.flink.connector.jdbc.testutils.tables.TableField;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
-import org.apache.flink.table.api.DataTypes;
-import org.apache.flink.types.Row;
 
-import java.lang.reflect.Array;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /** ClickHouseTableRow. */
 public class ClickHouseTableRow extends TableRow {
     public ClickHouseTableRow(String name, TableField[] fields) {
         super(name, fields);
-    }
-
-    @Override
-    protected JdbcResultSetBuilder<Row> getResultSetBuilder() {
-        return (rs) -> {
-            List<Row> result = new ArrayList<>();
-            DataTypes.Field[] fields = getTableDataFields();
-            while (rs.next()) {
-                Row row = new Row(fields.length);
-                for (int i = 0; i < fields.length; i++) {
-                    Object dbValue;
-                    Class<?> conversionClass = fields[i].getDataType().getConversionClass();
-                    if (conversionClass.equals(LocalTime.class)) {
-                        dbValue = rs.getTime(i + 1);
-                    } else if (conversionClass.equals(LocalDate.class)) {
-                        dbValue = rs.getDate(i + 1);
-                    } else if (conversionClass.equals(LocalDateTime.class)) {
-                        java.sql.Timestamp ts = rs.getTimestamp(i + 1);
-                        dbValue = ts == null ? null : ts.toLocalDateTime();
-                    } else if (conversionClass.isArray()) {
-                        dbValue = readArray(rs, i + 1, conversionClass);
-                    } else if (Map.class.isAssignableFrom(conversionClass)) {
-                        dbValue = readMap(rs, i + 1);
-                    } else {
-                        dbValue = rs.getObject(i + 1, conversionClass);
-                    }
-                    row.setField(i, getNullable(rs, dbValue));
-                }
-                result.add(row);
-            }
-            return result;
-        };
-    }
-
-    private Object readArray(ResultSet rs, int columnIndex, Class<?> conversionClass)
-            throws SQLException {
-        java.sql.Array sqlArray = rs.getArray(columnIndex);
-        if (sqlArray == null) {
-            return null;
-        }
-        Object raw = sqlArray.getArray();
-        Class<?> componentType = conversionClass.getComponentType();
-        int length = Array.getLength(raw);
-        Object typedArray = Array.newInstance(componentType, length);
-        for (int j = 0; j < length; j++) {
-            Object element = Array.get(raw, j);
-            Array.set(typedArray, j, coerce(element, componentType));
-        }
-        return typedArray;
-    }
-
-    private Object readMap(ResultSet rs, int columnIndex) throws SQLException {
-        Object raw = rs.getObject(columnIndex);
-        if (raw == null) {
-            return null;
-        }
-        if (raw instanceof Map) {
-            return raw;
-        }
-        throw new SQLException(
-                "Unexpected map representation returned by clickhouse driver: " + raw.getClass());
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> T coerce(Object value, Class<T> targetType) {
-        if (value == null) {
-            return null;
-        }
-        if (targetType.isInstance(value)) {
-            return (T) value;
-        }
-        if (targetType.equals(String.class)) {
-            return (T) value.toString();
-        }
-        if (Number.class.isAssignableFrom(targetType) && value instanceof Number) {
-            Number n = (Number) value;
-            if (targetType.equals(Integer.class)) {
-                return (T) Integer.valueOf(n.intValue());
-            } else if (targetType.equals(Long.class)) {
-                return (T) Long.valueOf(n.longValue());
-            } else if (targetType.equals(Short.class)) {
-                return (T) Short.valueOf(n.shortValue());
-            } else if (targetType.equals(Double.class)) {
-                return (T) Double.valueOf(n.doubleValue());
-            } else if (targetType.equals(Float.class)) {
-                return (T) Float.valueOf(n.floatValue());
-            }
-        }
-        throw new ClassCastException(
-                "Cannot coerce value of type "
-                        + value.getClass()
-                        + " to "
-                        + targetType
-                        + " (value: "
-                        + value
-                        + ")");
     }
 
     @Override
