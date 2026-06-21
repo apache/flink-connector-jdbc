@@ -57,7 +57,8 @@ public class ClickHouseTableRow extends TableRow {
                     } else if (conversionClass.equals(LocalDate.class)) {
                         dbValue = rs.getDate(i + 1);
                     } else if (conversionClass.equals(LocalDateTime.class)) {
-                        dbValue = rs.getTimestamp(i + 1);
+                        java.sql.Timestamp ts = rs.getTimestamp(i + 1);
+                        dbValue = ts == null ? null : ts.toLocalDateTime();
                     } else if (conversionClass.isArray()) {
                         dbValue = readArray(rs, i + 1, conversionClass);
                     } else if (Map.class.isAssignableFrom(conversionClass)) {
