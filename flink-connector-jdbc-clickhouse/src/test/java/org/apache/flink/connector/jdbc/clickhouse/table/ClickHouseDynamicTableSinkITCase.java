@@ -37,9 +37,9 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
     protected TableRow createUpsertOutputTable() {
         return tableRow(
                 "dynamicSinkForUpsert",
-                pkField("cnt", DataTypes.BIGINT().notNull()),
-                pkField("lencnt", DataTypes.BIGINT().notNull()),
-                field("cTag", DataTypes.INT().notNull()),
+                pkField("cnt", dbType("Int64"), DataTypes.BIGINT().notNull()),
+                pkField("lencnt", dbType("Int64"), DataTypes.BIGINT().notNull()),
+                field("cTag", dbType("Int32"), DataTypes.INT().notNull()),
                 field("ts", dbType("DateTime64(6)"), DataTypes.TIMESTAMP()));
     }
 
@@ -47,7 +47,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
     protected TableRow createAppendOutputTable() {
         return tableRow(
                 "dynamicSinkForAppend",
-                pkField("id", DataTypes.INT().notNull()),
+                pkField("id", dbType("Int32"), DataTypes.INT().notNull()),
                 field("num", dbType("Int64"), DataTypes.BIGINT().notNull()),
                 field("ts", dbType("DateTime64(6)"), DataTypes.TIMESTAMP()));
     }
@@ -56,7 +56,7 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
     protected TableRow createBatchOutputTable() {
         return tableRow(
                 "dynamicSinkForBatch",
-                field("NAME", DataTypes.VARCHAR(20).notNull()),
+                field("NAME", dbType("String"), DataTypes.VARCHAR(20).notNull()),
                 field("SCORE", dbType("Int64"), DataTypes.BIGINT().notNull()));
     }
 
@@ -69,15 +69,16 @@ class ClickHouseDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase
     protected TableRow createUserOutputTable() {
         return tableRow(
                 "USER_TABLE",
-                pkField("user_id", DataTypes.VARCHAR(20).notNull()),
-                pkField("user_name", DataTypes.VARCHAR(20).notNull()),
-                field("email", DataTypes.VARCHAR(255)),
-                field("balance", DataTypes.DECIMAL(18, 2)),
-                field("balance2", DataTypes.DECIMAL(18, 2)));
+                pkField("user_id", dbType("String"), DataTypes.VARCHAR(20).notNull()),
+                pkField("user_name", dbType("String"), DataTypes.VARCHAR(20).notNull()),
+                field("email", dbType("String"), DataTypes.VARCHAR(255)),
+                field("balance", dbType("Decimal(18, 2)"), DataTypes.DECIMAL(18, 2)),
+                field("balance2", dbType("Decimal(18, 2)"), DataTypes.DECIMAL(18, 2)));
     }
 
     @Override
     protected TableRow createCheckpointOutputTable() {
-        return tableRow("checkpointTable", field("id", DataTypes.BIGINT().notNull()));
+        return tableRow(
+                "checkpointTable", field("id", dbType("Int64"), DataTypes.BIGINT().notNull()));
     }
 }
