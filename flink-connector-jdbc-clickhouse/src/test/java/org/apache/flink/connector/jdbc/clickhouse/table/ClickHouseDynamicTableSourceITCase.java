@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.apache.flink.connector.jdbc.clickhouse.ClickHouseTestBase.tableRow;
@@ -55,6 +56,11 @@ class ClickHouseDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
                 field("string_col", dbType("String"), DataTypes.STRING()),
                 field("date_col", dbType("Date"), DataTypes.DATE()),
                 field("timestamp_col", dbType("DateTime(0)"), DataTypes.TIMESTAMP()),
+                field(
+                        "map_col",
+                        dbType("Map(Int, String)"),
+                        DataTypes.MAP(DataTypes.INT(), DataTypes.STRING())),
+                field("array_col", dbType("Array(String)"), DataTypes.ARRAY(DataTypes.STRING())),
                 field("nullable_bool_col", dbType("Nullable(Bool)"), DataTypes.BOOLEAN()),
                 field("nullable_int_col", dbType("Nullable(Int32)"), DataTypes.INT()),
                 field("nullable_string_col", dbType("Nullable(String)"), DataTypes.STRING()));
@@ -76,6 +82,13 @@ class ClickHouseDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
                         "hello",
                         LocalDate.parse("2020-01-01"),
                         LocalDateTime.parse("2020-01-01T15:35:00"),
+                        new HashMap<Integer, String>() {
+                            {
+                                put(1, "xxx");
+                                put(2, "zzz");
+                            }
+                        },
+                        new String[] {"abc", "def"},
                         true,
                         null,
                         null),
@@ -92,6 +105,13 @@ class ClickHouseDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase
                         "world",
                         LocalDate.parse("2020-01-01"),
                         LocalDateTime.parse("2020-01-01T15:36:01"),
+                        new HashMap<Integer, String>() {
+                            {
+                                put(3, "aaa");
+                                put(4, "bbb");
+                            }
+                        },
+                        new String[] {"foo", "bar"},
                         null,
                         123,
                         "optional"));

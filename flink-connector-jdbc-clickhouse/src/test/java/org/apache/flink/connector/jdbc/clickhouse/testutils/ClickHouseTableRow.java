@@ -18,10 +18,22 @@
 
 package org.apache.flink.connector.jdbc.clickhouse.testutils;
 
+import org.apache.flink.connector.jdbc.testutils.functions.JdbcResultSetBuilder;
 import org.apache.flink.connector.jdbc.testutils.tables.TableField;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.types.Row;
 
+import java.sql.Array;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /** ClickHouseTableRow. */
@@ -71,5 +83,58 @@ public class ClickHouseTableRow extends TableRow {
     @Override
     public String getDropTableQuery() {
         return String.format("DROP TABLE IF EXISTS %s;", getTableName());
+    }
+
+    @Override
+    protected JdbcResultSetBuilder<Row> getResultSetBuilder() {
+        return (rs) -> {
+            List<Row> result = new ArrayList<>();
+            DataTypes.Field[] fields = getTableDataFields();
+            while (rs.next()) {
+                Row row = new Row(fields.length);
+                for (int i = 0; i < fields.length; i++) {
+                    Class<?> conversionClass = fields[i].getDataType().getConversionClass();
+                    Object dbValue;
+                    if (conversionClass.equals(LocalTime.class)) {
+                        dbValue = rs.getTime(i + 1);
+                    } else if (conversionClass.equals(LocalDate.class)) {
+                        dbValue = rs.getDate(i + 1);
+                    } else if (conversionClass.equals(LocalDateTime.class)) {
+                        dbValue = rs.getTimestamp(i + 1);
+                    } else if (conversionClass.isArray()) {
+                        dbValue = readArrayColumn(rs, i + 1);
+                    } else if (Map.class.isAssignableFrom(conversionClass)) {
+                        // read untyped; ClickHouse's driver already returns a
+                        // java.util.Map for MAP columns when not forced into a
+                        // specific conversion class.
+                        dbValue = rs.getObject(i + 1);
+                    } else {
+                        dbValue = rs.getObject(i + 1, conversionClass);
+                    }
+                    row.setField(i, getNullable(rs, dbValue));
+                }
+                result.add(row);
+            }
+            return result;
+        };
+    }
+
+    private static Object[] readArrayColumn(ResultSet rs, int columnIndex) throws SQLException {
+        Object raw = rs.getObject(columnIndex);
+        if (raw == null) {
+            return null;
+        }
+        if (raw instanceof Array) {
+            Object arr = ((Array) raw).getArray();
+            return (Object[]) arr;
+        }
+        if (raw instanceof java.util.List) {
+            return ((java.util.List<?>) raw).toArray();
+        }
+        if (raw.getClass().isArray()) {
+            return (Object[]) raw;
+        }
+        throw new IllegalStateException(
+                "Unexpected representation for array column: " + raw.getClass());
     }
 }
