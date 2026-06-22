@@ -115,6 +115,21 @@ class NumericBetweenParametersProviderTest {
         check(expected, actual);
     }
 
+    @Test
+    void testBatchMaxMinTooLarge() {
+        JdbcNumericBetweenParametersProvider provider =
+                new JdbcNumericBetweenParametersProvider(2260418954055131340L, 3875220057236942850L)
+                        .ofBatchNum(3);
+        Serializable[][] actual = provider.getParameterValues();
+
+        long[][] expected = {
+            new long[] {2260418954055131340L, 2798685988449068491L},
+            new long[] {2798685988449068492L, 3336953022843005643L},
+            new long[] {3336953022843005644L, 3875220057236942850L}
+        };
+        check(expected, actual);
+    }
+
     private void check(long[][] expected, Serializable[][] actual) {
         assertThat(actual).hasDimensions(expected.length, expected[0].length);
         for (int i = 0; i < expected.length; i++) {

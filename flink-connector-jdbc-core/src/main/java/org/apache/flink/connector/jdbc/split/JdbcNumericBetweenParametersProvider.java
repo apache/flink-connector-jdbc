@@ -106,11 +106,12 @@ public class JdbcNumericBetweenParametersProvider implements JdbcParameterValues
 
         Serializable[][] parameters = new Serializable[batchNum][2];
         long start = minVal;
-        for (int i = 0; i < batchNum; i++) {
+        for (int i = 0; i < batchNum - 1; i++) {
             long end = start + batchSize - 1 - (i >= bigBatchNum ? 1 : 0);
             parameters[i] = new Long[] {start, end};
             start = end + 1;
         }
+        parameters[batchNum - 1] = new Long[] {start, maxVal};
         return parameters;
     }
 
