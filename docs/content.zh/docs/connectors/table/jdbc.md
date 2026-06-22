@@ -920,7 +920,10 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td><code>TIME [(p)] [WITHOUT TIMEZONE]</code></td>
     </tr>
     <tr>
-      <td><code>DATETIME [(p)]</code></td>
+      <td>
+        <code>DATETIME [(p)]</code><br>
+        <code>TIMESTAMP [(p)]</code>
+      </td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
@@ -933,6 +936,18 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td><code>DATETIME [(p)]</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><code>TIMESTAMP [(p)] [WITH TIMEZONE]</code></td>
+      <td><code>TIMESTAMP [(p)] [WITH TIMEZONE]</code></td>
+      <td><code>TIMESTAMP [(p)] [WITH TIMEZONE]</code></td>
+      <td><code>DATETIMEOFFSET</code></td>
+      <td><code>TIMESTAMP [(p)]</code></td>
+      <td><code>TIMESTAMP_WITH_TIME_ZONE</code></td>
+      <td><code>TIMESTAMP [(p)]</code></td>
+      <td><code>TIMESTAMP [(p)] [WITH TIMEZONE]</code></td>
+      <td><code>TIMESTAMP [(p)] [WITH TIMEZONE]</code></td>
     </tr>
     <tr>
       <td>

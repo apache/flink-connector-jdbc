@@ -913,7 +913,10 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       <td><code>TIME [(p)] [WITHOUT TIMEZONE]</code></td>
     </tr>
     <tr>
-      <td><code>DATETIME [(p)]</code></td>
+      <td>
+        <code>DATETIME [(p)]</code><br>
+        <code>TIMESTAMP [(p)]</code>
+      </td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
@@ -926,6 +929,18 @@ Flink supports connect to several databases which uses dialect like MySQL, Oracl
       <td><code>DATETIME [(p)]</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><code>TIMESTAMP [(p)] [WITH TIMEZONE]</code></td>
+      <td><code>TIMESTAMP [(p)] [WITH TIMEZONE]</code></td>
+      <td><code>TIMESTAMP [(p)] [WITH TIMEZONE]</code></td>
+      <td><code>DATETIMEOFFSET</code></td>
+      <td><code>TIMESTAMP [(p)]</code></td>
+      <td><code>TIMESTAMP_WITH_TIME_ZONE</code></td>
+      <td><code>TIMESTAMP [(p)]</code></td>
+      <td><code>TIMESTAMP [(p)] [WITH TIMEZONE]</code></td>
+      <td><code>TIMESTAMP [(p)] [WITH TIMEZONE]</code></td>
     </tr>
     <tr>
       <td>
