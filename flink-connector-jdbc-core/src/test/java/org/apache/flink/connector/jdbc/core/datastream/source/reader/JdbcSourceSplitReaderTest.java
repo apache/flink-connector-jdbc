@@ -34,6 +34,8 @@ import org.apache.flink.connector.testutils.source.reader.TestingReaderContext;
 
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -143,5 +145,112 @@ class JdbcSourceSplitReaderTest extends JdbcDataTestBase {
         assertThat(records).hasSize(TEST_DATA.length);
         assertThat(fetchedRecordsWithSplitIds.nextSplit()).isNull();
         splitReader.close();
+    }
+
+    @Test
+    void testFetchReconnectsWhenConnectionClosedWhileOpeningSplit() throws Exception {
+        // The provider hands back an already-closed connection the first time, so the reader's
+        // first use of it fails (mimicking the connection being torn down, e.g. on source
+        // cancellation, before the reader finishes opening the split). The reader must
+        // re-establish the connection and read the whole split.
+        CountingConnectionProvider provider = new CountingConnectionProvider(connectionProvider, 1);
+        try (JdbcSourceSplitReader<TestEntry> splitReader = newReader(provider, split)) {
+            RecordsWithSplitIds<RecordAndOffset<TestEntry>> fetched = splitReader.fetch();
+            assertThat(fetched.nextSplit()).isEqualTo("1");
+            List<TestEntry> records = new ArrayList<>();
+            RecordAndOffset<TestEntry> recordAndOffset = fetched.nextRecordFromSplit();
+            while (recordAndOffset != null) {
+                records.add(recordAndOffset.record);
+                recordAndOffset = fetched.nextRecordFromSplit();
+            }
+            assertThat(records).hasSize(TEST_DATA.length);
+            // The first (closed) connection plus exactly one re-established one: a reconnect ran.
+            assertThat(provider.establishCount).isEqualTo(2);
+        }
+    }
+
+    @Test
+    void testFetchRethrowsImmediatelyWhenConnectionStaysOpen() throws Exception {
+        // A query error on a healthy (open) connection must be rethrown immediately, with no
+        // reconnect attempt.
+        CountingConnectionProvider provider = new CountingConnectionProvider(connectionProvider, 0);
+        JdbcSourceSplit invalidSplit =
+                new JdbcSourceSplit("1", "select * from NON_EXISTENT_TABLE", null, null);
+        try (JdbcSourceSplitReader<TestEntry> splitReader = newReader(provider, invalidSplit)) {
+            assertThatThrownBy(splitReader::fetch).isInstanceOf(RuntimeException.class);
+            assertThat(provider.establishCount).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void testFetchFailsAfterExhaustingReconnectRetries() throws Exception {
+        // If the connection keeps being closed, the reader gives up after the retry budget
+        // instead of looping forever.
+        CountingConnectionProvider provider =
+                new CountingConnectionProvider(connectionProvider, Integer.MAX_VALUE);
+        try (JdbcSourceSplitReader<TestEntry> splitReader = newReader(provider, split)) {
+            assertThatThrownBy(splitReader::fetch).isInstanceOf(RuntimeException.class);
+            // The initial attempt plus MAX_CONNECTION_RETRIES (3) reconnect attempts.
+            assertThat(provider.establishCount).isEqualTo(4);
+        }
+    }
+
+    private JdbcSourceSplitReader<TestEntry> newReader(
+            JdbcConnectionProvider provider, JdbcSourceSplit sourceSplit) {
+        JdbcSourceSplitReader<TestEntry> reader =
+                new JdbcSourceSplitReader<>(
+                        new TestingReaderContext(),
+                        new Configuration(),
+                        TypeInformation.of(TestEntry.class),
+                        provider,
+                        DeliveryGuarantee.NONE,
+                        extractor);
+        reader.handleSplitsChanges(new SplitsAddition<>(Collections.singletonList(sourceSplit)));
+        return reader;
+    }
+
+    /**
+     * A {@link JdbcConnectionProvider} that closes the first {@code closeFirstN} connections it
+     * hands out (returning them already closed) to deterministically reproduce a connection torn
+     * down underneath the reader, while counting how many connections were established.
+     */
+    private static class CountingConnectionProvider implements JdbcConnectionProvider {
+        private final JdbcConnectionProvider delegate;
+        private final int closeFirstN;
+        private int establishCount = 0;
+
+        CountingConnectionProvider(JdbcConnectionProvider delegate, int closeFirstN) {
+            this.delegate = delegate;
+            this.closeFirstN = closeFirstN;
+        }
+
+        @Override
+        public Connection getOrEstablishConnection() throws SQLException, ClassNotFoundException {
+            Connection connection = delegate.getOrEstablishConnection();
+            if (++establishCount <= closeFirstN) {
+                connection.close();
+            }
+            return connection;
+        }
+
+        @Override
+        public Connection getConnection() {
+            return delegate.getConnection();
+        }
+
+        @Override
+        public boolean isConnectionValid() throws SQLException {
+            return delegate.isConnectionValid();
+        }
+
+        @Override
+        public void closeConnection() {
+            delegate.closeConnection();
+        }
+
+        @Override
+        public Connection reestablishConnection() throws SQLException, ClassNotFoundException {
+            return delegate.reestablishConnection();
+        }
     }
 }
