@@ -67,6 +67,13 @@ public class JdbcSourceSplitReader<T>
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcSourceSplitReader.class);
 
+    /**
+     * Maximum number of times a split is re-opened after the connection was found to be closed
+     * (e.g. torn down concurrently while the source is being cancelled). Mirrors the sink default
+     * {@code JdbcExecutionOptions.DEFAULT_MAX_RETRY_TIMES}.
+     */
+    private static final int MAX_CONNECTION_RETRIES = 3;
+
     private final Configuration config;
     @Nullable private JdbcSourceSplit currentSplit;
     private final Queue<JdbcSourceSplit> splits;
@@ -259,12 +266,65 @@ public class JdbcSourceSplitReader<T>
             final JdbcSourceSplit nextSplit = splits.poll();
             if (nextSplit != null) {
                 currentSplit = nextSplit;
-                openResultSetForSplit(currentSplit);
+                openResultSetForSplitWithReconnect(currentSplit);
                 return true;
             }
             return false;
         } catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Opens the result set for the split, re-establishing the connection and retrying if the
+     * connection was closed underneath us.
+     *
+     * <p>When a bounded query (e.g. {@code LIMIT}) produces enough rows, the job finishes and the
+     * source is cancelled while this reader may still be opening the next split. The connection
+     * that the provider validated can then be torn down by the time we prepare/execute the
+     * statement, surfacing as a closed-connection error (e.g. Derby {@code 08003 "No current
+     * connection"}). That should not fail the whole job, so we re-establish the connection and
+     * retry, mirroring the retry/reconnect handling in {@code JdbcOutputFormat#flush()}. We only
+     * retry when the connection is no longer valid; a genuine query error on a healthy connection
+     * is rethrown immediately, and a truly unreachable database makes re-establishing fail so real
+     * errors still propagate once the retry budget is exhausted.
+     */
+    private void openResultSetForSplitWithReconnect(JdbcSourceSplit split)
+            throws SQLException, ClassNotFoundException {
+        for (int attempt = 0; attempt <= MAX_CONNECTION_RETRIES; attempt++) {
+            try {
+                openResultSetForSplit(split);
+                return;
+            } catch (SQLException e) {
+                // Only retry when the connection itself is no longer valid (e.g. torn down while
+                // the source is being cancelled). A genuine query error on a healthy connection is
+                // rethrown immediately, and a truly unreachable database keeps failing the re-open,
+                // so real errors still propagate once the retry budget is exhausted.
+                if (attempt >= MAX_CONNECTION_RETRIES || connectionStillValid()) {
+                    throw e;
+                }
+                LOG.warn(
+                        "Connection was closed while opening split {} (attempt {}/{}); "
+                                + "re-establishing the connection and retrying.",
+                        split.splitId(),
+                        attempt + 1,
+                        MAX_CONNECTION_RETRIES,
+                        e);
+                // Drop the dead connection together with the statement/result set left on it so
+                // the retried open re-establishes cleanly, without running the close helpers
+                // (which rethrow as unchecked exceptions) against the closed connection.
+                resultSet = null;
+                statement = null;
+                connectionProvider.closeConnection();
+            }
+        }
+    }
+
+    private boolean connectionStillValid() {
+        try {
+            return connectionProvider.isConnectionValid();
+        } catch (SQLException ignored) {
+            return false;
         }
     }
 
