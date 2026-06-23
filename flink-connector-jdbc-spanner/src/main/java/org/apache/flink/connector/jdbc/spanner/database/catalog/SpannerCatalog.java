@@ -112,7 +112,8 @@ public class SpannerCatalog extends AbstractJdbcCatalog {
     protected Function<String, String> calculateUrlFunction(String url) {
         // Spanner JDBC URLs use semicolons for parameters instead of question marks.
         // Example: "jdbc:cloudspanner://host/.../databases/;autoConfigEmulator=true"
-        //       -> urlFunction("mydb") -> "jdbc:cloudspanner://host/.../databases/mydb;autoConfigEmulator=true"
+        //       -> urlFunction("mydb") ->
+        // "jdbc:cloudspanner://host/.../databases/mydb;autoConfigEmulator=true"
         int semiColonIndex = url.indexOf(';');
         if (semiColonIndex == -1) {
             // No semicolon params
