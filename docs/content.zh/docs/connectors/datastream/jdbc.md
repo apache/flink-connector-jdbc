@@ -208,7 +208,7 @@ public class JdbcSourceExample {
                             new Book(
                                 resultSet.getLong("id"),
                                 resultSet.getString("title")))
-                .build();
+                        .build();
         env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
                 .addSink(new DiscardingSink());
         env.execute();
@@ -276,8 +276,8 @@ The SQL DML statements are executed in batches, which can optionally be configur
 JdbcExecutionOptions.builder()
         .withBatchIntervalMs(200)             // optional: default = 0, meaning no time-based execution is done
         .withBatchSize(1000)                  // optional: default = 5000 values
-        .withMaxRetries(5)                    // optional: default = 3 
-.build();
+        .withMaxRetries(5)                    // optional: default = 3
+        .build();
 ```
 {{< /tab >}}
 {{< tab "Python" >}}
@@ -408,7 +408,8 @@ For example:
 StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 env
         .fromElements(...)
-        .addSink(JdbcSink.exactlyOnceSink(
+        .addSink(
+            JdbcSink.exactlyOnceSink(
                 "insert into books (id, title, author, price, qty) values (?,?,?,?,?)",
                 (ps, t) -> {
                     ps.setInt(1, t.id);
@@ -423,11 +424,11 @@ env
                 JdbcExactlyOnceOptions.defaults(),
                 () -> {
                     // create a driver-specific XA DataSource
-                    // The following example is for derby 
+                    // The following example is for derby
                     EmbeddedXADataSource ds = new EmbeddedXADataSource();
                     ds.setDatabaseName("my_db");
                     return ds;
-                });
+                }));
 env.execute();
 ```
 {{< /tab >}}
@@ -445,8 +446,8 @@ In such cases, please use the following API to construct `JdbcExactlyOnceOptions
 {{< tab "Java" >}}
 ```java
 JdbcExactlyOnceOptions.builder()
-.withTransactionPerConnection(true)
-.build();
+    .withTransactionPerConnection(true)
+    .build();
 ```
 {{< /tab >}}
 {{< tab "Python" >}}
