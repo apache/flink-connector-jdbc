@@ -40,9 +40,6 @@ Please consult your database documentation on how to add the corresponding drive
 
 ## JDBC Source
 
-Configuration goes as follow (see also {{< javadoc file="org/apache/flink/connector/jdbc/source/JdbcSource.html" name="JdbcSource javadoc" >}}
-and {{< javadoc file="org/apache/flink/connector/jdbc/source/JdbcSourceBuilder.html" name="JdbcSourceBuilder javadoc" >}}).
-
 ### Usage
 
 {{< tabs "4ab65f13-607a-411a-8d24-e709f701cd41" >}}
@@ -128,7 +125,6 @@ ResultExtractor resultExtractor = new ResultExtractor() {
 ### JdbcParameterValuesProvider
 
 A provider to provide parameters in sql to fulfill actual value in the corresponding placeholders, which is in the form of two-dimension array.
-See {{< javadoc file="org/apache/flink/connector/jdbc/split/JdbcParameterValuesProvider.html" name="JdbcParameterValuesProvider javadoc" >}} for more details.
 
 ```java
 
@@ -178,8 +174,6 @@ jdbcSourceBuilder =
 JdbcSource source = jdbcSourceBuilder.build();
 ```
 
-See {{< javadoc file="org/apache/flink/connector/jdbc/utils/ContinuousUnBoundingSettings.html" name="ContinuousUnBoundingSettings javadoc" >}} for more details.
-
 ### Full example
 
 {{< tabs "4ab65f13-608a-411a-8d24-e303f348ds81" >}}
@@ -214,7 +208,7 @@ public class JdbcSourceExample {
                             new Book(
                                 resultSet.getLong("id"),
                                 resultSet.getString("title")))
-                .build();
+                        .build();
         env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
                 .addSink(new DiscardingSink());
         env.execute();
@@ -233,7 +227,7 @@ Still not supported in Python API.
 
 The JDBC sink provides at-least-once guarantee.
 Effectively though, exactly-once can be achieved by crafting upsert SQL statements or idempotent SQL updates.
-Configuration goes as follow (see also {{< javadoc file="org/apache/flink/connector/jdbc/JdbcSink.html" name="JdbcSink javadoc" >}}).
+Configuration goes as follows:
 
 {{< tabs "4ab65f13-607a-411a-8d24-e709f701cd4c" >}}
 {{< tab "Java" >}}
@@ -274,7 +268,7 @@ It then repeatedly calls a user-provided function to update that prepared statem
 
 ### JDBC execution options
 
-The SQL DML statements are executed in batches, which can optionally be configured with the following instance (see also {{< javadoc name="JdbcExecutionOptions javadoc" file="org/apache/flink/connector/jdbc/JdbcExecutionOptions.html" >}})
+The SQL DML statements are executed in batches, which can optionally be configured with the following instance:
 
 {{< tabs "4ab65f13-607a-411a-8d24-e709f512ed6k" >}}
 {{< tab "Java" >}}
@@ -282,8 +276,8 @@ The SQL DML statements are executed in batches, which can optionally be configur
 JdbcExecutionOptions.builder()
         .withBatchIntervalMs(200)             // optional: default = 0, meaning no time-based execution is done
         .withBatchSize(1000)                  // optional: default = 5000 values
-        .withMaxRetries(5)                    // optional: default = 3 
-.build();
+        .withMaxRetries(5)                    // optional: default = 3
+        .build();
 ```
 {{< /tab >}}
 {{< tab "Python" >}}
@@ -300,13 +294,12 @@ JdbcExecutionOptions.builder() \
 A JDBC batch is executed as soon as one of the following conditions is true:
 
 * the configured batch interval time is elapsed
-* the maximum batch size is reached 
+* the maximum batch size is reached
 * a Flink checkpoint has started
 
 ### JDBC connection parameters
 
-The connection to the database is configured with a `JdbcConnectionOptions` instance. 
-Please see {{< javadoc name="JdbcConnectionOptions javadoc" file="org/apache/flink/connector/jdbc/JdbcConnectionOptions.html" >}} for details
+The connection to the database is configured with a `JdbcConnectionOptions` instance.
 
 ### Full example
 
@@ -397,14 +390,14 @@ env.execute()
 
 ## `JdbcSink.exactlyOnceSink`
 
-Since 1.13, Flink JDBC sink supports exactly-once mode. 
-The implementation relies on the JDBC driver support of XA 
+Since 1.13, Flink JDBC sink supports exactly-once mode.
+The implementation relies on the JDBC driver support of XA
 [standard](https://pubs.opengroup.org/onlinepubs/009680699/toc.pdf).
 Most drivers support XA if the database also supports XA (so the driver is usually the same).
 
 To use it, create a sink using `exactlyOnceSink()` method as above and additionally provide:
-- {{< javadoc name="exactly-once options" file="org/apache/flink/connector/jdbc/JdbcExactlyOnceOptions.html" >}}
-- {{< javadoc name="execution options" file="org/apache/flink/connector/jdbc/JdbcExecutionOptions.html" >}}
+- `JdbcExactlyOnceOptions`
+- `JdbcExecutionOptions`
 - [XA DataSource](https://docs.oracle.com/javase/8/docs/api/javax/sql/XADataSource.html) Supplier
 
 For example:
@@ -430,7 +423,7 @@ env
                 JdbcExactlyOnceOptions.defaults(),
                 () -> {
                     // create a driver-specific XA DataSource
-                    // The following example is for derby 
+                    // The following example is for derby
                     EmbeddedXADataSource ds = new EmbeddedXADataSource();
                     ds.setDatabaseName("my_db");
                     return ds;
@@ -452,8 +445,8 @@ In such cases, please use the following API to construct `JdbcExactlyOnceOptions
 {{< tab "Java" >}}
 ```java
 JdbcExactlyOnceOptions.builder()
-.withTransactionPerConnection(true)
-.build();
+    .withTransactionPerConnection(true)
+    .build();
 ```
 {{< /tab >}}
 {{< tab "Python" >}}
