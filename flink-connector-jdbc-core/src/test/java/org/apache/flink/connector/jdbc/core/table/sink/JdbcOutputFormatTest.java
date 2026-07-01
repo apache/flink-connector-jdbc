@@ -595,4 +595,36 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
             stat.execute("DELETE FROM " + OUTPUT_TABLE);
         }
     }
+
+    @Test
+    void testBulkInsertEnabledOnNonCapableDialectFailsFast() {
+        InternalJdbcConnectionOptions jdbcOptions =
+                InternalJdbcConnectionOptions.builder()
+                        .setDriverName(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setTableName(OUTPUT_TABLE)
+                        .build();
+        JdbcDmlOptions dmlOptions =
+                JdbcDmlOptions.builder()
+                        .withTableName(jdbcOptions.getTableName())
+                        .withDialect(jdbcOptions.getDialect())
+                        .withFieldNames(fieldNames)
+                        .build();
+
+        assertThatThrownBy(
+                        () ->
+                                new JdbcOutputFormatBuilder()
+                                        .setJdbcOptions(jdbcOptions)
+                                        .setFieldDataTypes(fieldDataTypes)
+                                        .setJdbcDmlOptions(dmlOptions)
+                                        .setJdbcExecutionOptions(
+                                                JdbcExecutionOptions.builder()
+                                                        .withBatchSize(10)
+                                                        .withBulkInsertEnabled(true)
+                                                        .build())
+                                        .build())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Bulk insert is enabled")
+                .hasMessageContaining("JdbcBulkInsertDialect");
+    }
 }

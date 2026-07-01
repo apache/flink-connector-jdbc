@@ -69,6 +69,7 @@ import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SC
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SCAN_PARTITION_UPPER_BOUND;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SINK_BUFFER_FLUSH_INTERVAL;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SINK_BUFFER_FLUSH_MAX_ROWS;
+import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SINK_BULK_INSERT_ENABLED;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SINK_MAX_RETRIES;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SINK_PARALLELISM;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.TABLE_NAME;
@@ -185,6 +186,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         builder.withBatchSize(config.get(SINK_BUFFER_FLUSH_MAX_ROWS));
         builder.withBatchIntervalMs(config.get(SINK_BUFFER_FLUSH_INTERVAL).toMillis());
         builder.withMaxRetries(config.get(SINK_MAX_RETRIES));
+        builder.withBulkInsertEnabled(config.get(SINK_BULK_INSERT_ENABLED));
         return builder.build();
     }
 
@@ -258,6 +260,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         optionalOptions.add(SINK_BUFFER_FLUSH_MAX_ROWS);
         optionalOptions.add(SINK_BUFFER_FLUSH_INTERVAL);
         optionalOptions.add(SINK_MAX_RETRIES);
+        optionalOptions.add(SINK_BULK_INSERT_ENABLED);
         optionalOptions.add(SINK_PARALLELISM);
         optionalOptions.add(MAX_RETRY_TIMEOUT);
         optionalOptions.add(LookupOptions.CACHE_TYPE);
