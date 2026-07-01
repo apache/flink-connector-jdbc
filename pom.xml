@@ -62,7 +62,7 @@ under the License.
         <jackson-bom.version>2.13.4.20221013</jackson-bom.version>
         <junit4.version>4.13.2</junit4.version>
         <junit5.version>5.10.1</junit5.version>
-        <assertj.version>3.24.2</assertj.version>
+        <assertj.version>3.27.7</assertj.version>
         <testcontainers.version>1.20.1</testcontainers.version>
         <mockito.version>3.12.4</mockito.version>
         <openlineage.version>1.32.0</openlineage.version>
