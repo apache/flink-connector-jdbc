@@ -17,7 +17,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <postgres.version>42.7.3</postgres.version>
+        <postgres.version>42.7.11</postgres.version>
         <surefire.module.config>
             --add-opens=java.base/java.util=ALL-UNNAMED
             --add-opens=java.base/java.lang=ALL-UNNAMED
@@ -92,7 +92,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.3</version>
+            <version>42.7.11</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
