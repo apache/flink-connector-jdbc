@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.core.table.sink;
 
+import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.DefaultOpenContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
@@ -25,10 +26,19 @@ import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
+import org.apache.flink.metrics.groups.OperatorMetricGroup;
+import org.apache.flink.metrics.groups.UnregisteredMetricsGroup;
+import org.apache.flink.runtime.jobgraph.OperatorID;
+import org.apache.flink.runtime.memory.MemoryManager;
+import org.apache.flink.runtime.operators.testutils.MockEnvironment;
+import org.apache.flink.runtime.operators.testutils.MockEnvironmentBuilder;
 import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkContextUtil;
-import org.apache.flink.streaming.util.MockStreamingRuntimeContext;
+import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
+import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
+import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService;
+import org.apache.flink.streaming.runtime.tasks.TestProcessingTimeService;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.Table;
@@ -383,7 +393,7 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
                 (SinkFunctionProvider) tableSink.getSinkRuntimeProvider(context);
         GenericJdbcSinkFunction<RowData> sinkFunction =
                 (GenericJdbcSinkFunction<RowData>) sinkProvider.createSinkFunction();
-        sinkFunction.setRuntimeContext(new MockStreamingRuntimeContext(true, 1, 0));
+        sinkFunction.setRuntimeContext(new TestingStreamingRuntimeContext(true, 1, 0));
         sinkFunction.setInputType(
                 TypeInformation.of(GenericRowData.class), JdbcTestBase.getExecutionConfig(false));
         sinkFunction.open(new DefaultOpenContext());
@@ -398,5 +408,82 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
                 .containsExactlyInAnyOrder(Row.of(1L), Row.of(2L));
 
         sinkFunction.close();
+    }
+
+    /** The help class to assure the test cases run compatibility. */
+    static class TestingStreamingRuntimeContext extends StreamingRuntimeContext {
+        private final boolean isCheckpointingEnabledUselessPlaceholder;
+
+        private final int numParallelSubtasks;
+        private final int subtaskIndex;
+
+        private final MockEnvironment environment;
+
+        public TestingStreamingRuntimeContext(
+                boolean isCheckpointingEnabled, int numParallelSubtasks, int subtaskIndex) {
+
+            this(
+                    isCheckpointingEnabled,
+                    numParallelSubtasks,
+                    subtaskIndex,
+                    new MockEnvironmentBuilder()
+                            .setTaskName("mockTask")
+                            .setManagedMemorySize(4 * MemoryManager.DEFAULT_PAGE_SIZE)
+                            .setParallelism(numParallelSubtasks)
+                            .setMaxParallelism(numParallelSubtasks)
+                            .setSubtaskIndex(subtaskIndex)
+                            .build());
+        }
+
+        public TestingStreamingRuntimeContext(
+                boolean isCheckpointingEnabled,
+                int numParallelSubtasks,
+                int subtaskIndex,
+                MockEnvironment environment) {
+
+            super(new MockStreamOperator(), environment, new HashMap<>());
+
+            this.isCheckpointingEnabledUselessPlaceholder = isCheckpointingEnabled;
+            this.numParallelSubtasks = numParallelSubtasks;
+            this.subtaskIndex = subtaskIndex;
+            this.environment = environment;
+        }
+
+        public ExecutionConfig getExecutionConfig() {
+            return environment.getExecutionConfig();
+        }
+
+        @Override
+        public OperatorMetricGroup getMetricGroup() {
+            return UnregisteredMetricsGroup.createOperatorMetricGroup();
+        }
+
+        public boolean isCheckpointingEnabled() {
+            return isCheckpointingEnabledUselessPlaceholder;
+        }
+    }
+
+    private static class MockStreamOperator extends AbstractStreamOperator<Integer> {
+        private static final long serialVersionUID = -1153976702711944427L;
+
+        private transient TestProcessingTimeService testProcessingTimeService;
+
+        @Override
+        public ExecutionConfig getExecutionConfig() {
+            return new ExecutionConfig();
+        }
+
+        @Override
+        public OperatorID getOperatorID() {
+            return new OperatorID();
+        }
+
+        @Override
+        public ProcessingTimeService getProcessingTimeService() {
+            if (testProcessingTimeService == null) {
+                testProcessingTimeService = new TestProcessingTimeService();
+            }
+            return testProcessingTimeService;
+        }
     }
 }
