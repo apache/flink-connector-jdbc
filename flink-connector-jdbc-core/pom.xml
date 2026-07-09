@@ -46,6 +46,17 @@ under the License.
         </dependency>
 
         <!-- Table ecosystem -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>7.0.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
         <!-- Projects depending on this project won't depend on flink-table-*. -->
         <dependency>
