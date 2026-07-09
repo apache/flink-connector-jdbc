@@ -18,12 +18,14 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.source.enumerator;
 
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumerator;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.SplitterEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
+import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
@@ -43,6 +45,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class JdbcSourceEnumerator
         implements SplitEnumerator<JdbcSourceSplit, JdbcSourceEnumeratorState> {
     private static final Logger LOG = LoggerFactory.getLogger(JdbcSourceEnumerator.class);
+
+    /**
+     * Ceiling for splits discovered but not yet handed to a reader. Without it the backlog simply
+     * migrates from the splitter queue into {@link #unassigned} (the splitter pacing only observes
+     * its own queue), so a slow reader set would grow the coordinator heap without bound and blow
+     * up checkpoint size. Enumeration resumes once consumption drains the backlog.
+     */
+    @VisibleForTesting static final int MAX_UNASSIGNED_SPLITS = 10_000;
+
+    /**
+     * Ceiling for in-flight async enumeration calls. The SourceCoordinator worker pool has a single
+     * thread per source, so queueing more than a couple of calls just adds churn.
+     */
+    private static final int MAX_PENDING_ENUMERATION_CALLS = 2;
 
     private final SplitEnumeratorContext<JdbcSourceSplit> context;
     private final List<JdbcSourceSplit> unassigned;
@@ -70,7 +86,29 @@ public class JdbcSourceEnumerator
 
     @Override
     public void close() throws IOException {
-        splitterEnumerator.close();
+        try {
+            splitterEnumerator.close();
+        } catch (RuntimeException primary) {
+            // Still release the provider connection, but do not mask the primary failure.
+            try {
+                closeProviderConnection();
+            } catch (RuntimeException suppressed) {
+                primary.addSuppressed(suppressed);
+            }
+            throw primary;
+        }
+        // The database-level splitter deliberately does NOT close the main provider connection, so
+        // close it here: for snapshot-capable providers that connection is the REPEATABLE READ
+        // transaction exporting the shared snapshot. Leaving it open pins the Postgres xmin horizon
+        // ("idle in transaction") for the lifetime of the TaskManager JVM, blocking vacuum. A
+        // standalone splitter may have closed it already; closeConnection() is idempotent.
+        closeProviderConnection();
+    }
+
+    private void closeProviderConnection() {
+        if (connectionProvider != null) {
+            connectionProvider.closeConnection();
+        }
     }
 
     @Override
@@ -86,8 +124,9 @@ public class JdbcSourceEnumerator
         }
         final Optional<JdbcSourceSplit> nextSplit = getNextSplit();
         if (nextSplit.isPresent()) {
-            context.assignSplit(nextSplit.get(), subtask);
-            LOG.info("Assigned split to subtask {} : {}", subtask, nextSplit.get());
+            JdbcSourceSplit split = refreshSnapshotId(nextSplit.get());
+            context.assignSplit(split, subtask);
+            LOG.debug("Assigned split to subtask {} : {}", subtask, split.splitId());
             preDiscoverSplits();
         } else {
             if (!readersWaitingForSplits.contains(subtask)) {
@@ -133,12 +172,37 @@ public class JdbcSourceEnumerator
         return Optional.of(next);
     }
 
+    /**
+     * Re-stamps a split with the snapshot id of the current run. Splits restored from a checkpoint
+     * carry the id exported by the failed attempt, but that exported snapshot died with its
+     * exporting connection, so the reader would fail with "snapshot does not exist" (and keep
+     * failing after every restart). Splits produced fresh by this run already carry the current id
+     * and are returned unchanged; non-snapshot splits are unaffected.
+     */
+    private JdbcSourceSplit refreshSnapshotId(JdbcSourceSplit split) {
+        String currentSnapshotId = splitterEnumerator.currentSnapshotId();
+        if (currentSnapshotId == null) {
+            return split;
+        }
+        return split.withGlobalSnapshotId(currentSnapshotId);
+    }
+
     private void preDiscoverSplits() {
-        int targetParallelism = context.currentParallelism();
-        while (asyncCallsPending.get() < targetParallelism
+        while (asyncCallsPending.get() < MAX_PENDING_ENUMERATION_CALLS
+                && unassigned.size() < MAX_UNASSIGNED_SPLITS
                 && !splitterEnumerator.isAllSplitsFinished()) {
             asyncCallsPending.incrementAndGet();
-            context.callAsync(() -> splitterEnumerator.enumerateSplits(), this::onSplitsDiscovered);
+            context.callAsync(
+                    () -> {
+                        List<JdbcSourceSplit> splits = splitterEnumerator.enumerateSplits();
+                        if (splits.isEmpty() && !splitterEnumerator.isAllSplitsFinished()) {
+                            // Transiently empty: back off briefly instead of hammering the
+                            // coordinator event loop with instant empty results.
+                            Thread.sleep(50);
+                        }
+                        return splits;
+                    },
+                    this::onSplitsDiscovered);
         }
 
         signalNoMoreSplitsIfDone();
@@ -147,13 +211,18 @@ public class JdbcSourceEnumerator
     private void onSplitsDiscovered(List<JdbcSourceSplit> splits, Throwable error) {
         asyncCallsPending.decrementAndGet();
         if (error != null) {
-            LOG.error("Failed to discover splits.", error);
-            preDiscoverSplits();
-            return;
+            // Enumeration failures are sticky (the background computation gave up; the same
+            // failure would recur on every retry). Rethrow on the coordinator thread so the
+            // job fails instead of spinning forever with — or finishing "successfully" without
+            // — the splits that were never discovered.
+            throw new FlinkRuntimeException("Failed to discover splits, failing the job.", error);
         }
 
         if (splits != null && !splits.isEmpty()) {
             assignOrBuffer(splits);
+            // Splits are now buffered/assigned and captured by the next checkpoint; release the
+            // splitter's in-flight staging so they are not persisted twice on restore.
+            splitterEnumerator.confirmSplitsDelivered(splits);
             preDiscoverSplits();
         } else if (!splitterEnumerator.isAllSplitsFinished()) {
             preDiscoverSplits();
@@ -164,19 +233,22 @@ public class JdbcSourceEnumerator
 
     private void assignOrBuffer(List<JdbcSourceSplit> splits) {
         for (JdbcSourceSplit split : splits) {
+            // Re-stamp before buffering/assigning so restored splits never reach a reader with the
+            // dead snapshot id of a previous attempt.
+            JdbcSourceSplit refreshed = refreshSnapshotId(split);
             if (!readersWaitingForSplits.isEmpty()) {
                 int subtaskId = readersWaitingForSplits.remove(0);
                 if (context.registeredReaders().containsKey(subtaskId)) {
-                    LOG.info(
+                    LOG.debug(
                             "Assigning discovered split {} to waiting subtask {}",
-                            split,
+                            refreshed.splitId(),
                             subtaskId);
-                    context.assignSplit(split, subtaskId);
+                    context.assignSplit(refreshed, subtaskId);
                 } else {
-                    unassigned.add(split);
+                    unassigned.add(refreshed);
                 }
             } else {
-                unassigned.add(split);
+                unassigned.add(refreshed);
             }
         }
     }
