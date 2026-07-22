@@ -16,7 +16,7 @@
 # limitations under the License.
 ################################################################################
 
-version: 4.1.0
+version: 4.1-SNAPSHOT
 flink_compatibility: ["2.1", "2.2"]
 variants:
   - maven: flink-connector-jdbc-core
