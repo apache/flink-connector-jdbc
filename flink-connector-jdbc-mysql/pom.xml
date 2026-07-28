@@ -33,7 +33,7 @@ under the License.
     <packaging>jar</packaging>
 
     <properties>
-        <mysql.version>8.0.29</mysql.version>
+        <mysql.version>8.2.0</mysql.version>
     </properties>
 
     <dependencies>
@@ -92,8 +92,8 @@ under the License.
 
         <!-- MySql -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
             <version>${mysql.version}</version>
             <scope>test</scope>
         </dependency>
