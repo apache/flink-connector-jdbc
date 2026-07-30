@@ -41,25 +41,32 @@ JDBC 连接器允许使用 JDBC 驱动向任意类型的关系型数据库读取
 依赖
 ------------
 
-使用 JDBC 连接器时, `flink-connector-jdbc-core`, `flink-connector-jdbc-${database}` 和对应的 JDBC 驱动需要添加到依赖中。
+从 4.0 版本开始，JDBC 连接器不再作为单个构件发布。它被拆分为包含公共运行时的
+`flink-connector-jdbc-core`，以及每个支持的数据库各一个构件，后者包含该数据库的方言（dialect）和
+catalog。你需要引入所连接数据库对应的构件，它会以传递依赖的方式引入 `flink-connector-jdbc-core`。
+
+| 数据库     | 连接器构件                        |
+|:-----------|:----------------------------------|
+| MySQL      | `flink-connector-jdbc-mysql`      |
+| Oracle     | `flink-connector-jdbc-oracle`     |
+| PostgreSQL | `flink-connector-jdbc-postgres`   |
+| SQL Server | `flink-connector-jdbc-sqlserver`  |
+| CrateDB    | `flink-connector-jdbc-cratedb`    |
+| Db2        | `flink-connector-jdbc-db2`        |
+| Trino      | `flink-connector-jdbc-trino`      |
+| OceanBase  | `flink-connector-jdbc-oceanbase`  |
+| Derby      | `flink-connector-jdbc-core`       |
 
 {{< sql_connector_download_table "jdbc" >}}
 
-连接到对应的数据库时，需要使用对应的 `flink-connector-jdbc-${database}` 依赖和驱动依赖。
+这些构件都不是自包含的 SQL uber jar。在使用 SQL Client 或 session 集群时，需要把
+`flink-connector-jdbc-core` 和所用数据库对应的构件同时放入 `lib/` 目录，并且还需要放入
+`flink-connector-jdbc-core` 所依赖的 `io.openlineage:openlineage-java` 和
+`io.openlineage:openlineage-sql-java` jar，否则构建作业时会抛出 `NoClassDefFoundError`。部分方言基于其他方言实现，
+因此还需要对应的构件：CrateDB 还需要 `flink-connector-jdbc-postgres`，OceanBase 还需要
+`flink-connector-jdbc-mysql` 和 `flink-connector-jdbc-oracle`。
 
-支持的 `flink-connector-jdbc-${database}` 依赖如下，其版本需要和 `flink-connector-jdbc-core` 依赖的版本相同：
-
-| Database   | Group Id                  | Artifact Id                      | JAR                                                                                         |
-|:-----------|:--------------------------|:---------------------------------|:--------------------------------------------------------------------------------------------|
-| MySQL      | `org.apache.flink`        | `flink-connector-jdbc-mysql`     | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-mysql/)     |
-| Oracle     | `org.apache.flink`        | `flink-connector-jdbc-oracle`    | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-oracle/)    |
-| PostgreSQL | `org.apache.flink`        | `flink-connector-jdbc-postgres`  | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-postgres/)  |
-| Derby      | `org.apache.flink`        | `flink-connector-jdbc-core`      | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-core/)      |
-| SQL Server | `org.apache.flink`        | `flink-connector-jdbc-sqlserver` | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-sqlserver/) |
-| CrateDB    | `org.apache.flink`        | `flink-connector-jdbc-cratedb`   | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-cratedb/)   |
-| Db2        | `org.apache.flink`        | `flink-connector-jdbc-db2`       | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-db2/)       | 
-| Trino      | `org.apache.flink`        | `flink-connector-jdbc-trino`     | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-trino/)     |
-| OceanBase  | `org.apache.flink`        | `flink-connector-jdbc-oceanbase` | [下载](https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-oceanbase/) |
+JDBC 连接器不是二进制发行版的一部分，请查阅[这里]({{< ref "docs/dev/configuration/overview" >}})了解如何在集群运行中引用 JDBC 连接器。
 
 在连接到具体数据库时，也需要对应的驱动依赖，目前支持的驱动如下：
 
@@ -161,7 +168,9 @@ ON myTopic.key = MyUserTable.id;
       <td>可选</td>
       <td style="word-wrap: break-word;">(none)</td>
       <td>String</td>
-      <td>数据库的兼容模式。</td>
+      <td>数据库的兼容模式。只有 OceanBase 支持该配置项，取值为 <code>'mysql'</code>（未设置时的默认值）
+        和 <code>'oracle'</code>，用于选择方言所针对的租户模式。为其他数据库设置该项会以
+        <code>Not supported option 'compatible-mode'</code> 失败。</td>
     </tr>
     <tr>
       <td><h5>username</h5></td>
@@ -202,14 +211,14 @@ ON myTopic.key = MyUserTable.id;
       <td><h5>scan.partition.lower-bound</h5></td>
       <td>可选</td>
       <td style="word-wrap: break-word;">(none)</td>
-      <td>Integer</td>
+      <td>Long</td>
       <td>第一个分区的最小值。</td>
     </tr>
     <tr>
       <td><h5>scan.partition.upper-bound</h5></td>
       <td>可选</td>
       <td style="word-wrap: break-word;">(none)</td>
-      <td>Integer</td>
+      <td>Long</td>
       <td>最后一个分区的最大值。</td>
     </tr>
     <tr>
@@ -450,8 +459,21 @@ lookup cache 的主要目的是用于提高时态表关联 JDBC 连接器的性�
                 WHEN NOT MATCHED THEN INSERT (..) <br>
                 VALUES (..)</td>
         </tr>
+        <tr>
+            <td>CrateDB</td>
+            <td>INSERT .. ON CONFLICT .. DO UPDATE SET ..</td>
+        </tr>
+        <tr>
+            <td>OceanBase</td>
+            <td>取决于 <code>'compatible-mode'</code>：<code>'mysql'</code> 模式下使用 MySQL 语法，
+                <code>'oracle'</code> 模式下使用 Oracle 语法。</td>
+        </tr>
     </tbody>
 </table>
+
+Trino 和 Derby 没有 upsert 语法。如果在 DDL 中定义了主键，sink 会先检查该主键对应的行是否存在，
+然后执行 `UPDATE` 或 `INSERT`，并对撤回消息执行 `DELETE`。对于 Trino，只有当表所在的 Trino
+connector 支持 `UPDATE` 和 `DELETE` 时才能正常工作。
 
 <a name="jdbc-catalog"></a>
 
@@ -482,14 +504,39 @@ tableExists(ObjectPath tablePath);
 
 JDBC catalog 支持以下参数:
 - `name`：必填，catalog 的名称。
-- `default-database`：必填，默认要连接的数据库。
 - `username`：必填，数据库账户的用户名。
 - `password`：必填，账户的密码。
-- `base-url`：必填，（不应该包含数据库名）
+- `base-url`：必填
   - 对于 Postgres Catalog `base-url` 应为 `"jdbc:postgresql://<ip>:<port>"` 的格式。
   - 对于 MySQL Catalog `base-url` 应为 `"jdbc:mysql://<ip>:<port>"` 的格式。
   - 对于 OceanBase Catalog `base-url` 应为 `"jdbc:oceanbase://<ip>:<port>"` 的格式。
-- `compatible-mode`: 选填，数据库的兼容模式。
+- `default-database`：选填，默认要连接的数据库。
+- `compatible-mode`: 选填，数据库的兼容模式。只有 OceanBase 支持该配置项，
+  参见 [连接器参数](#connector-options)。
+
+catalog 所连接的数据库必须能够从 `base-url`、`default-database` 或两者中确定。下列任意一种方式都是合法的：
+
+- 设置了 `default-database` 且 `base-url` 中不含数据库名，例如
+  `'base-url' = 'jdbc:postgresql://localhost:5432'` 配合 `'default-database' = 'mydb'`
+- `base-url` 中含有数据库名且省略 `default-database`，例如
+  `'base-url' = 'jdbc:postgresql://localhost:5432/mydb'`。如果不带查询字符串，这种写法会把 catalog
+  固定在 `mydb` 上：catalog 中的所有数据库都通过同一个 URL 访问。
+- 两者都设置且数据库名一致
+
+如果两者不一致，或者两者都没有给出数据库名，创建 catalog 会失败。
+
+`base-url` 还可以通过查询参数携带任意的驱动参数，它们会被传递给 catalog 打开的每一个连接。
+数据库名会被替换到查询字符串之前，因此这些参数对该 catalog 下的所有数据库都生效。当 `base-url`
+带有查询字符串时，`base-url` 本身必须包含数据库名，只设置 `default-database` 会被拒绝：
+
+```sql
+CREATE CATALOG my_catalog WITH(
+    'type' = 'jdbc',
+    'username' = '...',
+    'password' = '...',
+    'base-url' = 'jdbc:postgresql://localhost:5432/mydb?ssl=true&connectTimeout=10'
+);
+```
 
 {{< tabs "10bd8bfb-674c-46aa-8a36-385537df5791" >}}
 {{< tab "SQL" >}}
@@ -979,7 +1026,9 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <code>CHARACTER(n)</code><br>
         <code>VARCHAR(n)</code><br>
         <code>CHARACTER VARYING(n)</code><br>
-        <code>TEXT</code></td>
+        <code>TEXT</code><br>
+        <code>JSON</code><br>
+        <code>JSONB</code></td>
       <td>
         <code>CHAR(n)</code><br>
         <code>CHARACTER(n)</code><br>
@@ -1041,6 +1090,18 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
     <tr>
       <td></td>
       <td></td>
+      <td><code>UUID</code></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td><code>VARCHAR(36)</code></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
       <td><code>ARRAY</code></td>
       <td><code>ARRAY</code></td> 
       <td></td>
@@ -1052,5 +1113,10 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
     </tr>
     </tbody>
 </table>
+
+PostgreSQL 的 `JSON` 和 `JSONB` 列以其文本表示形式读取。`UUID` 列映射为 `VARCHAR(36)`；
+在 DDL 中将这类列声明为 `STRING` 同样可以工作。sink 会以字符串形式绑定这三种类型的参数，而 PostgreSQL
+会拒绝向这些类型的列写入字符串，除非 JDBC URL 设置了 `stringtype=unspecified`，例如
+`'url' = 'jdbc:postgresql://localhost:5432/mydb?stringtype=unspecified'`。
 
 {{< top >}}
