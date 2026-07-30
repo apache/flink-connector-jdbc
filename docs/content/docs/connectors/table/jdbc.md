@@ -38,7 +38,33 @@ The JDBC sink operate in upsert mode for exchange UPDATE/DELETE messages with th
 Dependencies
 ------------
 
+Since version 4.0 the JDBC connector is no longer published as a single artifact. It is split into
+`flink-connector-jdbc-core`, which contains the shared runtime, and one artifact per supported
+database, which contains the dialect and the catalog for that database. You need the artifact of the
+database you are connecting to; it pulls in `flink-connector-jdbc-core` transitively.
+
+| Database   | Connector artifact                |
+|:-----------|:----------------------------------|
+| MySQL      | `flink-connector-jdbc-mysql`      |
+| Oracle     | `flink-connector-jdbc-oracle`     |
+| PostgreSQL | `flink-connector-jdbc-postgres`   |
+| SQL Server | `flink-connector-jdbc-sqlserver`  |
+| CrateDB    | `flink-connector-jdbc-cratedb`    |
+| Db2        | `flink-connector-jdbc-db2`        |
+| Trino      | `flink-connector-jdbc-trino`      |
+| OceanBase  | `flink-connector-jdbc-oceanbase`  |
+| Spanner    | `flink-connector-jdbc-spanner`    |
+| Derby      | `flink-connector-jdbc-core`       |
+
 {{< sql_connector_download_table "jdbc" >}}
+
+None of these artifacts is a self-contained SQL uber jar. When using the SQL Client or a session
+cluster, put both `flink-connector-jdbc-core` and the artifact for your database into the `lib/`
+directory, together with the `io.openlineage:openlineage-java` and `io.openlineage:openlineage-sql-java`
+jars that `flink-connector-jdbc-core` depends on. Without them, building the job fails with a
+`NoClassDefFoundError`. Some dialects build on others and need their artifacts as well: CrateDB also needs
+`flink-connector-jdbc-postgres`, and OceanBase needs both `flink-connector-jdbc-mysql` and
+`flink-connector-jdbc-oracle`.
 
 The JDBC connector is not part of the binary distribution.
 See how to link with it for cluster execution [here]({{< ref "docs/dev/configuration/overview" >}}).
@@ -147,7 +173,10 @@ Connector Options
       <td>yes</td>
       <td style="word-wrap: break-word;">(none)</td>
       <td>String</td>
-      <td>The compatible mode of database.</td>
+      <td>The compatible mode of database. Only OceanBase supports this option, with the values
+        <code>'mysql'</code> (the default when unset) and <code>'oracle'</code>, selecting which
+        tenant mode the dialect targets. Setting it for any other database fails with
+        <code>Not supported option 'compatible-mode'</code>.</td>
     </tr>
     <tr>
       <td><h5>username</h5></td>
@@ -194,7 +223,7 @@ Connector Options
       <td>optional</td>
       <td>no</td>
       <td style="word-wrap: break-word;">(none)</td>
-      <td>Integer</td>
+      <td>Long</td>
       <td>The smallest value of the first partition.</td>
     </tr>
     <tr>
@@ -202,7 +231,7 @@ Connector Options
       <td>optional</td>
       <td>no</td>
       <td style="word-wrap: break-word;">(none)</td>
-      <td>Integer</td>
+      <td>Long</td>
       <td>The largest value of the last partition.</td>
     </tr>
     <tr>
@@ -452,15 +481,29 @@ As there is no standard syntax for upsert, the following table describes the dat
             <td>Spanner</td>
             <td>INSERT OR UPDATE INTO .. (..) VALUES (..)</td>
         </tr>
+        <tr>
+            <td>CrateDB</td>
+            <td>INSERT .. ON CONFLICT .. DO UPDATE SET ..</td>
+        </tr>
+        <tr>
+            <td>OceanBase</td>
+            <td>Depends on <code>'compatible-mode'</code>: the MySQL grammar in <code>'mysql'</code>
+                mode, the Oracle grammar in <code>'oracle'</code> mode.</td>
+        </tr>
     </tbody>
 </table>
+
+Trino and Derby have no upsert grammar. If a primary key is defined in the DDL, the sink instead
+checks whether a row with that key exists and then issues an `UPDATE` or an `INSERT`, and issues a
+`DELETE` for retractions. For Trino this only works if the Trino connector behind the table supports
+`UPDATE` and `DELETE`.
 
 JDBC Catalog
 ------------
 
 The `JdbcCatalog` enables users to connect Flink to relational databases over JDBC protocol.
 
-Currently, there are following JDBC catalog implementations: Postgres Catalog, MySQL Catalog, CrateDB Catalog and OceanBase Catalog. They support the following catalog methods. Other methods are currently not supported.
+Currently, there are following JDBC catalog implementations: Postgres Catalog, MySQL Catalog, CrateDB Catalog, OceanBase Catalog and Spanner Catalog. They support the following catalog methods. Other methods are currently not supported.
 
 ```java
 databaseExists(String databaseName);
@@ -480,15 +523,45 @@ Please refer to [Dependencies](#dependencies) section for how to setup a JDBC co
 
 The JDBC catalog supports the following options:
 - `name`: required, name of the catalog.
-- `default-database`: required, default database to connect to.
 - `username`: required, username of database account.
 - `password`: required, password of the account.
-- `base-url`: required (should not contain the database name)
+- `base-url`: required
   - for Postgres Catalog this should be `"jdbc:postgresql://<ip>:<port>"`
   - for MySQL Catalog this should be `"jdbc:mysql://<ip>:<port>"`
   - for OceanBase Catalog this should be `"jdbc:oceanbase://<ip>:<port>"`
   - for Spanner Catalog this should be `"jdbc:cloudspanner:/projects/<project>/instances/<instance>/databases/"`
-- `compatible-mode`: optional, the compatible mode of database.
+- `default-database`: optional, default database to connect to. Required for the Spanner Catalog.
+- `compatible-mode`: optional, the compatible mode of database. Only OceanBase supports this option,
+  see [Connector Options](#connector-options).
+
+Except for the Spanner Catalog, the database the catalog connects to has to be identifiable from
+`base-url`, `default-database`, or both. Any one of the following is valid:
+
+- `default-database` is set and `base-url` carries no database name, for example
+  `'base-url' = 'jdbc:postgresql://localhost:5432'` with `'default-database' = 'mydb'`
+- `base-url` carries the database name and `default-database` is omitted, for example
+  `'base-url' = 'jdbc:postgresql://localhost:5432/mydb'`. Without a query string, this form pins
+  the catalog to `mydb`: every database in the catalog is accessed through this same URL.
+- both are set and the database names match
+
+If the two disagree, or if neither carries a database name, catalog creation fails.
+
+`base-url` may also carry arbitrary driver options as query parameters, which are passed through to
+every connection the catalog opens. The database name is substituted ahead of the query string, so
+the options apply to all databases in the catalog. When `base-url` has a query string, it must
+carry the database name itself; setting only `default-database` is rejected:
+
+```sql
+CREATE CATALOG my_catalog WITH(
+    'type' = 'jdbc',
+    'username' = '...',
+    'password' = '...',
+    'base-url' = 'jdbc:postgresql://localhost:5432/mydb?ssl=true&connectTimeout=10'
+);
+```
+
+The Spanner Catalog always takes the database from `default-database`. Driver options are appended
+to its `base-url` as `;key=value` pairs instead of a query string.
 
 {{< tabs "10bd8bfb-674c-46aa-8a36-385537df5791" >}}
 {{< tab "SQL" >}}
@@ -976,7 +1049,9 @@ Flink supports the connection to several databases using dialect like MySQL, Ora
         <code>CHARACTER(n)</code><br>
         <code>VARCHAR(n)</code><br>
         <code>CHARACTER VARYING(n)</code><br>
-        <code>TEXT</code></td>
+        <code>TEXT</code><br>
+        <code>JSON</code><br>
+        <code>JSONB</code></td>
       <td>
         <code>CHAR(n)</code><br>
         <code>CHARACTER(n)</code><br>
@@ -1040,6 +1115,19 @@ Flink supports the connection to several databases using dialect like MySQL, Ora
     <tr>
       <td></td>
       <td></td>
+      <td><code>UUID</code></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td><code>VARCHAR(36)</code></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
       <td><code>ARRAY</code></td>
       <td><code>ARRAY</code></td> 
       <td></td>
@@ -1052,5 +1140,11 @@ Flink supports the connection to several databases using dialect like MySQL, Ora
     </tr>
     </tbody>
 </table>
+
+PostgreSQL `JSON` and `JSONB` columns are read as their textual representation. `UUID` columns are
+mapped to `VARCHAR(36)`; declaring such a column as `STRING` in the DDL also works. The sink binds
+all three as strings, which PostgreSQL rejects for these column types unless the JDBC URL sets
+`stringtype=unspecified`, for example
+`'url' = 'jdbc:postgresql://localhost:5432/mydb?stringtype=unspecified'`.
 
 {{< top >}}
