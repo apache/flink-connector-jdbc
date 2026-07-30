@@ -292,7 +292,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
 
             PreparedStatement ps =
                     conn.prepareStatement(
-                            String.format("SELECT * FROM %s;", getSchemaTableName(tablePath)));
+                            String.format("SELECT * FROM %s where 0=1;", getSchemaTableName(tablePath)));
 
             ResultSetMetaData resultSetMetaData = ps.getMetaData();
 
