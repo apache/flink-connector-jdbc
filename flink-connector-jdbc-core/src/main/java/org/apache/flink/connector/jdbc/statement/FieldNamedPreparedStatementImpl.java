@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.statement;
 
 import java.math.BigDecimal;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -37,12 +38,17 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 /** Simple implementation of {@link FieldNamedPreparedStatement}. */
 public class FieldNamedPreparedStatementImpl implements FieldNamedPreparedStatement {
 
+    private final Connection connection;
     private final PreparedStatement statement;
     private final int[][] indexMapping;
     private final String query;
 
     private FieldNamedPreparedStatementImpl(
-            PreparedStatement statement, int[][] indexMapping, String query) {
+            Connection connection,
+            PreparedStatement statement,
+            int[][] indexMapping,
+            String query) {
+        this.connection = connection;
         this.statement = statement;
         this.indexMapping = indexMapping;
         this.query = query;
@@ -179,6 +185,18 @@ public class FieldNamedPreparedStatementImpl implements FieldNamedPreparedStatem
     }
 
     @Override
+    public void setArray(int fieldIndex, Array x) throws SQLException {
+        for (int index : indexMapping[fieldIndex]) {
+            statement.setArray(index, x);
+        }
+    }
+
+    @Override
+    public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+        return connection.createArrayOf(typeName, elements);
+    }
+
+    @Override
     public void close() throws SQLException {
         statement.close();
     }
@@ -229,7 +247,7 @@ public class FieldNamedPreparedStatementImpl implements FieldNamedPreparedStatem
         }
 
         return new FieldNamedPreparedStatementImpl(
-                connection.prepareStatement(parsedSQL), indexMapping, parsedSQL);
+                connection, connection.prepareStatement(parsedSQL), indexMapping, parsedSQL);
     }
 
     /**
