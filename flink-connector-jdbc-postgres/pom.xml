@@ -33,7 +33,7 @@ under the License.
     <packaging>jar</packaging>
 
     <properties>
-        <postgres.version>42.7.3</postgres.version>
+        <postgres.version>42.7.13</postgres.version>
     </properties>
 
     <dependencies>
