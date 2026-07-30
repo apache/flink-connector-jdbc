@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.core.table.sink;
 
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
+import org.apache.flink.connector.jdbc.core.database.dialect.JdbcBulkInsertDialect;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
 import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialectConverter;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
@@ -28,6 +29,7 @@ import org.apache.flink.connector.jdbc.internal.executor.TableBufferReducedState
 import org.apache.flink.connector.jdbc.internal.executor.TableBufferedStatementExecutor;
 import org.apache.flink.connector.jdbc.internal.executor.TableInsertOrUpdateStatementExecutor;
 import org.apache.flink.connector.jdbc.internal.executor.TableSimpleStatementExecutor;
+import org.apache.flink.connector.jdbc.internal.executor.TableUnnestStatementExecutor;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatement;
@@ -37,8 +39,12 @@ import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static org.apache.flink.table.data.RowData.createFieldGetter;
@@ -49,6 +55,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 public class JdbcOutputFormatBuilder implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOG = LoggerFactory.getLogger(JdbcOutputFormatBuilder.class);
 
     private InternalJdbcConnectionOptions jdbcOptions;
     private JdbcExecutionOptions executionOptions;
@@ -86,19 +93,15 @@ public class JdbcOutputFormatBuilder implements Serializable {
                 Arrays.stream(fieldDataTypes)
                         .map(DataType::getLogicalType)
                         .toArray(LogicalType[]::new);
+
+        boolean useBulkInsert = shouldUseBulkInsert(executionOptions, dmlOptions.getDialect());
+
         if (dmlOptions.getKeyFields().isPresent() && dmlOptions.getKeyFields().get().length > 0) {
-            // upsert query
             return new JdbcOutputFormat<>(
                     new SimpleJdbcConnectionProvider(jdbcOptions),
                     executionOptions,
-                    () -> createBufferReduceExecutor(dmlOptions, logicalTypes));
+                    () -> createBufferReduceExecutor(dmlOptions, logicalTypes, useBulkInsert));
         } else {
-            // append only query
-            final String sql =
-                    dmlOptions
-                            .getDialect()
-                            .getInsertIntoStatement(
-                                    dmlOptions.getTableName(), dmlOptions.getFieldNames());
             return new JdbcOutputFormat<>(
                     new SimpleJdbcConnectionProvider(jdbcOptions),
                     executionOptions,
@@ -107,12 +110,29 @@ public class JdbcOutputFormatBuilder implements Serializable {
                                     dmlOptions.getDialect(),
                                     dmlOptions.getFieldNames(),
                                     logicalTypes,
-                                    sql));
+                                    dmlOptions.getTableName(),
+                                    useBulkInsert));
         }
     }
 
+    private static boolean shouldUseBulkInsert(
+            JdbcExecutionOptions executionOptions, JdbcDialect dialect) {
+        if (!executionOptions.isBulkInsertEnabled() || executionOptions.getBatchSize() <= 1) {
+            return false;
+        }
+        if (!(dialect instanceof JdbcBulkInsertDialect)) {
+            throw new IllegalStateException(
+                    String.format(
+                            "Bulk insert is enabled but dialect '%s' does not implement "
+                                    + "JdbcBulkInsertDialect. Either switch to a dialect that supports it "
+                                    + "or set 'sink.bulk-insert.enabled' = 'false'.",
+                            dialect.dialectName()));
+        }
+        return true;
+    }
+
     private static JdbcBatchStatementExecutor<RowData> createBufferReduceExecutor(
-            JdbcDmlOptions opt, LogicalType[] fieldTypes) {
+            JdbcDmlOptions opt, LogicalType[] fieldTypes, boolean useBulkInsert) {
         checkArgument(opt.getKeyFields().isPresent());
         JdbcDialect dialect = opt.getDialect();
         String tableName = opt.getTableName();
@@ -132,16 +152,21 @@ public class JdbcOutputFormatBuilder implements Serializable {
                         fieldTypes,
                         pkFields,
                         pkNames,
-                        pkTypes),
+                        pkTypes,
+                        useBulkInsert),
                 createDeleteExecutor(dialect, tableName, pkNames, pkTypes),
                 createRowKeyExtractor(fieldTypes, pkFields));
     }
 
     private static JdbcBatchStatementExecutor<RowData> createSimpleBufferedExecutor(
-            JdbcDialect dialect, String[] fieldNames, LogicalType[] fieldTypes, String sql) {
+            JdbcDialect dialect,
+            String[] fieldNames,
+            LogicalType[] fieldTypes,
+            String tableName,
+            boolean useBulkInsert) {
 
         return new TableBufferedStatementExecutor(
-                createSimpleRowExecutor(dialect, fieldNames, fieldTypes, sql));
+                createSimpleRowExecutor(dialect, fieldNames, fieldTypes, tableName, useBulkInsert));
     }
 
     private static JdbcBatchStatementExecutor<RowData> createUpsertRowExecutor(
@@ -151,7 +176,28 @@ public class JdbcOutputFormatBuilder implements Serializable {
             LogicalType[] fieldTypes,
             int[] pkFields,
             String[] pkNames,
-            LogicalType[] pkTypes) {
+            LogicalType[] pkTypes,
+            boolean useBulkInsert) {
+
+        if (useBulkInsert) {
+            JdbcBulkInsertDialect bulkDialect = (JdbcBulkInsertDialect) dialect;
+            String[] fieldTypeNames = getFieldTypeNames(fieldTypes, bulkDialect);
+            Optional<String> bulkSql =
+                    bulkDialect.getBatchUpsertStatement(
+                            tableName, fieldNames, fieldTypeNames, pkNames);
+
+            if (bulkSql.isPresent()) {
+                return new TableUnnestStatementExecutor(
+                        bulkSql.get(), RowType.of(fieldTypes), bulkDialect);
+            } else {
+                throw new IllegalStateException(
+                        String.format(
+                                "Bulk insert is enabled but dialect '%s' returned no upsert statement "
+                                        + "for the given inputs.",
+                                dialect.dialectName()));
+            }
+        }
+
         return dialect.getUpsertStatement(tableName, fieldNames, pkNames)
                 .map(sql -> createSimpleRowExecutor(dialect, fieldNames, fieldTypes, sql))
                 .orElseGet(
@@ -164,6 +210,35 @@ public class JdbcOutputFormatBuilder implements Serializable {
                                         pkFields,
                                         pkNames,
                                         pkTypes));
+    }
+
+    private static JdbcBatchStatementExecutor<RowData> createSimpleRowExecutor(
+            JdbcDialect dialect,
+            String[] fieldNames,
+            LogicalType[] fieldTypes,
+            String tableName,
+            boolean useBulkInsert) {
+
+        if (useBulkInsert) {
+            JdbcBulkInsertDialect bulkDialect = (JdbcBulkInsertDialect) dialect;
+            String[] fieldTypeNames = getFieldTypeNames(fieldTypes, bulkDialect);
+            Optional<String> bulkSql =
+                    bulkDialect.getBatchInsertStatement(tableName, fieldNames, fieldTypeNames);
+
+            if (bulkSql.isPresent()) {
+                return new TableUnnestStatementExecutor(
+                        bulkSql.get(), RowType.of(fieldTypes), bulkDialect);
+            } else {
+                throw new IllegalStateException(
+                        String.format(
+                                "Bulk insert is enabled but dialect '%s' returned no insert statement "
+                                        + "for the given inputs.",
+                                dialect.dialectName()));
+            }
+        }
+
+        final String sql = dialect.getInsertIntoStatement(tableName, fieldNames);
+        return createSimpleRowExecutor(dialect, fieldNames, fieldTypes, sql);
     }
 
     private static JdbcBatchStatementExecutor<RowData> createDeleteExecutor(
@@ -179,6 +254,15 @@ public class JdbcOutputFormatBuilder implements Serializable {
                 connection ->
                         FieldNamedPreparedStatement.prepareStatement(connection, sql, fieldNames),
                 rowConverter);
+    }
+
+    private static String[] getFieldTypeNames(
+            LogicalType[] fieldTypes, JdbcBulkInsertDialect dialect) {
+        String[] typeNames = new String[fieldTypes.length];
+        for (int i = 0; i < fieldTypes.length; i++) {
+            typeNames[i] = dialect.getArrayTypeName(fieldTypes[i]);
+        }
+        return typeNames;
     }
 
     private static JdbcBatchStatementExecutor<RowData> createInsertOrUpdateExecutor(

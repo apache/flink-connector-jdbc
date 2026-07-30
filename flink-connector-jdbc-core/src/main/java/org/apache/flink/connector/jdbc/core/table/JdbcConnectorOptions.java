@@ -179,6 +179,16 @@ public class JdbcConnectorOptions {
                     .defaultValue(3)
                     .withDescription("The max retry times if writing records to database failed.");
 
+    public static final ConfigOption<Boolean> SINK_BULK_INSERT_ENABLED =
+            ConfigOptions.key("sink.bulk-insert.enabled")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription(
+                            "Enable the dialect's bulk insert optimization for batch writes (e.g., "
+                                    + "PostgreSQL's UNNEST). The selected dialect must implement "
+                                    + "JdbcBulkInsertDialect; otherwise the sink fails fast at build time. "
+                                    + "Default is false.");
+
     public static final ConfigOption<FilterHandlingPolicy> FILTER_HANDLING_POLICY =
             ConfigOptions.key("filter.handling.policy")
                     .enumType(FilterHandlingPolicy.class)
