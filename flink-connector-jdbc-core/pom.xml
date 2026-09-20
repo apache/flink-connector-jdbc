@@ -34,6 +34,11 @@ under the License.
 
     <packaging>jar</packaging>
 
+    <properties>
+        <!-- CI runs on Java 17; Derby 10.17 requires Java 21. -->
+        <derby.version>10.16.1.1</derby.version>
+    </properties>
+
     <dependencies>
 
         <!-- Connectors -->
@@ -149,13 +154,13 @@ under the License.
         <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
-            <version>10.16.1.1</version>
+            <version>${derby.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derbytools</artifactId>
-            <version>10.16.1.1</version>
+            <version>${derby.version}</version>
             <scope>test</scope>
         </dependency>
 
