@@ -28,6 +28,7 @@ jobs:
   compile_and_test:
     if: github.repository_owner == 'apache'
     strategy:
+      fail-fast: false
       matrix:
         flink_branches: [{
           flink: 2.2-SNAPSHOT,
