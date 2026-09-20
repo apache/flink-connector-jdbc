@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import java.io.Flushable;
 import java.io.IOException;
@@ -41,7 +42,6 @@ import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -71,6 +71,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
 
     private final JdbcExecutionOptions executionOptions;
     private final StatementExecutorFactory<JdbcExec> statementExecutorFactory;
+    @Nullable private final String lineageTableName;
 
     @SuppressWarnings("unchecked")
     protected Function<In, JdbcIn> getExtractor() {
@@ -90,9 +91,21 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
             @Nonnull JdbcConnectionProvider connectionProvider,
             @Nonnull JdbcExecutionOptions executionOptions,
             @Nonnull StatementExecutorFactory<JdbcExec> statementExecutorFactory) {
+        this(connectionProvider, executionOptions, statementExecutorFactory, null);
+    }
+
+    /**
+     * @param lineageTableName the lineage dataset name, or null for an empty name
+     */
+    public JdbcOutputFormat(
+            @Nonnull JdbcConnectionProvider connectionProvider,
+            @Nonnull JdbcExecutionOptions executionOptions,
+            @Nonnull StatementExecutorFactory<JdbcExec> statementExecutorFactory,
+            @Nullable String lineageTableName) {
         this.connectionProvider = checkNotNull(connectionProvider);
         this.executionOptions = checkNotNull(executionOptions);
         this.statementExecutorFactory = checkNotNull(statementExecutorFactory);
+        this.lineageTableName = lineageTableName;
     }
 
     /** Connects to the target database and initializes the prepared statement. */
@@ -256,13 +269,9 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
 
     @Override
     public LineageVertex getLineageVertex() {
-        Optional<String> nameOpt =
-                jdbcStatementExecutor == null
-                        ? Optional.empty()
-                        : LineageUtils.tableNameOf(jdbcStatementExecutor.insertSql(), false);
+        String name = lineageTableName == null ? "" : lineageTableName;
         String namespace = LineageUtils.namespaceOf(connectionProvider);
-        LineageDataset dataset =
-                LineageUtils.datasetOf(nameOpt.orElse(""), namespace, Collections.emptyList());
+        LineageDataset dataset = LineageUtils.datasetOf(name, namespace, Collections.emptyList());
         return LineageUtils.lineageVertexOf(Collections.singleton(dataset));
     }
 }
