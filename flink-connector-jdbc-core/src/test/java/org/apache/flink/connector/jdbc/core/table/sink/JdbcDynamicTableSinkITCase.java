@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.core.table.sink;
 
+import org.apache.flink.FlinkVersion;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.functions.DefaultOpenContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -362,13 +363,20 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
                                 "'sink.buffer-flush.max-rows' = '2'",
                                 "'sink.buffer-flush.interval' = '0'")));
 
+        String onConflict = isFlip558Enabled() ? " ON CONFLICT DO DEDUPLICATE" : "";
         tEnv.executeSql(
                         String.format(
-                                "INSERT INTO %s SELECT * FROM %s", userTableSink, userTableLogs))
+                                "INSERT INTO %s SELECT * FROM %s%s",
+                                userTableSink, userTableLogs, onConflict))
                 .await();
 
         assertThat(userOutputTable.selectAllTable(getMetadata()))
                 .containsExactlyInAnyOrderElementsOf(testUserData());
+    }
+
+    /** Whether the Flink version under test has the FLIP-558 ON CONFLICT validation (>= 2.3). */
+    private static boolean isFlip558Enabled() {
+        return FlinkVersion.current().toString().compareTo("2.3") >= 0;
     }
 
     protected Map<String, String> getOptions() {
