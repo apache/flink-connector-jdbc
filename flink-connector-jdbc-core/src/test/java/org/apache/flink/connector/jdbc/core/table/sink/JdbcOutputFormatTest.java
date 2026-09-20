@@ -395,11 +395,17 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                         .setJdbcExecutionOptions(JdbcExecutionOptions.builder().build())
                         .build();
 
+        // the planner reads lineage at plan time, before open()
+        assertLineageDataset(outputFormat.getLineageVertex());
+
         JdbcOutputSerializer<RowData> serializer =
                 JdbcOutputSerializer.of(getSerializer(TypeInformation.of(RowData.class), true));
         outputFormat.open(serializer);
 
-        LineageVertex lineageVertex = outputFormat.getLineageVertex();
+        assertLineageDataset(outputFormat.getLineageVertex());
+    }
+
+    private static void assertLineageDataset(LineageVertex lineageVertex) {
         assertThat(lineageVertex.datasets().size()).isEqualTo(1);
         assertThat(lineageVertex.datasets().get(0).name()).isEqualTo("newbooks");
         assertThat(lineageVertex.datasets().get(0).namespace()).isEqualTo("derby:memory:test");

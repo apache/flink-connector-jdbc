@@ -31,6 +31,7 @@ import org.apache.flink.connector.jdbc.internal.executor.TableSimpleStatementExe
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatement;
+import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatementImpl;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
@@ -39,6 +40,7 @@ import org.apache.flink.table.types.logical.RowType;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.function.Function;
 
 import static org.apache.flink.table.data.RowData.createFieldGetter;
@@ -86,19 +88,24 @@ public class JdbcOutputFormatBuilder implements Serializable {
                 Arrays.stream(fieldDataTypes)
                         .map(DataType::getLogicalType)
                         .toArray(LogicalType[]::new);
+        final String sql =
+                dmlOptions
+                        .getDialect()
+                        .getInsertIntoStatement(
+                                dmlOptions.getTableName(), dmlOptions.getFieldNames());
+        // Lineage is read at plan time, before open(). The plain INSERT names the target table in
+        // every dialect; the upsert forms do not all parse.
+        final String lineageQuery =
+                FieldNamedPreparedStatementImpl.parseNamedStatement(sql, new HashMap<>());
         if (dmlOptions.getKeyFields().isPresent() && dmlOptions.getKeyFields().get().length > 0) {
             // upsert query
             return new JdbcOutputFormat<>(
                     new SimpleJdbcConnectionProvider(jdbcOptions),
                     executionOptions,
-                    () -> createBufferReduceExecutor(dmlOptions, logicalTypes));
+                    () -> createBufferReduceExecutor(dmlOptions, logicalTypes, sql),
+                    lineageQuery);
         } else {
             // append only query
-            final String sql =
-                    dmlOptions
-                            .getDialect()
-                            .getInsertIntoStatement(
-                                    dmlOptions.getTableName(), dmlOptions.getFieldNames());
             return new JdbcOutputFormat<>(
                     new SimpleJdbcConnectionProvider(jdbcOptions),
                     executionOptions,
@@ -107,12 +114,13 @@ public class JdbcOutputFormatBuilder implements Serializable {
                                     dmlOptions.getDialect(),
                                     dmlOptions.getFieldNames(),
                                     logicalTypes,
-                                    sql));
+                                    sql),
+                    lineageQuery);
         }
     }
 
     private static JdbcBatchStatementExecutor<RowData> createBufferReduceExecutor(
-            JdbcDmlOptions opt, LogicalType[] fieldTypes) {
+            JdbcDmlOptions opt, LogicalType[] fieldTypes, String insertSql) {
         checkArgument(opt.getKeyFields().isPresent());
         JdbcDialect dialect = opt.getDialect();
         String tableName = opt.getTableName();
@@ -132,7 +140,8 @@ public class JdbcOutputFormatBuilder implements Serializable {
                         fieldTypes,
                         pkFields,
                         pkNames,
-                        pkTypes),
+                        pkTypes,
+                        insertSql),
                 createDeleteExecutor(dialect, tableName, pkNames, pkTypes),
                 createRowKeyExtractor(fieldTypes, pkFields));
     }
@@ -151,7 +160,8 @@ public class JdbcOutputFormatBuilder implements Serializable {
             LogicalType[] fieldTypes,
             int[] pkFields,
             String[] pkNames,
-            LogicalType[] pkTypes) {
+            LogicalType[] pkTypes,
+            String insertSql) {
         return dialect.getUpsertStatement(tableName, fieldNames, pkNames)
                 .map(sql -> createSimpleRowExecutor(dialect, fieldNames, fieldTypes, sql))
                 .orElseGet(
@@ -163,7 +173,8 @@ public class JdbcOutputFormatBuilder implements Serializable {
                                         fieldTypes,
                                         pkFields,
                                         pkNames,
-                                        pkTypes));
+                                        pkTypes,
+                                        insertSql));
     }
 
     private static JdbcBatchStatementExecutor<RowData> createDeleteExecutor(
@@ -188,9 +199,9 @@ public class JdbcOutputFormatBuilder implements Serializable {
             LogicalType[] fieldTypes,
             int[] pkFields,
             String[] pkNames,
-            LogicalType[] pkTypes) {
+            LogicalType[] pkTypes,
+            String insertStmt) {
         final String existStmt = dialect.getRowExistsStatement(tableName, pkNames);
-        final String insertStmt = dialect.getInsertIntoStatement(tableName, fieldNames);
         final String updateStmt = dialect.getUpdateStatement(tableName, fieldNames, pkNames);
         return new TableInsertOrUpdateStatementExecutor(
                 connection ->
