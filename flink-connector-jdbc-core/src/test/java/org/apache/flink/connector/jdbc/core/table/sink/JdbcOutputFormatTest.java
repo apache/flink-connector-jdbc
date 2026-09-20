@@ -85,6 +85,30 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
     }
 
     @Test
+    void testCloseBeforeOpen() {
+        InternalJdbcConnectionOptions jdbcOptions =
+                InternalJdbcConnectionOptions.builder()
+                        .setDriverName(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setTableName(OUTPUT_TABLE)
+                        .build();
+        outputFormat =
+                new JdbcOutputFormatBuilder()
+                        .setJdbcOptions(jdbcOptions)
+                        .setFieldDataTypes(fieldDataTypes)
+                        .setJdbcDmlOptions(
+                                JdbcDmlOptions.builder()
+                                        .withTableName(jdbcOptions.getTableName())
+                                        .withDialect(jdbcOptions.getDialect())
+                                        .withFieldNames(fieldNames)
+                                        .build())
+                        .setJdbcExecutionOptions(JdbcExecutionOptions.defaults())
+                        .build();
+        // FLINK-17544: close() before open() must not throw
+        outputFormat.close();
+    }
+
+    @Test
     void testInvalidDriver() {
         String expectedMsg = "unable to open JDBC writer";
         assertThatThrownBy(

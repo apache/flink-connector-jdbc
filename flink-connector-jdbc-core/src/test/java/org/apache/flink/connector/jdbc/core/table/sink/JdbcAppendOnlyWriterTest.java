@@ -19,13 +19,16 @@
 package org.apache.flink.connector.jdbc.core.table.sink;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.core.database.JdbcFactoryLoader;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
-import org.apache.flink.connector.jdbc.internal.RowJdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
-import org.apache.flink.types.Row;
+import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.types.DataType;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +38,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Statement;
 
-import static org.apache.flink.connector.jdbc.JdbcDataTestBase.toRow;
+import static org.apache.flink.connector.jdbc.JdbcDataTestBase.buildGenericData;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
@@ -44,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /** Test for the Append only mode. */
 class JdbcAppendOnlyWriterTest extends JdbcTestBase {
 
-    private JdbcOutputFormat format;
+    private JdbcOutputFormat<RowData, ?, ?> format;
     private String[] fieldNames;
 
     @BeforeEach
@@ -53,42 +56,44 @@ class JdbcAppendOnlyWriterTest extends JdbcTestBase {
     }
 
     @Test
-    void testMaxRetry() {
-        assertThatThrownBy(
-                        () -> {
-                            format =
-                                    RowJdbcOutputFormat.builder()
-                                            .setOptions(
-                                                    InternalJdbcConnectionOptions.builder()
-                                                            .setDBUrl(getMetadata().getJdbcUrl())
-                                                            .setDialect(
-                                                                    JdbcFactoryLoader.loadDialect(
-                                                                            getMetadata()
-                                                                                    .getJdbcUrl(),
-                                                                            getClass()
-                                                                                    .getClassLoader()))
-                                                            .setTableName(OUTPUT_TABLE)
-                                                            .build())
-                                            .setFieldNames(fieldNames)
-                                            .setKeyFields(null)
-                                            .build();
-
-                            JdbcOutputSerializer<Row> serializer =
-                                    JdbcOutputSerializer.of(
-                                            getSerializer(TypeInformation.of(Row.class), true));
-
-                            format.open(serializer);
-
-                            // alter table schema to trigger retry logic after failure.
-                            alterTable();
-                            for (TestEntry entry : TEST_DATA) {
-                                format.writeRecord(toRow(entry));
-                            }
-
-                            // after retry default times, throws a BatchUpdateException.
-                            format.flush();
-                        })
-                .isInstanceOf(IOException.class);
+    void testMaxRetry() throws Exception {
+        InternalJdbcConnectionOptions jdbcOptions =
+                InternalJdbcConnectionOptions.builder()
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setDialect(
+                                JdbcFactoryLoader.loadDialect(
+                                        getMetadata().getJdbcUrl(), getClass().getClassLoader()))
+                        .setTableName(OUTPUT_TABLE)
+                        .build();
+        format =
+                new JdbcOutputFormatBuilder()
+                        .setJdbcOptions(jdbcOptions)
+                        .setJdbcDmlOptions(
+                                JdbcDmlOptions.builder()
+                                        .withTableName(OUTPUT_TABLE)
+                                        .withDialect(jdbcOptions.getDialect())
+                                        .withFieldNames(fieldNames)
+                                        .build())
+                        .setFieldDataTypes(
+                                new DataType[] {
+                                    DataTypes.INT(),
+                                    DataTypes.STRING(),
+                                    DataTypes.STRING(),
+                                    DataTypes.DOUBLE(),
+                                    DataTypes.INT()
+                                })
+                        .setJdbcExecutionOptions(JdbcExecutionOptions.defaults())
+                        .build();
+        format.open(
+                JdbcOutputSerializer.of(getSerializer(TypeInformation.of(RowData.class), true)));
+        // alter table schema to trigger retry logic after failure.
+        alterTable();
+        for (TestEntry entry : TEST_DATA) {
+            format.writeRecord(
+                    buildGenericData(entry.id, entry.title, entry.author, entry.price, entry.qty));
+        }
+        // after retry default times, throws a BatchUpdateException.
+        assertThatThrownBy(format::flush).isInstanceOf(IOException.class);
     }
 
     private void alterTable() throws Exception {
