@@ -33,7 +33,7 @@ under the License.
     <packaging>jar</packaging>
 
     <properties>
-        <oceanbase.version>2.4.8</oceanbase.version>
+        <oceanbase.version>2.4.19</oceanbase.version>
     </properties>
 
     <dependencies>
