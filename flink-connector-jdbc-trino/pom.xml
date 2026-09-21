@@ -33,7 +33,7 @@ under the License.
     <packaging>jar</packaging>
 
     <properties>
-        <trino.version>418</trino.version>
+        <trino.version>483</trino.version>
     </properties>
 
     <dependencies>
