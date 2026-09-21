@@ -27,7 +27,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 
-/** JDBC connection provider. */
+/**
+ * Provides the connection a JDBC source or sink works on.
+ *
+ * <p>A source copies the provider once per split reader, by Java serialization, so an
+ * implementation that wraps a pool or caches credentials gets one independent copy per reader
+ * rather than one per subtask. Keep anything that must not be duplicated out of the serialized
+ * state.
+ */
 @PublicEvolving
 public interface JdbcConnectionProvider extends Serializable, AutoCloseable {
     /**
