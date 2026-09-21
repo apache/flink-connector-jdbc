@@ -30,7 +30,14 @@ jobs:
       matrix:
         flink: [2.0.1, 2.1.1]
         jdk: [ '17' ]
-    uses: apache/flink-connector-shared-utils/.github/workflows/ci.yml@ci_utils
+    uses: snuyanzin/flink-connector-shared-utils/.github/workflows/ci.yml@t
     with:
       flink_version: ${{ matrix.flink }}
       jdk_version: ${{ matrix.jdk }}
+      split_by_module: true
+      test_modules: >-
+          ["flink-connector-jdbc-architecture","flink-connector-jdbc-core",
+           "flink-connector-jdbc-cratedb","flink-connector-jdbc-db2",
+           "flink-connector-jdbc-mysql","flink-connector-jdbc-oceanbase",
+           "flink-connector-jdbc-oracle","flink-connector-jdbc-postgres",
+           "flink-connector-jdbc-sqlserver","flink-connector-jdbc-trino"]
