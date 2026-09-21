@@ -34,7 +34,7 @@ under the License.
     <packaging>jar</packaging>
 
     <properties>
-        <oracle.version>21.8.0.0</oracle.version>
+        <oracle.version>23.26.3.0.0</oracle.version>
     </properties>
 
     <dependencies>
