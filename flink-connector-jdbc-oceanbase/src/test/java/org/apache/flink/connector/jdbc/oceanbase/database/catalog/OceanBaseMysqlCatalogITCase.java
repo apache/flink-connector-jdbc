@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.oceanbase.database.catalog;
 
+import org.apache.flink.FlinkVersion;
 import org.apache.flink.connector.jdbc.oceanbase.OceanBaseMysqlTestBase;
 import org.apache.flink.connector.jdbc.oceanbase.database.dialect.OceanBaseCompatibleMode;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
@@ -354,12 +355,14 @@ public class OceanBaseMysqlCatalogITCase extends OceanBaseCatalogITCaseBase
     @Test
     void testGroupByInsert() throws Exception {
         // Changes primary key for the next record.
+        String onConflict = isFlip558Enabled() ? " ON CONFLICT DO DEDUPLICATE" : "";
         tEnv.executeSql(
                         String.format(
                                 "insert into `%s` select max(`pid`) `pid`, `col_bigint` from `%s` "
-                                        + "group by `col_bigint` ",
+                                        + "group by `col_bigint` %s",
                                 TABLE_GROUPED_BY_SINK.getTableName(),
-                                TABLE_ALL_TYPES.getTableName()))
+                                TABLE_ALL_TYPES.getTableName(),
+                                onConflict))
                 .await();
 
         List<Row> results =
@@ -372,5 +375,10 @@ public class OceanBaseMysqlCatalogITCase extends OceanBaseCatalogITCaseBase
                                 .collect());
         assertThat(results)
                 .isEqualTo(Collections.singletonList(Row.ofKind(RowKind.INSERT, 2L, -1L)));
+    }
+
+    /** Whether the Flink version under test has the FLIP-558 ON CONFLICT validation (>= 2.3). */
+    private static boolean isFlip558Enabled() {
+        return FlinkVersion.current().toString().compareTo("2.3") >= 0;
     }
 }
