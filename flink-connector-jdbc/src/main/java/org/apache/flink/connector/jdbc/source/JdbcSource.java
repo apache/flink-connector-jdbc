@@ -42,6 +42,7 @@ import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSp
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.utils.ContinuousUnBoundingSettings;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
+import org.apache.flink.util.InstantiationUtil;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nullable;
@@ -108,7 +109,9 @@ public class JdbcSource<OUT>
                                 readerContext,
                                 configuration,
                                 typeInformation,
-                                connectionProvider,
+                                // A provider holds a single connection and is not thread safe, so
+                                // every split reader gets its own copy, as in the core JdbcSource.
+                                InstantiationUtil.cloneUnchecked(connectionProvider),
                                 deliveryGuarantee,
                                 resultExtractor),
                 configuration,
