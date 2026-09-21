@@ -18,13 +18,14 @@
 package org.apache.flink.connector.jdbc.core.datastream.sink.writer;
 
 import org.apache.flink.api.common.JobID;
-import org.apache.flink.api.common.JobInfo;
 import org.apache.flink.api.common.TaskInfo;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.connector.sink2.InitContext;
 import org.apache.flink.api.connector.sink2.SinkWriter;
-import org.apache.flink.api.connector.sink2.WriterInitContext;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
+import org.apache.flink.connector.jdbc.JdbcTestBase;
 import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitable;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.statements.JdbcQueryStatement;
@@ -32,13 +33,13 @@ import org.apache.flink.connector.jdbc.datasource.statements.SimpleJdbcQueryStat
 import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
+import org.apache.flink.connector.jdbc.testutils.TestingInitContext;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 import org.apache.flink.connector.testutils.source.TestingTaskInfo;
 import org.apache.flink.util.StringUtils;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,7 +48,6 @@ import java.util.stream.Collectors;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
 
 /**
  * Base smoke tests for the {@link
@@ -87,17 +87,14 @@ abstract class BaseJdbcWriterTest implements DerbyTestBase {
 
     @BeforeEach
     void init() throws Exception {
-        // We have to mock this because we have changes between 1.18 and 1.19
-        WriterInitContext sinkContext = Mockito.mock(WriterInitContext.class);
-        JobInfo jobInfo = Mockito.mock(JobInfo.class);
-        doReturn(jobInfo).when(sinkContext).getJobInfo();
-        doReturn(JobID.fromHexString(JOBID)).when(jobInfo).getJobId();
         TaskInfo taskInfo = new TestingTaskInfo("test_task", 4, 1, 4, 0, "test_subTask", "id");
-        doReturn(taskInfo).when(sinkContext).getTaskInfo();
+        InitContext sinkContext =
+                new TestingInitContext(JobID.fromHexString(JOBID), "test_jobName", taskInfo);
 
         JdbcOutputSerializer<BooksTable.BookEntry> outputSerializer =
                 JdbcOutputSerializer.of(
-                        sinkContext.createInputSerializer(), sinkContext.isObjectReuseEnabled());
+                        JdbcTestBase.getSerializer(
+                                TypeInformation.of(BooksTable.BookEntry.class), false));
 
         JdbcQueryStatement<BooksTable.BookEntry> queryStatement =
                 new SimpleJdbcQueryStatement<>(
