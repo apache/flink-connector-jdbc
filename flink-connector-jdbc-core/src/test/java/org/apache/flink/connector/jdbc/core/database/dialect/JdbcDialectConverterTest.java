@@ -18,13 +18,13 @@
 
 package org.apache.flink.connector.jdbc.core.database.dialect;
 
+import org.apache.flink.connector.jdbc.testutils.TestingResultSet;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.IntType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.TimestampType;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.sql.ResultSet;
 import java.time.LocalDateTime;
@@ -48,10 +48,8 @@ class JdbcDialectConverterTest {
                     }
                 };
 
-        ResultSet resultSet = Mockito.mock(ResultSet.class);
-        Mockito.when(resultSet.getObject(1)).thenReturn(123);
-        Mockito.when(resultSet.getObject(2))
-                .thenReturn(LocalDateTime.parse("2021-04-07T00:00:05.999"));
+        ResultSet resultSet =
+                TestingResultSet.of(123, LocalDateTime.parse("2021-04-07T00:00:05.999"));
         RowData res = rowConverter.toInternal(resultSet);
 
         assertThat(res.getInt(0)).isEqualTo(123);
