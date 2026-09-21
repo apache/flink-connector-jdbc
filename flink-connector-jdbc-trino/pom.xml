@@ -109,12 +109,12 @@ under the License.
         <!-- Trino test -->
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>trino</artifactId>
+            <artifactId>testcontainers-trino</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
+            <artifactId>testcontainers-postgresql</artifactId>
             <scope>test</scope>
         </dependency>
 
