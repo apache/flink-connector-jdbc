@@ -32,6 +32,7 @@ import org.apache.flink.connector.base.source.reader.splitreader.SplitsChange;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
+import org.apache.flink.util.IOUtils;
 import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
@@ -221,12 +222,15 @@ public class JdbcSourceSplitReader<T>
 
     @Override
     public void close() throws Exception {
-        closeResultSetAndStatement();
-        if (connection != null && !connection.isClosed()) {
-            connection.close();
+        try {
+            // The provider is this reader's own copy, so it is closed here too: that runs the
+            // teardown of a user-supplied provider, and covers the connection if the provider
+            // hands out one it does not track itself.
+            IOUtils.closeAll(this::closeResultSetAndStatement, connection, connectionProvider);
+        } finally {
+            connection = null;
+            currentSplit = null;
         }
-        connection = null;
-        currentSplit = null;
     }
 
     @Override

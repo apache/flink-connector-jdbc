@@ -30,6 +30,7 @@ import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.DeliveryGuarantee;
+import org.apache.flink.connector.base.source.reader.splitreader.SplitReader;
 import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSourceEnumStateSerializer;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.JdbcSourceEnumerator;
@@ -39,6 +40,7 @@ import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitte
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.SplitterEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.JdbcSourceReader;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.JdbcSourceSplitReader;
+import org.apache.flink.connector.jdbc.core.datastream.source.reader.RecordAndOffset;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplitSerializer;
@@ -49,6 +51,7 @@ import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.streaming.api.lineage.LineageDataset;
 import org.apache.flink.streaming.api.lineage.LineageVertex;
 import org.apache.flink.streaming.api.lineage.LineageVertexProvider;
+import org.apache.flink.util.InstantiationUtil;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nullable;
@@ -59,6 +62,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /** JDBC source. */
 @PublicEvolving
@@ -120,16 +124,27 @@ public class JdbcSource<OUT>
     public SourceReader<OUT, JdbcSourceSplit> createReader(SourceReaderContext readerContext)
             throws Exception {
         return new JdbcSourceReader<>(
-                () ->
-                        new JdbcSourceSplitReader<>(
-                                readerContext,
-                                configuration,
-                                typeInformation,
-                                connectionProvider,
-                                deliveryGuarantee,
-                                resultExtractor),
-                configuration,
-                readerContext);
+                splitReaderSupplier(readerContext), configuration, readerContext);
+    }
+
+    /**
+     * Supplies the split readers of one {@link JdbcSourceReader}. Every reader gets its own
+     * connection provider: a provider holds a single connection and is not thread safe, while
+     * flink-connector-base builds a split reader per split fetcher and closes the reader of a
+     * finished split while the reader of the next split is already reading. Sharing one provider
+     * lets the first close the connection out from under the second.
+     */
+    @VisibleForTesting
+    Supplier<SplitReader<RecordAndOffset<OUT>, JdbcSourceSplit>> splitReaderSupplier(
+            SourceReaderContext readerContext) {
+        return () ->
+                new JdbcSourceSplitReader<>(
+                        readerContext,
+                        configuration,
+                        typeInformation,
+                        InstantiationUtil.cloneUnchecked(connectionProvider),
+                        deliveryGuarantee,
+                        resultExtractor);
     }
 
     @Override
