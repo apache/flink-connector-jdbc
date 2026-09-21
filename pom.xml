@@ -62,7 +62,7 @@ under the License.
         <jackson-bom.version>2.22.2</jackson-bom.version>
         <junit5.version>5.10.1</junit5.version>
         <assertj.version>3.27.7</assertj.version>
-        <testcontainers.version>1.21.4</testcontainers.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
         <postgres.version>42.7.13</postgres.version>
         <mockito.version>3.12.4</mockito.version>
         <openlineage.version>1.32.0</openlineage.version>
@@ -133,7 +133,7 @@ under the License.
 
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
 
