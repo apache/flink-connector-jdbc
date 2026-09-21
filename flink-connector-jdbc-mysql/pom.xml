@@ -33,7 +33,7 @@ under the License.
     <packaging>jar</packaging>
 
     <properties>
-        <mysql.version>8.2.0</mysql.version>
+        <mysql.version>26.7.0</mysql.version>
     </properties>
 
     <dependencies>
