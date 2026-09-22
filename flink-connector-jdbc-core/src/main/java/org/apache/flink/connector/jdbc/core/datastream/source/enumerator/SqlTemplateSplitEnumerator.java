@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.source.enumerator;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.PreparedSplitterEnumerator;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.CheckpointedOffset;
@@ -44,6 +45,7 @@ import java.util.function.Supplier;
  * @deprecated Use {@link PreparedSplitterEnumerator} instead.
  */
 @Deprecated
+@Internal
 public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> {
 
     public static final Logger LOG = LoggerFactory.getLogger(SqlTemplateSplitEnumerator.class);
@@ -112,6 +114,7 @@ public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase
 
     /** The {@link TemplateSqlSplitEnumeratorProvider} for {@link SqlTemplateSplitEnumerator}. */
     @Deprecated
+    @Internal
     public static class TemplateSqlSplitEnumeratorProvider
             implements JdbcSqlSplitEnumeratorBase.Provider<JdbcSourceSplit> {
 
