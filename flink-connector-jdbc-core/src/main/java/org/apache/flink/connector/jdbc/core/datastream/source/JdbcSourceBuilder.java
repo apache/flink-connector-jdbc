@@ -64,9 +64,11 @@ import java.util.Objects;
  *           .build();
  * </code></pre>
  *
- * <p>In order to query the JDBC source in parallel, you need to provide a parameterized query
- * template (i.e. a valid {@link PreparedStatement}) and a {@link JdbcParameterValuesProvider} which
- * provides binding values for the query parameters. E.g.:
+ * <p>In order to query the JDBC source in parallel, give {@link #setSplitter(SplitterEnumerator)} a
+ * {@link
+ * org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.PreparedSplitterEnumerator}
+ * built from a parameterized query template (i.e. a valid {@link PreparedStatement}) and one row of
+ * binding values per split. E.g.:
  *
  * <pre><code>
  *
@@ -141,7 +143,7 @@ public class JdbcSourceBuilder<OUT> {
     }
 
     /**
-     * @deprecated Use {@link #setSplitter(SplitterEnumerator)} instead.
+     * @deprecated Since 4.1.0. Use {@link #setSplitter(SplitterEnumerator)} instead.
      */
     @Deprecated
     public JdbcSourceBuilder<OUT> setSql(@Nonnull String sql) {
@@ -195,10 +197,16 @@ public class JdbcSourceBuilder<OUT> {
     // ------ Optional ------------------------------------------------------------------
 
     /**
-     * The continuousUnBoundingSettings to discovery the next available batch splits. Note: If the
-     * value was set, the {@link #jdbcParameterValuesProvider} must specified with the {@link
-     * org.apache.flink.connector.jdbc.split.JdbcSlideTimingParameterProvider}.
+     * Settings for continuous split discovery on the deprecated {@link #setSql(String)} path; they
+     * require {@link #setJdbcParameterValuesProvider(JdbcParameterValuesProvider)} with a {@link
+     * JdbcSlideTimingParameterProvider}.
+     *
+     * @deprecated Since 5.0.0. Only the deprecated {@link #setSql(String)} path reads this.
+     *     Unbounded reads on the {@link #setSplitter(SplitterEnumerator)} path use {@link
+     *     org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.SlideTimingSplitterEnumerator},
+     *     which has no discovery interval.
      */
+    @Deprecated
     public JdbcSourceBuilder<OUT> setContinuousUnBoundingSettings(
             ContinuousUnBoundingSettings continuousUnBoundingSettings) {
         this.continuousUnBoundingSettings = continuousUnBoundingSettings;
@@ -209,7 +217,7 @@ public class JdbcSourceBuilder<OUT> {
      * If the value was set as an instance of {@link JdbcSlideTimingParameterProvider}, it's
      * required to specify the {@link #continuousUnBoundingSettings}.
      *
-     * @deprecated Use {@link #setSplitter(SplitterEnumerator)} instead.
+     * @deprecated Since 4.1.0. Use {@link #setSplitter(SplitterEnumerator)} instead.
      */
     @Deprecated
     public JdbcSourceBuilder<OUT> setJdbcParameterValuesProvider(
@@ -275,6 +283,12 @@ public class JdbcSourceBuilder<OUT> {
         return this;
     }
 
+    /**
+     * @deprecated Since 5.0.0. Only the deprecated {@link #setSql(String)} path reads this. A
+     *     {@link SplitterEnumerator} set with {@link #setSplitter(SplitterEnumerator)} carries its
+     *     own state.
+     */
+    @Deprecated
     public JdbcSourceBuilder<OUT> setOptionalSqlSplitEnumeratorState(
             Serializable optionalSqlSplitEnumeratorState) {
         this.optionalSqlSplitEnumeratorState = optionalSqlSplitEnumeratorState;
