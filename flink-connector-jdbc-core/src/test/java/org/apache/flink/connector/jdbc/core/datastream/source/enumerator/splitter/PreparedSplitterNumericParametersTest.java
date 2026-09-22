@@ -21,8 +21,10 @@ package org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitt
 import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PreparedSplitterNumericParametersTest {
 
@@ -121,6 +123,64 @@ class PreparedSplitterNumericParametersTest {
             new long[] {3336953022843005681L, 3875220057236942850L}
         };
         check(expected, parameters);
+    }
+
+    @Test
+    void testBatchSizeNeverReadsPastMaxVal() {
+        // 5 values in batches of 4: two splits, and the second must stop at 9, not at 10
+        Serializable[][] parameters =
+                new PreparedSplitterNumericParameters(5, 9).withBatchSize(4).getParameterValues();
+
+        long[][] expected = {new long[] {5, 7}, new long[] {8, 9}};
+        check(expected, parameters);
+    }
+
+    @Test
+    void testSplitsCoverTheRangeExactly() {
+        // every batch size and batch number for every range up to 40 values: contiguous splits
+        // from minVal to maxVal
+        for (long minVal = -3; minVal <= 3; minVal += 3) {
+            for (int count = 1; count <= 40; count++) {
+                long maxVal = minVal + count - 1;
+                for (int k = 1; k <= 45; k++) {
+                    assertCoversRange(
+                            minVal,
+                            maxVal,
+                            new PreparedSplitterNumericParameters(minVal, maxVal)
+                                    .withBatchSize(k)
+                                    .getParameterValues());
+                    assertCoversRange(
+                            minVal,
+                            maxVal,
+                            new PreparedSplitterNumericParameters(minVal, maxVal)
+                                    .withBatchNum(k)
+                                    .getParameterValues());
+                }
+            }
+        }
+    }
+
+    @Test
+    void testMinValMustNotExceedMaxVal() {
+        assertThatThrownBy(() -> new PreparedSplitterNumericParameters(10, 9))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("minVal must not be larger than maxVal");
+    }
+
+    private static void assertCoversRange(long minVal, long maxVal, Serializable[][] splits) {
+        long next = minVal;
+        for (Serializable[] split : splits) {
+            long start = (Long) split[0];
+            long end = (Long) split[1];
+            assertThat(start)
+                    .as("start of %s for [%s, %s]", Arrays.toString(split), minVal, maxVal)
+                    .isEqualTo(next);
+            assertThat(end)
+                    .as("end of %s for [%s, %s]", Arrays.toString(split), minVal, maxVal)
+                    .isGreaterThanOrEqualTo(start);
+            next = end + 1;
+        }
+        assertThat(next - 1).as("last end for [%s, %s]", minVal, maxVal).isEqualTo(maxVal);
     }
 
     private void check(long[][] expected, Serializable[][] actual) {
