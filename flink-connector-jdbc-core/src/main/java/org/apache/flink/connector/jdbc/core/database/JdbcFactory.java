@@ -47,7 +47,9 @@ public interface JdbcFactory {
      */
     boolean acceptsURL(String url);
 
-    /** @return a new instance of the {@link JdbcDialect}. */
+    /**
+     * @return a new instance of the {@link JdbcDialect}.
+     */
     JdbcDialect createDialect();
 
     /**

@@ -140,7 +140,9 @@ public class JdbcSourceBuilder<OUT> {
         return this;
     }
 
-    /** @deprecated Use {@link #setSplitter(SplitterEnumerator)} instead. */
+    /**
+     * @deprecated Use {@link #setSplitter(SplitterEnumerator)} instead.
+     */
     @Deprecated
     public JdbcSourceBuilder<OUT> setSql(@Nonnull String sql) {
         Preconditions.checkArgument(

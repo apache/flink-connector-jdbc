@@ -374,8 +374,10 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
     @Override
     public List<CatalogPartitionSpec> listPartitions(
             ObjectPath tablePath, CatalogPartitionSpec partitionSpec)
-            throws TableNotExistException, TableNotPartitionedException,
-                    PartitionSpecInvalidException, CatalogException {
+            throws TableNotExistException,
+                    TableNotPartitionedException,
+                    PartitionSpecInvalidException,
+                    CatalogException {
         return Collections.emptyList();
     }
 
@@ -404,8 +406,10 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
             CatalogPartitionSpec partitionSpec,
             CatalogPartition partition,
             boolean ignoreIfExists)
-            throws TableNotExistException, TableNotPartitionedException,
-                    PartitionSpecInvalidException, PartitionAlreadyExistsException,
+            throws TableNotExistException,
+                    TableNotPartitionedException,
+                    PartitionSpecInvalidException,
+                    PartitionAlreadyExistsException,
                     CatalogException {
         throw new UnsupportedOperationException();
     }

@@ -141,7 +141,9 @@ public class XaTransaction implements Serializable, AutoCloseable {
                 "inconsistent internal state");
     }
 
-    /** @param checkpointId to associate with the new transaction. */
+    /**
+     * @param checkpointId to associate with the new transaction.
+     */
     public void createTx(long checkpointId) throws IOException {
         try {
             Preconditions.checkState(currentTid == null, "currentXid not null");
