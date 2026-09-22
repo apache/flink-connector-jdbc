@@ -46,13 +46,16 @@ public class PreparedSplitterEnumerator extends SqlSplitterEnumerator {
         this.finished = false;
     }
 
+    /** One split per parameter row; an empty matrix gives no split. */
     public static PreparedSplitterEnumerator of(
             String sqlTemplate, Serializable[][] sqlParameters) {
         return new PreparedSplitterEnumerator(sqlTemplate, sqlParameters);
     }
 
+    /** Reads a query without parameters as one split. */
     public static PreparedSplitterEnumerator of(String sqlTemplate) {
-        return new PreparedSplitterEnumerator(sqlTemplate, new Serializable[0][]);
+        return new PreparedSplitterEnumerator(
+                sqlTemplate, new Serializable[][] {new Serializable[0]});
     }
 
     public static PreparedSplitterEnumerator of(
