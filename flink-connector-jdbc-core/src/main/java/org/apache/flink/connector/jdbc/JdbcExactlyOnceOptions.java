@@ -44,8 +44,6 @@ import java.util.Optional;
  *       prepared by the other one (and known to it))
  *   <li>block when using with some non-MVCC databases, if there are ended-not-prepared transactions
  * </ol>
- *
- * <p>See also {@link org.apache.flink.connector.jdbc.xa.XaFacade#recover()}
  */
 @PublicEvolving
 public class JdbcExactlyOnceOptions implements Serializable {
