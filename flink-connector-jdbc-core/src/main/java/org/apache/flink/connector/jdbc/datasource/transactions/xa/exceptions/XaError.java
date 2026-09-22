@@ -128,7 +128,9 @@ public class XaError {
         return Arrays.toString(more);
     }
 
-    /** @return error description from {@link XAException} javadoc from to ease debug. */
+    /**
+     * @return error description from {@link XAException} javadoc from to ease debug.
+     */
     private static String translateCode(int code) {
         switch (code) {
             case XAException.XA_HEURCOM:

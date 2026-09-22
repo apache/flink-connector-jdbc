@@ -123,7 +123,9 @@ public class JdbcConnectorOptions {
     // Lookup options
     // -----------------------------------------------------------------------------------------
 
-    /** @deprecated please use {@link LookupOptions#PARTIAL_CACHE_MAX_ROWS} instead. */
+    /**
+     * @deprecated please use {@link LookupOptions#PARTIAL_CACHE_MAX_ROWS} instead.
+     */
     @Deprecated
     public static final ConfigOption<Long> LOOKUP_CACHE_MAX_ROWS =
             ConfigOptions.key("lookup.cache.max-rows")
@@ -133,7 +135,10 @@ public class JdbcConnectorOptions {
                             "The max number of rows of lookup cache, over this value, the oldest rows will "
                                     + "be eliminated. \"cache.max-rows\" and \"cache.ttl\" options must all be specified if any of them is "
                                     + "specified.");
-    /** @deprecated please use {@link LookupOptions#PARTIAL_CACHE_EXPIRE_AFTER_WRITE} instead. */
+
+    /**
+     * @deprecated please use {@link LookupOptions#PARTIAL_CACHE_EXPIRE_AFTER_WRITE} instead.
+     */
     @Deprecated
     public static final ConfigOption<Duration> LOOKUP_CACHE_TTL =
             ConfigOptions.key("lookup.cache.ttl")
@@ -141,7 +146,9 @@ public class JdbcConnectorOptions {
                     .defaultValue(Duration.ofSeconds(10))
                     .withDescription("The cache time to live.");
 
-    /** @deprecated please use {@link LookupOptions#MAX_RETRIES} instead. */
+    /**
+     * @deprecated please use {@link LookupOptions#MAX_RETRIES} instead.
+     */
     @Deprecated
     public static final ConfigOption<Integer> LOOKUP_MAX_RETRIES =
             ConfigOptions.key("lookup.max-retries")
@@ -149,7 +156,9 @@ public class JdbcConnectorOptions {
                     .defaultValue(3)
                     .withDescription("The max retry times if lookup database failed.");
 
-    /** @deprecated please use {@link LookupOptions#PARTIAL_CACHE_CACHE_MISSING_KEY} instead. */
+    /**
+     * @deprecated please use {@link LookupOptions#PARTIAL_CACHE_CACHE_MISSING_KEY} instead.
+     */
     @Deprecated
     public static final ConfigOption<Boolean> LOOKUP_CACHE_MISSING_KEY =
             ConfigOptions.key("lookup.cache.caching-missing-key")
