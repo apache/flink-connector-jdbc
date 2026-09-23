@@ -73,6 +73,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -130,7 +131,32 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
             String defaultDatabase,
             String baseUrl,
             Properties connectionProperties) {
-        super(catalogName, validateJdbcUrl(baseUrl, defaultDatabase));
+        this(
+                userClassLoader,
+                catalogName,
+                defaultDatabase,
+                baseUrl,
+                connectionProperties,
+                AbstractJdbcCatalog::validateJdbcUrl);
+    }
+
+    /**
+     * Creates a catalog whose default database is resolved by the given resolver. Subclasses whose
+     * base-url does not follow the {@code jdbc:<dialect>://host:port[/database]} layout (e.g.
+     * Spanner's {@code /projects/.../databases/} path) can provide their own resolver instead of
+     * {@link #validateJdbcUrl}.
+     *
+     * @param defaultDatabaseResolver resolves and validates the default database from the base-url
+     *     and the configured default database, in this order
+     */
+    protected AbstractJdbcCatalog(
+            ClassLoader userClassLoader,
+            String catalogName,
+            String defaultDatabase,
+            String baseUrl,
+            Properties connectionProperties,
+            BiFunction<String, String, String> defaultDatabaseResolver) {
+        super(catalogName, checkNotNull(defaultDatabaseResolver).apply(baseUrl, defaultDatabase));
 
         checkNotNull(userClassLoader);
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(baseUrl));
@@ -141,6 +167,20 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
         this.connectionProperties = Preconditions.checkNotNull(connectionProperties);
         this.defaultUrl = this.urlFunction.apply(defaultDatabase);
 
+        validateConnectionProperties(connectionProperties);
+    }
+
+    /**
+     * Validates the connection properties. By default, both the user and the password must be set.
+     * Dialects with a different authentication mechanism can override this method.
+     *
+     * <p>Note: This method is called from the constructor, before the fields of subclasses are
+     * initialized. Implementations must only depend on the given argument and must not access
+     * subclass state.
+     *
+     * @param connectionProperties the connection properties of the catalog
+     */
+    protected void validateConnectionProperties(Properties connectionProperties) {
         checkArgument(
                 !StringUtils.isNullOrWhitespaceOnly(connectionProperties.getProperty(USER_KEY)));
         checkArgument(
@@ -590,7 +630,19 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog implements Jdb
         throw new UnsupportedOperationException();
     }
 
-    private Function<String, String> calculateUrlFunction(String url) {
+    /**
+     * Returns a function that builds the JDBC URL of a database from its name, based on the given
+     * base-url. By default, query parameters after {@code ?} are kept after the database name.
+     * Dialects with a different URL syntax can override this method.
+     *
+     * <p>Note: This method is called from the constructor, before the fields of subclasses are
+     * initialized. Implementations must only depend on the given argument and must not access
+     * subclass state.
+     *
+     * @param url the base-url of the catalog
+     * @return a function mapping a database name to its JDBC URL
+     */
+    protected Function<String, String> calculateUrlFunction(String url) {
         final String[] parts;
         final int questionMarkIndex = url.indexOf('?');
         if (questionMarkIndex == -1) {
