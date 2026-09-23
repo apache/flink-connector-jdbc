@@ -21,11 +21,13 @@ package org.apache.flink.connector.jdbc.statement;
 import org.apache.flink.annotation.PublicEvolving;
 
 import java.math.BigDecimal;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Time;
 import java.sql.Timestamp;
 
@@ -253,6 +255,31 @@ public interface FieldNamedPreparedStatement extends AutoCloseable {
      * @see PreparedStatement#setObject(int, Object)
      */
     void setObject(int fieldIndex, Object x) throws SQLException;
+
+    /**
+     * Sets the designated parameter to the given <code>java.sql.Array</code> object. The driver
+     * converts this to an SQL <code>ARRAY</code> value when it sends it to the database.
+     *
+     * <p>The default implementation throws {@link SQLFeatureNotSupportedException} so that existing
+     * implementations remain source and binary compatible.
+     *
+     * @see PreparedStatement#setArray(int, Array)
+     */
+    default void setArray(int fieldIndex, Array x) throws SQLException {
+        throw new SQLFeatureNotSupportedException("setArray is not supported.");
+    }
+
+    /**
+     * Factory method for creating Array objects.
+     *
+     * <p>The default implementation throws {@link SQLFeatureNotSupportedException} so that existing
+     * implementations remain source and binary compatible.
+     *
+     * @see Connection#createArrayOf(String, Object[])
+     */
+    default Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+        throw new SQLFeatureNotSupportedException("createArrayOf is not supported.");
+    }
 
     /**
      * Releases this <code>Statement</code> object's database and JDBC resources immediately instead
