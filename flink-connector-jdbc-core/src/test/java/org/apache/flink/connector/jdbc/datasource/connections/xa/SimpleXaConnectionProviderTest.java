@@ -137,6 +137,34 @@ public abstract class SimpleXaConnectionProviderTest implements DatabaseTest {
     }
 
     @Test
+    void testRecoverFindsTransactionPreparedOnAnotherConnection() throws SQLException {
+        Xid xid = TRANSACTION_BASE.withBranch(System.currentTimeMillis());
+        try (SimpleXaConnectionProvider xa =
+                SimpleXaConnectionProvider.from(getMetadata().buildXaDataSource())) {
+            xa.open();
+            xa.start(xid);
+            try (PreparedStatement ps =
+                    xa.getConnection().prepareStatement(TEST_TABLE.getInsertIntoQuery())) {
+                TEST_TABLE
+                        .getStatementBuilder()
+                        .accept(ps, new BooksTable.BookEntry(1, "title1", "author1", 100D, 10));
+                ps.execute();
+            }
+            xa.endAndPrepare(xid);
+        }
+
+        try (SimpleXaConnectionProvider xa =
+                SimpleXaConnectionProvider.from(getMetadata().buildXaDataSource())) {
+            xa.open();
+            assertThat(xa.recover()).contains(xid);
+            xa.rollback(xid);
+            assertThat(xa.recover()).doesNotContain(xid);
+        }
+
+        assertBooks(new ArrayList<>());
+    }
+
+    @Test
     void testEmptyFailAndRollbackTransaction() throws SQLException {
 
         Xid xid = TRANSACTION_BASE.withBranch(System.currentTimeMillis());
