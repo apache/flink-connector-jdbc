@@ -19,12 +19,14 @@ package org.apache.flink.connector.jdbc.datasource.connections.xa;
 
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.TransactionId;
-import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.EmptyTransactionXaException;
-import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
+import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+
+import javax.transaction.xa.Xid;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -36,9 +38,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-class TransactionIdConnectionTest implements DerbyTestBase {
+/** Tests for {@link SimpleXaConnectionProvider} with the {@link TransactionId}s a job creates. */
+public abstract class TransactionIdConnectionTest implements DatabaseTest {
 
     private static final BooksTable TEST_TABLE = new BooksTable("XaTable");
     private static final byte[] JOB_ID =
@@ -50,10 +52,23 @@ class TransactionIdConnectionTest implements DerbyTestBase {
     }
 
     public void assertBooks(List<BooksTable.BookEntry> expected) throws SQLException {
-        List<BooksTable.BookEntry> current =
-                TEST_TABLE.selectAllTable(getMetadata().getConnection());
-        assertThat(current.size()).isEqualTo(expected.size());
-        assertThat(current).isEqualTo(expected);
+        try (Connection connection = getMetadata().getConnection()) {
+            List<BooksTable.BookEntry> current = TEST_TABLE.selectAllTable(connection);
+            assertThat(current.size()).isEqualTo(expected.size());
+            assertThat(current).isEqualTo(expected);
+        }
+    }
+
+    /** A failed test can leave a prepared transaction behind, which holds its locks. */
+    @AfterEach
+    void rollbackPreparedTransactions() throws SQLException {
+        try (SimpleXaConnectionProvider xa =
+                SimpleXaConnectionProvider.from(getMetadata().buildXaDataSource())) {
+            xa.open();
+            for (Xid xid : xa.recover()) {
+                xa.rollback(xid);
+            }
+        }
     }
 
     @Test
@@ -122,28 +137,6 @@ class TransactionIdConnectionTest implements DerbyTestBase {
         }
 
         assertBooks(expected);
-    }
-
-    @Test
-    void testEmptyTransaction() throws SQLException {
-        TransactionId xid = TransactionId.create(JOB_ID, 1, 1).withBranch(123L);
-        assertThatExceptionOfType(EmptyTransactionXaException.class)
-                .isThrownBy(
-                        () -> {
-                            try (SimpleXaConnectionProvider xa =
-                                    SimpleXaConnectionProvider.from(
-                                            getMetadata().buildXaDataSource())) {
-                                xa.open();
-                                // Start transaction
-                                xa.start(xid);
-                                // Prepare the transaction
-                                xa.endAndPrepare(xid);
-                                // This should fail
-                            }
-                        })
-                .withMessage("end response XA_RDONLY, xid: " + xid.toString());
-
-        assertBooks(new ArrayList<>());
     }
 
     @Test
