@@ -91,6 +91,8 @@ public class TableRow extends TableBase<Row> {
                         } else if (type.getConversionClass().equals(LocalDateTime.class)) {
                             ps.setTimestamp(
                                     i + 1, Timestamp.valueOf(row.<LocalDateTime>getFieldAs(i)));
+                        } else if (type.getConversionClass().equals(Float.class)) {
+                            ps.setFloat(i + 1, row.<Float>getFieldAs(i));
                         } else {
                             ps.setObject(i + 1, row.getField(i));
                         }
