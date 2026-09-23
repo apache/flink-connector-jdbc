@@ -34,16 +34,12 @@ public class PostgresDatabase extends DatabaseExtension implements PostgresImage
     private static final PostgreSQLContainer<?> CONTAINER =
             new PostgresXaContainer(POSTGRES_16).withMaxConnections(10).withMaxTransactions(50);
 
-    private static PostgresMetadata metadata;
-
     public static PostgresMetadata getMetadata() {
         if (!CONTAINER.isRunning()) {
             throw new FlinkRuntimeException("Container is stopped.");
         }
-        if (metadata == null) {
-            metadata = new PostgresMetadata(CONTAINER, true);
-        }
-        return metadata;
+        // Not cached: a reused fork restarts the container for each test class, on a new port.
+        return new PostgresMetadata(CONTAINER, true);
     }
 
     protected DatabaseMetadata getMetadataDB() {
