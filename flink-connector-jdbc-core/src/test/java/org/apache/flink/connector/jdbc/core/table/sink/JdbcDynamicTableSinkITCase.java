@@ -36,6 +36,8 @@ import org.apache.flink.runtime.operators.testutils.MockEnvironmentBuilder;
 import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkContextUtil;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
+import org.apache.flink.streaming.api.lineage.LineageVertexProvider;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService;
@@ -416,6 +418,29 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
                 .containsExactlyInAnyOrder(Row.of(1L), Row.of(2L));
 
         sinkFunction.close();
+    }
+
+    /**
+     * {@code TableLineageUtils} asks the object the provider returns for lineage at plan time,
+     * before {@code open()}. The dataset must already carry the physical table name then.
+     */
+    @Test
+    void testLineageDatasetNameIsKnownAtPlanTime() {
+        // checkpointOutputTable has no primary key, userOutputTable has one
+        for (TableRow table : Arrays.asList(checkpointOutputTable, userOutputTable)) {
+            Map<String, String> options = getOptions();
+            options.put("table-name", table.getTableName());
+            DynamicTableSink tableSink = createTableSink(table.getTableResolvedSchema(), options);
+            SinkFunctionProvider sinkProvider =
+                    (SinkFunctionProvider)
+                            tableSink.getSinkRuntimeProvider(new SinkRuntimeProviderContext(false));
+
+            LineageVertex lineageVertex =
+                    ((LineageVertexProvider) sinkProvider.createSinkFunction()).getLineageVertex();
+
+            assertThat(lineageVertex.datasets()).hasSize(1);
+            assertThat(lineageVertex.datasets().get(0).name()).isEqualTo(table.getTableName());
+        }
     }
 
     /** The help class to assure the test cases run compatibility. */

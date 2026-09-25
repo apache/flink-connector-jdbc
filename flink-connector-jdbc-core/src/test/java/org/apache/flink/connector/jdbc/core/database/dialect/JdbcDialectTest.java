@@ -18,19 +18,25 @@
 
 package org.apache.flink.connector.jdbc.core.database.dialect;
 
+import org.apache.flink.connector.jdbc.core.database.JdbcFactoryLoader;
+import org.apache.flink.connector.jdbc.lineage.LineageUtils;
+import org.apache.flink.connector.jdbc.statement.FieldNamedPreparedStatementImpl;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.annotation.Nullable;
 
+import java.util.HashMap;
 import java.util.List;
 
 import static org.apache.flink.core.testutils.FlinkAssertions.anyCauseMatches;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Tests for all DataTypes and Dialects of JDBC connector. */
@@ -71,6 +77,23 @@ public abstract class JdbcDialectTest implements DatabaseTest {
         } else {
             tEnv.executeSql("SELECT * FROM T");
         }
+    }
+
+    /**
+     * The lineage dataset name is read from the dialect's INSERT statement, so it has to parse to
+     * the target table for every dialect, quoting included.
+     */
+    @Test
+    void testInsertStatementNamesTheLineageTable() {
+        JdbcDialect dialect =
+                JdbcFactoryLoader.loadDialect(
+                        getMetadata().getJdbcUrl(), getClass().getClassLoader());
+        String insert =
+                FieldNamedPreparedStatementImpl.parseNamedStatement(
+                        dialect.getInsertIntoStatement("myTable", new String[] {"f0", "f1"}),
+                        new HashMap<>());
+
+        assertThat(LineageUtils.tableNameOf(insert, false)).hasValue("myTable");
     }
 
     // ~ Inner Class

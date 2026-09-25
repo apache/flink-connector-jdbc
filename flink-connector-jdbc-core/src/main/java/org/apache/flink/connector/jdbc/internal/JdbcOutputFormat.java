@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import java.io.Flushable;
 import java.io.IOException;
@@ -71,6 +72,7 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
 
     private final JdbcExecutionOptions executionOptions;
     private final StatementExecutorFactory<JdbcExec> statementExecutorFactory;
+    @Nullable private final String lineageQuery;
 
     @SuppressWarnings("unchecked")
     protected Function<In, JdbcIn> getExtractor() {
@@ -90,9 +92,22 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
             @Nonnull JdbcConnectionProvider connectionProvider,
             @Nonnull JdbcExecutionOptions executionOptions,
             @Nonnull StatementExecutorFactory<JdbcExec> statementExecutorFactory) {
+        this(connectionProvider, executionOptions, statementExecutorFactory, null);
+    }
+
+    /**
+     * @param lineageQuery the statement the lineage dataset name is read from before {@link #open},
+     *     when no statement executor exists yet
+     */
+    public JdbcOutputFormat(
+            @Nonnull JdbcConnectionProvider connectionProvider,
+            @Nonnull JdbcExecutionOptions executionOptions,
+            @Nonnull StatementExecutorFactory<JdbcExec> statementExecutorFactory,
+            @Nullable String lineageQuery) {
         this.connectionProvider = checkNotNull(connectionProvider);
         this.executionOptions = checkNotNull(executionOptions);
         this.statementExecutorFactory = checkNotNull(statementExecutorFactory);
+        this.lineageQuery = lineageQuery;
     }
 
     /** Connects to the target database and initializes the prepared statement. */
@@ -256,10 +271,12 @@ public class JdbcOutputFormat<In, JdbcIn, JdbcExec extends JdbcBatchStatementExe
 
     @Override
     public LineageVertex getLineageVertex() {
+        String query = lineageQuery;
+        if (query == null && jdbcStatementExecutor != null) {
+            query = jdbcStatementExecutor.insertSql();
+        }
         Optional<String> nameOpt =
-                jdbcStatementExecutor == null
-                        ? Optional.empty()
-                        : LineageUtils.tableNameOf(jdbcStatementExecutor.insertSql(), false);
+                query == null ? Optional.empty() : LineageUtils.tableNameOf(query, false);
         String namespace = LineageUtils.namespaceOf(connectionProvider);
         LineageDataset dataset =
                 LineageUtils.datasetOf(nameOpt.orElse(""), namespace, Collections.emptyList());
