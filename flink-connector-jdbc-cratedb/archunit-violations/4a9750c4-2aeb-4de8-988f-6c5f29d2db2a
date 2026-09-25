@@ -1,0 +1,1 @@
+Constructor <org.apache.flink.connector.jdbc.cratedb.database.catalog.CrateDBCatalog.<init>(java.lang.ClassLoader, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)> is annotated with <org.apache.flink.annotation.VisibleForTesting> in (CrateDBCatalog.java:0)
