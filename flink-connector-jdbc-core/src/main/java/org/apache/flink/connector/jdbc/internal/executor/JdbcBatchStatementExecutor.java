@@ -23,7 +23,6 @@ import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.function.Function;
 
 /** Executes the given JDBC statement in batch for the accumulated records. */
 @Internal
@@ -42,11 +41,6 @@ public interface JdbcBatchStatementExecutor<T> {
 
     /** return the insert sql of the executor. */
     String insertSql();
-
-    static <T, K> JdbcBatchStatementExecutor<T> keyed(
-            String sql, Function<T, K> keyExtractor, JdbcStatementBuilder<K> statementBuilder) {
-        return new KeyedBatchStatementExecutor<>(sql, keyExtractor, statementBuilder);
-    }
 
     static <T> JdbcBatchStatementExecutor<T> simple(
             String sql, JdbcStatementBuilder<T> paramSetter) {
