@@ -21,16 +21,22 @@ package org.apache.flink.connector.jdbc.core.table.sink;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
+import org.apache.flink.connector.jdbc.core.database.dialect.JdbcDialect;
+import org.apache.flink.connector.jdbc.derby.database.dialect.DerbyDialect;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.streaming.api.lineage.LineageVertex;
 import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.StringData;
+import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.types.RowKind;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +49,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.INPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.OUTPUT_TABLE;
@@ -55,6 +65,7 @@ import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.entry;
 
 /** Test suite for {@link JdbcOutputFormatBuilder}. */
 class JdbcOutputFormatTest extends JdbcDataTestBase {
@@ -585,6 +596,327 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
                 recordCount++;
             }
             assertThat(recordCount).isEqualTo(TEST_DATA.length);
+        }
+    }
+
+    @Test
+    void testUpsertBranchWithNativeUpsertReducesByKey() throws Exception {
+        RecordingDialect dialect = new RecordingDialect(true);
+
+        assertChangelogIsReducedByKey(dialect);
+
+        // the dialect's own upsert is used; the insert-or-update fallback is never assembled
+        assertThat(dialect.upsertCalls).isEqualTo(1);
+        assertThat(dialect.deleteCalls).isEqualTo(1);
+        assertThat(dialect.rowExistsCalls).isZero();
+        assertThat(dialect.updateCalls).isZero();
+    }
+
+    @Test
+    void testUpsertBranchWithInsertOrUpdateFallbackReducesByKey() throws Exception {
+        RecordingDialect dialect = new RecordingDialect(false);
+
+        assertChangelogIsReducedByKey(dialect);
+
+        // no native upsert (Derby, Trino): exists + insert + update replace it
+        assertThat(dialect.upsertCalls).isEqualTo(1);
+        assertThat(dialect.rowExistsCalls).isEqualTo(1);
+        assertThat(dialect.insertCalls).isEqualTo(1);
+        assertThat(dialect.updateCalls).isEqualTo(1);
+        assertThat(dialect.deleteCalls).isEqualTo(1);
+    }
+
+    /**
+     * Shared by both upsert branches: within one buffer the last change to a key wins, the key
+     * alone decides identity, and a delete of an unknown key is a no-op.
+     */
+    private void assertChangelogIsReducedByKey(JdbcDialect dialect) throws Exception {
+        openOutputFormat(dialect, new String[] {"id"}, batchOf(100, 0), false);
+        TestEntry first = TEST_DATA[0];
+        TestEntry second = TEST_DATA[1];
+
+        outputFormat.writeRecord(changelogRow(RowKind.INSERT, first, "v1"));
+        outputFormat.writeRecord(changelogRow(RowKind.UPDATE_AFTER, first, "v2"));
+        outputFormat.flush();
+        assertThat(titlesById()).containsOnly(entry(first.id, "v2"));
+
+        // DELETE then INSERT of the same key keeps the row: the reduce key carries no row kind
+        outputFormat.writeRecord(changelogRow(RowKind.DELETE, first, "v2"));
+        outputFormat.writeRecord(changelogRow(RowKind.INSERT, first, "v3"));
+        outputFormat.flush();
+        assertThat(titlesById()).containsOnly(entry(first.id, "v3"));
+
+        // INSERT then DELETE of a new key writes nothing; a DELETE of an unknown key is a no-op
+        outputFormat.writeRecord(changelogRow(RowKind.INSERT, second, "v1"));
+        outputFormat.writeRecord(changelogRow(RowKind.DELETE, second, "v1"));
+        outputFormat.writeRecord(changelogRow(RowKind.DELETE, TEST_DATA[3], "never written"));
+        outputFormat.flush();
+        assertThat(titlesById()).containsOnly(entry(first.id, "v3"));
+
+        // an UPDATE_BEFORE on its own is a delete
+        outputFormat.writeRecord(changelogRow(RowKind.UPDATE_BEFORE, first, "v3"));
+        outputFormat.flush();
+        assertThat(titlesById()).isEmpty();
+    }
+
+    @Test
+    void testAppendOnlyBranchUsesThePlainInsert() throws Exception {
+        RecordingDialect dialect = new RecordingDialect(true);
+        openOutputFormat(dialect, null, batchOf(100, 0), false);
+
+        outputFormat.writeRecord(changelogRow(RowKind.INSERT, TEST_DATA[0], "a"));
+        outputFormat.writeRecord(changelogRow(RowKind.INSERT, TEST_DATA[1], "b"));
+        outputFormat.flush();
+
+        assertThat(titlesById())
+                .containsOnly(entry(TEST_DATA[0].id, "a"), entry(TEST_DATA[1].id, "b"));
+        assertThat(dialect.insertCalls).isEqualTo(1);
+        assertThat(dialect.upsertCalls).isZero();
+        assertThat(dialect.rowExistsCalls).isZero();
+        assertThat(dialect.deleteCalls).isZero();
+    }
+
+    @Test
+    void testKeyFieldOutsideTheFieldNamesFailsAtOpen() {
+        // indexOf gives -1 for the unknown key, and the builder indexes the field types with it
+        assertThatThrownBy(
+                        () ->
+                                openOutputFormat(
+                                        new DerbyDialect(),
+                                        new String[] {"nope"},
+                                        batchOf(100, 0),
+                                        false))
+                .isInstanceOf(ArrayIndexOutOfBoundsException.class);
+    }
+
+    @Test
+    void testNullKeyValueMatchesNeitherExistsNorDelete() throws Exception {
+        openOutputFormat(new DerbyDialect(), new String[] {"title"}, batchOf(100, 0), false);
+        TestEntry entry = TEST_DATA[0];
+
+        outputFormat.writeRecord(changelogRow(RowKind.INSERT, entry, null));
+        outputFormat.flush();
+        assertThat(titlesById()).containsOnly(entry(entry.id, null));
+
+        // `DELETE ... WHERE title = ?` with NULL matches nothing: the row is silently retained
+        outputFormat.writeRecord(changelogRow(RowKind.DELETE, entry, null));
+        outputFormat.flush();
+        assertThat(titlesById()).containsOnly(entry(entry.id, null));
+
+        // `exists` never matches either, so the same key is inserted again, which the table's
+        // primary key rejects
+        outputFormat.writeRecord(changelogRow(RowKind.INSERT, entry, null));
+        assertThatThrownBy(outputFormat::flush)
+                .isInstanceOf(IOException.class)
+                .hasCauseInstanceOf(SQLException.class);
+
+        // the buffer survived the failed flush: once the conflict is gone the replay lands
+        executeUpdate("DELETE FROM " + OUTPUT_TABLE_3 + " WHERE id = " + entry.id);
+        outputFormat.flush();
+        assertThat(titlesById()).containsOnly(entry(entry.id, null));
+    }
+
+    @Test
+    void testObjectReuseCopiesTheRecordBeforeBuffering() throws Exception {
+        openOutputFormat(new DerbyDialect(), new String[] {"id"}, batchOf(100, 0), true);
+
+        GenericRowData row = (GenericRowData) changelogRow(RowKind.INSERT, TEST_DATA[0], "first");
+        outputFormat.writeRecord(row);
+        // with object reuse on, the runtime hands the same object over again for the next record
+        row.setField(0, TEST_DATA[1].id);
+        row.setField(1, StringData.fromString("second"));
+        outputFormat.writeRecord(row);
+        outputFormat.flush();
+
+        assertThat(titlesById())
+                .containsOnly(entry(TEST_DATA[0].id, "first"), entry(TEST_DATA[1].id, "second"));
+    }
+
+    @Test
+    void testFailedFlushKeepsTheBufferAndReplaysUpsertsIdempotently() throws Exception {
+        String child = OUTPUT_TABLE_3 + "_child";
+        TestEntry kept = TEST_DATA[0];
+        TestEntry deleted = TEST_DATA[1];
+        executeUpdate(
+                "INSERT INTO "
+                        + OUTPUT_TABLE_3
+                        + " (id, title) VALUES ("
+                        + deleted.id
+                        + ", 'old')");
+        executeUpdate(
+                "CREATE TABLE "
+                        + child
+                        + " (id INT NOT NULL PRIMARY KEY, parent INT NOT NULL,"
+                        + " CONSTRAINT child_fk FOREIGN KEY (parent) REFERENCES "
+                        + OUTPUT_TABLE_3
+                        + " (id))");
+        try {
+            executeUpdate("INSERT INTO " + child + " VALUES (1, " + deleted.id + ")");
+            openOutputFormat(new DerbyDialect(), new String[] {"id"}, batchOf(100, 1), false);
+
+            outputFormat.writeRecord(changelogRow(RowKind.INSERT, kept, "kept"));
+            outputFormat.writeRecord(changelogRow(RowKind.DELETE, deleted, "old"));
+
+            // the upsert batch commits, the delete batch fails on the foreign key, the one retry
+            // re-prepares the statements and replays both, and fails the same way
+            assertThatThrownBy(outputFormat::flush)
+                    .isInstanceOf(IOException.class)
+                    .hasCauseInstanceOf(SQLException.class);
+            assertThat(titlesById()).containsOnly(entry(kept.id, "kept"), entry(deleted.id, "old"));
+
+            // remove the conflict: the next flush replays the whole buffer and the delete lands,
+            // and the replayed upsert did not duplicate the row
+            executeUpdate("DELETE FROM " + child);
+            outputFormat.flush();
+            assertThat(titlesById()).containsOnly(entry(kept.id, "kept"));
+
+            // and the buffer is empty afterwards
+            outputFormat.flush();
+            assertThat(titlesById()).containsOnly(entry(kept.id, "kept"));
+        } finally {
+            executeUpdate("DELETE FROM " + child);
+            executeUpdate("DROP TABLE " + child);
+        }
+    }
+
+    private void openOutputFormat(
+            JdbcDialect dialect,
+            String[] keyFields,
+            JdbcExecutionOptions executionOptions,
+            boolean objectReuse)
+            throws IOException {
+        InternalJdbcConnectionOptions jdbcOptions =
+                InternalJdbcConnectionOptions.builder()
+                        .setDriverName(getMetadata().getDriverClass())
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setTableName(OUTPUT_TABLE_3)
+                        .build();
+        JdbcDmlOptions.JdbcDmlOptionsBuilder dmlOptions =
+                JdbcDmlOptions.builder()
+                        .withTableName(OUTPUT_TABLE_3)
+                        .withDialect(dialect)
+                        .withFieldNames(fieldNames);
+        if (keyFields != null) {
+            dmlOptions.withKeyFields(keyFields);
+        }
+        outputFormat =
+                new JdbcOutputFormatBuilder()
+                        .setJdbcOptions(jdbcOptions)
+                        .setFieldDataTypes(fieldDataTypes)
+                        .setJdbcDmlOptions(dmlOptions.build())
+                        .setJdbcExecutionOptions(executionOptions)
+                        .build();
+        outputFormat.open(
+                JdbcOutputSerializer.of(
+                        getSerializer(InternalTypeInfo.of(rowType), objectReuse), objectReuse));
+    }
+
+    private static JdbcExecutionOptions batchOf(int batchSize, int maxRetries) {
+        return JdbcExecutionOptions.builder()
+                .withBatchSize(batchSize)
+                .withBatchIntervalMs(0)
+                .withMaxRetries(maxRetries)
+                .build();
+    }
+
+    private static RowData changelogRow(RowKind kind, TestEntry entry, String title) {
+        GenericRowData row =
+                (GenericRowData)
+                        buildGenericData(entry.id, title, entry.author, entry.price, entry.qty);
+        row.setRowKind(kind);
+        return row;
+    }
+
+    private Map<Integer, String> titlesById() throws SQLException {
+        Map<Integer, String> titles = new HashMap<>();
+        try (Connection conn = getMetadata().getConnection();
+                Statement stat = conn.createStatement();
+                ResultSet rs = stat.executeQuery("SELECT id, title FROM " + OUTPUT_TABLE_3)) {
+            while (rs.next()) {
+                assertThat(titles.put(rs.getInt("id"), rs.getString("title"))).isNull();
+            }
+        }
+        return titles;
+    }
+
+    private void executeUpdate(String sql) throws SQLException {
+        try (Connection conn = getMetadata().getConnection();
+                Statement stat = conn.createStatement()) {
+            stat.executeUpdate(sql);
+        }
+    }
+
+    /**
+     * A Derby dialect that counts which statement texts the builder asks it for, and can offer a
+     * native upsert through Derby's {@code MERGE}, which {@link DerbyDialect} itself does not use.
+     */
+    private static class RecordingDialect extends DerbyDialect {
+        private final boolean nativeUpsert;
+        int upsertCalls;
+        int rowExistsCalls;
+        int insertCalls;
+        int updateCalls;
+        int deleteCalls;
+
+        RecordingDialect(boolean nativeUpsert) {
+            this.nativeUpsert = nativeUpsert;
+        }
+
+        @Override
+        public Optional<String> getUpsertStatement(
+                String tableName, String[] fieldNames, String[] uniqueKeyFields) {
+            upsertCalls++;
+            if (!nativeUpsert) {
+                return super.getUpsertStatement(tableName, fieldNames, uniqueKeyFields);
+            }
+            String on =
+                    Arrays.stream(uniqueKeyFields)
+                            .map(f -> "t." + f + " = :" + f)
+                            .collect(Collectors.joining(" AND "));
+            String set =
+                    Arrays.stream(fieldNames)
+                            .filter(f -> !Arrays.asList(uniqueKeyFields).contains(f))
+                            .map(f -> f + " = :" + f)
+                            .collect(Collectors.joining(", "));
+            String values =
+                    Arrays.stream(fieldNames).map(f -> ":" + f).collect(Collectors.joining(", "));
+            return Optional.of(
+                    "MERGE INTO "
+                            + tableName
+                            + " t USING SYSIBM.SYSDUMMY1 ON "
+                            + on
+                            + " WHEN MATCHED THEN UPDATE SET "
+                            + set
+                            + " WHEN NOT MATCHED THEN INSERT ("
+                            + String.join(", ", fieldNames)
+                            + ") VALUES ("
+                            + values
+                            + ")");
+        }
+
+        @Override
+        public String getRowExistsStatement(String tableName, String[] conditionFields) {
+            rowExistsCalls++;
+            return super.getRowExistsStatement(tableName, conditionFields);
+        }
+
+        @Override
+        public String getInsertIntoStatement(String tableName, String[] fieldNames) {
+            insertCalls++;
+            return super.getInsertIntoStatement(tableName, fieldNames);
+        }
+
+        @Override
+        public String getUpdateStatement(
+                String tableName, String[] fieldNames, String[] conditionFields) {
+            updateCalls++;
+            return super.getUpdateStatement(tableName, fieldNames, conditionFields);
+        }
+
+        @Override
+        public String getDeleteStatement(String tableName, String[] conditionFields) {
+            deleteCalls++;
+            return super.getDeleteStatement(tableName, conditionFields);
         }
     }
 

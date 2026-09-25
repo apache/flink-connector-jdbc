@@ -56,6 +56,7 @@ import org.apache.flink.table.planner.runtime.utils.TestData;
 import org.apache.flink.table.runtime.connector.sink.SinkRuntimeProviderContext;
 import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
+import org.apache.flink.types.RowKind;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -377,6 +378,128 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
     /** Whether the Flink version under test has the FLIP-558 ON CONFLICT validation (>= 2.3). */
     private static boolean isFlip558Enabled() {
         return FlinkVersion.current().toString().compareTo("2.3") >= 0;
+    }
+
+    /**
+     * Every change to one key within one buffer window is reduced to its last change, and the key
+     * alone decides identity: an INSERT after a DELETE keeps the row, a DELETE after an INSERT
+     * removes it, and a DELETE for a key the sink never saw is a no-op. The upsert materializer is
+     * off, so the sink sees the changelog as the source emits it.
+     */
+    @Test
+    protected void testChangelogReducedWithinOneBuffer() throws Exception {
+        TableEnvironment tEnv = TableEnvironment.create(EnvironmentSettings.newInstance().build());
+        tEnv.getConfig().set("table.exec.sink.upsert-materialize", "NONE");
+        // no stored balance or its double has a trailing zero: Oracle strips them on read
+        List<Row> changelog =
+                Arrays.asList(
+                        Row.ofKind(RowKind.INSERT, "user1", "Tom", "tom@gmail.com", d("8.10")),
+                        Row.ofKind(RowKind.DELETE, "user1", "Tom", "tom@gmail.com", d("8.10")),
+                        Row.ofKind(RowKind.DELETE, "user2", "Jack", "jack@qq.com", d("9.26")),
+                        Row.ofKind(RowKind.INSERT, "user2", "Jack", "jack@qq.com", d("9.26")),
+                        Row.ofKind(RowKind.INSERT, "user3", "Bailey", "bailey@qq.com", d("9.99")),
+                        Row.ofKind(
+                                RowKind.UPDATE_BEFORE,
+                                "user3",
+                                "Bailey",
+                                "bailey@qq.com",
+                                d("9.99")),
+                        Row.ofKind(
+                                RowKind.UPDATE_AFTER,
+                                "user3",
+                                "Bailey",
+                                "bailey@qq.com",
+                                d("10.99")),
+                        Row.ofKind(RowKind.DELETE, "user9", "Nobody", "nobody@qq.com", d("1.00")));
+        String dataId = TestValuesTableFactory.registerData(changelog);
+
+        String userTableLogs = "user_logs_one_buffer";
+        tEnv.executeSql(
+                String.format(
+                        "CREATE TABLE %s ( "
+                                + "  user_id STRING, "
+                                + "  user_name STRING, "
+                                + "  email STRING, "
+                                + "  balance DECIMAL(18,2), "
+                                + "  balance2 AS balance * 2 "
+                                + ") WITH ( "
+                                + " 'connector' = 'values', "
+                                + " 'data-id' = '%s', "
+                                + " 'changelog-mode' = 'I,UA,UB,D' "
+                                + ")",
+                        userTableLogs, dataId));
+
+        // a buffer larger than the changelog, so everything is reduced in one window and
+        // written once, on close
+        String userTableSink = "user_sink_one_buffer";
+        tEnv.executeSql(
+                userOutputTable.getCreateQueryForFlink(
+                        getMetadata(),
+                        userTableSink,
+                        Arrays.asList(
+                                "'sink.buffer-flush.max-rows' = '100'",
+                                "'sink.buffer-flush.interval' = '0'")));
+
+        tEnv.executeSql(
+                        String.format(
+                                "INSERT INTO %s SELECT * FROM %s", userTableSink, userTableLogs))
+                .await();
+
+        assertThat(userOutputTable.selectAllTable(getMetadata()))
+                .containsExactlyInAnyOrder(
+                        Row.of("user2", "Jack", "jack@qq.com", d("9.26"), d("18.52")),
+                        Row.of("user3", "Bailey", "bailey@qq.com", d("10.99"), d("21.98")));
+    }
+
+    /**
+     * With {@code sink.parallelism} different from the input parallelism the planner shuffles by
+     * primary key in front of the sink, so each subtask reduces its own keys. The end state must be
+     * the same as at parallelism 1.
+     */
+    @Test
+    protected void testChangelogWithSinkParallelismAboveOne() throws Exception {
+        TableEnvironment tEnv = TableEnvironment.create(EnvironmentSettings.newInstance().build());
+        tEnv.getConfig().set("table.exec.sink.upsert-materialize", "NONE");
+        tEnv.getConfig().set("parallelism.default", "1");
+        String dataId = TestValuesTableFactory.registerData(TestData.userChangelog());
+
+        String userTableLogs = "user_logs_parallel";
+        tEnv.executeSql(
+                String.format(
+                        "CREATE TABLE %s ( "
+                                + "  user_id STRING, "
+                                + "  user_name STRING, "
+                                + "  email STRING, "
+                                + "  balance DECIMAL(18,2), "
+                                + "  balance2 AS balance * 2 "
+                                + ") WITH ( "
+                                + " 'connector' = 'values', "
+                                + " 'data-id' = '%s', "
+                                + " 'changelog-mode' = 'I,UA,UB,D' "
+                                + ")",
+                        userTableLogs, dataId));
+
+        String userTableSink = "user_sink_parallel";
+        tEnv.executeSql(
+                userOutputTable.getCreateQueryForFlink(
+                        getMetadata(),
+                        userTableSink,
+                        Arrays.asList(
+                                "'sink.parallelism' = '2'",
+                                "'sink.buffer-flush.max-rows' = '2'",
+                                "'sink.buffer-flush.interval' = '0'")));
+
+        tEnv.executeSql(
+                        String.format(
+                                "INSERT INTO %s SELECT * FROM %s", userTableSink, userTableLogs))
+                .await();
+
+        assertThat(userOutputTable.selectAllTable(getMetadata()))
+                .containsExactlyInAnyOrderElementsOf(testUserData());
+    }
+
+    private static BigDecimal d(String value) {
+        return new BigDecimal(value);
     }
 
     protected Map<String, String> getOptions() {
