@@ -18,8 +18,12 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.source.split;
 
+import org.apache.flink.util.InstantiationUtil;
+
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Random;
@@ -40,7 +44,8 @@ class JdbcSourceSplitSerializerTest {
             new JdbcSourceSplitSerializer() {
                 @Override
                 public int getVersion() {
-                    return new Random().nextInt(10) + 1;
+                    // clearly outside the known versions {0, 1}
+                    return new Random().nextInt(10) + 2;
                 }
             };
 
@@ -67,6 +72,44 @@ class JdbcSourceSplitSerializerTest {
         // Test for matched version.
         assertThat(serializer.deserialize(serializer.getVersion(), serializer.serialize(split)))
                 .isEqualTo(split);
+    }
+
+    @Test
+    void testRoundTripPreservesGlobalSnapshotId() throws IOException {
+        JdbcSourceSplit withSnapshot = new JdbcSourceSplit("1", "select 1", null, null, "0-1-123");
+
+        JdbcSourceSplit deserialized =
+                serializer.deserialize(serializer.getVersion(), serializer.serialize(withSnapshot));
+
+        assertThat(deserialized).isEqualTo(withSnapshot);
+        assertThat(deserialized.getGlobalSnapshotId()).isEqualTo("0-1-123");
+    }
+
+    @Test
+    void testLegacyVersionZeroBytesStillDeserialize() throws IOException {
+        // Bytes as written before the snapshot field existed: no trailing snapshot payload.
+        byte[] legacyBytes = writeLegacyFormat(split);
+
+        JdbcSourceSplit deserialized = serializer.deserialize(0, legacyBytes);
+
+        assertThat(deserialized).isEqualTo(split);
+        assertThat(deserialized.getGlobalSnapshotId()).isNull();
+    }
+
+    private static byte[] writeLegacyFormat(JdbcSourceSplit sourceSplit) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (DataOutputStream out = new DataOutputStream(baos)) {
+            out.writeUTF(sourceSplit.splitId());
+            out.writeUTF(sourceSplit.getSqlTemplate());
+            byte[] paramsBytes = InstantiationUtil.serializeObject(sourceSplit.getParameters());
+            out.writeInt(paramsBytes.length);
+            out.write(paramsBytes);
+            byte[] chkOffset =
+                    InstantiationUtil.serializeObject(sourceSplit.getCheckpointedOffset());
+            out.writeInt(chkOffset.length);
+            out.write(chkOffset);
+        }
+        return baos.toByteArray();
     }
 
     static class MockedJdbcSourceSplit extends JdbcSourceSplit {

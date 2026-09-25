@@ -41,15 +41,27 @@ public class JdbcSourceSplit implements SourceSplit, Serializable {
 
     private final @Nullable CheckpointedOffset checkpointedOffset;
 
+    private final @Nullable String globalSnapshotId;
+
     public JdbcSourceSplit(
             String id,
             String sqlTemplate,
             @Nullable Serializable[] parameters,
             @Nullable CheckpointedOffset checkpointedOffset) {
+        this(id, sqlTemplate, parameters, checkpointedOffset, null);
+    }
+
+    public JdbcSourceSplit(
+            String id,
+            String sqlTemplate,
+            @Nullable Serializable[] parameters,
+            @Nullable CheckpointedOffset checkpointedOffset,
+            @Nullable String globalSnapshotId) {
         this.id = id;
         this.sqlTemplate = sqlTemplate;
         this.parameters = parameters;
         this.checkpointedOffset = checkpointedOffset;
+        this.globalSnapshotId = globalSnapshotId;
     }
 
     @Nullable
@@ -59,7 +71,30 @@ public class JdbcSourceSplit implements SourceSplit, Serializable {
 
     public JdbcSourceSplit updateWithCheckpointedPosition(
             @Nullable CheckpointedOffset checkpointedOffset) {
-        return new JdbcSourceSplit(id, sqlTemplate, parameters, checkpointedOffset);
+        return new JdbcSourceSplit(
+                id, sqlTemplate, parameters, checkpointedOffset, globalSnapshotId);
+    }
+
+    /**
+     * Id of the exported database snapshot that this split must be read within, or {@code null} if
+     * the split does not participate in a shared snapshot.
+     */
+    @Nullable
+    public String getGlobalSnapshotId() {
+        return globalSnapshotId;
+    }
+
+    /**
+     * Returns a copy of this split stamped with the given snapshot id. Used by the enumerator to
+     * re-stamp splits restored from a checkpoint: the snapshot exported by the failed attempt died
+     * with its connection, so every split of the restored run must be read within the freshly
+     * exported snapshot instead.
+     */
+    public JdbcSourceSplit withGlobalSnapshotId(@Nullable String snapshotId) {
+        if (Objects.equals(globalSnapshotId, snapshotId)) {
+            return this;
+        }
+        return new JdbcSourceSplit(id, sqlTemplate, parameters, checkpointedOffset, snapshotId);
     }
 
     public Optional<CheckpointedOffset> getReaderPositionOptional() {
@@ -100,12 +135,13 @@ public class JdbcSourceSplit implements SourceSplit, Serializable {
         return Objects.equals(id, that.id)
                 && Objects.equals(sqlTemplate, that.sqlTemplate)
                 && Arrays.equals(parameters, that.parameters)
-                && Objects.equals(checkpointedOffset, that.checkpointedOffset);
+                && Objects.equals(checkpointedOffset, that.checkpointedOffset)
+                && Objects.equals(globalSnapshotId, that.globalSnapshotId);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(id, sqlTemplate, checkpointedOffset);
+        int result = Objects.hash(id, sqlTemplate, checkpointedOffset, globalSnapshotId);
         result = 31 * result + Arrays.hashCode(parameters);
         return result;
     }
@@ -119,10 +155,14 @@ public class JdbcSourceSplit implements SourceSplit, Serializable {
                 + ", sqlTemplate='"
                 + sqlTemplate
                 + '\''
+                // Bound values are user data; never print them — split toStrings end up in logs.
                 + ", parameters="
-                + Arrays.toString(parameters)
+                + (parameters == null ? "null" : (parameters.length + " value(s)"))
                 + ", checkpointedOffset="
                 + checkpointedOffset
+                + ", globalSnapshotId='"
+                + globalSnapshotId
+                + '\''
                 + '}';
     }
 }
