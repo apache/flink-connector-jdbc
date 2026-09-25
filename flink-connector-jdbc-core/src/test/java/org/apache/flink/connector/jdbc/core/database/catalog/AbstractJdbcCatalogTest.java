@@ -18,8 +18,15 @@
 
 package org.apache.flink.connector.jdbc.core.database.catalog;
 
+import org.apache.flink.table.catalog.ObjectPath;
+
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Properties;
+import java.util.function.BiFunction;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Test for {@link AbstractJdbcCatalog}. */
@@ -59,5 +66,76 @@ class AbstractJdbcCatalogTest {
                                         "jdbc:dialect://localhost:1234/db", "not_db"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(AbstractJdbcCatalog.DATABASE_NOT_UNIQUE_HINT);
+    }
+
+    @Test
+    void testDefaultDatabaseResolver() {
+        String baseUrl = "jdbc:dialect://localhost:1234/custom/path/";
+        AbstractJdbcCatalog catalog =
+                new TestJdbcCatalog(
+                        "db",
+                        baseUrl,
+                        (url, database) -> {
+                            assertThat(url).isEqualTo(baseUrl);
+                            assertThat(database).isEqualTo("db");
+                            return "resolved_db";
+                        });
+
+        assertThat(catalog.getDefaultDatabase()).isEqualTo("resolved_db");
+    }
+
+    @Test
+    void testDefaultResolverValidatesJdbcUrl() {
+        assertThatThrownBy(() -> new TestJdbcCatalog("not_db", "jdbc:dialect://localhost:1234/db"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(AbstractJdbcCatalog.DATABASE_NOT_UNIQUE_HINT);
+    }
+
+    /** Minimal {@link AbstractJdbcCatalog} used to test the constructors. */
+    private static class TestJdbcCatalog extends AbstractJdbcCatalog {
+
+        TestJdbcCatalog(String defaultDatabase, String baseUrl) {
+            super(
+                    Thread.currentThread().getContextClassLoader(),
+                    "catalog",
+                    defaultDatabase,
+                    baseUrl,
+                    authProperties());
+        }
+
+        TestJdbcCatalog(
+                String defaultDatabase,
+                String baseUrl,
+                BiFunction<String, String, String> defaultDatabaseResolver) {
+            super(
+                    Thread.currentThread().getContextClassLoader(),
+                    "catalog",
+                    defaultDatabase,
+                    baseUrl,
+                    authProperties(),
+                    defaultDatabaseResolver);
+        }
+
+        private static Properties authProperties() {
+            Properties properties = new Properties();
+            properties.setProperty("user", "user");
+            properties.setProperty("password", "password");
+            return properties;
+        }
+
+        @Override
+        public List<String> listDatabases() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<String> listTables(String databaseName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean tableExists(ObjectPath tablePath) {
+            throw new UnsupportedOperationException();
+        }
     }
 }
