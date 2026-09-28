@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -51,6 +52,19 @@ public class JdbcSourceEnumerator
     private final List<Integer> readersWaitingForSplits = new ArrayList<>();
     private final AtomicInteger asyncCallsPending = new AtomicInteger(0);
 
+    /**
+     * The splitter state that corresponds to the splits that have already been handed over to
+     * {@link #unassigned} or to a reader.
+     *
+     * <p>Only touched from the coordinator thread: {@link #onSplitsDiscovered} commits it and
+     * {@link #snapshotState(long)} reads it. Both run on the same thread as each other, so the two
+     * never interleave. It must NOT be read from {@link SplitterEnumerator#serializableState()}
+     * directly in {@link #snapshotState(long)}: enumeration happens on a worker thread, so that
+     * state can already have advanced past splits that are still in flight and therefore not part
+     * of the checkpoint.
+     */
+    private Serializable lastHandledSplitterState;
+
     public JdbcSourceEnumerator(
             SplitEnumeratorContext<JdbcSourceSplit> context,
             SplitterEnumerator splitterEnumerator,
@@ -65,6 +79,9 @@ public class JdbcSourceEnumerator
     @Override
     public void start() {
         splitterEnumerator.start(connectionProvider);
+        // No split has been handled yet: this is the state a concurrent checkpoint has to fall
+        // back to while the first batch is still being enumerated on a worker thread.
+        lastHandledSplitterState = splitterEnumerator.serializableState();
         preDiscoverSplits();
     }
 
@@ -120,7 +137,7 @@ public class JdbcSourceEnumerator
                 Collections.emptyList(),
                 Collections.emptyList(),
                 new ArrayList<>(unassigned),
-                splitterEnumerator.serializableState());
+                lastHandledSplitterState);
     }
 
     private Optional<JdbcSourceSplit> getNextSplit() {
@@ -134,17 +151,31 @@ public class JdbcSourceEnumerator
     }
 
     private void preDiscoverSplits() {
-        int targetParallelism = context.currentParallelism();
-        while (asyncCallsPending.get() < targetParallelism
-                && !splitterEnumerator.isAllSplitsFinished()) {
+        // Keep at most one enumeration in flight. The splitter state that goes with a batch is
+        // committed by its handler, so the commits only stay ordered consistently with the state
+        // advances while there is a single enumeration running at a time. callAsync allows
+        // concurrent callables, so relying on the completion order would be unsafe.
+        while (asyncCallsPending.get() < 1 && !splitterEnumerator.isAllSplitsFinished()) {
             asyncCallsPending.incrementAndGet();
-            context.callAsync(() -> splitterEnumerator.enumerateSplits(), this::onSplitsDiscovered);
+            context.callAsync(this::enumerateSplitsWithState, this::onSplitsDiscovered);
         }
 
         signalNoMoreSplitsIfDone();
     }
 
-    private void onSplitsDiscovered(List<JdbcSourceSplit> splits, Throwable error) {
+    /**
+     * Enumerates splits and captures the splitter state that corresponds to exactly those splits.
+     *
+     * <p>Both are captured on the same worker thread invocation, so the returned state and splits
+     * belong together. Splits must never be separated from the state that produced them, otherwise
+     * a checkpoint taken in between would either drop splits or duplicate them.
+     */
+    private EnumerationResult enumerateSplitsWithState() {
+        final List<JdbcSourceSplit> splits = splitterEnumerator.enumerateSplits();
+        return new EnumerationResult(splits, splitterEnumerator.serializableState());
+    }
+
+    private void onSplitsDiscovered(EnumerationResult result, Throwable error) {
         asyncCallsPending.decrementAndGet();
         if (error != null) {
             LOG.error("Failed to discover splits.", error);
@@ -152,8 +183,15 @@ public class JdbcSourceEnumerator
             return;
         }
 
-        if (splits != null && !splits.isEmpty()) {
-            assignOrBuffer(splits);
+        // The splits are now owned by this enumerator (buffered) or by a reader, so the state that
+        // produced them may be included in a checkpoint from here on. Committing it here, on the
+        // coordinator thread, keeps the checkpointed state in sync with the splits that have
+        // actually been handled; preDiscoverSplits keeps at most one enumeration in flight so the
+        // states are always committed in the order they were captured.
+        lastHandledSplitterState = result.state;
+
+        if (result.splits != null && !result.splits.isEmpty()) {
+            assignOrBuffer(result.splits);
             preDiscoverSplits();
         } else if (!splitterEnumerator.isAllSplitsFinished()) {
             preDiscoverSplits();
@@ -191,6 +229,21 @@ public class JdbcSourceEnumerator
                 LOG.info("No more splits available for subtask {}", subtaskId);
             }
             readersWaitingForSplits.clear();
+        }
+    }
+
+    /**
+     * The outcome of a single {@link SplitterEnumerator#enumerateSplits()} invocation: the produced
+     * splits together with the splitter state as of that invocation.
+     */
+    private static final class EnumerationResult {
+        private final @Nullable List<JdbcSourceSplit> splits;
+        private final @Nullable Serializable state;
+
+        private EnumerationResult(
+                @Nullable List<JdbcSourceSplit> splits, @Nullable Serializable state) {
+            this.splits = splits;
+            this.state = state;
         }
     }
 }
