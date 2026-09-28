@@ -146,8 +146,20 @@ public final class SqlTemplateSplitEnumerator extends JdbcSqlSplitEnumeratorBase
 
         @Override
         public JdbcSqlSplitEnumeratorBase<JdbcSourceSplit> create() {
+            // Stateful providers such as JdbcSlideTimingParameterProvider are mutated in place
+            // while enumerating. Starting from a null state would make a checkpoint that lands
+            // before the first batch is handled store null; on restore the provider could then
+            // not be rolled back and the in-flight first batch would be lost. Falling back to the
+            // provider's current state keeps the enumerator's state non-null from the start, so
+            // that restore resets the provider to a well-defined point.
+            final Serializable initialState =
+                    optionalSqlSplitEnumeratorState != null
+                            ? optionalSqlSplitEnumeratorState
+                            : (parameterValuesProvider == null
+                                    ? null
+                                    : parameterValuesProvider.getLatestOptionalState());
             return new SqlTemplateSplitEnumerator(
-                    this.optionalSqlSplitEnumeratorState, sqlTemplate, parameterValuesProvider);
+                    initialState, sqlTemplate, parameterValuesProvider);
         }
 
         @Override
