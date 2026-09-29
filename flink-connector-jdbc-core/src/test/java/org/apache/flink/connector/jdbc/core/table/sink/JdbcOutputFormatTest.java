@@ -779,6 +779,31 @@ class JdbcOutputFormatTest extends JdbcDataTestBase {
         }
     }
 
+    @Test
+    void testFlushOnADeadConnectionReconnectsAndReplaysTheBuffer() throws Exception {
+        TestEntry kept = TEST_DATA[0];
+        TestEntry deleted = TEST_DATA[1];
+        executeUpdate(
+                "INSERT INTO "
+                        + OUTPUT_TABLE_3
+                        + " (id, title) VALUES ("
+                        + deleted.id
+                        + ", 'old')");
+        openOutputFormat(new DerbyDialect(), new String[] {"id"}, batchOf(100, 1), false);
+
+        outputFormat.writeRecord(changelogRow(RowKind.INSERT, kept, "kept"));
+        outputFormat.writeRecord(changelogRow(RowKind.DELETE, deleted, "old"));
+
+        // the first attempt fails on the closed connection; the retry reconnects and re-prepares
+        // the exists, insert, update and delete statements on the new connection
+        Connection dead = outputFormat.getConnection();
+        dead.close();
+        outputFormat.flush();
+
+        assertThat(outputFormat.getConnection()).isNotSameAs(dead);
+        assertThat(titlesById()).containsOnly(entry(kept.id, "kept"));
+    }
+
     private void openOutputFormat(
             JdbcDialect dialect,
             String[] keyFields,
