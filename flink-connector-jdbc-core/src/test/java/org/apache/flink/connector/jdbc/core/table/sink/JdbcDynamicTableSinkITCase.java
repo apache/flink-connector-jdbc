@@ -42,6 +42,7 @@ import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService;
 import org.apache.flink.streaming.runtime.tasks.TestProcessingTimeService;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
+import org.apache.flink.table.api.ExplainDetail;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableResult;
@@ -489,10 +490,12 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
                                 "'sink.buffer-flush.max-rows' = '2'",
                                 "'sink.buffer-flush.interval' = '0'")));
 
-        tEnv.executeSql(
-                        String.format(
-                                "INSERT INTO %s SELECT * FROM %s", userTableSink, userTableLogs))
-                .await();
+        String insert =
+                String.format("INSERT INTO %s SELECT * FROM %s", userTableSink, userTableLogs);
+        // a rebalance instead of the key shuffle still gives the right end state in most runs
+        assertThat(tEnv.explainSql(insert, ExplainDetail.JSON_EXECUTION_PLAN))
+                .contains("\"ship_strategy\" : \"HASH\"");
+        tEnv.executeSql(insert).await();
 
         assertThat(userOutputTable.selectAllTable(getMetadata()))
                 .containsExactlyInAnyOrderElementsOf(testUserData());
