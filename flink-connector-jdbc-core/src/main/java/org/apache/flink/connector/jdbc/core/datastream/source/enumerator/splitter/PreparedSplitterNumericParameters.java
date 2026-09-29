@@ -37,6 +37,7 @@ public class PreparedSplitterNumericParameters implements Serializable {
     private int batchNum;
 
     public PreparedSplitterNumericParameters(long minVal, long maxVal) {
+        Preconditions.checkArgument(minVal <= maxVal, "minVal must not be larger than maxVal");
         this.minVal = minVal;
         this.maxVal = maxVal;
         this.batchNum = 0;
@@ -77,11 +78,14 @@ public class PreparedSplitterNumericParameters implements Serializable {
 
         Serializable[][] parameters = new Serializable[batchNum][2];
         long start = minVal;
-        for (int i = 0; i < batchNum; i++) {
+        for (int i = 0; i < batchNum - 1; i++) {
             long end = start + batchSize - 1 - (i >= bigBatchNum ? 1 : 0);
             parameters[i] = new Long[] {start, end};
             start = end + 1;
         }
+        // bigBatchNum is negative when batchSize does not divide the range, and the loop
+        // then overshoots maxVal
+        parameters[batchNum - 1] = new Long[] {start, maxVal};
         return parameters;
     }
 }
