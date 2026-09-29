@@ -72,4 +72,32 @@ class TrinoDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implements 
             }
         }
     }
+
+    @Disabled("Trino dont allow create tables with PK")
+    @Test
+    @Override
+    protected void testChangelogReducedWithinOneBuffer() throws Exception {
+        try (Connection conn = getMetadataDatabase().getConnection()) {
+            try {
+                userOutputTable.createTable(conn);
+                super.testChangelogReducedWithinOneBuffer();
+            } finally {
+                userOutputTable.deleteTable(conn);
+            }
+        }
+    }
+
+    @Disabled("Trino dont allow create tables with PK")
+    @Test
+    @Override
+    protected void testChangelogWithSinkParallelismAboveOne() throws Exception {
+        try (Connection conn = getMetadataDatabase().getConnection()) {
+            try {
+                userOutputTable.createTable(conn);
+                super.testChangelogWithSinkParallelismAboveOne();
+            } finally {
+                userOutputTable.deleteTable(conn);
+            }
+        }
+    }
 }
