@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.core.table;
 
+import org.apache.flink.FlinkVersion;
 import org.apache.flink.table.api.TableConfig;
 import org.apache.flink.table.planner.utils.StreamTableTestUtil;
 import org.apache.flink.table.planner.utils.TableTestBase;
@@ -27,8 +28,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.rules.TestName;
 
+import static org.assertj.core.api.Assumptions.assumeThat;
+
 /** Plan tests for JDBC connector, for example, testing projection push down. */
 class JdbcTablePlanTest extends TableTestBase {
+
+    /** Flink 2.4 spells the AND of pushed-down filters in upper case (FLINK-40021). */
+    private static final boolean UPPER_CASE_FILTER_AND = FlinkVersion.byCode("2.4").isPresent();
 
     private final StreamTableTestUtil util = streamTestUtil(TableConfig.getDefault());
 
@@ -95,8 +101,20 @@ class JdbcTablePlanTest extends TableTestBase {
         util.verifyExecPlan("SELECT id, time_col FROM jdbc LIMIT 3");
     }
 
+    /** Drop this test, its plan and UPPER_CASE_FILTER_AND with support for Flink below 2.4. */
     @Test
     void testFilterPushdown() {
+        assumeThat(UPPER_CASE_FILTER_AND).isFalse();
+        verifyFilterPushdown();
+    }
+
+    @Test
+    void testFilterPushdownSinceFlink24() {
+        assumeThat(UPPER_CASE_FILTER_AND).isTrue();
+        verifyFilterPushdown();
+    }
+
+    private void verifyFilterPushdown() {
         util.verifyExecPlan(
                 "SELECT id, time_col, real_col FROM jdbc WHERE id = 900001 AND time_col <> TIME '11:11:11' OR double_col >= -1000.23");
     }
