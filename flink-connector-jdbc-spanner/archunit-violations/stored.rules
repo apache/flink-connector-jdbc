@@ -1,0 +1,10 @@
+#
+#Thu Oct 01 22:34:56 JST 2026
+Return\ and\ argument\ types\ of\ methods\ annotated\ with\ @Public\ must\ be\ annotated\ with\ @Public.=0d508b36-1cb3-46a0-8b44-ab03515b6dd0
+ITCASE\ tests\ should\ use\ a\ MiniCluster\ resource\ or\ extension=ffb0beff-47a8-42ad-b77d-db364545c68e
+Production\ code\ must\ not\ call\ methods\ annotated\ with\ @VisibleForTesting=e6954f14-c6b5-4f2a-a6bd-e82e27bac826
+Options\ for\ connectors\ and\ formats\ should\ reside\ in\ a\ consistent\ package\ and\ be\ public\ API.=552777dd-45bc-4c9a-ac29-ba4ec65ba09a
+Tests\ inheriting\ from\ AbstractTestBase\ should\ have\ name\ ending\ with\ ITCase=165e7b72-6990-4c95-8de6-fe5bf07acccb
+Return\ and\ argument\ types\ of\ methods\ annotated\ with\ @PublicEvolving\ must\ be\ annotated\ with\ @Public(Evolving).=1316651e-fb17-4a24-a942-f808296b0dc7
+Classes\ in\ API\ packages\ should\ have\ at\ least\ one\ API\ visibility\ annotation.=587d66bd-c2ad-4670-ac2b-5b925740df14
+Connector\ production\ code\ must\ depend\ only\ on\ public\ API\ when\ outside\ of\ connector\ packages=d403fa7e-9995-4b64-9585-f244105875f0
