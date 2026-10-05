@@ -29,6 +29,7 @@ import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitReader;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsAddition;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsChange;
+import org.apache.flink.connector.jdbc.core.datastream.connection.ConnectionProvider;
 import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
 import org.apache.flink.connector.jdbc.core.datastream.source.split.JdbcSourceSplit;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
@@ -334,6 +335,30 @@ public class JdbcSourceSplitReader<T>
 
     private void getOrEstablishConnection() throws SQLException, ClassNotFoundException {
         connection = connectionProvider.getOrEstablishConnection();
+        String globalSnapshotId = currentSplit != null ? currentSplit.getGlobalSnapshotId() : null;
+        if (globalSnapshotId != null) {
+            // The split must be read within the enumerator's exported snapshot: joining it opens
+            // a REPEATABLE READ transaction on the connection. Flipping the auto-commit flag would
+            // commit that transaction and silently read outside the snapshot, so skip it here.
+            if (!(connectionProvider instanceof ConnectionProvider)
+                    || !((ConnectionProvider) connectionProvider).supportsGlobalSnapshot()) {
+                // Fail closed: reading the split outside its snapshot would silently violate the
+                // consistency the split's snapshot id promises.
+                throw new IllegalStateException(
+                        "Split "
+                                + currentSplit.splitId()
+                                + " must be read within global snapshot "
+                                + globalSnapshotId
+                                + ", but the connection provider "
+                                + connectionProvider.getClass().getName()
+                                + " does not support joining one.");
+            }
+            ((ConnectionProvider) connectionProvider).joinGlobalSnapshot(globalSnapshotId);
+            // Joining may have re-established the connection inside the provider; re-read it so
+            // the statement is prepared on the connection that actually holds the snapshot.
+            connection = connectionProvider.getConnection();
+            return;
+        }
         if (autoCommit == null) {
             return;
         }
