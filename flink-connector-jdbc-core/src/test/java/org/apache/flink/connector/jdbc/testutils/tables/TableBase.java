@@ -52,8 +52,10 @@ import java.util.stream.Stream;
 /** Base table operations. * */
 public abstract class TableBase<T> implements TableManaged {
 
-    private final String name;
-    private final TableField[] fields;
+    public static final String DEFAULT_PRIMARY_KEY_CONSTRAINT_NAME = "PRIMARY";
+
+    protected final String name;
+    protected final TableField[] fields;
 
     protected TableBase(String name, TableField[] fields) {
         Preconditions.checkArgument(name != null && !name.isEmpty(), "Table name must be defined");
@@ -69,7 +71,7 @@ public abstract class TableBase<T> implements TableManaged {
         return name;
     }
 
-    private Stream<TableField> getStreamFields() {
+    protected Stream<TableField> getStreamFields() {
         return Arrays.stream(this.fields);
     }
 
@@ -120,7 +122,7 @@ public abstract class TableBase<T> implements TableManaged {
                 .toArray();
     }
 
-    public Schema getTableSchema() {
+    public Schema getTableSchema(String pkConstraintName) {
         Schema.Builder schema = Schema.newBuilder();
         getStreamFields().forEach(field -> schema.column(field.getName(), field.getDataType()));
 
@@ -129,9 +131,13 @@ public abstract class TableBase<T> implements TableManaged {
                         .filter(TableField::isPkField)
                         .map(TableField::getName)
                         .collect(Collectors.joining(", "));
-        schema.primaryKeyNamed("PRIMARY", pkFields);
+        schema.primaryKeyNamed(pkConstraintName, pkFields);
 
         return schema.build();
+    }
+
+    public Schema getTableSchema() {
+        return getTableSchema(DEFAULT_PRIMARY_KEY_CONSTRAINT_NAME);
     }
 
     public ResolvedSchema getTableResolvedSchema() {
