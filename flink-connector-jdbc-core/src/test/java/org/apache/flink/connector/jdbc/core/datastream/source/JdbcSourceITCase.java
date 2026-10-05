@@ -22,6 +22,7 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
+import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.PreparedSplitterEnumerator;
 import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -159,6 +160,25 @@ class JdbcSourceITCase extends JdbcDataTestBase implements JdbcITCaseBase {
     }
 
     /** A sink function to collect the records. */
+    @Test
+    void testReadWithSplitterWithoutParameters() throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setParallelism(2);
+        JdbcSource<TestEntry> jdbcSource =
+                JdbcSource.<TestEntry>builder()
+                        .setTypeInformation(TypeInformation.of(TestEntry.class))
+                        .setSplitter(PreparedSplitterEnumerator.of(sql))
+                        .setDBUrl(getMetadata().getJdbcUrl())
+                        .setDriverName(getMetadata().getDriverClass())
+                        .setResultExtractor(extractor)
+                        .build();
+        env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
+                .addSink(new TestingSinkFunction());
+        env.execute();
+        assertThat(collectedRecords).containsExactlyInAnyOrder(TEST_DATA);
+    }
+
     static class TestingSinkFunction implements SinkFunction<TestEntry> {
 
         @Override
