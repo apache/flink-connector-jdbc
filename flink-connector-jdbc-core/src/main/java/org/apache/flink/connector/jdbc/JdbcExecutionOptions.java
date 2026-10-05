@@ -33,12 +33,15 @@ public class JdbcExecutionOptions implements Serializable {
     private final long batchIntervalMs;
     private final int batchSize;
     private final int maxRetries;
+    private final boolean bulkInsertEnabled;
 
-    private JdbcExecutionOptions(long batchIntervalMs, int batchSize, int maxRetries) {
+    private JdbcExecutionOptions(
+            long batchIntervalMs, int batchSize, int maxRetries, boolean bulkInsertEnabled) {
         Preconditions.checkArgument(maxRetries >= 0);
         this.batchIntervalMs = batchIntervalMs;
         this.batchSize = batchSize;
         this.maxRetries = maxRetries;
+        this.bulkInsertEnabled = bulkInsertEnabled;
     }
 
     public long getBatchIntervalMs() {
@@ -53,6 +56,16 @@ public class JdbcExecutionOptions implements Serializable {
         return maxRetries;
     }
 
+    /**
+     * Returns whether the dialect's bulk insert optimization is enabled. The selected dialect must
+     * implement {@link
+     * org.apache.flink.connector.jdbc.core.database.dialect.JdbcBulkInsertDialect}; otherwise the
+     * sink fails fast at build time.
+     */
+    public boolean isBulkInsertEnabled() {
+        return bulkInsertEnabled;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -64,12 +77,13 @@ public class JdbcExecutionOptions implements Serializable {
         JdbcExecutionOptions that = (JdbcExecutionOptions) o;
         return batchIntervalMs == that.batchIntervalMs
                 && batchSize == that.batchSize
-                && maxRetries == that.maxRetries;
+                && maxRetries == that.maxRetries
+                && bulkInsertEnabled == that.bulkInsertEnabled;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(batchIntervalMs, batchSize, maxRetries);
+        return Objects.hash(batchIntervalMs, batchSize, maxRetries, bulkInsertEnabled);
     }
 
     public static Builder builder() {
@@ -86,6 +100,7 @@ public class JdbcExecutionOptions implements Serializable {
         private long intervalMs = DEFAULT_INTERVAL_MILLIS;
         private int size = DEFAULT_SIZE;
         private int maxRetries = DEFAULT_MAX_RETRY_TIMES;
+        private boolean bulkInsertEnabled = false;
 
         public Builder withBatchSize(int size) {
             this.size = size;
@@ -102,8 +117,21 @@ public class JdbcExecutionOptions implements Serializable {
             return this;
         }
 
+        /**
+         * Enable or disable the dialect's bulk insert optimization. The selected dialect must
+         * implement {@link
+         * org.apache.flink.connector.jdbc.core.database.dialect.JdbcBulkInsertDialect}; when
+         * enabled with a dialect that does not, the sink fails fast at build time.
+         *
+         * <p>Default is {@code false}.
+         */
+        public Builder withBulkInsertEnabled(boolean enabled) {
+            this.bulkInsertEnabled = enabled;
+            return this;
+        }
+
         public JdbcExecutionOptions build() {
-            return new JdbcExecutionOptions(intervalMs, size, maxRetries);
+            return new JdbcExecutionOptions(intervalMs, size, maxRetries, bulkInsertEnabled);
         }
     }
 }
