@@ -16,7 +16,23 @@
 # limitations under the License.
 ################################################################################
 
-version: 3.3.0-SNAPSHOT
+version: 4.0-SNAPSHOT
 variants:
-  - maven: flink-connector-jdbc
-    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc/$full_version/flink-connector-jdbc-$full_version.jar
+  - maven: flink-connector-jdbc-core
+    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-core/$full_version/flink-connector-jdbc-core-$full_version.jar
+  - maven: flink-connector-jdbc-cratedb
+    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-cratedb/$full_version/flink-connector-jdbc-cratedb-$full_version.jar
+  - maven: flink-connector-jdbc-db2
+    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-db2/$full_version/flink-connector-jdbc-db2-$full_version.jar
+  - maven: flink-connector-jdbc-mysql
+    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-mysql/$full_version/flink-connector-jdbc-mysql-$full_version.jar
+  - maven: flink-connector-jdbc-oceanbase
+    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-oceanbase/$full_version/flink-connector-jdbc-oceanbase-$full_version.jar
+  - maven: flink-connector-jdbc-oracle
+    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-oracle/$full_version/flink-connector-jdbc-oracle-$full_version.jar
+  - maven: flink-connector-jdbc-postgres
+    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-postgres/$full_version/flink-connector-jdbc-postgres-$full_version.jar
+  - maven: flink-connector-jdbc-sqlserver
+    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-sqlserver/$full_version/flink-connector-jdbc-sqlserver-$full_version.jar
+  - maven: flink-connector-jdbc-trino
+    sql_url: https://repo.maven.apache.org/maven2/org/apache/flink/flink-connector-jdbc-trino/$full_version/flink-connector-jdbc-trino-$full_version.jar

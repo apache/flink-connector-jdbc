@@ -29,9 +29,22 @@ under the License.
 This connector provides a source that read data from a JDBC database and
 provides a sink that writes data to a JDBC database.
 
-To use it, add the following dependency to your project (along with your JDBC driver):
+Since version 4.0 the connector is no longer published as a single artifact. It is split into
+`flink-connector-jdbc-core`, which contains the source and the sink, and one artifact per supported
+database, which contains the dialect and the catalog for that database. Add the artifact for the
+database you are connecting to (along with your JDBC driver); it pulls in
+`flink-connector-jdbc-core` transitively. For example, for PostgreSQL:
 
-{{< connector_artifact flink-connector-jdbc jdbc >}}
+{{< connector_artifact flink-connector-jdbc-postgres jdbc >}}
+
+The available database artifacts are `flink-connector-jdbc-mysql`, `flink-connector-jdbc-oracle`,
+`flink-connector-jdbc-postgres`, `flink-connector-jdbc-sqlserver`, `flink-connector-jdbc-cratedb`,
+`flink-connector-jdbc-db2`, `flink-connector-jdbc-trino` and `flink-connector-jdbc-oceanbase`. The
+Derby dialect ships in `flink-connector-jdbc-core`.
+
+The `JdbcSource` and `JdbcSink` themselves live in `flink-connector-jdbc-core` and work against any
+JDBC driver, so a database artifact is only required for the Table/SQL API, where the dialect is used
+to generate statements.
 
 Note that the streaming connectors are currently __NOT__ part of the binary distribution.
 See how to link with them for cluster execution [here]({{< ref "docs/dev/configuration/overview" >}}).
@@ -42,28 +55,24 @@ Please consult your database documentation on how to add the corresponding drive
 
 ### Usage
 
-{{< tabs "4ab65f13-607a-411a-8d24-e709f701cd41" >}}
-{{< tab "Java" >}}
 ```java
-JdbcSource source = JdbcSourceBuilder.builder()
+JdbcSource<OUT> source = JdbcSource.<OUT>builder()
         // Required
-        .setSql(...)
+        .setSplitter(...)
         .setResultExtractor(...)
+        .setTypeInformation(...)
+        .setDBUrl(...)
+        .setDriverName(...)
         .setUsername(...)
         .setPassword(...)
-        .setDriverName(...)
-        .setDBUrl(...)
-        .setTypeInformation(...)
-        
-         // Optional
-        .setContinuousUnBoundingSettings(...)
-        .setJdbcParameterValuesProvider(...)
+
+        // Optional
         .setDeliveryGuarantee(...)
         .setConnectionCheckTimeoutSeconds(...)
-        
+
         // The extended JDBC connection property passing
         .setConnectionProperty("key", "value")
-        
+
         // other attributes
         .setSplitReaderFetchBatchSize(...)
         .setResultSetType(...)
@@ -72,15 +81,79 @@ JdbcSource source = JdbcSourceBuilder.builder()
         .setResultSetFetchSize(...)
         .setConnectionProvider(...)
         .build();
+```
 
+`setSplitter` describes the query and how it is divided into splits, and is the only required way to
+define what the source reads. The older `setSql` / `setJdbcParameterValuesProvider` pair is
+deprecated in favour of it; see [Deprecated query API](#deprecated-query-api). Setting both a
+splitter and a query fails at `build()` time.
+
+### SplitterEnumerator
+
+A `SplitterEnumerator` produces the `JdbcSourceSplit`s that the readers execute, and decides whether
+the source is bounded or continuously unbounded.
+
+#### PreparedSplitterEnumerator
+
+`PreparedSplitterEnumerator` builds bounded splits from a query template. With no parameters the
+query becomes a single split:
+
+```java
+PreparedSplitterEnumerator.of("select * from books");
 ```
-{{< /tab >}}
-{{< tab "Python" >}}
-```python
-Still not supported in Python API.
+
+To read in parallel, provide a parameterized query template (i.e. a valid
+[JDBC prepared statement](https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/PreparedStatement.html))
+together with the binding values. One split is generated per row of the parameter array:
+
+```java
+String query = "select * from books where author = ?";
+Serializable[][] queryParameters = new String[2][1];
+queryParameters[0] = new String[]{"Kumar"};
+queryParameters[1] = new String[]{"Tan Ah Teck"};
+
+PreparedSplitterEnumerator.of(query, queryParameters);
 ```
-{{< /tab >}}
-{{< /tabs >}}
+
+For a numeric range there are convenience overloads that generate the parameter pairs for you. The
+template must take a lower and an upper bound, and the range is divided either into splits of a given
+size or into a given number of splits:
+
+```java
+// splits of at most 1000 values each
+PreparedSplitterEnumerator.of("select * from books where id between ? and ?", 1L, 10_000L, 1000L);
+
+// exactly 10 splits
+PreparedSplitterEnumerator.of("select * from books where id between ? and ?", 1L, 10_000L, 10);
+```
+
+Note that the two overloads differ only in whether the last argument is a `long` (batch size) or an
+`int` (number of batches). The same can be expressed explicitly with
+`PreparedSplitterNumericParameters`:
+
+```java
+PreparedSplitterEnumerator.of(
+        "select * from books where id between ? and ?",
+        new PreparedSplitterNumericParameters(1L, 10_000L).withBatchSize(1000L));
+```
+
+#### SlideTimingSplitterEnumerator
+
+`SlideTimingSplitterEnumerator` generates splits continuously from a sliding window over a timestamp
+column, which makes the source unbounded. The query template takes the window start and end:
+
+```java
+SlideTimingSplitterEnumerator.builder()
+        .setSqlTemplate("select * from books where ts >= ? and ts < ?")
+        .setStartMillis(startMillis)
+        .setSlideSpanMillis(1000L)
+        .setSlideStepMillis(1000L)
+        .setSplitGenerateDelayMillis(100L)
+        .build();
+```
+
+`setSplitGenerateDelayMillis` holds a window back for the given duration before it is emitted as a
+split, which gives late-arriving rows time to land.
 
 ### Delivery guarantee
 
@@ -93,12 +166,16 @@ remains unchanged in the whole lifecycle of `JdbcSourceSplit` processing.
 Unfortunately, this condition is not met in most databases and data scenarios.
 See [FLIP-239](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=217386271) for more details.
 
+Using `DeliveryGuarantee.EXACTLY_ONCE` requires `setResultSetType` to be either
+`ResultSet.TYPE_SCROLL_INSENSITIVE` or `ResultSet.CONCUR_READ_ONLY`; other values fail at `build()`
+time.
+
 ### ResultExtractor
 
 An `Extractor` to extract a record from `ResultSet` executed by a sql.
 
 ```java
-import org.apache.flink.connector.jdbc.source.reader.extractor.ResultExtractor;
+import org.apache.flink.connector.jdbc.core.datastream.source.reader.extractor.ResultExtractor;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -113,74 +190,17 @@ class Book {
     final String title;
 };
 
-ResultExtractor resultExtractor = new ResultExtractor() {
+ResultExtractor<Book> resultExtractor = new ResultExtractor<Book>() {
     @Override
-    public Object extract(ResultSet resultSet) throws SQLException {
-        return new Book(resultSet.getLong("id"), resultSet.getString("titile"));
+    public Book extract(ResultSet resultSet) throws SQLException {
+        return new Book(resultSet.getLong("id"), resultSet.getString("title"));
     }
 };
-
-```
-
-### JdbcParameterValuesProvider
-
-A provider to provide parameters in sql to fulfill actual value in the corresponding placeholders, which is in the form of two-dimension array.
-
-```java
-
-class TestEntry {
-    ...
-};
-
-ResultSetExtractor extractor = ...;
-
-StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
-JdbcSource<TestEntry> jdbcSource =
-        JdbcSource.<TestEntry>builder()
-                .setTypeInformation(TypeInformation.of(TestEntry.class))
-                .setSql("select * from testing_table where id >= ? and id <= ?")
-                .setJdbcParameterValuesProvider(
-                        new JdbcGenericParameterValuesProvider(
-                                new Serializable[][] {{1001, 1005}, {1006, 1010}}))
-                ...
-                .build();
-env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
-        .addSink(new DiscardSink());
-env.execute();
-
-```
-
-### Minimalist Streaming Semantic and ContinuousUnBoundingSettings
-
-If you want to generate continuous milliseconds parameters based on sliding-window,
-please have a try on setting the followed attributes of `JdbcSource`:
-
-```java
-
-jdbcSourceBuilder =
-        JdbcSource.<TestEntry>builder()
-        .setSql("select * from testing_table where ts >= ? and ts < ?")
-        
-        // Required for streaming related semantic.
-        .setContinuousUnBoundingSettings(new ContinuousUnBoundingSettings(Duration.ofMillis(10L), Duration.ofSeconds(1L)))
-        .setJdbcParameterValuesProvider(new JdbcSlideTimingParameterProvider(0L, 1000L, 1000L, 100L))
-        .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
-        .setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE);
-
-        // other attributes
-        ...
-        
-JdbcSource source = jdbcSourceBuilder.build();
 ```
 
 ### Full example
 
-{{< tabs "4ab65f13-608a-411a-8d24-e303f348ds81" >}}
-{{< tab "Java" >}}
-
 ```java
-
 public class JdbcSourceExample {
 
     static class Book {
@@ -198,11 +218,11 @@ public class JdbcSourceExample {
         JdbcSource<Book> jdbcSource =
                 JdbcSource.<Book>builder()
                         .setTypeInformation(TypeInformation.of(Book.class))
-                        .setSql("select * from testing_table where id < ?")
-                        .setDBUrl(...)
-                        .setJdbcParameterValuesProvider(
-                                new JdbcGenericParameterValuesProvider(
+                        .setSplitter(
+                                PreparedSplitterEnumerator.of(
+                                        "select * from books where id < ?",
                                         new Serializable[][] {{1001L}}))
+                        .setDBUrl(...)
                         .setDriverName(...)
                         .setResultExtractor(resultSet ->
                             new Book(
@@ -210,47 +230,74 @@ public class JdbcSourceExample {
                                 resultSet.getString("title")))
                         .build();
         env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
-                .addSink(new DiscardingSink());
+                .sinkTo(new DiscardingSink<>());
         env.execute();
     }
 }
 ```
-{{< /tab >}}
-{{< tab "Python" >}}
-```python
-Still not supported in Python API.
-```
-{{< /tab >}}
-{{< /tabs >}}
 
-## `JdbcSink.sink`
+### Deprecated query API
 
-The JDBC sink provides at-least-once guarantee.
-Effectively though, exactly-once can be achieved by crafting upsert SQL statements or idempotent SQL updates.
-Configuration goes as follows:
+Before `SplitterEnumerator` was introduced, the query was defined with `setSql` and the splits with a
+`JdbcParameterValuesProvider`. Both methods are deprecated and are equivalent to a
+`PreparedSplitterEnumerator`:
 
-{{< tabs "4ab65f13-607a-411a-8d24-e709f701cd4c" >}}
-{{< tab "Java" >}}
 ```java
-JdbcSink.sink(
-      	sqlDmlStatement,                       // mandatory
-      	jdbcStatementBuilder,                  // mandatory   	
-      	jdbcExecutionOptions,                  // optional
-      	jdbcConnectionOptions                  // mandatory
-);
+// deprecated
+JdbcSource.<TestEntry>builder()
+        .setSql("select * from testing_table where id >= ? and id <= ?")
+        .setJdbcParameterValuesProvider(
+                new JdbcGenericParameterValuesProvider(
+                        new Serializable[][] {{1001, 1005}, {1006, 1010}}))
+        ...
+
+// current
+JdbcSource.<TestEntry>builder()
+        .setSplitter(
+                PreparedSplitterEnumerator.of(
+                        "select * from testing_table where id >= ? and id <= ?",
+                        new Serializable[][] {{1001, 1005}, {1006, 1010}}))
+        ...
 ```
-{{< /tab >}}
-{{< tab "Python" >}}
-```python
-JdbcSink.sink(
-    sql_dml_statement,          # mandatory
-    type_info,                  # mandatory
-    jdbc_connection_options,    # mandatory
-    jdbc_execution_options      # optional
-)
+
+On this deprecated path, continuous unbounded reads are configured with
+`setContinuousUnBoundingSettings` and a `JdbcSlideTimingParameterProvider`, which must be set
+together:
+
+```java
+// deprecated
+JdbcSource.<TestEntry>builder()
+        .setSql("select * from testing_table where ts >= ? and ts < ?")
+        .setContinuousUnBoundingSettings(
+                new ContinuousUnBoundingSettings(Duration.ofMillis(10L), Duration.ofSeconds(1L)))
+        .setJdbcParameterValuesProvider(
+                new JdbcSlideTimingParameterProvider(0L, 1000L, 1000L, 100L))
+        .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
+        .setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE);
 ```
-{{< /tab >}}
-{{< /tabs >}}
+
+Use [`SlideTimingSplitterEnumerator`](#slidetimingsplitterenumerator) instead.
+`setContinuousUnBoundingSettings` has no effect when a splitter is set — a splitter declares its own
+boundedness.
+
+## JDBC Sink
+
+The JDBC sink is built with `JdbcSink.builder()`. It provides an at-least-once and an exactly-once
+variant, selected by which `build` method you call. Effectively though, exactly-once can also be
+achieved on the at-least-once path by crafting upsert SQL statements or idempotent SQL updates.
+
+```java
+JdbcSink<IN> sink = JdbcSink.<IN>builder()
+        .withQueryStatement(sqlDmlStatement, jdbcStatementBuilder)   // mandatory
+        .withExecutionOptions(jdbcExecutionOptions)                  // optional
+        .buildAtLeastOnce(jdbcConnectionOptions);                    // mandatory
+```
+
+The sink is attached to a stream with `sinkTo`:
+
+```java
+stream.sinkTo(sink);
+```
 
 ### SQL DML statement and JDBC statement builder
 
@@ -266,12 +313,13 @@ It then repeatedly calls a user-provided function to update that prepared statem
 (preparedStatement, someRecord) -> { ... update here the preparedStatement with values from someRecord ... }
 ```
 
+The two are passed together to `withQueryStatement`. A `JdbcQueryStatement` can also be supplied
+directly if the query itself has to be derived from the record.
+
 ### JDBC execution options
 
 The SQL DML statements are executed in batches, which can optionally be configured with the following instance:
 
-{{< tabs "4ab65f13-607a-411a-8d24-e709f512ed6k" >}}
-{{< tab "Java" >}}
 ```java
 JdbcExecutionOptions.builder()
         .withBatchIntervalMs(200)             // optional: default = 0, meaning no time-based execution is done
@@ -279,17 +327,6 @@ JdbcExecutionOptions.builder()
         .withMaxRetries(5)                    // optional: default = 3
         .build();
 ```
-{{< /tab >}}
-{{< tab "Python" >}}
-```python
-JdbcExecutionOptions.builder() \
-    .with_batch_interval_ms(2000) \
-    .with_batch_size(100) \
-    .with_max_retries(5) \
-    .build()
-```
-{{< /tab >}}
-{{< /tabs >}}
 
 A JDBC batch is executed as soon as one of the following conditions is true:
 
@@ -299,12 +336,12 @@ A JDBC batch is executed as soon as one of the following conditions is true:
 
 ### JDBC connection parameters
 
-The connection to the database is configured with a `JdbcConnectionOptions` instance.
+The connection to the database is configured with a `JdbcConnectionOptions` instance, which is passed
+to `buildAtLeastOnce`. A `JdbcConnectionProvider` can be passed instead to reuse an existing
+connection strategy.
 
 ### Full example
 
-{{< tabs "4ab65f13-608a-411a-8d24-e303f348ds8d" >}}
-{{< tab "Java" >}}
 ```java
 public class JdbcSinkExample {
 
@@ -324,137 +361,94 @@ public class JdbcSinkExample {
     public static void main(String[] args) throws Exception {
         var env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        env.fromElements(
+        env.fromData(
                 new Book(101L, "Stream Processing with Apache Flink", "Fabian Hueske, Vasiliki Kalavri", 2019),
                 new Book(102L, "Streaming Systems", "Tyler Akidau, Slava Chernyak, Reuven Lax", 2018),
                 new Book(103L, "Designing Data-Intensive Applications", "Martin Kleppmann", 2017),
                 new Book(104L, "Kafka: The Definitive Guide", "Gwen Shapira, Neha Narkhede, Todd Palino", 2017)
-        ).addSink(
-                JdbcSink.sink(
-                        "insert into books (id, title, authors, year) values (?, ?, ?, ?)",
-                        (statement, book) -> {
-                            statement.setLong(1, book.id);
-                            statement.setString(2, book.title);
-                            statement.setString(3, book.authors);
-                            statement.setInt(4, book.year);
-                        },
-                        JdbcExecutionOptions.builder()
-                                .withBatchSize(1000)
-                                .withBatchIntervalMs(200)
-                                .withMaxRetries(5)
-                                .build(),
-                        new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-                                .withUrl("jdbc:postgresql://dbhost:5432/postgresdb")
-                                .withDriverName("org.postgresql.Driver")
-                                .withUsername("someUser")
-                                .withPassword("somePassword")
-                                .build()
-                ));
-                
+        ).sinkTo(
+                JdbcSink.<Book>builder()
+                        .withQueryStatement(
+                                "insert into books (id, title, authors, year) values (?, ?, ?, ?)",
+                                (statement, book) -> {
+                                    statement.setLong(1, book.id);
+                                    statement.setString(2, book.title);
+                                    statement.setString(3, book.authors);
+                                    statement.setInt(4, book.year);
+                                })
+                        .withExecutionOptions(
+                                JdbcExecutionOptions.builder()
+                                        .withBatchSize(1000)
+                                        .withBatchIntervalMs(200)
+                                        .withMaxRetries(5)
+                                        .build())
+                        .buildAtLeastOnce(
+                                new JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
+                                        .withUrl("jdbc:postgresql://dbhost:5432/postgresdb")
+                                        .withDriverName("org.postgresql.Driver")
+                                        .withUsername("someUser")
+                                        .withPassword("somePassword")
+                                        .build()));
+
         env.execute();
     }
 }
 ```
-{{< /tab >}}
-{{< tab "Python" >}}
-```python
-env = StreamExecutionEnvironment.get_execution_environment()
-type_info = Types.ROW([Types.INT(), Types.STRING(), Types.STRING(), Types.INT()])
-env.from_collection(
-    [(101, "Stream Processing with Apache Flink", "Fabian Hueske, Vasiliki Kalavri", 2019),
-     (102, "Streaming Systems", "Tyler Akidau, Slava Chernyak, Reuven Lax", 2018),
-     (103, "Designing Data-Intensive Applications", "Martin Kleppmann", 2017),
-     (104, "Kafka: The Definitive Guide", "Gwen Shapira, Neha Narkhede, Todd Palino", 2017)
-     ], type_info=type_info) \
-    .add_sink(
-    JdbcSink.sink(
-        "insert into books (id, title, authors, year) values (?, ?, ?, ?)",
-        type_info,
-        JdbcConnectionOptions.JdbcConnectionOptionsBuilder()
-            .with_url('jdbc:postgresql://dbhost:5432/postgresdb')
-            .with_driver_name('org.postgresql.Driver')
-            .with_user_name('someUser')
-            .with_password('somePassword')
-            .build(),
-        JdbcExecutionOptions.builder()
-            .with_batch_interval_ms(1000)
-            .with_batch_size(200)
-            .with_max_retries(5)
-            .build()
-    ))
 
-env.execute()
-```
-{{< /tab >}}
-{{< /tabs >}}
+### Exactly-once sink
 
-## `JdbcSink.exactlyOnceSink`
-
-Since 1.13, Flink JDBC sink supports exactly-once mode.
-The implementation relies on the JDBC driver support of XA
+The exactly-once implementation relies on the JDBC driver support of XA
 [standard](https://pubs.opengroup.org/onlinepubs/009680699/toc.pdf).
 Most drivers support XA if the database also supports XA (so the driver is usually the same).
 
-To use it, create a sink using `exactlyOnceSink()` method as above and additionally provide:
+To use it, call `buildExactlyOnce()` instead of `buildAtLeastOnce()` and provide:
 - `JdbcExactlyOnceOptions`
-- `JdbcExecutionOptions`
-- [XA DataSource](https://docs.oracle.com/javase/8/docs/api/javax/sql/XADataSource.html) Supplier
+- an [XA DataSource](https://docs.oracle.com/javase/8/docs/api/javax/sql/XADataSource.html) Supplier
 
 For example:
 
-{{< tabs "4ab65f13-608a-411a-8d24-e304f627ac8f" >}}
-{{< tab "Java" >}}
 ```java
 StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 env
-        .fromElements(...)
-        .addSink(JdbcSink.exactlyOnceSink(
-                "insert into books (id, title, author, price, qty) values (?,?,?,?,?)",
-                (ps, t) -> {
-                    ps.setInt(1, t.id);
-                    ps.setString(2, t.title);
-                    ps.setString(3, t.author);
-                    ps.setDouble(4, t.price);
-                    ps.setInt(5, t.qty);
-                },
-                JdbcExecutionOptions.builder()
-                    .withMaxRetries(0)
-                    .build(),
-                JdbcExactlyOnceOptions.defaults(),
-                () -> {
-                    // create a driver-specific XA DataSource
-                    // The following example is for derby
-                    EmbeddedXADataSource ds = new EmbeddedXADataSource();
-                    ds.setDatabaseName("my_db");
-                    return ds;
-                });
+        .fromData(...)
+        .sinkTo(JdbcSink.<Book>builder()
+                .withQueryStatement(
+                        "insert into books (id, title, author, price, qty) values (?,?,?,?,?)",
+                        (ps, t) -> {
+                            ps.setInt(1, t.id);
+                            ps.setString(2, t.title);
+                            ps.setString(3, t.author);
+                            ps.setDouble(4, t.price);
+                            ps.setInt(5, t.qty);
+                        })
+                .withExecutionOptions(
+                        JdbcExecutionOptions.builder()
+                                .withMaxRetries(0)
+                                .build())
+                .buildExactlyOnce(
+                        JdbcExactlyOnceOptions.defaults(),
+                        () -> {
+                            // create a driver-specific XA DataSource
+                            PGXADataSource ds = new PGXADataSource();
+                            ds.setUrl("jdbc:postgresql://localhost:5432/postgres");
+                            ds.setUser(username);
+                            ds.setPassword(password);
+                            return ds;
+                        }));
 env.execute();
 ```
-{{< /tab >}}
-{{< tab "Python" >}}
-```python
-Still not supported in Python API.
-```
-{{< /tab >}}
-{{< /tabs >}}
+
+An `XaConnectionProvider` can be passed instead of the supplier when the connection strategy has to
+be controlled directly.
 
 **NOTE:** Some databases only allow a single XA transaction per connection (e.g. PostgreSQL, MySQL).
 In such cases, please use the following API to construct `JdbcExactlyOnceOptions`:
 
-{{< tabs "4ab65f13-608a-411a-8d24-e304f627cd4e" >}}
-{{< tab "Java" >}}
 ```java
 JdbcExactlyOnceOptions.builder()
     .withTransactionPerConnection(true)
     .build();
 ```
-{{< /tab >}}
-{{< tab "Python" >}}
-```python
-Still not supported in Python API.
-```
-{{< /tab >}}
-{{< /tabs >}}
 
 This will make Flink use a separate connection for every XA transaction. This may require adjusting connection limits.
 For PostgreSQL and MySQL, this can be done by increasing `max_connections`.
@@ -463,63 +457,44 @@ Furthermore, XA needs to be enabled and/or configured in some databases.
 For PostgreSQL, you should set `max_prepared_transactions` to some value greater than zero.
 For MySQL v8+, you should grant `XA_RECOVER_ADMIN` to Flink DB user.
 
-**ATTENTION:** Currently, `JdbcSink.exactlyOnceSink` can ensure exactly once semantics
+**ATTENTION:** Currently, the exactly-once sink can ensure exactly once semantics
 with `JdbcExecutionOptions.maxRetries == 0`; otherwise, duplicated results maybe produced.
 
 ### `XADataSource` examples
 PostgreSQL `XADataSource` example:
-{{< tabs "4ab65f13-608a-411a-8d24-e304f323ab3a" >}}
-{{< tab "Java" >}}
 ```java
 PGXADataSource xaDataSource = new org.postgresql.xa.PGXADataSource();
 xaDataSource.setUrl("jdbc:postgresql://localhost:5432/postgres");
 xaDataSource.setUser(username);
 xaDataSource.setPassword(password);
 ```
-{{< /tab >}}
-{{< tab "Python" >}}
-```python
-Still not supported in Python API.
-```
-{{< /tab >}}
-{{< /tabs >}}
 
 MySQL `XADataSource` example:
-{{< tabs "4ab65f13-608a-411a-8d24-b213f323ca3c" >}}
-{{< tab "Java" >}}
 ```java
 MysqlXADataSource xaDataSource = new com.mysql.cj.jdbc.MysqlXADataSource();
 xaDataSource.setUrl("jdbc:mysql://localhost:3306/");
 xaDataSource.setUser(username);
 xaDataSource.setPassword(password);
 ```
-{{< /tab >}}
-{{< tab "Python" >}}
-```python
-Still not supported in Python API.
-```
-{{< /tab >}}
-{{< /tabs >}}
 
 Oracle `XADataSource` example:
-{{< tabs "4ab65f13-608a-411a-8d24-b213f337ad5f" >}}
-{{< tab "Java" >}}
 ```java
 OracleXADataSource xaDataSource = new oracle.jdbc.xa.OracleXADataSource();
 xaDataSource.setURL("jdbc:oracle:oci8:@");
 xaDataSource.setUser("scott");
 xaDataSource.setPassword("tiger");
 ```
-{{< /tab >}}
-{{< tab "Python" >}}
-```python
-Still not supported in Python API.
-```
-{{< /tab >}}
-{{< /tabs >}}
 
 Please also take Oracle connection pooling into account.
 
-Please refer to the `JdbcXaSinkFunction` documentation for more details.
+## Lineage
+
+`JdbcSource` and `JdbcSink` expose lineage information as described in
+[FLIP-314](https://cwiki.apache.org/confluence/display/FLINK/FLIP-314%3A+Support+Customized+Job+Lineage+Listener),
+as do the Table API source and lookup function. No configuration is needed on the connector side; the
+information is delivered to any `JobStatusChangedListener` registered in the cluster.
+
+The dataset namespace is derived from the JDBC URL and the dataset name from the queries the job
+executes.
 
 {{< top >}}
