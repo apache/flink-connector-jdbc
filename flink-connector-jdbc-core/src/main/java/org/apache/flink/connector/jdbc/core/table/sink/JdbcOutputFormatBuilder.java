@@ -86,12 +86,16 @@ public class JdbcOutputFormatBuilder implements Serializable {
                 Arrays.stream(fieldDataTypes)
                         .map(DataType::getLogicalType)
                         .toArray(LogicalType[]::new);
+        // The planner reads lineage before open(). Parsing the name from a statement would load
+        // OpenLineage's native SQL parser at plan time.
+        final String lineageTableName = dmlOptions.getTableName();
         if (dmlOptions.getKeyFields().isPresent() && dmlOptions.getKeyFields().get().length > 0) {
             // upsert query
             return new JdbcOutputFormat<>(
                     new SimpleJdbcConnectionProvider(jdbcOptions),
                     executionOptions,
-                    () -> createBufferReduceExecutor(dmlOptions, logicalTypes));
+                    () -> createBufferReduceExecutor(dmlOptions, logicalTypes),
+                    lineageTableName);
         } else {
             // append only query
             final String sql =
@@ -107,7 +111,8 @@ public class JdbcOutputFormatBuilder implements Serializable {
                                     dmlOptions.getDialect(),
                                     dmlOptions.getFieldNames(),
                                     logicalTypes,
-                                    sql));
+                                    sql),
+                    lineageTableName);
         }
     }
 
