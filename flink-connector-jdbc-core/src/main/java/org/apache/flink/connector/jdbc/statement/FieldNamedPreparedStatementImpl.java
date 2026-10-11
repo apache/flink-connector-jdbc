@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.statement;
 
 import java.math.BigDecimal;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -176,6 +177,18 @@ public class FieldNamedPreparedStatementImpl implements FieldNamedPreparedStatem
         for (int index : indexMapping[fieldIndex]) {
             statement.setObject(index, x);
         }
+    }
+
+    @Override
+    public void setArray(int fieldIndex, Array x) throws SQLException {
+        for (int index : indexMapping[fieldIndex]) {
+            statement.setArray(index, x);
+        }
+    }
+
+    @Override
+    public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+        return statement.getConnection().createArrayOf(typeName, elements);
     }
 
     @Override
