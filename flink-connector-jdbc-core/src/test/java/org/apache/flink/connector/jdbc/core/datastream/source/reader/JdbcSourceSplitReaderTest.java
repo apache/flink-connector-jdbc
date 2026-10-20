@@ -120,6 +120,31 @@ class JdbcSourceSplitReaderTest extends JdbcDataTestBase {
     }
 
     @Test
+    void testFetchFailsClosedForSnapshotSplitWithoutSnapshotSupport() {
+        // A split carrying a snapshot id must never be opened outside that snapshot: a provider
+        // without joining support has to fail the reader instead of silently reading live data.
+        JdbcSourceSplit snapshotSplit =
+                new JdbcSourceSplit(
+                        "snap-1", split.getSqlTemplate(), null, null, "00000001-00000001-1");
+        final TestingReaderContext context = new TestingReaderContext();
+        JdbcSourceSplitReader<TestEntry> splitReader =
+                new JdbcSourceSplitReader<>(
+                        context,
+                        new Configuration(),
+                        TypeInformation.of(TestEntry.class),
+                        connectionProvider,
+                        DeliveryGuarantee.NONE,
+                        extractor);
+        splitReader.handleSplitsChanges(
+                new SplitsAddition<>(Collections.singletonList(snapshotSplit)));
+
+        assertThatThrownBy(splitReader::fetch)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("00000001-00000001-1")
+                .hasMessageContaining("does not support joining one");
+    }
+
+    @Test
     void testFetch() throws Exception {
         final TestingReaderContext context = new TestingReaderContext();
         TypeInformation<TestEntry> typeInformation = TypeInformation.of(TestEntry.class);
