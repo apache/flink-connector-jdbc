@@ -33,6 +33,7 @@ import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.Transac
 import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
 import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
+import org.apache.flink.metrics.Counter;
 import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
@@ -65,6 +66,8 @@ public class JdbcWriter<IN>
 
     /** The XA transaction of an exactly-once writer; null for at-least-once. */
     @Nullable private final XaTransaction jdbcTransaction;
+
+    private final Counter numRecordsSend;
 
     private long lastCheckpointId;
     private boolean pendingRecords;
@@ -120,10 +123,11 @@ public class JdbcWriter<IN>
             throws IOException {
         this.jdbcOutput = checkNotNull(jdbcOutput, "jdbcOutput must be defined");
         this.jdbcTransaction = jdbcTransaction;
-        this.lastCheckpointId =
-                lastCheckpointId(checkNotNull(initContext, "initContext must be defined"));
         this.pendingRecords = false;
         try {
+            this.lastCheckpointId =
+                    lastCheckpointId(checkNotNull(initContext, "initContext must be defined"));
+            this.numRecordsSend = initContext.metricGroup().getNumRecordsSendCounter();
             this.jdbcOutput.open(outputSerializer);
         } catch (IOException | RuntimeException e) {
             // nobody calls close() on a writer whose constructor threw; without this the
@@ -226,6 +230,9 @@ public class JdbcWriter<IN>
             jdbcTransaction.checkState();
         }
         this.jdbcOutput.writeRecord(element);
+        // the batch is flushed at the latest on the next checkpoint, so the counter runs ahead of
+        // the database by at most one batch
+        numRecordsSend.inc();
         if (!this.pendingRecords) {
             this.pendingRecords = true;
         }

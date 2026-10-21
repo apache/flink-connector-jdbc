@@ -29,7 +29,8 @@ import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.connector.sink2.WriterInitContext;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
-import org.apache.flink.metrics.groups.UnregisteredMetricsGroup;
+import org.apache.flink.runtime.metrics.groups.InternalSinkWriterMetricGroup;
+import org.apache.flink.runtime.metrics.groups.UnregisteredMetricGroups;
 import org.apache.flink.util.SimpleUserCodeClassLoader;
 import org.apache.flink.util.UserCodeClassLoader;
 
@@ -48,8 +49,11 @@ public class TestingInitContext implements WriterInitContext {
     private final TypeSerializer<?> inputSerializer;
     private final OptionalLong restoredCheckpointId;
     private final boolean objectReuseEnabled;
+    // not UnregisteredMetricsGroup.createSinkWriterMetricGroup(): that one returns a new counter
+    // on every call, so what the writer increments could never be read back
     private final SinkWriterMetricGroup metricGroup =
-            UnregisteredMetricsGroup.createSinkWriterMetricGroup();
+            InternalSinkWriterMetricGroup.wrap(
+                    UnregisteredMetricGroups.createUnregisteredOperatorMetricGroup());
 
     /** The context of a fresh writer in a job with a single subtask. */
     public TestingInitContext(TypeSerializer<?> inputSerializer) {

@@ -84,6 +84,8 @@ class AlLeastOnceJdbcWriterTest extends BaseJdbcWriterTest {
         sinkWriter.flush(false);
 
         assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection())).isEqualTo(BOOKS);
+        assertThat(initContext.metricGroup().getNumRecordsSendCounter().getCount())
+                .isEqualTo(BOOKS.size());
     }
 
     @Test
