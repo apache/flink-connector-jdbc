@@ -18,27 +18,23 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.source;
 
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.connector.jdbc.JdbcDataTestBase;
 import org.apache.flink.connector.jdbc.split.JdbcGenericParameterValuesProvider;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.legacy.SinkFunction;
 import org.apache.flink.streaming.api.lineage.SourceLineageVertex;
 import org.apache.flink.streaming.util.RestartStrategyUtils;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.INPUT_TABLE;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TestEntry;
+import static org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase.assertSourceProducesExactly;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -47,13 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class JdbcSourceITCase extends JdbcDataTestBase implements JdbcITCaseBase {
 
-    public static Queue<TestEntry> collectedRecords;
     private final String sql = "select id, title, author, price, qty from " + INPUT_TABLE;
-
-    @BeforeEach
-    void init() {
-        collectedRecords = new ConcurrentLinkedDeque<>();
-    }
 
     @Test
     void testReadWithoutParallelismWithoutParamsProvider() throws Exception {
@@ -68,10 +58,7 @@ class JdbcSourceITCase extends JdbcDataTestBase implements JdbcITCaseBase {
                         .setDriverName(getMetadata().getDriverClass())
                         .setResultExtractor(extractor)
                         .build();
-        env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
-                .addSink(new TestingSinkFunction());
-        env.execute();
-        assertThat(collectedRecords).containsExactlyInAnyOrder(TEST_DATA);
+        assertSourceProducesExactly(env, jdbcSource, TEST_DATA);
     }
 
     @Test
@@ -90,10 +77,7 @@ class JdbcSourceITCase extends JdbcDataTestBase implements JdbcITCaseBase {
                         .setDriverName(getMetadata().getDriverClass())
                         .setResultExtractor(extractor)
                         .build();
-        env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
-                .addSink(new TestingSinkFunction());
-        env.execute();
-        assertThat(collectedRecords).containsExactlyInAnyOrder(TEST_DATA);
+        assertSourceProducesExactly(env, jdbcSource, TEST_DATA);
     }
 
     @Test
@@ -109,10 +93,7 @@ class JdbcSourceITCase extends JdbcDataTestBase implements JdbcITCaseBase {
                         .setDriverName(getMetadata().getDriverClass())
                         .setResultExtractor(extractor)
                         .build();
-        env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
-                .addSink(new TestingSinkFunction());
-        env.execute();
-        assertThat(collectedRecords).containsExactlyInAnyOrder(TEST_DATA);
+        assertSourceProducesExactly(env, jdbcSource, TEST_DATA);
     }
 
     @Test
@@ -131,10 +112,7 @@ class JdbcSourceITCase extends JdbcDataTestBase implements JdbcITCaseBase {
                         .setDriverName(getMetadata().getDriverClass())
                         .setResultExtractor(extractor)
                         .build();
-        env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
-                .addSink(new TestingSinkFunction());
-        env.execute();
-        assertThat(collectedRecords).containsExactlyInAnyOrder(TEST_DATA);
+        assertSourceProducesExactly(env, jdbcSource, TEST_DATA);
     }
 
     @Test
@@ -156,14 +134,5 @@ class JdbcSourceITCase extends JdbcDataTestBase implements JdbcITCaseBase {
         assertThat(lineageVertex.datasets().size()).isEqualTo(1);
         assertThat(lineageVertex.datasets().get(0).name()).isEqualTo("books");
         assertThat(lineageVertex.datasets().get(0).namespace()).isEqualTo("derby:memory:test");
-    }
-
-    /** A sink function to collect the records. */
-    static class TestingSinkFunction implements SinkFunction<TestEntry> {
-
-        @Override
-        public void invoke(TestEntry value, Context context) throws Exception {
-            collectedRecords.add(value);
-        }
     }
 }

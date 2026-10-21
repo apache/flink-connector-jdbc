@@ -35,7 +35,6 @@ import org.apache.flink.connector.jdbc.split.JdbcSlideTimingParameterProvider;
 import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
-import org.apache.flink.streaming.api.functions.sink.legacy.SinkFunction;
 import org.apache.flink.test.junit5.InjectClusterClient;
 import org.apache.flink.util.Collector;
 
@@ -135,9 +134,7 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
     @ParameterizedTest
     @EnumSource(DeliveryGuarantee.class)
     @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
-    void testForNormalCaseWithoutFailure(
-            DeliveryGuarantee guarantee, @InjectClusterClient ClusterClient<?> client)
-            throws Exception {
+    void testForNormalCaseWithoutFailure(DeliveryGuarantee guarantee) throws Exception {
         // Test continuous + unbounded splits
         StreamExecutionEnvironment env = getEnvWithRestartStrategyParallelism();
 
@@ -145,12 +142,14 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
         if (DeliveryGuarantee.EXACTLY_ONCE == guarantee) {
             jdbcSourceBuilder.setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE);
         }
-        env.fromSource(jdbcSourceBuilder.build(), WatermarkStrategy.noWatermarks(), "TestSource")
-                .addSink(new TestingSinkFunction());
-        waitExpectation(client, env, () -> collectedRecords.size() >= TESTING_ENTRIES_SIZE);
+        List<TestEntry> collected =
+                env.fromSource(
+                                jdbcSourceBuilder.build(),
+                                WatermarkStrategy.noWatermarks(),
+                                "TestSource")
+                        .executeAndCollect(TESTING_ENTRIES_SIZE);
 
-        assertThat(collectedRecords).hasSize(testEntries.size());
-        assertThat(collectedRecords).containsExactlyInAnyOrderElementsOf(testEntries);
+        assertThat(collected).containsExactlyInAnyOrderElementsOf(testEntries);
     }
 
     @Test
@@ -374,15 +373,6 @@ class JdbcSourceStreamRelatedITCase implements DerbyTestBase, JdbcITCaseBase {
             if (value.id % 17 == 0) {
                 sleep(MINIMAL_CHECKPOINT_TIME * 2);
             }
-        }
-    }
-
-    /** A sink function to collect the records. */
-    static class TestingSinkFunction implements SinkFunction<TestEntry> {
-
-        @Override
-        public void invoke(TestEntry value, Context context) throws Exception {
-            collectedRecords.add(value);
         }
     }
 }
