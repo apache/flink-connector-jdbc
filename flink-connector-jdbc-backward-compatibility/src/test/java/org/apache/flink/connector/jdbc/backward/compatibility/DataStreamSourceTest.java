@@ -18,7 +18,6 @@
 
 package org.apache.flink.connector.jdbc.backward.compatibility;
 
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.connector.jdbc.JdbcTestFixture;
 import org.apache.flink.connector.jdbc.core.datastream.source.JdbcSource;
@@ -29,7 +28,6 @@ import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.legacy.SinkFunction;
 import org.apache.flink.streaming.util.RestartStrategyUtils;
 import org.apache.flink.test.junit5.MiniClusterExtension;
 
@@ -44,15 +42,12 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Collections;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase.assertSourceProducesExactly;
 
 /** Test for backward compatibility. */
 public class DataStreamSourceTest implements PostgresTestBase {
-    public static Queue<JdbcTestFixture.TestEntry> collectedRecords;
     private static final BooksTable TEST_TABLE = new BooksTable("SourceTable");
 
     protected final ResultExtractor<JdbcTestFixture.TestEntry> extractor =
@@ -80,7 +75,6 @@ public class DataStreamSourceTest implements PostgresTestBase {
 
     @BeforeEach
     void init() throws SQLException {
-        collectedRecords = new ConcurrentLinkedDeque<>();
         try (Connection conn = getMetadata().getConnection();
                 PreparedStatement ps = conn.prepareStatement(TEST_TABLE.getInsertIntoQuery())) {
             for (int i = 0; i < TEST_DATA.length; i++) {
@@ -113,10 +107,7 @@ public class DataStreamSourceTest implements PostgresTestBase {
                         .setDriverName(getMetadata().getDriverClass())
                         .setResultExtractor(extractor)
                         .build();
-        env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
-                .addSink(new TestingSinkFunction());
-        env.execute();
-        assertThat(collectedRecords).containsExactlyInAnyOrder(TEST_DATA);
+        assertSourceProducesExactly(env, jdbcSource, TEST_DATA);
     }
 
     @Test
@@ -137,10 +128,7 @@ public class DataStreamSourceTest implements PostgresTestBase {
                         .setDriverName(getMetadata().getDriverClass())
                         .setResultExtractor(extractor)
                         .build();
-        env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
-                .addSink(new TestingSinkFunction());
-        env.execute();
-        assertThat(collectedRecords).containsExactlyInAnyOrder(TEST_DATA);
+        assertSourceProducesExactly(env, jdbcSource, TEST_DATA);
     }
 
     @Test
@@ -158,10 +146,7 @@ public class DataStreamSourceTest implements PostgresTestBase {
                         .setDriverName(getMetadata().getDriverClass())
                         .setResultExtractor(extractor)
                         .build();
-        env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
-                .addSink(new TestingSinkFunction());
-        env.execute();
-        assertThat(collectedRecords).containsExactlyInAnyOrder(TEST_DATA);
+        assertSourceProducesExactly(env, jdbcSource, TEST_DATA);
     }
 
     @Test
@@ -182,18 +167,6 @@ public class DataStreamSourceTest implements PostgresTestBase {
                         .setDriverName(getMetadata().getDriverClass())
                         .setResultExtractor(extractor)
                         .build();
-        env.fromSource(jdbcSource, WatermarkStrategy.noWatermarks(), "TestSource")
-                .addSink(new TestingSinkFunction());
-        env.execute();
-        assertThat(collectedRecords).containsExactlyInAnyOrder(TEST_DATA);
-    }
-
-    /** A sink function to collect the records. */
-    static class TestingSinkFunction implements SinkFunction<JdbcTestFixture.TestEntry> {
-
-        @Override
-        public void invoke(JdbcTestFixture.TestEntry value, Context context) throws Exception {
-            collectedRecords.add(value);
-        }
+        assertSourceProducesExactly(env, jdbcSource, TEST_DATA);
     }
 }

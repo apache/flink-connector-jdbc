@@ -36,6 +36,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Tests for {@link SimpleXaConnectionProvider} against a database with two-phase commit. */
 public abstract class SimpleXaConnectionProviderTest implements DatabaseTest {
@@ -66,6 +68,21 @@ public abstract class SimpleXaConnectionProviderTest implements DatabaseTest {
                 xa.rollback(xid);
             }
         }
+    }
+
+    /** A close after an open that got no connection has nothing to close. */
+    @Test
+    void testCloseAfterFailedOpen() {
+        SimpleXaConnectionProvider xa =
+                SimpleXaConnectionProvider.from(
+                        () -> {
+                            throw new IllegalStateException("no data source");
+                        },
+                        null);
+
+        assertThatThrownBy(xa::open).isInstanceOf(IllegalStateException.class);
+
+        assertThatCode(xa::close).doesNotThrowAnyException();
     }
 
     @Test

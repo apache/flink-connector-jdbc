@@ -18,10 +18,17 @@
 
 package org.apache.flink.connector.jdbc.testutils;
 
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.connector.source.Source;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.test.junit5.MiniClusterExtension;
+import org.apache.flink.util.CloseableIterator;
+import org.apache.flink.util.CollectionUtil;
 
 import org.junit.jupiter.api.extension.RegisterExtension;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /** A base for ITCase implementations. */
 public interface JdbcITCaseBase {
@@ -33,4 +40,16 @@ public interface JdbcITCaseBase {
                             .setNumberTaskManagers(2)
                             .setNumberSlotsPerTaskManager(2)
                             .build());
+
+    /** Runs {@code source} on {@code env} and asserts that it produces exactly {@code expected}. */
+    @SafeVarargs
+    static <T> void assertSourceProducesExactly(
+            StreamExecutionEnvironment env, Source<T, ?, ?> source, T... expected)
+            throws Exception {
+        try (CloseableIterator<T> records =
+                env.fromSource(source, WatermarkStrategy.noWatermarks(), "TestSource")
+                        .executeAndCollect()) {
+            assertThat(CollectionUtil.iteratorToList(records)).containsExactlyInAnyOrder(expected);
+        }
+    }
 }

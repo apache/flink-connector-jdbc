@@ -23,6 +23,7 @@ import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.JdbcStatementBuilder;
+import org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriter;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.PoolingXaConnectionProvider;
@@ -106,6 +107,10 @@ public class JdbcSinkBuilder<IN> {
             DeliveryGuarantee deliveryGuarantee,
             JdbcExactlyOnceOptions exactlyOnceOptions,
             JdbcConnectionProvider connectionProvider) {
+        if (deliveryGuarantee == DeliveryGuarantee.EXACTLY_ONCE) {
+            JdbcWriter.checkExactlyOnceExecutionOptions(
+                    checkNotNull(executionOptions, "executionOptions cannot be null"));
+        }
 
         return new JdbcSink<>(
                 checkNotNull(deliveryGuarantee, "deliveryGuarantee cannot be null"),

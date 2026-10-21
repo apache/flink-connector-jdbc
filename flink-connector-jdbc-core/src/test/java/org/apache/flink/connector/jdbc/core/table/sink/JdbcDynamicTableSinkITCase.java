@@ -19,29 +19,20 @@
 package org.apache.flink.connector.jdbc.core.table.sink;
 
 import org.apache.flink.FlinkVersion;
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.functions.DefaultOpenContext;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.connector.sink2.Sink;
+import org.apache.flink.api.connector.sink2.SinkWriter;
+import org.apache.flink.api.connector.sink2.SupportsCommitter;
+import org.apache.flink.api.connector.sink2.SupportsWriterState;
 import org.apache.flink.connector.jdbc.JdbcTestBase;
-import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
+import org.apache.flink.connector.jdbc.testutils.TestingInitContext;
+import org.apache.flink.connector.jdbc.testutils.TestingWriterContext;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
-import org.apache.flink.metrics.groups.OperatorMetricGroup;
-import org.apache.flink.metrics.groups.UnregisteredMetricsGroup;
-import org.apache.flink.runtime.jobgraph.OperatorID;
-import org.apache.flink.runtime.memory.MemoryManager;
-import org.apache.flink.runtime.operators.testutils.MockEnvironment;
-import org.apache.flink.runtime.operators.testutils.MockEnvironmentBuilder;
-import org.apache.flink.runtime.state.StateSnapshotContextSynchronousImpl;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.SinkContextUtil;
 import org.apache.flink.streaming.api.lineage.LineageVertex;
 import org.apache.flink.streaming.api.lineage.LineageVertexProvider;
-import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
-import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
-import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService;
-import org.apache.flink.streaming.runtime.tasks.TestProcessingTimeService;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.ExplainDetail;
@@ -49,17 +40,19 @@ import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
-import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.table.connector.sink.legacy.SinkFunctionProvider;
+import org.apache.flink.table.connector.sink.SinkV2Provider;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.planner.factories.TestValuesTableFactory;
 import org.apache.flink.table.planner.runtime.utils.TestData;
 import org.apache.flink.table.runtime.connector.sink.SinkRuntimeProviderContext;
+import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
+import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.test.util.AbstractTestBase;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
+import org.apache.flink.util.InstantiationUtil;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -518,32 +511,83 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
         return options;
     }
 
+    /** The sink travels in the job graph, and the writer-only sink registers no state. */
+    @Test
+    void testSinkRuntimeProviderIsSinkV2WithTheConfiguredParallelism() throws Exception {
+        Map<String, String> options = getOptions();
+        options.put("sink.parallelism", "3");
+        DynamicTableSink tableSink =
+                createTableSink(checkpointOutputTable.getTableResolvedSchema(), options);
+
+        DynamicTableSink.SinkRuntimeProvider provider =
+                tableSink.getSinkRuntimeProvider(new SinkRuntimeProviderContext(false));
+
+        assertThat(provider).isInstanceOf(SinkV2Provider.class);
+        SinkV2Provider sinkProvider = (SinkV2Provider) provider;
+        assertThat(sinkProvider.getParallelism()).hasValue(3);
+        Sink<?> sink = InstantiationUtil.clone(sinkProvider.createSink());
+        assertThat(sink)
+                .isInstanceOf(JdbcTableSink.class)
+                .isNotInstanceOf(SupportsWriterState.class)
+                .isNotInstanceOf(SupportsCommitter.class);
+    }
+
+    /**
+     * {@code SinkWriterOperator#prepareSnapshotPreBarrier} calls {@code flush(false)} on every
+     * checkpoint; the buffered records have to reach the database then, not only on {@code
+     * flush(true)} at the end of input.
+     */
     @Test
     void testFlushBufferWhenCheckpoint() throws Exception {
-        ResolvedSchema schema = checkpointOutputTable.getTableResolvedSchema();
+        flushBufferWhenCheckpoint(new TestingInitContext(checkpointRowSerializer()));
+    }
 
-        DynamicTableSink tableSink = createTableSink(schema, getOptions());
+    /** With object reuse on, the writer copies every record before it buffers it. */
+    @Test
+    void testFlushBufferWhenCheckpointWithObjectReuse() throws Exception {
+        flushBufferWhenCheckpoint(
+                new TestingInitContext(checkpointRowSerializer()).withObjectReuse());
+    }
 
-        SinkRuntimeProviderContext context = new SinkRuntimeProviderContext(false);
-        SinkFunctionProvider sinkProvider =
-                (SinkFunctionProvider) tableSink.getSinkRuntimeProvider(context);
-        GenericJdbcSinkFunction<RowData> sinkFunction =
-                (GenericJdbcSinkFunction<RowData>) sinkProvider.createSinkFunction();
-        sinkFunction.setRuntimeContext(new TestingStreamingRuntimeContext(true, 1, 0));
-        sinkFunction.setInputType(
-                TypeInformation.of(GenericRowData.class), JdbcTestBase.getExecutionConfig(false));
-        sinkFunction.open(new DefaultOpenContext());
-        sinkFunction.invoke(GenericRowData.of(1L), SinkContextUtil.forTimestamp(1));
-        sinkFunction.invoke(GenericRowData.of(2L), SinkContextUtil.forTimestamp(1));
+    private void flushBufferWhenCheckpoint(TestingInitContext context) throws Exception {
+        DynamicTableSink tableSink =
+                createTableSink(checkpointOutputTable.getTableResolvedSchema(), getOptions());
+        SinkV2Provider sinkProvider =
+                (SinkV2Provider)
+                        tableSink.getSinkRuntimeProvider(new SinkRuntimeProviderContext(false));
+        SinkWriter<RowData> writer = sinkProvider.createSink().createWriter(context);
+        try {
+            SinkWriter.Context writerContext = new TestingWriterContext();
+            GenericRowData reused = GenericRowData.of(1L);
+            writer.write(reused, writerContext);
+            reused.setField(0, 2L);
+            writer.write(reused, writerContext);
 
-        assertThat(checkpointOutputTable.selectAllTable(getMetadata())).isEmpty();
+            assertThat(checkpointOutputTable.selectAllTable(getMetadata())).isEmpty();
 
-        sinkFunction.snapshotState(new StateSnapshotContextSynchronousImpl(1, 1));
+            writer.flush(false);
 
-        assertThat(checkpointOutputTable.selectAllTable(getMetadata()))
-                .containsExactlyInAnyOrder(Row.of(1L), Row.of(2L));
+            if (context.isObjectReuseEnabled()) {
+                assertThat(checkpointOutputTable.selectAllTable(getMetadata()))
+                        .containsExactlyInAnyOrder(Row.of(1L), Row.of(2L));
+            } else {
+                // without object reuse the writer may buffer the record itself
+                assertThat(checkpointOutputTable.selectAllTable(getMetadata())).hasSize(2);
+            }
+            assertThat(context.metricGroup().getNumRecordsSendCounter().getCount()).isEqualTo(2);
+        } finally {
+            writer.close();
+        }
+    }
 
-        sinkFunction.close();
+    private TypeSerializer<RowData> checkpointRowSerializer() {
+        RowType rowType =
+                (RowType)
+                        checkpointOutputTable
+                                .getTableResolvedSchema()
+                                .toPhysicalRowDataType()
+                                .getLogicalType();
+        return JdbcTestBase.getSerializer(InternalTypeInfo.of(rowType), false);
     }
 
     /**
@@ -557,92 +601,15 @@ public abstract class JdbcDynamicTableSinkITCase extends AbstractTestBase implem
             Map<String, String> options = getOptions();
             options.put("table-name", table.getTableName());
             DynamicTableSink tableSink = createTableSink(table.getTableResolvedSchema(), options);
-            SinkFunctionProvider sinkProvider =
-                    (SinkFunctionProvider)
+            SinkV2Provider sinkProvider =
+                    (SinkV2Provider)
                             tableSink.getSinkRuntimeProvider(new SinkRuntimeProviderContext(false));
 
             LineageVertex lineageVertex =
-                    ((LineageVertexProvider) sinkProvider.createSinkFunction()).getLineageVertex();
+                    ((LineageVertexProvider) sinkProvider.createSink()).getLineageVertex();
 
             assertThat(lineageVertex.datasets()).hasSize(1);
             assertThat(lineageVertex.datasets().get(0).name()).isEqualTo(table.getTableName());
-        }
-    }
-
-    /** The help class to assure the test cases run compatibility. */
-    static class TestingStreamingRuntimeContext extends StreamingRuntimeContext {
-        private final boolean isCheckpointingEnabledUselessPlaceholder;
-
-        private final int numParallelSubtasks;
-        private final int subtaskIndex;
-
-        private final MockEnvironment environment;
-
-        public TestingStreamingRuntimeContext(
-                boolean isCheckpointingEnabled, int numParallelSubtasks, int subtaskIndex) {
-
-            this(
-                    isCheckpointingEnabled,
-                    numParallelSubtasks,
-                    subtaskIndex,
-                    new MockEnvironmentBuilder()
-                            .setTaskName("mockTask")
-                            .setManagedMemorySize(4 * MemoryManager.DEFAULT_PAGE_SIZE)
-                            .setParallelism(numParallelSubtasks)
-                            .setMaxParallelism(numParallelSubtasks)
-                            .setSubtaskIndex(subtaskIndex)
-                            .build());
-        }
-
-        public TestingStreamingRuntimeContext(
-                boolean isCheckpointingEnabled,
-                int numParallelSubtasks,
-                int subtaskIndex,
-                MockEnvironment environment) {
-
-            super(new MockStreamOperator(), environment, new HashMap<>());
-
-            this.isCheckpointingEnabledUselessPlaceholder = isCheckpointingEnabled;
-            this.numParallelSubtasks = numParallelSubtasks;
-            this.subtaskIndex = subtaskIndex;
-            this.environment = environment;
-        }
-
-        public ExecutionConfig getExecutionConfig() {
-            return environment.getExecutionConfig();
-        }
-
-        @Override
-        public OperatorMetricGroup getMetricGroup() {
-            return UnregisteredMetricsGroup.createOperatorMetricGroup();
-        }
-
-        public boolean isCheckpointingEnabled() {
-            return isCheckpointingEnabledUselessPlaceholder;
-        }
-    }
-
-    private static class MockStreamOperator extends AbstractStreamOperator<Integer> {
-        private static final long serialVersionUID = -1153976702711944427L;
-
-        private transient TestProcessingTimeService testProcessingTimeService;
-
-        @Override
-        public ExecutionConfig getExecutionConfig() {
-            return new ExecutionConfig();
-        }
-
-        @Override
-        public OperatorID getOperatorID() {
-            return new OperatorID();
-        }
-
-        @Override
-        public ProcessingTimeService getProcessingTimeService() {
-            if (testProcessingTimeService == null) {
-                testProcessingTimeService = new TestProcessingTimeService();
-            }
-            return testProcessingTimeService;
         }
     }
 }
