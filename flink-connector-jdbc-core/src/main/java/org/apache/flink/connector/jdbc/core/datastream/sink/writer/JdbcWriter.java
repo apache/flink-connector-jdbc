@@ -19,8 +19,8 @@ package org.apache.flink.connector.jdbc.core.datastream.sink.writer;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.connector.sink2.CommittingSinkWriter;
-import org.apache.flink.api.connector.sink2.InitContext;
 import org.apache.flink.api.connector.sink2.StatefulSinkWriter;
+import org.apache.flink.api.connector.sink2.WriterInitContext;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -75,7 +75,7 @@ public class JdbcWriter<IN>
             JdbcOutputSerializer<IN> outputSerializer,
             DeliveryGuarantee deliveryGuarantee,
             Collection<JdbcWriterState> recoveredState,
-            InitContext initContext)
+            WriterInitContext initContext)
             throws IOException {
 
         this.deliveryGuarantee =
@@ -85,7 +85,9 @@ public class JdbcWriter<IN>
 
         pendingRecords = false;
         this.lastCheckpointId =
-                initContext.getRestoredCheckpointId().orElse(InitContext.INITIAL_CHECKPOINT_ID - 1);
+                initContext
+                        .getRestoredCheckpointId()
+                        .orElse(WriterInitContext.INITIAL_CHECKPOINT_ID - 1);
 
         checkNotNull(connectionProvider, "connectionProvider must be defined");
 

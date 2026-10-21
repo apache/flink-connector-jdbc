@@ -20,8 +20,8 @@ package org.apache.flink.connector.jdbc.core.datastream.sink.writer;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.common.TaskInfo;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.connector.sink2.InitContext;
-import org.apache.flink.api.connector.sink2.SinkWriter;
+import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.connector.sink2.WriterInitContext;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -34,6 +34,7 @@ import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.internal.JdbcOutputSerializer;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.TestingInitContext;
+import org.apache.flink.connector.jdbc.testutils.TestingWriterContext;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 import org.apache.flink.connector.testutils.source.TestingTaskInfo;
 import org.apache.flink.util.StringUtils;
@@ -70,7 +71,7 @@ abstract class BaseJdbcWriterTest implements DerbyTestBase {
                     .collect(Collectors.toList());
     protected JdbcWriter<BooksTable.BookEntry> sinkWriter;
 
-    protected final TestWriterContext writerContext = new TestWriterContext();
+    protected final TestingWriterContext writerContext = new TestingWriterContext();
 
     @Override
     public List<TableManaged> getManagedTables() {
@@ -88,13 +89,14 @@ abstract class BaseJdbcWriterTest implements DerbyTestBase {
     @BeforeEach
     void init() throws Exception {
         TaskInfo taskInfo = new TestingTaskInfo("test_task", 4, 1, 4, 0, "test_subTask", "id");
-        InitContext sinkContext =
-                new TestingInitContext(JobID.fromHexString(JOBID), "test_jobName", taskInfo);
+        TypeSerializer<BooksTable.BookEntry> serializer =
+                JdbcTestBase.getSerializer(TypeInformation.of(BooksTable.BookEntry.class), false);
+        WriterInitContext sinkContext =
+                new TestingInitContext(
+                        JobID.fromHexString(JOBID), "test_jobName", taskInfo, serializer);
 
         JdbcOutputSerializer<BooksTable.BookEntry> outputSerializer =
-                JdbcOutputSerializer.of(
-                        JdbcTestBase.getSerializer(
-                                TypeInformation.of(BooksTable.BookEntry.class), false));
+                JdbcOutputSerializer.of(serializer);
 
         JdbcQueryStatement<BooksTable.BookEntry> queryStatement =
                 new SimpleJdbcQueryStatement<>(
@@ -152,17 +154,5 @@ abstract class BaseJdbcWriterTest implements DerbyTestBase {
                                 .map(x -> StringUtils.byteToHexString(x.getBranchQualifier()))
                                 .collect(Collectors.toList()))
                 .isEqualTo(hanging);
-    }
-
-    public static class TestWriterContext implements SinkWriter.Context {
-        @Override
-        public long currentWatermark() {
-            return System.currentTimeMillis();
-        }
-
-        @Override
-        public Long timestamp() {
-            return System.currentTimeMillis();
-        }
     }
 }
