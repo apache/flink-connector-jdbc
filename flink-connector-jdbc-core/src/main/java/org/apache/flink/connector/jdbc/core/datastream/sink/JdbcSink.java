@@ -107,15 +107,12 @@ public class JdbcSink<IN>
     public JdbcWriter<IN> restoreWriter(
             WriterInitContext context, Collection<JdbcWriterState> recoveredState)
             throws IOException {
-        JdbcOutputSerializer<IN> outputSerializer =
-                JdbcOutputSerializer.of(
-                        context.createInputSerializer(), context.isObjectReuseEnabled());
         return new JdbcWriter<>(
                 this.connectionProvider,
                 this.executionOptions,
                 this.exactlyOnceOptions,
                 this.queryStatement,
-                outputSerializer,
+                JdbcOutputSerializer.of(context),
                 deliveryGuarantee,
                 recoveredState,
                 context);

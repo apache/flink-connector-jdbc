@@ -23,17 +23,27 @@ import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitable;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.SimpleJdbcConnectionProvider;
+import org.apache.flink.connector.jdbc.datasource.statements.SimpleJdbcQueryStatement;
+import org.apache.flink.connector.jdbc.internal.JdbcOutputFormat;
+import org.apache.flink.connector.jdbc.internal.executor.JdbcBatchStatementExecutor;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Smoke tests for the {@link JdbcWriter} with AtLeastOnce semantics and the underlying classes. */
 class AlLeastOnceJdbcWriterTest extends BaseJdbcWriterTest {
+
+    private static final String INSERT_INTO_MISSING_TABLE =
+            "INSERT INTO NO_SUCH_TABLE (id) VALUES (?)";
 
     @Override
     protected JdbcExecutionOptions getExecutionOptions() {
@@ -101,5 +111,74 @@ class AlLeastOnceJdbcWriterTest extends BaseJdbcWriterTest {
         sinkWriter.flush(false);
 
         assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection())).isEqualTo(BOOKS);
+    }
+
+    @Test
+    void testPrebuiltOutputFormat() throws Exception {
+        JdbcWriter<BooksTable.BookEntry> writer =
+                new JdbcWriter<>(
+                        insertFormat(getConnectionProvider(), TEST_TABLE.getInsertIntoQuery()),
+                        outputSerializer,
+                        initContext);
+        try {
+            for (BooksTable.BookEntry book : BOOKS) {
+                writer.write(book, writerContext);
+            }
+            writer.flush(false);
+
+            assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection())).isEqualTo(BOOKS);
+        } finally {
+            writer.close();
+        }
+    }
+
+    /** Nobody closes a writer whose constructor threw, so the constructor has to clean up. */
+    @Test
+    void testFailedOpenClosesConnection() {
+        SimpleJdbcConnectionProvider provider =
+                new SimpleJdbcConnectionProvider(getMetadata().getConnectionOptions());
+
+        assertThatThrownBy(
+                        () ->
+                                new JdbcWriter<>(
+                                        insertFormat(provider, INSERT_INTO_MISSING_TABLE),
+                                        outputSerializer,
+                                        initContext))
+                .isInstanceOf(IOException.class)
+                .hasMessage("unable to open JDBC writer")
+                .hasCauseInstanceOf(SQLException.class);
+
+        assertThat(provider.getConnection()).isNull();
+    }
+
+    @Test
+    void testFailedOpenClosesConnectionOfTheDataStreamWriter() {
+        SimpleJdbcConnectionProvider provider =
+                new SimpleJdbcConnectionProvider(getMetadata().getConnectionOptions());
+
+        assertThatThrownBy(
+                        () ->
+                                new JdbcWriter<>(
+                                        provider,
+                                        getExecutionOptions(),
+                                        getExactlyOnceOptions(),
+                                        new SimpleJdbcQueryStatement<>(
+                                                INSERT_INTO_MISSING_TABLE, (ps, book) -> {}),
+                                        outputSerializer,
+                                        DeliveryGuarantee.AT_LEAST_ONCE,
+                                        Collections.emptyList(),
+                                        initContext))
+                .isInstanceOf(IOException.class)
+                .hasMessage("unable to open JDBC writer");
+
+        assertThat(provider.getConnection()).isNull();
+    }
+
+    private JdbcOutputFormat<BooksTable.BookEntry, ?, ?> insertFormat(
+            JdbcConnectionProvider provider, String insert) {
+        return new JdbcOutputFormat<>(
+                provider,
+                getExecutionOptions(),
+                () -> JdbcBatchStatementExecutor.simple(insert, TEST_TABLE.getStatementBuilder()));
     }
 }

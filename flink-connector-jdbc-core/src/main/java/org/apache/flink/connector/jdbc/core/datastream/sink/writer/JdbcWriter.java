@@ -38,6 +38,7 @@ import org.apache.flink.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.transaction.xa.Xid;
 
 import java.io.IOException;
@@ -60,10 +61,11 @@ public class JdbcWriter<IN>
 
     private static final Logger LOG = LoggerFactory.getLogger(JdbcWriter.class);
 
-    private final DeliveryGuarantee deliveryGuarantee;
-    private final JdbcOutputFormat<IN, IN, JdbcBatchStatementExecutor<IN>> jdbcOutput;
+    private final JdbcOutputFormat<IN, ?, ?> jdbcOutput;
 
-    private XaTransaction jdbcTransaction;
+    /** The XA transaction of an exactly-once writer; null for at-least-once. */
+    @Nullable private final XaTransaction jdbcTransaction;
+
     private long lastCheckpointId;
     private boolean pendingRecords;
 
@@ -77,63 +79,147 @@ public class JdbcWriter<IN>
             Collection<JdbcWriterState> recoveredState,
             WriterInitContext initContext)
             throws IOException {
+        // evaluated left to right: the XA branch is started before the private constructor opens
+        // the format on its connection, and the format must not touch the provider before start()
+        this(
+                simpleOutputFormat(
+                        checkNotNull(connectionProvider, "connectionProvider must be defined"),
+                        checkNotNull(executionOptions, "executionOptions must be defined"),
+                        checkNotNull(queryStatement, "queryStatement must be defined")),
+                outputSerializer,
+                checkNotNull(deliveryGuarantee, "deliveryGuarantee must be defined")
+                                == DeliveryGuarantee.EXACTLY_ONCE
+                        ? openXaTransaction(
+                                connectionProvider,
+                                executionOptions,
+                                exactlyOnceOptions,
+                                recoveredState,
+                                checkNotNull(initContext, "initContext must be defined"))
+                        : null,
+                initContext);
+    }
 
-        this.deliveryGuarantee =
-                checkNotNull(deliveryGuarantee, "deliveryGuarantee must be defined");
+    /**
+     * An at-least-once writer over a format built for it, for the Table sink. The writer opens and
+     * closes the format; its executor must accept the writer's input type, there is no extraction
+     * step in between.
+     */
+    public JdbcWriter(
+            JdbcOutputFormat<IN, ?, ?> jdbcOutput,
+            JdbcOutputSerializer<IN> outputSerializer,
+            WriterInitContext initContext)
+            throws IOException {
+        this(jdbcOutput, outputSerializer, null, initContext);
+    }
 
-        checkNotNull(initContext, "initContext must be defined");
-
-        pendingRecords = false;
+    private JdbcWriter(
+            JdbcOutputFormat<IN, ?, ?> jdbcOutput,
+            JdbcOutputSerializer<IN> outputSerializer,
+            @Nullable XaTransaction jdbcTransaction,
+            WriterInitContext initContext)
+            throws IOException {
+        this.jdbcOutput = checkNotNull(jdbcOutput, "jdbcOutput must be defined");
+        this.jdbcTransaction = jdbcTransaction;
         this.lastCheckpointId =
-                initContext
-                        .getRestoredCheckpointId()
-                        .orElse(WriterInitContext.INITIAL_CHECKPOINT_ID - 1);
-
-        checkNotNull(connectionProvider, "connectionProvider must be defined");
-
-        if (deliveryGuarantee == DeliveryGuarantee.EXACTLY_ONCE) {
-            checkArgument(
-                    executionOptions.getMaxRetries() == 0,
-                    "JDBC XA sink requires maxRetries equal to 0, otherwise it could "
-                            + "cause duplicates. See issue FLINK-22311 for details.");
-
-            checkNotNull(exactlyOnceOptions, "exactlyOnceOptions must be defined");
-            checkNotNull(recoveredState, "recoveredState must be defined");
-            checkState(recoveredState.size() <= 1, "more than one state to recover");
-
-            JdbcWriterState state =
-                    recoveredState.stream().findFirst().orElse(JdbcWriterState.empty());
-
-            TransactionId transactionId =
-                    TransactionId.create(
-                            initContext.getJobInfo().getJobId().getBytes(),
-                            initContext.getTaskInfo().getIndexOfThisSubtask(),
-                            initContext.getTaskInfo().getNumberOfParallelSubtasks());
-
-            this.jdbcTransaction =
-                    new XaTransaction(
-                            exactlyOnceOptions,
-                            transactionId,
-                            ((XaConnectionProvider) connectionProvider));
-            this.jdbcTransaction.open(state);
-            this.jdbcTransaction.createTx(lastCheckpointId);
+                lastCheckpointId(checkNotNull(initContext, "initContext must be defined"));
+        this.pendingRecords = false;
+        try {
+            this.jdbcOutput.open(outputSerializer);
+        } catch (IOException | RuntimeException e) {
+            // nobody calls close() on a writer whose constructor threw; without this the
+            // connection the format established, or the XA branch, stays open
+            try {
+                releaseResources();
+            } catch (Exception closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
+            throw e;
         }
+    }
 
-        checkNotNull(executionOptions, "executionOptions must be defined");
-        checkNotNull(queryStatement, "queryStatement must be defined");
-        this.jdbcOutput =
-                new JdbcOutputFormat<>(
-                        connectionProvider,
-                        executionOptions,
-                        () ->
-                                JdbcBatchStatementExecutor.simple(
-                                        queryStatement.query(), queryStatement::statement));
-        this.jdbcOutput.open(outputSerializer);
+    /** Rejects execution options an exactly-once writer cannot run with. */
+    public static void checkExactlyOnceExecutionOptions(JdbcExecutionOptions executionOptions) {
+        checkArgument(
+                executionOptions.getMaxRetries() == 0,
+                "JDBC XA sink requires maxRetries equal to 0, otherwise it could "
+                        + "cause duplicates. See issue FLINK-22311 for details.");
+    }
+
+    private static long lastCheckpointId(WriterInitContext initContext) {
+        return initContext
+                .getRestoredCheckpointId()
+                .orElse(WriterInitContext.INITIAL_CHECKPOINT_ID - 1);
+    }
+
+    /**
+     * Opens the XA connection, recovers {@code recoveredState} and starts the branch of the last
+     * checkpoint. The transaction is closed again when any of that fails.
+     */
+    private static XaTransaction openXaTransaction(
+            JdbcConnectionProvider connectionProvider,
+            JdbcExecutionOptions executionOptions,
+            JdbcExactlyOnceOptions exactlyOnceOptions,
+            Collection<JdbcWriterState> recoveredState,
+            WriterInitContext initContext)
+            throws IOException {
+        checkExactlyOnceExecutionOptions(executionOptions);
+        checkArgument(
+                connectionProvider instanceof XaConnectionProvider,
+                "exactly-once delivery needs an XaConnectionProvider, got %s",
+                connectionProvider.getClass().getName());
+        checkNotNull(exactlyOnceOptions, "exactlyOnceOptions must be defined");
+        checkNotNull(recoveredState, "recoveredState must be defined");
+        checkState(recoveredState.size() <= 1, "more than one state to recover");
+        JdbcWriterState state = recoveredState.stream().findFirst().orElse(JdbcWriterState.empty());
+        TransactionId transactionId =
+                TransactionId.create(
+                        initContext.getJobInfo().getJobId().getBytes(),
+                        initContext.getTaskInfo().getIndexOfThisSubtask(),
+                        initContext.getTaskInfo().getNumberOfParallelSubtasks());
+        XaTransaction transaction =
+                new XaTransaction(
+                        exactlyOnceOptions,
+                        transactionId,
+                        (XaConnectionProvider) connectionProvider);
+        try {
+            transaction.open(state);
+            transaction.createTx(lastCheckpointId(initContext));
+        } catch (IOException | RuntimeException e) {
+            try {
+                transaction.close();
+            } catch (Exception closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
+            throw e;
+        }
+        return transaction;
+    }
+
+    private static <IN> JdbcOutputFormat<IN, IN, JdbcBatchStatementExecutor<IN>> simpleOutputFormat(
+            JdbcConnectionProvider connectionProvider,
+            JdbcExecutionOptions executionOptions,
+            JdbcQueryStatement<IN> queryStatement) {
+        return new JdbcOutputFormat<>(
+                connectionProvider,
+                executionOptions,
+                () ->
+                        JdbcBatchStatementExecutor.simple(
+                                queryStatement.query(), queryStatement::statement));
+    }
+
+    /** Releases what the constructor acquired; an open XA branch is rolled back with it. */
+    private void releaseResources() throws Exception {
+        if (jdbcTransaction == null) {
+            jdbcOutput.close();
+        } else {
+            // not jdbcOutput.close(): it would flush, and close the connection the branch runs on
+            jdbcTransaction.close();
+        }
     }
 
     @Override
     public void write(IN element, Context context) throws IOException, InterruptedException {
-        if (deliveryGuarantee == DeliveryGuarantee.EXACTLY_ONCE) {
+        if (jdbcTransaction != null) {
             jdbcTransaction.checkState();
         }
         this.jdbcOutput.writeRecord(element);
@@ -144,7 +230,7 @@ public class JdbcWriter<IN>
 
     @Override
     public void flush(boolean endOfInput) throws IOException, InterruptedException {
-        if (deliveryGuarantee != DeliveryGuarantee.EXACTLY_ONCE || endOfInput) {
+        if (jdbcTransaction == null || endOfInput) {
             LOG.debug("final flush={}", endOfInput);
             flush();
         } else {
@@ -159,7 +245,7 @@ public class JdbcWriter<IN>
 
     @Override
     public Collection<JdbcCommitable> prepareCommit() throws IOException, InterruptedException {
-        if (deliveryGuarantee != DeliveryGuarantee.EXACTLY_ONCE) {
+        if (jdbcTransaction == null) {
             return Collections.emptyList();
         }
 
@@ -185,7 +271,7 @@ public class JdbcWriter<IN>
 
     @Override
     public List<JdbcWriterState> snapshotState(long checkpointId) throws IOException {
-        if (deliveryGuarantee != DeliveryGuarantee.EXACTLY_ONCE) {
+        if (jdbcTransaction == null) {
             return Collections.emptyList();
         }
 
@@ -207,13 +293,9 @@ public class JdbcWriter<IN>
 
     @Override
     public void close() throws Exception {
-        if (deliveryGuarantee != DeliveryGuarantee.EXACTLY_ONCE) {
-            this.jdbcOutput.close();
-        } else {
-            // don't jdbcOutput.close(); as we don't want neither to flush nor to close connection
-            // here
-            this.jdbcOutput.checkFlushException();
-            this.jdbcTransaction.close();
+        if (jdbcTransaction != null) {
+            jdbcOutput.checkFlushException();
         }
+        releaseResources();
     }
 }

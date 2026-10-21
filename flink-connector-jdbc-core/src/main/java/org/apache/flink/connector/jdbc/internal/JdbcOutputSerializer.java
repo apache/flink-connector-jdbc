@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.internal;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.connector.sink2.WriterInitContext;
 
 import java.io.Serializable;
 
@@ -42,6 +43,11 @@ public class JdbcOutputSerializer<T> implements Serializable {
     public static <S> JdbcOutputSerializer<S> of(
             TypeSerializer<S> typeSerializer, boolean objectReuse) {
         return new JdbcOutputSerializer<>(typeSerializer, objectReuse);
+    }
+
+    /** The serializer for a writer's input, with the object reuse setting of its job. */
+    public static <S> JdbcOutputSerializer<S> of(WriterInitContext context) {
+        return of(context.createInputSerializer(), context.isObjectReuseEnabled());
     }
 
     public JdbcOutputSerializer<T> withObjectReuseEnabled(boolean enabled) {
