@@ -20,12 +20,11 @@ package org.apache.flink.connector.jdbc.core.table.sink;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.internal.GenericJdbcSinkFunction;
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.internal.options.JdbcDmlOptions;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.table.connector.sink.legacy.SinkFunctionProvider;
+import org.apache.flink.table.connector.sink.SinkV2Provider;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.types.RowKind;
 
@@ -74,15 +73,19 @@ public class JdbcDynamicTableSink implements DynamicTableSink {
 
     @Override
     public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
-        final JdbcOutputFormatBuilder builder = new JdbcOutputFormatBuilder();
+        return SinkV2Provider.of(
+                new JdbcTableSink(outputFormatBuilder()), jdbcOptions.getParallelism());
+    }
 
+    /** The builder of the format every writer of this sink runs over. */
+    JdbcOutputFormatBuilder outputFormatBuilder() {
+        final JdbcOutputFormatBuilder builder = new JdbcOutputFormatBuilder();
         builder.setJdbcOptions(jdbcOptions);
         builder.setJdbcDmlOptions(dmlOptions);
         builder.setJdbcExecutionOptions(executionOptions);
         builder.setFieldDataTypes(
                 DataType.getFieldDataTypes(physicalRowDataType).toArray(new DataType[0]));
-        return SinkFunctionProvider.of(
-                new GenericJdbcSinkFunction<>(builder.build()), jdbcOptions.getParallelism());
+        return builder;
     }
 
     @Override
