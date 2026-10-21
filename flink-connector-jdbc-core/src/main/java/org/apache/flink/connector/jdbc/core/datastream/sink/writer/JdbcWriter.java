@@ -137,7 +137,10 @@ public class JdbcWriter<IN>
         }
     }
 
-    /** Rejects execution options an exactly-once writer cannot run with. */
+    /**
+     * Rejects execution options an exactly-once writer cannot run with. {@code JdbcSinkBuilder}
+     * runs the same check on the client; this one covers a {@code JdbcSink} built directly.
+     */
     public static void checkExactlyOnceExecutionOptions(JdbcExecutionOptions executionOptions) {
         checkArgument(
                 executionOptions.getMaxRetries() == 0,
