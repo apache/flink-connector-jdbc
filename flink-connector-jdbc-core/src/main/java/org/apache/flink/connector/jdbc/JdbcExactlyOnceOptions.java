@@ -27,15 +27,18 @@ import java.util.Optional;
  * JDBC exactly once sink options.
  *
  * <p><b>maxCommitAttempts</b> - maximum number of commit attempts to make per transaction; must be
- * > 0; state size is proportional to the product of max number of in-flight snapshots and this
- * number.
+ * > 0. The committer retries a transient failure right away, and Flink stops after {@code
+ * sink.committer.retries} retries, so a transaction gets at most the smaller of maxCommitAttempts
+ * and {@code sink.committer.retries} + 1 attempts.
  *
- * <p><b>allowOutOfOrderCommits</b> - If true, all prepared transactions will be attempted to commit
- * regardless of any transient failures during this operation. This may lead to inconsistency.
- * Default: false.
+ * <p><b>allowOutOfOrderCommits</b> - If true, all prepared transactions restored from a writer
+ * state will be attempted to commit regardless of any transient failures during this operation.
+ * This may lead to inconsistency. The committer always commits checkpoints in order. Default:
+ * false.
  *
  * <p><b>recoveredAndRollback</b> - whether to rollback prepared transactions known to XA RM on
- * startup (after committing <b>known</b> transactions, i.e. restored from state).
+ * startup (after committing <b>known</b> transactions, i.e. restored from state). Transactions of
+ * checkpoints before the restored one belong to the committer.
  *
  * <p>NOTE that setting this parameter to true may:
  *
