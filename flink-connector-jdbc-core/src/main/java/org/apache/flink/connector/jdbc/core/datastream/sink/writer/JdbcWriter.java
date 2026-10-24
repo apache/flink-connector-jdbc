@@ -66,6 +66,7 @@ public class JdbcWriter<IN>
     private XaTransaction jdbcTransaction;
     private long lastCheckpointId;
     private boolean pendingRecords;
+    private boolean endOfInput;
 
     public JdbcWriter(
             JdbcConnectionProvider connectionProvider,
@@ -142,6 +143,9 @@ public class JdbcWriter<IN>
 
     @Override
     public void flush(boolean endOfInput) throws IOException, InterruptedException {
+        if (endOfInput) {
+            this.endOfInput = true;
+        }
         if (deliveryGuarantee != DeliveryGuarantee.EXACTLY_ONCE || endOfInput) {
             LOG.debug("final flush={}", endOfInput);
             flush();
@@ -199,7 +203,11 @@ public class JdbcWriter<IN>
         }
 
         this.lastCheckpointId = checkpointId;
-        jdbcTransaction.createTx(this.lastCheckpointId);
+        // after the end of input the last transaction is prepared and no record follows, but
+        // checkpoints can still come until the task finishes
+        if (!endOfInput) {
+            jdbcTransaction.createTx(this.lastCheckpointId);
+        }
         return Collections.singletonList(jdbcTransaction.getState());
     }
 
