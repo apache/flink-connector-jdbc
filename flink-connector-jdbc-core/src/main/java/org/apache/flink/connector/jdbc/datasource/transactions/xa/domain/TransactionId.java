@@ -143,6 +143,10 @@ public class TransactionId implements Xid, Serializable {
                 jobId, subtaskId, numberOfSubtasks, checkpointId, attempts + 1, restored);
     }
 
+    public int getNumberOfSubtasks() {
+        return numberOfSubtasks;
+    }
+
     public long getCheckpointId() {
         return checkpointId;
     }
