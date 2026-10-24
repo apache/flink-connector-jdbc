@@ -457,12 +457,19 @@ Still not supported in Python API.
 {{< /tab >}}
 {{< /tabs >}}
 
-This will make Flink use a separate connection for every XA transaction. This may require adjusting connection limits.
-For PostgreSQL and MySQL, this can be done by increasing `max_connections`.
+This will make Flink start every XA transaction on a connection from a pool, and return the connection once its transaction is prepared, so each sink subtask writes on one connection at a time.
 
 Furthermore, XA needs to be enabled and/or configured in some databases.
-For PostgreSQL, you should set `max_prepared_transactions` to some value greater than zero.
-For MySQL v8+, you should grant `XA_RECOVER_ADMIN` to Flink DB user.
+For PostgreSQL, you should set `max_prepared_transactions` to at least twice the sink parallelism: every sink subtask keeps its transaction prepared until the checkpoint completes, and can prepare the next one before the previous one is committed. Each failed or concurrent checkpoint in between adds one more per sink subtask.
+For MySQL v8+, you should grant `XA_RECOVER_ADMIN` to Flink DB user, otherwise a restarted job can't roll back the transactions of the failed attempt.
+
+The sink commits a prepared XA transaction once the checkpoint completes, on a different connection than the one that prepared it.
+For MySQL, this requires `xa_detach_on_prepare` to be `ON`, which is the default since MySQL 8.0.29.
+
+Records become visible once the checkpoint completes. A single committer subtask commits the transactions of all sink subtasks, one after another, which takes about one database round trip per sink subtask.
+A prepared transaction keeps its locks until it is committed, so a record that touches a row of the previous checkpoint waits until that commit.
+If several sink subtasks write the same rows, use `keyBy` on the row key. Otherwise they can block each other until the database's lock timeout fails the job.
+The same happens if a checkpoint takes longer than the lock timeout. PostgreSQL waits forever by default, so set `lock_timeout`.
 
 **ATTENTION:** Currently, `JdbcSink.exactlyOnceSink` can ensure exactly once semantics
 with `JdbcExecutionOptions.maxRetries == 0`; otherwise, duplicated results maybe produced.
