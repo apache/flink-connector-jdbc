@@ -24,10 +24,16 @@ import org.apache.flink.connector.jdbc.testutils.DatabaseTest;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.lineage.LineageGraph;
+import org.apache.flink.streaming.api.lineage.LineageGraphUtils;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.table.connector.source.DataStreamScanProvider;
+import org.apache.flink.table.connector.source.ScanTableSource;
 import org.apache.flink.table.connector.source.lookup.cache.LookupCache;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.GenericRowData;
@@ -35,6 +41,7 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.planner.factories.TestValuesTableFactory;
 import org.apache.flink.table.planner.runtime.utils.StreamTestSink;
+import org.apache.flink.table.runtime.connector.source.ScanRuntimeProviderContext;
 import org.apache.flink.table.runtime.functions.table.lookup.LookupCacheManager;
 import org.apache.flink.table.test.lookup.cache.LookupCacheAssert;
 import org.apache.flink.test.junit5.MiniClusterExtension;
@@ -60,10 +67,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.field;
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
+import static org.apache.flink.table.factories.utils.FactoryMocks.createTableSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** ITCase for {@link JdbcDynamicTableSource}. */
@@ -582,6 +591,57 @@ public abstract class JdbcDynamicTableSourceITCase implements DatabaseTest {
                         + "S.id = D.id AND (S.name = \'Bob\' OR S.nickname = \'ABC\')",
                 expectedResultSetRows,
                 expectedCachedEntries);
+    }
+
+    /**
+     * {@code TableLineageUtils} takes the lineage vertex of a source at plan time, before the
+     * source connects to the database. The dataset must already carry the physical table name then.
+     */
+    @Test
+    void testScanLineageDatasetNameIsKnownAtPlanTime() {
+        assertScanLineageDatasetName(inputTable.getTableName());
+    }
+
+    /**
+     * The reported dataset name is the configured {@code table-name}, not a name that the lineage
+     * SQL parser recovers from the generated query: it misreads a table name that a database
+     * requires quoting for, for example a name containing a hyphen. Lineage is taken at plan time,
+     * so the table does not have to exist for this test.
+     */
+    @Test
+    void testScanLineageDatasetNameIsNotParsedFromTheQuery() {
+        assertScanLineageDatasetName("jdbc-lineage-source");
+    }
+
+    private void assertScanLineageDatasetName(String tableName) {
+        Map<String, String> options = getOptions();
+        options.put("table-name", tableName);
+        ScanTableSource tableSource =
+                (ScanTableSource) createTableSource(inputTable.getTableResolvedSchema(), options);
+
+        ScanTableSource.ScanRuntimeProvider scanProvider =
+                tableSource.getScanRuntimeProvider(ScanRuntimeProviderContext.INSTANCE);
+        DataStream<RowData> sourceStream =
+                ((DataStreamScanProvider) scanProvider)
+                        .produceDataStream(providerContext -> Optional.empty(), env);
+
+        LineageGraph lineageGraph =
+                LineageGraphUtils.convertToLineageGraph(
+                        Collections.singletonList(sourceStream.getTransformation()));
+
+        assertThat(lineageGraph.sources()).hasSize(1);
+        LineageVertex lineageVertex = lineageGraph.sources().get(0);
+        assertThat(lineageVertex.datasets()).hasSize(1);
+        assertThat(lineageVertex.datasets().get(0).name()).isEqualTo(tableName);
+    }
+
+    private Map<String, String> getOptions() {
+        Map<String, String> options = new HashMap<>();
+        options.put("connector", "jdbc");
+        options.put("url", getMetadata().getJdbcUrl());
+        options.put("username", getMetadata().getUsername());
+        options.put("password", getMetadata().getPassword());
+        return options;
     }
 
     protected TemporalUnit timestampPrecision() {
