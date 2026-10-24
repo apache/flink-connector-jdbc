@@ -147,16 +147,10 @@ public class JdbcExactlyOnceOptions implements Serializable {
         }
 
         /**
-         * Set whether the same connection can be used for multiple XA transactions. A transaction
-         * is prepared each time a checkpoint is performed; it is committed once the checkpoint is
-         * confirmed. There can be multiple un-confirmed checkpoints and therefore multiple prepared
-         * transactions.
-         *
-         * <p>Some databases support this natively (e.g. Oracle); while others only allow a single
-         * XA transaction per connection (e.g. MySQL, PostgreSQL).
-         *
-         * <p>If enabled, each transaction uses a separate connection from a pool. The database
-         * limit of open connections might need to be adjusted.
+         * Set whether each XA transaction is started on a connection from a pool. The connection
+         * goes back to the pool once its transaction is prepared, as the committer commits the
+         * transaction on a connection of its own. The writer therefore uses one connection at a
+         * time either way.
          *
          * <p>Disabled by default.
          */
