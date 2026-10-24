@@ -125,6 +125,7 @@ public class JdbcSourceBuilder<OUT> {
     private ResultExtractor<OUT> resultExtractor;
     private SplitterEnumerator splitterEnumerator;
     private JdbcConnectionProvider connectionProvider;
+    private @Nullable String lineageTableName;
 
     JdbcSourceBuilder() {
         this.configuration = new Configuration();
@@ -295,6 +296,18 @@ public class JdbcSourceBuilder<OUT> {
         return this;
     }
 
+    /**
+     * Sets the dataset name of the lineage vertex.
+     *
+     * <p>By default, or when set to {@code null}, the name is derived from the SQL query by
+     * OpenLineage's SQL parser. A Table source knows the configured table name and sets it, so the
+     * name does not have to be parsed out of the generated query.
+     */
+    public JdbcSourceBuilder<OUT> setLineageTableName(@Nullable String lineageTableName) {
+        this.lineageTableName = lineageTableName;
+        return this;
+    }
+
     public JdbcSource<OUT> build() {
         if (this.connectionProvider == null) {
             this.connectionProvider = new SimpleJdbcConnectionProvider(connOptionsBuilder.build());
@@ -361,7 +374,8 @@ public class JdbcSourceBuilder<OUT> {
                 splitterEnumerator,
                 resultExtractor,
                 typeInformation,
-                deliveryGuarantee);
+                deliveryGuarantee,
+                lineageTableName);
     }
 
     private SplitterEnumerator getSplitter(

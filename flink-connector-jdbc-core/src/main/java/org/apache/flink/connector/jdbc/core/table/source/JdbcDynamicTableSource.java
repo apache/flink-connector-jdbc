@@ -199,6 +199,9 @@ public class JdbcDynamicTableSource
 
         LOG.debug("Query generated for JDBC scan: " + query);
 
+        // The planner reads lineage at plan time, before the source connects. The source knows the
+        // physical table name, so it does not have to parse it out of the generated query.
+        builder.setLineageTableName(options.getTableName());
         builder.setSql(query);
         final RowType rowType = (RowType) physicalRowDataType.getLogicalType();
         builder.setResultExtractor(new RowDataResultExtractor(dialect.getRowConverter(rowType)));
