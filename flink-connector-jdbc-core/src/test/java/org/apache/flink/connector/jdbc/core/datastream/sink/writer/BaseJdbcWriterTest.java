@@ -42,8 +42,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
@@ -87,9 +89,26 @@ abstract class BaseJdbcWriterTest implements DerbyTestBase {
 
     @BeforeEach
     void init() throws Exception {
-        TaskInfo taskInfo = new TestingTaskInfo("test_task", 4, 1, 4, 0, "test_subTask", "id");
+        this.sinkWriter =
+                newWriter(
+                        JobID.fromHexString(JOBID),
+                        1,
+                        4,
+                        OptionalLong.empty(),
+                        Collections.emptyList());
+    }
+
+    protected JdbcWriter<BooksTable.BookEntry> newWriter(
+            JobID jobId,
+            int subtask,
+            int parallelism,
+            OptionalLong restoredCheckpointId,
+            Collection<JdbcWriterState> recoveredState)
+            throws Exception {
+        TaskInfo taskInfo =
+                new TestingTaskInfo("test_task", 4, subtask, parallelism, 0, "test_subTask", "id");
         InitContext sinkContext =
-                new TestingInitContext(JobID.fromHexString(JOBID), "test_jobName", taskInfo);
+                new TestingInitContext(jobId, "test_jobName", taskInfo, restoredCheckpointId);
 
         JdbcOutputSerializer<BooksTable.BookEntry> outputSerializer =
                 JdbcOutputSerializer.of(
@@ -100,16 +119,15 @@ abstract class BaseJdbcWriterTest implements DerbyTestBase {
                 new SimpleJdbcQueryStatement<>(
                         TEST_TABLE.getInsertIntoQuery(), TEST_TABLE.getStatementBuilder());
 
-        this.sinkWriter =
-                new JdbcWriter<>(
-                        getConnectionProvider(),
-                        getExecutionOptions(),
-                        getExactlyOnceOptions(),
-                        queryStatement,
-                        outputSerializer,
-                        getDeliveryGuarantee(),
-                        Collections.emptyList(),
-                        sinkContext);
+        return new JdbcWriter<>(
+                getConnectionProvider(),
+                getExecutionOptions(),
+                getExactlyOnceOptions(),
+                queryStatement,
+                outputSerializer,
+                getDeliveryGuarantee(),
+                recoveredState,
+                sinkContext);
     }
 
     @AfterEach

@@ -23,6 +23,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.util.ratelimit.RateLimiterStrategy;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.RestartStrategyOptions;
+import org.apache.flink.configuration.StateRecoveryOptions;
 import org.apache.flink.connector.datagen.source.DataGeneratorSource;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -30,6 +31,8 @@ import org.apache.flink.connector.jdbc.datasource.connections.xa.SimpleXaConnect
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.TableRow;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
+import org.apache.flink.core.execution.JobClient;
+import org.apache.flink.core.execution.SavepointFormatType;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
@@ -41,15 +44,19 @@ import org.apache.flink.testutils.junit.SharedReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.transaction.xa.Xid;
 
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -76,6 +83,8 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
                     field("qty", INT()));
 
     private static final long RECOVERY_RECORDS = 100;
+
+    private static final long RESCALE_RECORDS = 1_000;
 
     private static final BooksTable UPDATE_TABLE = new BooksTable("UpdateSinkTable");
 
@@ -170,21 +179,85 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
                 .map(
                         new FailingSnapshotMapper(
                                 failed, firstFailingCheckpointId, failingCheckpoints, expire))
-                .sinkTo(
-                        finishSink(
-                                new JdbcSinkBuilder<BooksTable.BookEntry>()
-                                        .withQueryStatement(
-                                                RECOVERY_TABLE.getInsertIntoQuery(),
-                                                (ps, book) -> {
-                                                    ps.setInt(1, book.id);
-                                                    ps.setString(2, book.title);
-                                                    ps.setString(3, book.author);
-                                                    ps.setDouble(4, book.price);
-                                                    ps.setInt(5, book.qty);
-                                                })));
+                .sinkTo(recoverySink());
         env.execute();
 
         assertThat(failed.get().get()).isEqualTo(failingCheckpoints);
+        assertWrittenOnce(RECOVERY_RECORDS);
+    }
+
+    /**
+     * A restore at a lower parallelism hands a writer the states of several writers. The source
+     * goes on from the savepoint, so every record is written once.
+     */
+    @Test
+    void testRestoreAtLowerParallelism(@TempDir Path savepoints) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setParallelism(2);
+        env.enableCheckpointing(100L);
+        addRescalePipeline(env, RateLimiterStrategy.perCheckpoint(20));
+        String savepoint = stopWithSavepoint(env.executeAsync(), savepoints);
+
+        Configuration config = new Configuration();
+        config.set(StateRecoveryOptions.SAVEPOINT_PATH, savepoint);
+        env = StreamExecutionEnvironment.getExecutionEnvironment(config);
+        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setParallelism(1);
+        env.enableCheckpointing(100L);
+        addRescalePipeline(env, RateLimiterStrategy.perCheckpoint(200));
+        env.execute();
+
+        assertWrittenOnce(RESCALE_RECORDS);
+    }
+
+    private void addRescalePipeline(
+            StreamExecutionEnvironment env, RateLimiterStrategy rateLimiterStrategy) {
+        DataGeneratorSource<BooksTable.BookEntry> books =
+                new DataGeneratorSource<>(
+                        ExactlyOnceJdbcSinkTest::book,
+                        RESCALE_RECORDS,
+                        rateLimiterStrategy,
+                        TypeInformation.of(BooksTable.BookEntry.class));
+        env.fromSource(books, WatermarkStrategy.noWatermarks(), "books")
+                .uid("books")
+                .sinkTo(recoverySink())
+                .uid("sink");
+    }
+
+    /** Retries until all tasks run, as a savepoint can't be taken before. */
+    private static String stopWithSavepoint(JobClient client, Path savepoints) throws Exception {
+        Instant deadline = Instant.now().plusSeconds(60);
+        while (true) {
+            try {
+                return client.stopWithSavepoint(
+                                false, savepoints.toUri().toString(), SavepointFormatType.CANONICAL)
+                        .get();
+            } catch (ExecutionException e) {
+                if (Instant.now().isAfter(deadline)) {
+                    throw e;
+                }
+                Thread.sleep(100L);
+            }
+        }
+    }
+
+    private JdbcSink<BooksTable.BookEntry> recoverySink() {
+        return finishSink(
+                new JdbcSinkBuilder<BooksTable.BookEntry>()
+                        .withQueryStatement(
+                                RECOVERY_TABLE.getInsertIntoQuery(),
+                                (ps, book) -> {
+                                    ps.setInt(1, book.id);
+                                    ps.setString(2, book.title);
+                                    ps.setString(3, book.author);
+                                    ps.setDouble(4, book.price);
+                                    ps.setInt(5, book.qty);
+                                }));
+    }
+
+    /** Checks for prepared transactions first, as a select would wait for their locks. */
+    private void assertWrittenOnce(long records) throws SQLException {
         try (SimpleXaConnectionProvider xa =
                 SimpleXaConnectionProvider.from(getMetadata().buildXaDataSource())) {
             xa.open();
@@ -196,9 +269,7 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
                         .collect(Collectors.toList());
         assertThat(written)
                 .containsExactlyInAnyOrderElementsOf(
-                        IntStream.range(0, (int) RECOVERY_RECORDS)
-                                .boxed()
-                                .collect(Collectors.toList()));
+                        IntStream.range(0, (int) records).boxed().collect(Collectors.toList()));
     }
 
     /**

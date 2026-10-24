@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -46,7 +47,6 @@ import java.util.Optional;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
-import static org.apache.flink.util.Preconditions.checkState;
 
 /**
  * Jdbc writer that allow at-least-once (non-XA operation) and exactly-once (XA operation)
@@ -95,10 +95,15 @@ public class JdbcWriter<IN>
 
             checkNotNull(exactlyOnceOptions, "exactlyOnceOptions must be defined");
             checkNotNull(recoveredState, "recoveredState must be defined");
-            checkState(recoveredState.size() <= 1, "more than one state to recover");
 
-            JdbcWriterState state =
-                    recoveredState.stream().findFirst().orElse(JdbcWriterState.empty());
+            // after a downscale a writer restores the states of several writers
+            List<TransactionId> prepared = new ArrayList<>();
+            List<TransactionId> hanging = new ArrayList<>();
+            for (JdbcWriterState recovered : recoveredState) {
+                prepared.addAll(recovered.getPrepared());
+                hanging.addAll(recovered.getHanging());
+            }
+            JdbcWriterState state = JdbcWriterState.of(prepared, hanging);
 
             TransactionId transactionId =
                     TransactionId.create(

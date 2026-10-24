@@ -17,6 +17,7 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.sink.writer;
 
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
@@ -26,6 +27,7 @@ import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommit
 import org.apache.flink.connector.jdbc.core.datastream.sink.committer.TestingCommitRequest;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.SimpleXaConnectionProvider;
+import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.TransactionId;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 
 import org.junit.jupiter.api.AfterEach;
@@ -33,6 +35,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.transaction.xa.Xid;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -144,6 +147,67 @@ class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
 
         sinkWriter.snapshotState(1L);
         assertThat(sinkWriter.snapshotState(2L).get(0).getHanging()).isEmpty();
+    }
+
+    /**
+     * After a downscale a writer restores the states of several writers. The transactions they
+     * prepared before the restored checkpoint belong to the committer.
+     */
+    @Test
+    void testRestoreFromSeveralStates() throws Exception {
+        sinkWriter.close();
+        JobID jobId = new JobID();
+        List<JdbcCommitable> committables = new ArrayList<>();
+        List<JdbcWriterState> states = new ArrayList<>();
+        for (int subtask = 0; subtask < 2; subtask++) {
+            JdbcWriter<BooksTable.BookEntry> writer =
+                    newWriter(jobId, subtask, 2, OptionalLong.empty(), Collections.emptyList());
+            writer.write(BOOKS.get(subtask), writerContext);
+            writer.flush(false);
+            committables.addAll(writer.prepareCommit());
+            states.addAll(writer.snapshotState(1L));
+            writer.close();
+        }
+
+        sinkWriter = newWriter(jobId, 0, 1, OptionalLong.of(1L), states);
+        sinkWriter.close();
+
+        assertThat(recover())
+                .containsExactlyInAnyOrder(
+                        committables.get(0).getXid(), committables.get(1).getXid());
+        commit(committables.get(0));
+        commit(committables.get(1));
+        assertThat(TEST_TABLE.selectAllTable(getMetadata())).isEqualTo(BOOKS.subList(0, 2));
+    }
+
+    /** Before FLINK-41060 the writer kept its prepared transactions in its state. */
+    @Test
+    void testRestoreFromSeveralStatesWithPreparedTransactions() throws Exception {
+        sinkWriter.close();
+        JobID jobId = new JobID();
+        List<JdbcWriterState> states = new ArrayList<>();
+        for (int subtask = 0; subtask < 2; subtask++) {
+            JdbcWriter<BooksTable.BookEntry> writer =
+                    newWriter(jobId, subtask, 2, OptionalLong.empty(), Collections.emptyList());
+            writer.write(BOOKS.get(subtask), writerContext);
+            writer.flush(false);
+            Xid xid = writer.prepareCommit().iterator().next().getXid();
+            writer.close();
+            states.add(
+                    JdbcWriterState.of(
+                            Collections.singletonList(
+                                    TransactionId.restoreFromXid(
+                                            xid.getFormatId(),
+                                            xid.getGlobalTransactionId(),
+                                            xid.getBranchQualifier())),
+                            Collections.emptyList()));
+        }
+
+        sinkWriter = newWriter(jobId, 0, 1, OptionalLong.of(1L), states);
+        sinkWriter.close();
+
+        assertThat(recover()).isEmpty();
+        assertThat(TEST_TABLE.selectAllTable(getMetadata())).isEqualTo(BOOKS.subList(0, 2));
     }
 
     /** Commits the committable the way the committer gets it when it is not chained. */
