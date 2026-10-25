@@ -107,6 +107,7 @@ public class JdbcWriter<IN>
 
             TransactionId transactionId =
                     TransactionId.create(
+                            exactlyOnceOptions.getTransactionIdPrefix().orElse(null),
                             initContext.getJobInfo().getJobId().getBytes(),
                             initContext.getTaskInfo().getIndexOfThisSubtask(),
                             initContext.getTaskInfo().getNumberOfParallelSubtasks());

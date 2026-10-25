@@ -18,9 +18,14 @@
 package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.TransactionId;
 import org.apache.flink.util.Preconditions;
+import org.apache.flink.util.StringUtils;
+
+import javax.annotation.Nullable;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
@@ -47,6 +52,9 @@ import java.util.Optional;
  *       prepared by the other one (and known to it))
  *   <li>block when using with some non-MVCC databases, if there are ended-not-prepared transactions
  * </ol>
+ *
+ * <p><b>transactionIdPrefix</b> - the prefix of the XA transaction ids of this sink; see {@link
+ * JDBCExactlyOnceOptionsBuilder#withTransactionIdPrefix(String)}. Not set by default.
  */
 @PublicEvolving
 public class JdbcExactlyOnceOptions implements Serializable {
@@ -61,18 +69,21 @@ public class JdbcExactlyOnceOptions implements Serializable {
     private final boolean allowOutOfOrderCommits;
     private final Integer timeoutSec;
     private final boolean transactionPerConnection;
+    @Nullable private final String transactionIdPrefix;
 
     private JdbcExactlyOnceOptions(
             boolean discoverAndRollbackOnRecovery,
             int maxCommitAttempts,
             boolean allowOutOfOrderCommits,
             Optional<Integer> timeoutSec,
-            boolean transactionPerConnection) {
+            boolean transactionPerConnection,
+            @Nullable String transactionIdPrefix) {
         this.discoverAndRollbackOnRecovery = discoverAndRollbackOnRecovery;
         this.maxCommitAttempts = maxCommitAttempts;
         this.allowOutOfOrderCommits = allowOutOfOrderCommits;
         this.timeoutSec = timeoutSec.orElse(null);
         this.transactionPerConnection = transactionPerConnection;
+        this.transactionIdPrefix = transactionIdPrefix;
         Preconditions.checkArgument(this.maxCommitAttempts > 0, "maxCommitAttempts should be > 0");
     }
 
@@ -100,6 +111,10 @@ public class JdbcExactlyOnceOptions implements Serializable {
         return transactionPerConnection;
     }
 
+    public Optional<String> getTransactionIdPrefix() {
+        return Optional.ofNullable(transactionIdPrefix);
+    }
+
     public static JDBCExactlyOnceOptionsBuilder builder() {
         return new JDBCExactlyOnceOptionsBuilder();
     }
@@ -112,6 +127,7 @@ public class JdbcExactlyOnceOptions implements Serializable {
         private boolean allowOutOfOrderCommits = DEFAULT_ALLOW_OUT_OF_ORDER_COMMITS;
         private Optional<Integer> timeoutSec = Optional.empty();
         private boolean transactionPerConnection = DEFAULT_TRANSACTION_PER_CONNECTION;
+        @Nullable private String transactionIdPrefix;
 
         /**
          * Toggle discovery and rollback of prepared transactions upon recovery to prevent new
@@ -163,13 +179,32 @@ public class JdbcExactlyOnceOptions implements Serializable {
             return this;
         }
 
+        /**
+         * Set the prefix of the XA transaction ids of this sink, at most 43 bytes in UTF-8. Keep it
+         * the same across restarts of the job, and don't give it to another sink or job writing to
+         * the same database at the same time.
+         */
+        public JDBCExactlyOnceOptionsBuilder withTransactionIdPrefix(String transactionIdPrefix) {
+            Preconditions.checkArgument(
+                    !StringUtils.isNullOrWhitespaceOnly(transactionIdPrefix),
+                    "transactionIdPrefix must not be null or blank");
+            Preconditions.checkArgument(
+                    transactionIdPrefix.getBytes(StandardCharsets.UTF_8).length
+                            <= TransactionId.MAX_PREFIX_BYTES,
+                    "transactionIdPrefix must be at most %s bytes in UTF-8",
+                    TransactionId.MAX_PREFIX_BYTES);
+            this.transactionIdPrefix = transactionIdPrefix;
+            return this;
+        }
+
         public JdbcExactlyOnceOptions build() {
             return new JdbcExactlyOnceOptions(
                     recoveredAndRollback,
                     maxCommitAttempts,
                     allowOutOfOrderCommits,
                     timeoutSec,
-                    transactionPerConnection);
+                    transactionPerConnection,
+                    transactionIdPrefix);
         }
     }
 }

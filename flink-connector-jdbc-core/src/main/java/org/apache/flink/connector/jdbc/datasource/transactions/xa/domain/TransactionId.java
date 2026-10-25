@@ -29,11 +29,16 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import javax.annotation.Nullable;
 import javax.transaction.xa.Xid;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Optional;
 
 import static org.apache.flink.util.StringUtils.byteToHexString;
 
@@ -45,6 +50,13 @@ public class TransactionId implements Xid, Serializable {
 
     private static final int FORMAT_ID = 202;
 
+    // the global transaction id starts with the prefix
+    private static final int PREFIXED_FORMAT_ID = 203;
+
+    /** The bytes left for the prefix in a global transaction id, after its length, job and task. */
+    public static final int MAX_PREFIX_BYTES = Xid.MAXGTRIDSIZE - 1 - JobID.SIZE - Integer.BYTES;
+
+    @Nullable private final byte[] prefix;
     private final byte[] jobId;
     private final int subtaskId;
     private final int numberOfSubtasks;
@@ -53,12 +65,14 @@ public class TransactionId implements Xid, Serializable {
     private final boolean restored;
 
     private TransactionId(
+            @Nullable byte[] prefix,
             byte[] jobId,
             int subtaskId,
             int numberOfSubtasks,
             long checkpointId,
             int attempts,
             boolean restored) {
+        this.prefix = prefix;
         this.jobId = jobId;
         this.subtaskId = subtaskId;
         this.numberOfSubtasks = numberOfSubtasks;
@@ -72,12 +86,23 @@ public class TransactionId implements Xid, Serializable {
     }
 
     public static TransactionId create(byte[] jobId, int subtaskId, int numberOfSubtasks) {
-        return new TransactionId(jobId, subtaskId, numberOfSubtasks, -1, 0, false);
+        return create(null, jobId, subtaskId, numberOfSubtasks);
+    }
+
+    public static TransactionId create(
+            @Nullable String prefix, byte[] jobId, int subtaskId, int numberOfSubtasks) {
+        byte[] prefixBytes = prefix == null ? null : prefix.getBytes(StandardCharsets.UTF_8);
+        Preconditions.checkArgument(
+                prefixBytes == null || prefixBytes.length <= MAX_PREFIX_BYTES,
+                "transactionIdPrefix must be at most %s bytes in UTF-8",
+                MAX_PREFIX_BYTES);
+        return new TransactionId(prefixBytes, jobId, subtaskId, numberOfSubtasks, -1, 0, false);
     }
 
     public static TransactionId restore(
             byte[] jobId, int subtaskId, int numberOfSubtasks, long checkpointId, int attempts) {
-        return new TransactionId(jobId, subtaskId, numberOfSubtasks, checkpointId, attempts, true);
+        return new TransactionId(
+                null, jobId, subtaskId, numberOfSubtasks, checkpointId, attempts, true);
     }
 
     public static TransactionId createFromXid(
@@ -93,6 +118,9 @@ public class TransactionId implements Xid, Serializable {
     public static TransactionId fromXid(
             int formatId, byte[] globalTransactionId, byte[] branchQualifier, boolean restored)
             throws IOException {
+        if (PREFIXED_FORMAT_ID == formatId) {
+            return fromPrefixedXid(globalTransactionId, branchQualifier, restored);
+        }
         if (FORMAT_ID != formatId) {
             throw new IOException(String.format("Xid formatId (%s) is not valid", formatId));
         }
@@ -105,7 +133,33 @@ public class TransactionId implements Xid, Serializable {
         int numberOfSubtasks = branch.readInt();
         long checkpoint = branch.readLong();
 
-        return new TransactionId(jobIdBytes, subtaskId, numberOfSubtasks, checkpoint, 0, restored);
+        return new TransactionId(
+                null, jobIdBytes, subtaskId, numberOfSubtasks, checkpoint, 0, restored);
+    }
+
+    private static TransactionId fromPrefixedXid(
+            byte[] globalTransactionId, byte[] branchQualifier, boolean restored)
+            throws IOException {
+        try {
+            ByteBuffer gid = ByteBuffer.wrap(globalTransactionId);
+            byte[] prefix = new byte[Byte.toUnsignedInt(gid.get())];
+            gid.get(prefix);
+            byte[] jobIdBytes = new byte[JobID.SIZE];
+            gid.get(jobIdBytes);
+            int subtaskId = gid.getInt();
+
+            ByteBuffer branch = ByteBuffer.wrap(branchQualifier);
+            int numberOfSubtasks = branch.getInt();
+            long checkpoint = branch.getLong();
+            if (gid.hasRemaining() || branch.hasRemaining()) {
+                throw new IOException("Xid is too long");
+            }
+
+            return new TransactionId(
+                    prefix, jobIdBytes, subtaskId, numberOfSubtasks, checkpoint, 0, restored);
+        } catch (BufferUnderflowException e) {
+            throw new IOException("Xid is too short", e);
+        }
     }
 
     public static TransactionId deserialize(byte[] bytes) {
@@ -130,21 +184,40 @@ public class TransactionId implements Xid, Serializable {
 
     public TransactionId copy() {
         return new TransactionId(
-                jobId, subtaskId, numberOfSubtasks, checkpointId, attempts, restored);
+                prefix, jobId, subtaskId, numberOfSubtasks, checkpointId, attempts, restored);
     }
 
     public TransactionId withBranch(long checkpointId) {
         return new TransactionId(
-                jobId, subtaskId, numberOfSubtasks, checkpointId, attempts, restored);
+                prefix, jobId, subtaskId, numberOfSubtasks, checkpointId, attempts, restored);
     }
 
     public TransactionId withAttemptsIncremented() {
         return new TransactionId(
-                jobId, subtaskId, numberOfSubtasks, checkpointId, attempts + 1, restored);
+                prefix, jobId, subtaskId, numberOfSubtasks, checkpointId, attempts + 1, restored);
+    }
+
+    /** For the writer state, which stores the prefix next to what {@link #serialize()} writes. */
+    public TransactionId withPrefix(@Nullable byte[] prefix) {
+        return new TransactionId(
+                prefix, jobId, subtaskId, numberOfSubtasks, checkpointId, attempts, restored);
+    }
+
+    @Nullable
+    public byte[] getPrefixBytes() {
+        return prefix;
+    }
+
+    public Optional<String> getPrefix() {
+        return Optional.ofNullable(prefix).map(p -> new String(p, StandardCharsets.UTF_8));
     }
 
     public byte[] getJobId() {
         return jobId;
+    }
+
+    public int getSubtaskId() {
+        return subtaskId;
     }
 
     public int getNumberOfSubtasks() {
@@ -173,11 +246,24 @@ public class TransactionId implements Xid, Serializable {
 
     @Override
     public int getFormatId() {
-        return FORMAT_ID;
+        return prefix == null ? FORMAT_ID : PREFIXED_FORMAT_ID;
     }
 
+    /**
+     * Without a prefix the ids keep the padding of the shared buffer, as transactions prepared
+     * before the prefix was added must still be found by their bytes.
+     */
     @Override
     public byte[] getGlobalTransactionId() {
+        if (prefix != null) {
+            // globalTransactionId = prefix length + prefix + job id + task index
+            return ByteBuffer.allocate(1 + prefix.length + JobID.SIZE + Integer.BYTES)
+                    .put((byte) prefix.length)
+                    .put(prefix)
+                    .put(jobId, 0, JobID.SIZE)
+                    .putInt(subtaskId)
+                    .array();
+        }
         try {
             // globalTransactionId = job id + task index
             final DataOutputSerializer out = new DataOutputSerializer(1);
@@ -192,6 +278,12 @@ public class TransactionId implements Xid, Serializable {
     @Override
     public byte[] getBranchQualifier() {
         Preconditions.checkArgument(checkpointId >= 0, "No branch was initialized");
+        if (prefix != null) {
+            return ByteBuffer.allocate(Integer.BYTES + Long.BYTES)
+                    .putInt(numberOfSubtasks)
+                    .putLong(checkpointId)
+                    .array();
+        }
         try {
             // branchQualifier = numberOfSubtasks + checkpoint id
             final DataOutputSerializer out = new DataOutputSerializer(1);
@@ -203,6 +295,7 @@ public class TransactionId implements Xid, Serializable {
         }
     }
 
+    /** Writes all but the prefix. */
     public byte[] serialize() {
         try {
             final DataOutputSerializer out = new DataOutputSerializer(1);
@@ -252,6 +345,7 @@ public class TransactionId implements Xid, Serializable {
         TransactionId that = (TransactionId) other;
         EqualsBuilder builder =
                 new EqualsBuilder()
+                        .append(prefix, that.prefix)
                         .append(jobId, that.jobId)
                         .append(subtaskId, that.subtaskId)
                         .append(numberOfSubtasks, that.numberOfSubtasks)
@@ -272,6 +366,7 @@ public class TransactionId implements Xid, Serializable {
     public int hashCode(boolean withInternal) {
         HashCodeBuilder builder =
                 new HashCodeBuilder(17, 37)
+                        .append(prefix)
                         .append(jobId)
                         .append(subtaskId)
                         .append(numberOfSubtasks)
@@ -287,6 +382,7 @@ public class TransactionId implements Xid, Serializable {
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.JSON_STYLE)
+                .append("prefix", getPrefix().orElse(null))
                 .append("jobId", jobId)
                 .append("subtaskId", subtaskId)
                 .append("numberOfSubtasks", numberOfSubtasks)
