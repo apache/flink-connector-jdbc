@@ -199,6 +199,40 @@ public abstract class XaTransactionTest implements DatabaseTest {
         assertThat(isPrepared(none)).isTrue();
     }
 
+    /** MySQL only lists prepared transactions with XA_RECOVER_ADMIN. */
+    @Test
+    void testRollbackRestoredHangingWithoutRecover() throws Exception {
+        byte[] jobId = new JobID().getBytes();
+        TransactionId hanging = prepare(jobId, 1, 4, 5, 1);
+
+        try (XaTransaction transaction =
+                new XaTransaction(
+                        JdbcExactlyOnceOptions.defaults(),
+                        TransactionId.create(jobId, 0, 2),
+                        withoutRecover(newXaConnectionProvider()))) {
+            transaction.open(restoredState(hanging));
+            transaction.rollbackPreparedTxs(5);
+        }
+
+        assertThat(isPrepared(hanging)).isFalse();
+    }
+
+    @Test
+    void testRollbackRestoredHangingWithPrefixWithoutRecover() throws Exception {
+        TransactionId hanging = prepare("books", new JobID().getBytes(), 0, 1, 5, 1);
+
+        try (XaTransaction transaction =
+                new XaTransaction(
+                        JdbcExactlyOnceOptions.defaults(),
+                        TransactionId.create("books", new JobID().getBytes(), 0, 1),
+                        withoutRecover(newXaConnectionProvider()))) {
+            transaction.open(restoredState(hanging));
+            transaction.rollbackPreparedTxs(5);
+        }
+
+        assertThat(isPrepared(hanging)).isFalse();
+    }
+
     /**
      * After a downscale from 4 to 2, split list state gives the states of subtasks 0 and 1 to
      * subtask 0, while subtask 1 owns old subtask 1 modulo 2. Without listing, only subtask 0 knows
@@ -211,9 +245,7 @@ public abstract class XaTransactionTest implements DatabaseTest {
         for (int subtask = 0; subtask < 2; subtask++) {
             try (XaTransaction transaction =
                     new XaTransaction(
-                            JdbcExactlyOnceOptions.builder()
-                                    .withRecoveredAndRollback(false)
-                                    .build(),
+                            JdbcExactlyOnceOptions.defaults(),
                             TransactionId.create("books", jobId, subtask, 2),
                             withoutRecover(newXaConnectionProvider()))) {
                 transaction.open(subtask == 0 ? restoredState(hanging) : JdbcWriterState.empty());

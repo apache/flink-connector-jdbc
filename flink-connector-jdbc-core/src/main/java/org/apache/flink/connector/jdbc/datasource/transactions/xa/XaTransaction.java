@@ -89,15 +89,6 @@ public class XaTransaction implements Serializable, AutoCloseable {
             recoverState(state);
             hangingXids = new LinkedList<>(failOrRollback(hangingXids).getForRetry());
             commitTx();
-            if (exactlyOnceOptions.isDiscoverAndRollbackOnRecovery()) {
-                // Pending transactions which are not included into the checkpoint might hold locks
-                // and should be rolled back. However, rolling back ALL transactions can cause data
-                // loss: the transactions of checkpoints before the restored one are committed by
-                // the committer, which restores them from its own state. rollbackPreparedTxs()
-                // rolls back this writer's own transactions. The lookup below never matches a
-                // driver Xid (FLINK-41101).
-                recoverAndRollback();
-            }
         } catch (Exception e) {
             ExceptionUtils.rethrowIOException(e);
         }
@@ -357,23 +348,6 @@ public class XaTransaction implements Serializable, AutoCloseable {
             LOG.info("failed to roll back {} transactions", result.getForRetry().size());
         }
         return result;
-    }
-
-    private void recoverAndRollback() {
-        Collection<Xid> recovered = xaConnectionProvider.recover();
-        if (recovered.isEmpty()) {
-            return;
-        }
-        LOG.warn("rollback {} recovered transactions", recovered.size());
-        for (Xid xid : recovered) {
-            if (baseTransaction.belongsTo(xid)) {
-                try {
-                    xaConnectionProvider.rollback(xid);
-                } catch (Exception e) {
-                    LOG.info("unable to rollback recovered transaction, xid={}", xid, e);
-                }
-            }
-        }
     }
 
     private void throwIfAnyReachedMaxAttempts(

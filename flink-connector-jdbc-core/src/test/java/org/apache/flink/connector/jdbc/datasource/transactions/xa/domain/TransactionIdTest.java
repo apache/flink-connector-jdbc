@@ -165,29 +165,4 @@ class TransactionIdTest {
 
         assertThat(Arrays.asList(tid.withBranch(123L))).isEqualTo(Arrays.asList(rid));
     }
-
-    @Test
-    void testBelongsTo() {
-        TransactionId tid1 =
-                TransactionId.create(
-                        JobID.fromHexString("6b64d8a9a951e2e8767ae952ad951706").getBytes(), 1, 2);
-        TransactionId tid2 =
-                TransactionId.create(
-                        JobID.fromHexString("6b64d8a9a951e2e8767ae952ad951706").getBytes(), 2, 2);
-        TransactionId tid3 =
-                TransactionId.create(
-                        JobID.fromHexString("6b64d8a9a951e2e8767ae952ad951706").getBytes(), 3, 3);
-
-        assertThat(tid1.belongsTo(tid1)).isTrue();
-        assertThat(tid1.belongsTo(tid2)).isFalse();
-        assertThat(tid1.belongsTo(tid3)).isTrue();
-
-        assertThat(tid2.belongsTo(tid1)).isFalse();
-        assertThat(tid2.belongsTo(tid2)).isTrue();
-        assertThat(tid2.belongsTo(tid3)).isTrue();
-
-        assertThat(tid3.belongsTo(tid1)).isFalse();
-        assertThat(tid3.belongsTo(tid2)).isFalse();
-        assertThat(tid3.belongsTo(tid3)).isTrue();
-    }
 }

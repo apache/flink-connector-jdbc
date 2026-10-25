@@ -37,7 +37,6 @@ import java.io.Serializable;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Optional;
 
 import static org.apache.flink.util.StringUtils.byteToHexString;
@@ -308,25 +307,6 @@ public class TransactionId implements Xid, Serializable {
         } catch (IOException e) {
             throw new FlinkRuntimeException(e);
         }
-    }
-
-    public boolean belongsTo(Xid xid) {
-        if (!(xid instanceof TransactionId)) {
-            return false;
-        }
-
-        TransactionId tXid = (TransactionId) xid;
-
-        if (FORMAT_ID != tXid.getFormatId() || !Arrays.equals(jobId, tXid.jobId)) {
-            return false;
-        }
-
-        if (subtaskId == tXid.subtaskId && numberOfSubtasks == tXid.numberOfSubtasks) {
-            return true;
-        }
-
-        // Check if was a job downgrade
-        return numberOfSubtasks < tXid.subtaskId;
     }
 
     @Override
