@@ -121,8 +121,22 @@ public class XaTransaction implements Serializable, AutoCloseable {
         preparedXids = null;
     }
 
+    /**
+     * Keeps only the hanging transactions of this job, which {@link #open} rolls back. Those of
+     * another job may belong to a job that still runs and is about to commit them, for example the
+     * job that took the savepoint this one restores.
+     */
     public void recoverState(JdbcWriterState state) {
-        hangingXids = new LinkedList<>(state.getHanging());
+        hangingXids = new LinkedList<>();
+        for (TransactionId hanging : state.getHanging()) {
+            if (Arrays.equals(hanging.getJobId(), baseTransaction.getJobId())) {
+                hangingXids.add(hanging);
+            } else {
+                LOG.info(
+                        "leaving the restored transaction of another job, xid={}",
+                        hanging.getXidValue());
+            }
+        }
         preparedXids = new ArrayList<>(state.getPrepared());
         LOG.info(
                 "initialized state: prepared xids: {}, hanging xids: {}",

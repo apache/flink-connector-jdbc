@@ -92,11 +92,41 @@ public abstract class XaTransactionTest implements DatabaseTest {
         assertThat(isPrepared(otherSubtask)).isTrue();
     }
 
+    /**
+     * A job restored from a savepoint while the job that took it still runs would roll back the
+     * transaction that job's committer is about to commit.
+     */
+    @Test
+    void testOpenKeepsRestoredHangingOfEarlierJob() throws Exception {
+        byte[] earlierJobId = new JobID().getBytes();
+        TransactionId hanging = prepare(earlierJobId, 0, 1, 5, 1);
+
+        rollbackPreparedTxs(new JobID().getBytes(), 0, 1, 5, restoredState(hanging));
+
+        assertThat(isPrepared(hanging)).isTrue();
+    }
+
+    /** The state of a failed attempt of the same job, here before an upscale. */
+    @Test
+    void testOpenRollsBackRestoredHangingOfSameJob() throws Exception {
+        byte[] jobId = new JobID().getBytes();
+        TransactionId hanging = prepare(jobId, 0, 1, 5, 1);
+
+        rollbackPreparedTxs(jobId, 0, 2, 5, restoredState(hanging));
+
+        assertThat(isPrepared(hanging)).isFalse();
+    }
+
+    private static JdbcWriterState restoredState(TransactionId hanging) {
+        return JdbcWriterState.of(Collections.emptyList(), Collections.singletonList(hanging));
+    }
+
     /** Prepares a transaction with one record. */
     private TransactionId prepare(
             byte[] jobId, int subtask, int parallelism, long checkpointId, int id)
             throws Exception {
-        try (XaTransaction transaction = newTransaction(jobId, subtask, parallelism)) {
+        try (XaTransaction transaction =
+                newTransaction(jobId, subtask, parallelism, JdbcWriterState.empty())) {
             transaction.createTx(checkpointId);
             try (PreparedStatement ps =
                     transaction
@@ -114,19 +144,25 @@ public abstract class XaTransactionTest implements DatabaseTest {
 
     private void rollbackPreparedTxs(byte[] jobId, int subtask, int parallelism, long checkpointId)
             throws Exception {
-        try (XaTransaction transaction = newTransaction(jobId, subtask, parallelism)) {
+        rollbackPreparedTxs(jobId, subtask, parallelism, checkpointId, JdbcWriterState.empty());
+    }
+
+    private void rollbackPreparedTxs(
+            byte[] jobId, int subtask, int parallelism, long checkpointId, JdbcWriterState state)
+            throws Exception {
+        try (XaTransaction transaction = newTransaction(jobId, subtask, parallelism, state)) {
             transaction.rollbackPreparedTxs(checkpointId);
         }
     }
 
-    private XaTransaction newTransaction(byte[] jobId, int subtask, int parallelism)
-            throws Exception {
+    private XaTransaction newTransaction(
+            byte[] jobId, int subtask, int parallelism, JdbcWriterState state) throws Exception {
         XaTransaction transaction =
                 new XaTransaction(
                         JdbcExactlyOnceOptions.defaults(),
                         TransactionId.create(jobId, subtask, parallelism),
                         newXaConnectionProvider());
-        transaction.open(JdbcWriterState.empty());
+        transaction.open(state);
         return transaction;
     }
 
