@@ -60,6 +60,9 @@ public class XaTransaction implements Serializable, AutoCloseable {
     // last element is the current xid
     private transient Deque<TransactionId> hangingXids = new LinkedList<>();
     private transient TransactionId currentTid;
+    // restored hanging xids under the prefix that another subtask owns; rolled back here only if
+    // this writer can't list prepared transactions, as then their owner can't either
+    private transient List<TransactionId> unownedHangingXids = new ArrayList<>();
 
     private final TransactionId baseTransaction;
 
@@ -118,19 +121,28 @@ public class XaTransaction implements Serializable, AutoCloseable {
         xaConnectionProvider.close();
         currentTid = null;
         hangingXids = null;
+        unownedHangingXids = null;
         preparedXids = null;
     }
 
     /**
      * Keeps only the hanging transactions of this job, which {@link #open} rolls back. Those of
      * another job may belong to a job that still runs and is about to commit them, for example the
-     * job that took the savepoint this one restores.
+     * job that took the savepoint this one restores. With a prefix it keeps those under the prefix
+     * that it owns, see {@link #isLeftoverFromCheckpoint}, which also covers earlier jobs; rolling
+     * them back here needs no listing of the prepared transactions.
      */
     public void recoverState(JdbcWriterState state) {
         hangingXids = new LinkedList<>();
+        unownedHangingXids = new ArrayList<>();
         for (TransactionId hanging : state.getHanging()) {
-            if (Arrays.equals(hanging.getJobId(), baseTransaction.getJobId())) {
+            if (baseTransaction.getPrefixBytes() == null
+                    ? Arrays.equals(hanging.getJobId(), baseTransaction.getJobId())
+                    : isOwnedUnderPrefix(hanging)) {
                 hangingXids.add(hanging);
+            } else if (baseTransaction.getPrefixBytes() != null
+                    && Arrays.equals(hanging.getPrefixBytes(), baseTransaction.getPrefixBytes())) {
+                unownedHangingXids.add(hanging);
             } else {
                 LOG.info(
                         "leaving the restored transaction of another job, xid={}",
@@ -139,9 +151,11 @@ public class XaTransaction implements Serializable, AutoCloseable {
         }
         preparedXids = new ArrayList<>(state.getPrepared());
         LOG.info(
-                "initialized state: prepared xids: {}, hanging xids: {}",
+                "initialized state: prepared xids: {}, hanging xids: {}, hanging xids of other"
+                        + " subtasks: {}",
                 preparedXids.size(),
-                hangingXids.size());
+                hangingXids.size(),
+                unownedHangingXids.size());
     }
 
     public void checkState() {
@@ -152,49 +166,87 @@ public class XaTransaction implements Serializable, AutoCloseable {
     }
 
     /**
-     * Rolls back the prepared transactions of this writer from the given checkpoint on. A failed
-     * attempt may have left them prepared, the restart replays their records, and the committer
-     * only commits transactions of earlier checkpoints. It runs whether or not {@code
-     * discoverAndRollbackOnRecovery} is set.
+     * Rolls back the prepared transactions left behind from the given checkpoint on. Their records
+     * are replayed, and the committer only commits transactions of earlier checkpoints.
      */
     public void rollbackPreparedTxs(long checkpointId) {
         Collection<Xid> recovered;
         try {
             recovered = xaConnectionProvider.recover();
         } catch (Exception e) {
-            LOG.warn("unable to recover prepared transactions", e);
+            LOG.warn(
+                    "unable to recover prepared transactions, those left behind that aren't in the"
+                            + " restored state keep their locks",
+                    e);
+            hangingXids.addAll(failOrRollback(unownedHangingXids).getForRetry());
             return;
         }
         for (Xid xid : recovered) {
-            if (isOwnFromCheckpoint(xid, checkpointId)) {
-                LOG.info("rolling back transaction of a failed attempt, xid={}", xid);
-                xaConnectionProvider.rollback(xid);
+            if (isLeftoverFromCheckpoint(xid, checkpointId)) {
+                LOG.info("rolling back a leftover transaction, xid={}", xid);
+                try {
+                    xaConnectionProvider.rollback(xid);
+                } catch (RuntimeException e) {
+                    if (isPrepared(xid)) {
+                        throw e;
+                    }
+                    LOG.info("leftover transaction is gone already, xid={}", xid);
+                }
             }
         }
     }
 
     /**
-     * A transaction id names the job, the subtask and the parallelism, but not the sink. Another
-     * exactly-once sink of the job at the same parallelism can't run, as it starts the same xids.
-     * At another parallelism its xids differ only in the parallelism, so that has to match too.
+     * A transaction id names the job, the subtask and the parallelism, and the prefix if there is
+     * one. Without a prefix this writer only rolls back its own transactions: another exactly-once
+     * sink of the job at the same parallelism can't run, as it starts the same xids, and at another
+     * parallelism its xids differ only in the parallelism.
+     *
+     * <p>With a prefix it also rolls back those of earlier jobs and parallelisms under the prefix,
+     * of the subtasks whose index is its own modulo the parallelism, so each has a single owner as
+     * long as all writers can list them. At the same job and parallelism that is only its own, as
+     * in BATCH the other writers may have prepared their transactions for the committer already.
      */
-    private boolean isOwnFromCheckpoint(Xid xid, long checkpointId) {
-        if (xid.getFormatId() != baseTransaction.getFormatId()
-                || !Arrays.equals(
-                        xid.getGlobalTransactionId(), baseTransaction.getGlobalTransactionId())) {
-            return false;
-        }
+    private boolean isLeftoverFromCheckpoint(Xid xid, long checkpointId) {
+        TransactionId transactionId;
         try {
-            TransactionId transactionId =
+            transactionId =
                     TransactionId.createFromXid(
                             xid.getFormatId(),
                             xid.getGlobalTransactionId(),
                             xid.getBranchQualifier());
-            return transactionId.getNumberOfSubtasks() == baseTransaction.getNumberOfSubtasks()
-                    && transactionId.getCheckpointId() >= checkpointId;
         } catch (IOException e) {
             return false;
         }
+        if (transactionId.getCheckpointId() < checkpointId) {
+            return false;
+        }
+        if (xid.getFormatId() == baseTransaction.getFormatId()
+                && Arrays.equals(
+                        xid.getGlobalTransactionId(), baseTransaction.getGlobalTransactionId())
+                && transactionId.getNumberOfSubtasks() == baseTransaction.getNumberOfSubtasks()) {
+            return true;
+        }
+        return baseTransaction.getPrefixBytes() != null && isOwnedUnderPrefix(transactionId);
+    }
+
+    private boolean isOwnedUnderPrefix(TransactionId transactionId) {
+        return Arrays.equals(transactionId.getPrefixBytes(), baseTransaction.getPrefixBytes())
+                && transactionId.getSubtaskId() % baseTransaction.getNumberOfSubtasks()
+                        == baseTransaction.getSubtaskId();
+    }
+
+    private boolean isPrepared(Xid xid) {
+        return xaConnectionProvider.recover().stream()
+                .anyMatch(
+                        recovered ->
+                                recovered.getFormatId() == xid.getFormatId()
+                                        && Arrays.equals(
+                                                recovered.getGlobalTransactionId(),
+                                                xid.getGlobalTransactionId())
+                                        && Arrays.equals(
+                                                recovered.getBranchQualifier(),
+                                                xid.getBranchQualifier()));
     }
 
     /**

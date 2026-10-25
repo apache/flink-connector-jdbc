@@ -183,6 +183,13 @@ public class JdbcExactlyOnceOptions implements Serializable {
          * Set the prefix of the XA transaction ids of this sink, at most 43 bytes in UTF-8. Keep it
          * the same across restarts of the job, and don't give it to another sink or job writing to
          * the same database at the same time.
+         *
+         * <p>With a prefix a restarted writer also rolls back the prepared transactions that
+         * earlier jobs left behind under the prefix, for example after a restore from a savepoint
+         * or a retained checkpoint into a new job, or a restart at another parallelism. This needs
+         * the permission to list prepared transactions, such as XA_RECOVER_ADMIN on MySQL. Without
+         * a prefix, those of earlier jobs and of another parallelism keep their locks until they
+         * are rolled back by hand.
          */
         public JDBCExactlyOnceOptionsBuilder withTransactionIdPrefix(String transactionIdPrefix) {
             Preconditions.checkArgument(

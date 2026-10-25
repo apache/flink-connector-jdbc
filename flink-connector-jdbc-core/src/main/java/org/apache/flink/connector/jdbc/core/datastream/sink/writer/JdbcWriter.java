@@ -117,6 +117,14 @@ public class JdbcWriter<IN>
                             exactlyOnceOptions,
                             transactionId,
                             ((XaConnectionProvider) connectionProvider));
+            if (!exactlyOnceOptions.getTransactionIdPrefix().isPresent()
+                    && transactionId.getSubtaskId() == 0) {
+                LOG.warn(
+                        "No transaction id prefix is set, so prepared transactions left behind by"
+                                + " earlier jobs or another parallelism are not rolled back and keep"
+                                + " their locks. Set one with"
+                                + " JdbcExactlyOnceOptions.builder().withTransactionIdPrefix().");
+            }
             this.jdbcTransaction.open(state);
             this.jdbcTransaction.rollbackPreparedTxs(lastCheckpointId);
             this.jdbcTransaction.createTx(lastCheckpointId);

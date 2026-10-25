@@ -82,7 +82,7 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
                     field("price", dbType("FLOAT"), DOUBLE()),
                     field("qty", INT()));
 
-    private static final long RECOVERY_RECORDS = 100;
+    protected static final long RECOVERY_RECORDS = 100;
 
     private static final long RESCALE_RECORDS = 1_000;
 
@@ -91,7 +91,7 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
     private static final int UPDATES = 10_000;
 
     @RegisterExtension
-    private final SharedObjectsExtension sharedObjects = SharedObjectsExtension.create();
+    protected final SharedObjectsExtension sharedObjects = SharedObjectsExtension.create();
 
     @Override
     protected <T> JdbcSink<T> finishSink(JdbcSinkBuilder<T> builder) {
@@ -242,7 +242,7 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
         }
     }
 
-    private JdbcSink<BooksTable.BookEntry> recoverySink() {
+    protected JdbcSink<BooksTable.BookEntry> recoverySink() {
         return finishSink(
                 new JdbcSinkBuilder<BooksTable.BookEntry>()
                         .withQueryStatement(
@@ -257,7 +257,7 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
     }
 
     /** Checks for prepared transactions first, as a select would wait for their locks. */
-    private void assertWrittenOnce(long records) throws SQLException {
+    protected void assertWrittenOnce(long records) throws SQLException {
         try (SimpleXaConnectionProvider xa =
                 SimpleXaConnectionProvider.from(getMetadata().buildXaDataSource())) {
             xa.open();
@@ -314,7 +314,7 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
         }
     }
 
-    private static BooksTable.BookEntry book(Long id) {
+    protected static BooksTable.BookEntry book(Long id) {
         return new BooksTable.BookEntry(id.intValue(), "Book " + id, "Writer", id.doubleValue(), 1);
     }
 
@@ -323,7 +323,7 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
      * its snapshots from the tail to the head, so the sink has already prepared its transaction for
      * those checkpoints.
      */
-    private static class FailingSnapshotMapper
+    protected static class FailingSnapshotMapper
             implements MapFunction<BooksTable.BookEntry, BooksTable.BookEntry>,
                     CheckpointedFunction {
 
