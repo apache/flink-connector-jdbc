@@ -71,6 +71,11 @@ under the License.
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.26.1</log4j.version>
 
+        <!-- Until flink-connector-parent enables the plugin itself (FLINK-41232) -->
+        <cyclonedx-maven-plugin.version>2.9.3</cyclonedx-maven-plugin.version>
+        <!-- Makes the build reproducible; the SBOMs then carry no build timestamp -->
+        <project.build.outputTimestamp>2026-10-26T00:00:00Z</project.build.outputTimestamp>
+
         <flink.parent.artifactId>flink-connector-jdbc-parent</flink.parent.artifactId>
         <surefire.module.config>
             <!-- required by JdbcExactlyOnceSinkE2eTest --> --add-opens=java.base/java.util=ALL-UNNAMED
@@ -436,6 +441,15 @@ under the License.
                 <groupId>org.commonjava.maven.plugins</groupId>
                 <artifactId>directory-maven-plugin</artifactId>
             </plugin>
+
+            <plugin>
+                <!-- Provided dependencies, such as the drivers, are not shipped -->
+                <groupId>org.cyclonedx</groupId>
+                <artifactId>cyclonedx-maven-plugin</artifactId>
+                <configuration>
+                    <includeProvidedScope>false</includeProvidedScope>
+                </configuration>
+            </plugin>
         </plugins>
 
         <pluginManagement>
@@ -462,6 +476,17 @@ under the License.
                      Don't upgrade it in this profile because it formats code differently.
                      Re-evaluate once support for Java 8 is dropped. -->
                 <spotless.skip>true</spotless.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>fast</id>
+            <activation>
+                <property>
+                    <name>fast</name>
+                </property>
+            </activation>
+            <properties>
+                <cyclonedx.skip>true</cyclonedx.skip>
             </properties>
         </profile>
     </profiles>
