@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.core.datastream.source;
 
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.core.datastream.source.config.ContinuousUnBoundingSettings;
 import org.apache.flink.connector.jdbc.core.datastream.source.enumerator.splitter.JdbcSqlSplitterEnumerator;
@@ -37,6 +38,7 @@ import org.apache.flink.types.Row;
 import org.junit.jupiter.api.Test;
 
 import java.io.Serializable;
+import java.sql.ResultSet;
 import java.time.Duration;
 
 import static org.apache.flink.connector.jdbc.core.datastream.source.JdbcSourceOptions.READER_FETCH_BATCH_SIZE;
@@ -209,6 +211,22 @@ class JdbcSourceBuilderTest {
                                         .build())
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(JdbcSourceBuilder.INVALID_CONTINUOUS_SLIDE_TIMING_HINT);
+    }
+
+    @Test
+    void testExactlyOnceRequiresScrollInsensitiveResultSetType() {
+        sourceBuilder.setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE);
+
+        assertThatThrownBy(
+                        () -> sourceBuilder.setResultSetType(ResultSet.TYPE_FORWARD_ONLY).build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("ResultSet.TYPE_SCROLL_INSENSITIVE");
+        assertThatThrownBy(() -> sourceBuilder.setResultSetType(ResultSet.CONCUR_READ_ONLY).build())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("ResultSet.TYPE_SCROLL_INSENSITIVE");
+
+        assertThat(sourceBuilder.setResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE).build())
+                .isNotNull();
     }
 
     @Test
