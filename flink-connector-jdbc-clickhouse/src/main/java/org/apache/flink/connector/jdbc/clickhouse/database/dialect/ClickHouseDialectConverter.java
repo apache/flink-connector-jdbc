@@ -26,11 +26,7 @@ import org.apache.flink.table.data.GenericArrayData;
 import org.apache.flink.table.data.GenericMapData;
 import org.apache.flink.table.data.MapData;
 import org.apache.flink.table.data.TimestampData;
-import org.apache.flink.table.types.logical.ArrayType;
-import org.apache.flink.table.types.logical.LogicalType;
-import org.apache.flink.table.types.logical.LogicalTypeRoot;
-import org.apache.flink.table.types.logical.MapType;
-import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.types.logical.*;
 import org.apache.flink.table.types.logical.utils.LogicalTypeUtils;
 
 import java.lang.reflect.Array;
@@ -40,6 +36,8 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -81,6 +79,16 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
         } else if (root == LogicalTypeRoot.MAP) {
             return (val, index, statement) ->
                     statement.setObject(index, toExternalSerializer(val.getMap(index), type));
+        } else if (root == LogicalTypeRoot.TIMESTAMP_WITH_TIME_ZONE
+                || root == LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE) {
+            final int precision = ((TimestampType) type).getPrecision();
+            final DateTimeFormatter formatter =
+                    DateTimeFormatter.ofPattern(timestampPattern(precision))
+                            .withZone(ZoneOffset.UTC);
+            return (val, index, statement) ->
+                    statement.setString(
+                            index,
+                            formatter.format(val.getTimestamp(index, precision).toInstant()));
         } else {
             return super.createExternalConverter(type);
         }
@@ -88,6 +96,9 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
 
     // adding support to MAP and ARRAY types
     private static Object toExternalSerializer(Object value, LogicalType type) {
+        if (value == null) {
+            return null;
+        }
         switch (type.getTypeRoot()) {
             case BOOLEAN:
                 return value;
@@ -229,6 +240,12 @@ public class ClickHouseDialectConverter extends AbstractDialectConverter {
             default:
                 return super.createInternalConverter(type);
         }
+    }
+
+    private static String timestampPattern(int precision) {
+        return precision <= 0
+                ? "yyyy-MM-dd HH:mm:ss"
+                : "yyyy-MM-dd HH:mm:ss." + "S".repeat(precision);
     }
 
     @Override

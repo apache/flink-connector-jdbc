@@ -70,7 +70,7 @@ public class ClickHouseDialect extends AbstractDialect {
 
     @Override
     public String quoteIdentifier(String identifier) {
-        return identifier;
+        return "`" + identifier + "`";
     }
 
     // ClickHouse does not support Upsert statements
@@ -95,9 +95,9 @@ public class ClickHouseDialect extends AbstractDialect {
                 Arrays.stream(conditionFields)
                         .map(f -> format("%s = :%s", quoteIdentifier(f), f))
                         .collect(Collectors.joining(" AND "));
-        return "ALTER TABLE "
+        return "UPDATE "
                 + quoteIdentifier(tableName)
-                + " UPDATE "
+                + " SET "
                 + setClause
                 + " WHERE "
                 + conditionClause;
