@@ -83,9 +83,11 @@ under the License.
 
         <!-- Root dependencies for all projects -->
 
+        <!-- Part of flink-dist, so the connector must not bring it in itself -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-base</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
