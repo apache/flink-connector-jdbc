@@ -306,9 +306,8 @@ public class JdbcSourceBuilder<OUT> {
 
         if (deliveryGuarantee == DeliveryGuarantee.EXACTLY_ONCE) {
             Preconditions.checkArgument(
-                    this.resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE
-                            || this.resultSetType == ResultSet.CONCUR_READ_ONLY,
-                    "The 'resultSetType' must be ResultSet.TYPE_SCROLL_INSENSITIVE or ResultSet.CONCUR_READ_ONLY when using %s",
+                    this.resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE,
+                    "The 'resultSetType' must be ResultSet.TYPE_SCROLL_INSENSITIVE when using %s",
                     DeliveryGuarantee.EXACTLY_ONCE);
         }
 
