@@ -117,6 +117,13 @@ under the License.
             <artifactId>testcontainers-postgresql</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- The sink tests create tables with a primary key in the Postgres database behind Trino -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgres.version}</version>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 
