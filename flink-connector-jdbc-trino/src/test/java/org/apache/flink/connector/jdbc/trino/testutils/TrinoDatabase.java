@@ -26,15 +26,12 @@ import org.apache.flink.connector.jdbc.testutils.DatabaseResource;
 import org.apache.flink.connector.jdbc.testutils.resources.DockerResource;
 import org.apache.flink.util.FlinkRuntimeException;
 
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.TrinoContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.images.builder.Transferable;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 
 /** A Trino database for testing. */
@@ -90,7 +87,6 @@ public class TrinoDatabase extends DatabaseExtension implements TrinoImages, Pos
                 try {
                     CONTAINER_DB.start();
 
-                    Path tempFile = Files.createTempFile(null, null);
                     String postgresContent =
                             "connector.name=postgresql\n"
                                     + String.format(
@@ -100,14 +96,14 @@ public class TrinoDatabase extends DatabaseExtension implements TrinoImages, Pos
                                             "connection-user=%s\n", CONTAINER_DB.getUsername())
                                     + String.format(
                                             "connection-password=%s\n", CONTAINER_DB.getPassword());
-                    Files.write(tempFile, postgresContent.getBytes(StandardCharsets.UTF_8));
 
+                    // Copied rather than bind mounted: Trino runs as uid 1000 and cannot read a
+                    // 0600 temp file owned by another build user on Linux.
                     CONTAINER
                             .withDatabaseName("postgres/public")
-                            .withFileSystemBind(
-                                    tempFile.toFile().getAbsolutePath(),
-                                    "/etc/trino/catalog/postgres.properties",
-                                    BindMode.READ_WRITE)
+                            .withCopyToContainer(
+                                    Transferable.of(postgresContent),
+                                    "/etc/trino/catalog/postgres.properties")
                             .waitingFor(Wait.forHttp("/ui/login.html").forStatusCode(200));
                     CONTAINER.start();
                 } catch (Exception e) {

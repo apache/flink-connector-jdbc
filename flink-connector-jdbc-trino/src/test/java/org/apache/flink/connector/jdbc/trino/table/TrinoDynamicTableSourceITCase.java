@@ -25,8 +25,6 @@ import org.apache.flink.connector.jdbc.trino.database.dialect.TrinoDialect;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.types.Row;
 
-import org.junit.jupiter.api.Disabled;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,7 +38,6 @@ import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.fiel
 import static org.apache.flink.connector.jdbc.testutils.tables.TableBuilder.tableRow;
 
 /** The Table Source ITCase for {@link TrinoDialect}. */
-@Disabled("Not working on jenkins as container not start.")
 class TrinoDynamicTableSourceITCase extends JdbcDynamicTableSourceITCase implements TrinoTestBase {
 
     @Override

@@ -24,7 +24,6 @@ import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.trino.TrinoTestBase;
 import org.apache.flink.connector.jdbc.trino.database.dialect.TrinoDialect;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -32,19 +31,16 @@ import java.util.Arrays;
 import java.util.List;
 
 /** The Table Sink ITCase for {@link TrinoDialect}. */
-@Disabled("Not working on jenkins as container not start.")
 class TrinoDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implements TrinoTestBase {
 
+    // Trino cannot declare a primary key, so the tests using upsertOutputTable or
+    // userOutputTable create them in the Postgres database behind Trino.
     @Override
     public List<TableManaged> getManagedTables() {
         return Arrays.asList(
-                // upsertOutputTable,
-                appendOutputTable, batchOutputTable, realOutputTable, checkpointOutputTable
-                // userOutputTable
-                );
+                appendOutputTable, batchOutputTable, realOutputTable, checkpointOutputTable);
     }
 
-    @Disabled("Trino dont allow create tables with PK")
     @Test
     @Override
     protected void testUpsert() throws Exception {
@@ -54,12 +50,11 @@ class TrinoDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implements 
                 upsertOutputTable.createTable(conn);
                 super.testUpsert();
             } finally {
-                upsertOutputTable.deleteTable(conn);
+                upsertOutputTable.dropTable(conn);
             }
         }
     }
 
-    @Disabled("Trino dont allow create tables with PK")
     @Test
     @Override
     protected void testReadingFromChangelogSource() throws Exception {
@@ -68,12 +63,11 @@ class TrinoDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implements 
                 userOutputTable.createTable(conn);
                 super.testReadingFromChangelogSource();
             } finally {
-                userOutputTable.deleteTable(conn);
+                userOutputTable.dropTable(conn);
             }
         }
     }
 
-    @Disabled("Trino dont allow create tables with PK")
     @Test
     @Override
     protected void testChangelogReducedWithinOneBuffer() throws Exception {
@@ -82,12 +76,11 @@ class TrinoDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implements 
                 userOutputTable.createTable(conn);
                 super.testChangelogReducedWithinOneBuffer();
             } finally {
-                userOutputTable.deleteTable(conn);
+                userOutputTable.dropTable(conn);
             }
         }
     }
 
-    @Disabled("Trino dont allow create tables with PK")
     @Test
     @Override
     protected void testChangelogWithSinkParallelismAboveOne() throws Exception {
@@ -96,7 +89,7 @@ class TrinoDynamicTableSinkITCase extends JdbcDynamicTableSinkITCase implements 
                 userOutputTable.createTable(conn);
                 super.testChangelogWithSinkParallelismAboveOne();
             } finally {
-                userOutputTable.deleteTable(conn);
+                userOutputTable.dropTable(conn);
             }
         }
     }
