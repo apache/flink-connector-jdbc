@@ -54,7 +54,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
@@ -68,6 +67,7 @@ public class JdbcRowDataLookupFunction extends LookupFunction implements Lineage
     private static final long serialVersionUID = 2L;
 
     private final String query;
+    private final String lineageTableName;
     private final JdbcConnectionProvider connectionProvider;
     private final String[] keyNames;
     private final int maxRetryTimes;
@@ -111,6 +111,7 @@ public class JdbcRowDataLookupFunction extends LookupFunction implements Lineage
                                 })
                         .toArray(DataType[]::new);
         this.maxRetryTimes = maxRetryTimes;
+        this.lineageTableName = options.getTableName();
         this.query =
                 options.getDialect()
                         .getSelectFromStatement(options.getTableName(), fieldNames, keyNames);
@@ -241,11 +242,10 @@ public class JdbcRowDataLookupFunction extends LookupFunction implements Lineage
                 new DefaultTypeDatasetFacet(
                         LegacyTypeInfoDataTypeConverter.toLegacyTypeInfo(
                                 TypeConversions.fromLogicalToDataType(producedType)));
-        Optional<String> nameOpt = LineageUtils.tableNameOf(query, true);
         String namespace = LineageUtils.namespaceOf(connectionProvider);
         LineageDataset dataset =
                 LineageUtils.datasetOf(
-                        nameOpt.orElse(""), namespace, Arrays.asList(defaultTypeDatasetFacet));
+                        lineageTableName, namespace, Arrays.asList(defaultTypeDatasetFacet));
         return LineageUtils.sourceLineageVertexOf(
                 Boundedness.BOUNDED, Collections.singleton(dataset));
     }
