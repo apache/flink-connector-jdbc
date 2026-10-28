@@ -57,6 +57,7 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
     protected static final String TABLE_PRIMITIVE_TYPE = "primitive_table";
     protected static final String TABLE_PRIMITIVE_TYPE2 = "primitive_table2";
     protected static final String TABLE_ARRAY_TYPE = "array_table";
+    protected static final String TABLE_ARRAY_TYPE2 = "array_table2";
     protected static final String TABLE_SERIAL_TYPE = "serial_table";
     protected static final String TABLE_UUID_TYPE = "uuid_table";
     protected static final String TABLE_UUID_TYPE2 = "uuid_table2";
@@ -111,6 +112,9 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
                 getPrimitiveTable("test_pk2").pgSchemaSql);
         createTable(
                 PostgresTablePath.fromFlinkTableName(TABLE_ARRAY_TYPE),
+                getArrayTable().pgSchemaSql);
+        createTable(
+                PostgresTablePath.fromFlinkTableName(TABLE_ARRAY_TYPE2),
                 getArrayTable().pgSchemaSql);
         createTable(
                 PostgresTablePath.fromFlinkTableName(TABLE_SERIAL_TYPE),
@@ -192,6 +196,10 @@ class PostgresCatalogTestBase implements JdbcITCaseBase, PostgresTestBase {
                 PostgresCatalog.DEFAULT_DATABASE,
                 String.format(
                         "DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE_ARRAY_TYPE)));
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE,
+                String.format(
+                        "DROP TABLE %s ", PostgresTablePath.fromFlinkTableName(TABLE_ARRAY_TYPE2)));
         executeSQL(
                 PostgresCatalog.DEFAULT_DATABASE,
                 String.format(
