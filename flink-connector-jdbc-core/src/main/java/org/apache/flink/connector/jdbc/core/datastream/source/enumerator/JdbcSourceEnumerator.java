@@ -178,9 +178,10 @@ public class JdbcSourceEnumerator
     private void onSplitsDiscovered(EnumerationResult result, Throwable error) {
         asyncCallsPending.decrementAndGet();
         if (error != null) {
-            LOG.error("Failed to discover splits.", error);
-            preDiscoverSplits();
-            return;
+            // Rethrow rather than retry: this callback runs on the coordinator thread, so an
+            // uncaught exception here fails the job, which is what a broken splitter (e.g. an
+            // invalid scan.partition.boundary-query) must do instead of retrying forever.
+            throw new RuntimeException("Failed to discover splits.", error);
         }
 
         // The splits are now owned by this enumerator (buffered) or by a reader, so the state that
