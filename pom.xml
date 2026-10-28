@@ -353,7 +353,7 @@ under the License.
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>33.0.0-jre</version>
+                <version>33.7.1-jre</version>
             </dependency>
 
             <!-- For dependency convergence on crate-jdbc mismatch -->
