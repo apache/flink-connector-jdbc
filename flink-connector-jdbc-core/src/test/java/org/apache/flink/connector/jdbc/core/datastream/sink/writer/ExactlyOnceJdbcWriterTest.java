@@ -101,6 +101,19 @@ class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
         assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection())).isEqualTo(BOOKS);
     }
 
+    /** Checkpoints can still come after the end of input, until the task finishes. */
+    @Test
+    void testCheckpointsAfterEndOfInput() throws Exception {
+        for (BooksTable.BookEntry book : BOOKS) {
+            sinkWriter.write(book, writerContext);
+        }
+        sinkWriter.flush(true);
+        assertThat(sinkWriter.prepareCommit()).hasSize(1);
+
+        sinkWriter.snapshotState(1L);
+        assertThat(sinkWriter.snapshotState(2L).get(0).getHanging()).isEmpty();
+    }
+
     protected void checkPreCommitWithSnapshot(long checkpointId, boolean hasCommit)
             throws Exception {
         sinkWriter.flush(false);
