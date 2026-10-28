@@ -18,7 +18,6 @@
 package org.apache.flink.connector.jdbc.datasource.transactions.xa;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriterState;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.XaConnectionProvider;
@@ -36,11 +35,13 @@ import javax.transaction.xa.Xid;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 /** Class that manages all relevant XA operations. */
 @Internal
@@ -51,7 +52,7 @@ public class XaTransaction implements Serializable, AutoCloseable {
     private final XaConnectionProvider xaConnectionProvider;
     private final JdbcExactlyOnceOptions exactlyOnceOptions;
 
-    // checkpoints and the corresponding transactions waiting for completion notification from JM
+    // prepared xids from the restored writer state, committed on open
     private transient List<TransactionId> preparedXids = new ArrayList<>();
     // hanging XIDs - used for cleanup
     // it's a list to support retries and scaling down
@@ -59,6 +60,9 @@ public class XaTransaction implements Serializable, AutoCloseable {
     // last element is the current xid
     private transient Deque<TransactionId> hangingXids = new LinkedList<>();
     private transient TransactionId currentTid;
+    // restored hanging xids under the prefix that another subtask owns; rolled back here only if
+    // this writer can't list prepared transactions, as then their owner can't either
+    private transient List<TransactionId> unownedHangingXids = new ArrayList<>();
 
     private final TransactionId baseTransaction;
 
@@ -69,10 +73,6 @@ public class XaTransaction implements Serializable, AutoCloseable {
         this.xaConnectionProvider = xaFacade;
         this.exactlyOnceOptions = exactlyOnceOptions;
         this.baseTransaction = transactionId;
-    }
-
-    public Xid getCurrentXid() {
-        return currentTid;
     }
 
     public XaConnectionProvider getConnectionProvider() {
@@ -89,16 +89,6 @@ public class XaTransaction implements Serializable, AutoCloseable {
             recoverState(state);
             hangingXids = new LinkedList<>(failOrRollback(hangingXids).getForRetry());
             commitTx();
-            if (exactlyOnceOptions.isDiscoverAndRollbackOnRecovery()) {
-                // Pending transactions which are not included into the checkpoint might hold locks
-                // and
-                // should be rolled back. However, rolling back ALL transactions can cause data
-                // loss. So
-                // each subtask first commits transactions from its state and then rolls back
-                // discovered
-                // transactions if they belong to it.
-                recoverAndRollback();
-            }
         } catch (Exception e) {
             ExceptionUtils.rethrowIOException(e);
         }
@@ -122,16 +112,41 @@ public class XaTransaction implements Serializable, AutoCloseable {
         xaConnectionProvider.close();
         currentTid = null;
         hangingXids = null;
+        unownedHangingXids = null;
         preparedXids = null;
     }
 
+    /**
+     * Keeps only the hanging transactions of this job, which {@link #open} rolls back. Those of
+     * another job may belong to a job that still runs and is about to commit them, for example the
+     * job that took the savepoint this one restores. With a prefix it keeps those under the prefix
+     * that it owns, see {@link #isLeftoverFromCheckpoint}, which also covers earlier jobs; rolling
+     * them back here needs no listing of the prepared transactions.
+     */
     public void recoverState(JdbcWriterState state) {
-        hangingXids = new LinkedList<>(state.getHanging());
+        hangingXids = new LinkedList<>();
+        unownedHangingXids = new ArrayList<>();
+        for (TransactionId hanging : state.getHanging()) {
+            if (baseTransaction.getPrefixBytes() == null
+                    ? Arrays.equals(hanging.getJobId(), baseTransaction.getJobId())
+                    : isOwnedUnderPrefix(hanging)) {
+                hangingXids.add(hanging);
+            } else if (baseTransaction.getPrefixBytes() != null
+                    && Arrays.equals(hanging.getPrefixBytes(), baseTransaction.getPrefixBytes())) {
+                unownedHangingXids.add(hanging);
+            } else {
+                LOG.info(
+                        "leaving the restored transaction of another job, xid={}",
+                        hanging.getXidValue());
+            }
+        }
         preparedXids = new ArrayList<>(state.getPrepared());
         LOG.info(
-                "initialized state: prepared xids: {}, hanging xids: {}",
+                "initialized state: prepared xids: {}, hanging xids: {}, hanging xids of other"
+                        + " subtasks: {}",
                 preparedXids.size(),
-                hangingXids.size());
+                hangingXids.size(),
+                unownedHangingXids.size());
     }
 
     public void checkState() {
@@ -139,6 +154,90 @@ public class XaTransaction implements Serializable, AutoCloseable {
         Preconditions.checkState(
                 !hangingXids.isEmpty() && hangingXids.peekLast().equals(currentTid),
                 "inconsistent internal state");
+    }
+
+    /**
+     * Rolls back the prepared transactions left behind from the given checkpoint on. Their records
+     * are replayed, and the committer only commits transactions of earlier checkpoints.
+     */
+    public void rollbackPreparedTxs(long checkpointId) {
+        Collection<Xid> recovered;
+        try {
+            recovered = xaConnectionProvider.recover();
+        } catch (Exception e) {
+            LOG.warn(
+                    "unable to recover prepared transactions, those left behind that aren't in the"
+                            + " restored state keep their locks",
+                    e);
+            hangingXids.addAll(failOrRollback(unownedHangingXids).getForRetry());
+            return;
+        }
+        for (Xid xid : recovered) {
+            if (isLeftoverFromCheckpoint(xid, checkpointId)) {
+                LOG.info("rolling back a leftover transaction, xid={}", xid);
+                try {
+                    xaConnectionProvider.rollback(xid);
+                } catch (RuntimeException e) {
+                    if (isPrepared(xid)) {
+                        throw e;
+                    }
+                    LOG.info("leftover transaction is gone already, xid={}", xid);
+                }
+            }
+        }
+    }
+
+    /**
+     * A transaction id names the job, the subtask and the parallelism, and the prefix if there is
+     * one. Without a prefix this writer only rolls back its own transactions: another exactly-once
+     * sink of the job at the same parallelism can't run, as it starts the same xids, and at another
+     * parallelism its xids differ only in the parallelism.
+     *
+     * <p>With a prefix it also rolls back those of earlier jobs and parallelisms under the prefix,
+     * of the subtasks whose index is its own modulo the parallelism, so each has a single owner as
+     * long as all writers can list them. At the same job and parallelism that is only its own, as
+     * in BATCH the other writers may have prepared their transactions for the committer already.
+     */
+    private boolean isLeftoverFromCheckpoint(Xid xid, long checkpointId) {
+        TransactionId transactionId;
+        try {
+            transactionId =
+                    TransactionId.createFromXid(
+                            xid.getFormatId(),
+                            xid.getGlobalTransactionId(),
+                            xid.getBranchQualifier());
+        } catch (IOException e) {
+            return false;
+        }
+        if (transactionId.getCheckpointId() < checkpointId) {
+            return false;
+        }
+        if (xid.getFormatId() == baseTransaction.getFormatId()
+                && Arrays.equals(
+                        xid.getGlobalTransactionId(), baseTransaction.getGlobalTransactionId())
+                && transactionId.getNumberOfSubtasks() == baseTransaction.getNumberOfSubtasks()) {
+            return true;
+        }
+        return baseTransaction.getPrefixBytes() != null && isOwnedUnderPrefix(transactionId);
+    }
+
+    private boolean isOwnedUnderPrefix(TransactionId transactionId) {
+        return Arrays.equals(transactionId.getPrefixBytes(), baseTransaction.getPrefixBytes())
+                && transactionId.getSubtaskId() % baseTransaction.getNumberOfSubtasks()
+                        == baseTransaction.getSubtaskId();
+    }
+
+    private boolean isPrepared(Xid xid) {
+        return xaConnectionProvider.recover().stream()
+                .anyMatch(
+                        recovered ->
+                                recovered.getFormatId() == xid.getFormatId()
+                                        && Arrays.equals(
+                                                recovered.getGlobalTransactionId(),
+                                                xid.getGlobalTransactionId())
+                                        && Arrays.equals(
+                                                recovered.getBranchQualifier(),
+                                                xid.getBranchQualifier()));
     }
 
     /**
@@ -155,12 +254,18 @@ public class XaTransaction implements Serializable, AutoCloseable {
         }
     }
 
-    public void prepareTx() throws IOException {
+    /**
+     * Ends and prepares the current transaction. The caller is responsible for committing it.
+     *
+     * @return the xid of the prepared transaction, empty if it had nothing to commit
+     */
+    public Optional<TransactionId> prepareTx() throws IOException {
         checkState();
         hangingXids.pollLast();
+        TransactionId prepared = null;
         try {
             xaConnectionProvider.endAndPrepare(currentTid);
-            preparedXids.add(currentTid);
+            prepared = currentTid;
         } catch (EmptyTransactionXaException e) {
             LOG.info(
                     "empty XA transaction (skip), xid: {}, checkpoint {}",
@@ -170,6 +275,7 @@ public class XaTransaction implements Serializable, AutoCloseable {
             ExceptionUtils.rethrowIOException(e);
         }
         currentTid = null;
+        return Optional.ofNullable(prepared);
     }
 
     public void commitTx() {
@@ -178,46 +284,12 @@ public class XaTransaction implements Serializable, AutoCloseable {
         preparedXids.addAll(commitXids(toCommit));
     }
 
-    public void commitTxUntil(long checkpointId) {
-        Tuple2<List<TransactionId>, List<TransactionId>> splittedXids =
-                split(preparedXids, checkpointId);
-
-        if (splittedXids.f0.isEmpty()) {
-            LOG.warn("nothing to commit up to checkpoint: {}", checkpointId);
-        } else {
-            preparedXids = splittedXids.f1;
-            preparedXids.addAll(commitXids(splittedXids.f0));
-        }
-    }
-
     public List<TransactionId> commitXids(List<TransactionId> xids) {
         return commit(
                         xids,
                         exactlyOnceOptions.isAllowOutOfOrderCommits(),
                         exactlyOnceOptions.getMaxCommitAttempts())
                 .getForRetry();
-    }
-
-    private Tuple2<List<TransactionId>, List<TransactionId>> split(
-            List<TransactionId> list, long checkpointId) {
-        return split(list, checkpointId, true);
-    }
-
-    private Tuple2<List<TransactionId>, List<TransactionId>> split(
-            List<TransactionId> list, long checkpointId, boolean checkpointIntoLo) {
-
-        List<TransactionId> lo = new ArrayList<>(list.size() / 2);
-        List<TransactionId> hi = new ArrayList<>(list.size() / 2);
-        list.forEach(
-                i -> {
-                    if (i.getCheckpointId() < checkpointId
-                            || (i.getCheckpointId() == checkpointId && checkpointIntoLo)) {
-                        lo.add(i);
-                    } else {
-                        hi.add(i);
-                    }
-                });
-        return new Tuple2<>(lo, hi);
     }
 
     private XaTransactionResult<TransactionId> commit(
@@ -276,23 +348,6 @@ public class XaTransaction implements Serializable, AutoCloseable {
             LOG.info("failed to roll back {} transactions", result.getForRetry().size());
         }
         return result;
-    }
-
-    private void recoverAndRollback() {
-        Collection<Xid> recovered = xaConnectionProvider.recover();
-        if (recovered.isEmpty()) {
-            return;
-        }
-        LOG.warn("rollback {} recovered transactions", recovered.size());
-        for (Xid xid : recovered) {
-            if (baseTransaction.belongsTo(xid)) {
-                try {
-                    xaConnectionProvider.rollback(xid);
-                } catch (Exception e) {
-                    LOG.info("unable to rollback recovered transaction, xid={}", xid, e);
-                }
-            }
-        }
     }
 
     private void throwIfAnyReachedMaxAttempts(

@@ -38,16 +38,15 @@ import org.apache.flink.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.transaction.xa.Xid;
-
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
-import static org.apache.flink.util.Preconditions.checkState;
 
 /**
  * Jdbc writer that allow at-least-once (non-XA operation) and exactly-once (XA operation)
@@ -65,7 +64,7 @@ public class JdbcWriter<IN>
 
     private XaTransaction jdbcTransaction;
     private long lastCheckpointId;
-    private boolean pendingRecords;
+    private boolean endOfInput;
 
     public JdbcWriter(
             JdbcConnectionProvider connectionProvider,
@@ -83,7 +82,6 @@ public class JdbcWriter<IN>
 
         checkNotNull(initContext, "initContext must be defined");
 
-        pendingRecords = false;
         this.lastCheckpointId =
                 initContext.getRestoredCheckpointId().orElse(InitContext.INITIAL_CHECKPOINT_ID - 1);
 
@@ -97,13 +95,19 @@ public class JdbcWriter<IN>
 
             checkNotNull(exactlyOnceOptions, "exactlyOnceOptions must be defined");
             checkNotNull(recoveredState, "recoveredState must be defined");
-            checkState(recoveredState.size() <= 1, "more than one state to recover");
 
-            JdbcWriterState state =
-                    recoveredState.stream().findFirst().orElse(JdbcWriterState.empty());
+            // after a downscale a writer restores the states of several writers
+            List<TransactionId> prepared = new ArrayList<>();
+            List<TransactionId> hanging = new ArrayList<>();
+            for (JdbcWriterState recovered : recoveredState) {
+                prepared.addAll(recovered.getPrepared());
+                hanging.addAll(recovered.getHanging());
+            }
+            JdbcWriterState state = JdbcWriterState.of(prepared, hanging);
 
             TransactionId transactionId =
                     TransactionId.create(
+                            exactlyOnceOptions.getTransactionIdPrefix().orElse(null),
                             initContext.getJobInfo().getJobId().getBytes(),
                             initContext.getTaskInfo().getIndexOfThisSubtask(),
                             initContext.getTaskInfo().getNumberOfParallelSubtasks());
@@ -113,7 +117,16 @@ public class JdbcWriter<IN>
                             exactlyOnceOptions,
                             transactionId,
                             ((XaConnectionProvider) connectionProvider));
+            if (!exactlyOnceOptions.getTransactionIdPrefix().isPresent()
+                    && transactionId.getSubtaskId() == 0) {
+                LOG.warn(
+                        "No transaction id prefix is set, so prepared transactions left behind by"
+                                + " earlier jobs or another parallelism are not rolled back and keep"
+                                + " their locks. Set one with"
+                                + " JdbcExactlyOnceOptions.builder().withTransactionIdPrefix().");
+            }
             this.jdbcTransaction.open(state);
+            this.jdbcTransaction.rollbackPreparedTxs(lastCheckpointId);
             this.jdbcTransaction.createTx(lastCheckpointId);
         }
 
@@ -135,13 +148,13 @@ public class JdbcWriter<IN>
             jdbcTransaction.checkState();
         }
         this.jdbcOutput.writeRecord(element);
-        if (!this.pendingRecords) {
-            this.pendingRecords = true;
-        }
     }
 
     @Override
     public void flush(boolean endOfInput) throws IOException, InterruptedException {
+        if (endOfInput) {
+            this.endOfInput = true;
+        }
         if (deliveryGuarantee != DeliveryGuarantee.EXACTLY_ONCE || endOfInput) {
             LOG.debug("final flush={}", endOfInput);
             flush();
@@ -161,23 +174,19 @@ public class JdbcWriter<IN>
             return Collections.emptyList();
         }
 
-        Xid currentXid = jdbcTransaction.getCurrentXid();
-
         jdbcTransaction.checkState();
 
         flush();
-        jdbcTransaction.prepareTx();
+        Optional<TransactionId> preparedXid = jdbcTransaction.prepareTx();
 
-        // If no records, commit the empty transaction
-        if (!this.pendingRecords) {
-            jdbcTransaction.commitTxUntil(this.lastCheckpointId);
+        // If no records, there is nothing to commit
+        if (!preparedXid.isPresent()) {
             return Collections.emptyList();
         }
 
-        // otherwise, return a committable
-        this.pendingRecords = false;
-        final JdbcCommitable committable = JdbcCommitable.of(currentXid, jdbcTransaction);
-        LOG.debug("Committing {} committable.", committable);
+        // otherwise, the committer commits it once the checkpoint is complete
+        final JdbcCommitable committable = JdbcCommitable.of(preparedXid.get());
+        LOG.debug("Handing {} to the committer.", committable);
         return Collections.singletonList(committable);
     }
 
@@ -193,13 +202,12 @@ public class JdbcWriter<IN>
                 checkpointId,
                 lastCheckpointId);
 
-        // If no records, commit the empty transaction
-        if (!this.pendingRecords) {
-            jdbcTransaction.commitTxUntil(this.lastCheckpointId);
-        }
-
         this.lastCheckpointId = checkpointId;
-        jdbcTransaction.createTx(this.lastCheckpointId);
+        // after the end of input the last transaction is prepared and no record follows, but
+        // checkpoints can still come until the task finishes
+        if (!endOfInput) {
+            jdbcTransaction.createTx(this.lastCheckpointId);
+        }
         return Collections.singletonList(jdbcTransaction.getState());
     }
 

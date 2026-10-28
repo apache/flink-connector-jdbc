@@ -18,32 +18,34 @@
 package org.apache.flink.connector.jdbc;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.TransactionId;
 import org.apache.flink.util.Preconditions;
+import org.apache.flink.util.StringUtils;
+
+import javax.annotation.Nullable;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
  * JDBC exactly once sink options.
  *
  * <p><b>maxCommitAttempts</b> - maximum number of commit attempts to make per transaction; must be
- * > 0; state size is proportional to the product of max number of in-flight snapshots and this
- * number.
+ * > 0. The committer retries a transient failure right away, and Flink stops after {@code
+ * sink.committer.retries} retries, so a transaction gets at most the smaller of maxCommitAttempts
+ * and {@code sink.committer.retries} + 1 attempts.
  *
- * <p><b>allowOutOfOrderCommits</b> - If true, all prepared transactions will be attempted to commit
- * regardless of any transient failures during this operation. This may lead to inconsistency.
- * Default: false.
+ * <p><b>allowOutOfOrderCommits</b> - If true, all prepared transactions restored from a writer
+ * state will be attempted to commit regardless of any transient failures during this operation.
+ * This may lead to inconsistency. The committer always commits checkpoints in order. Default:
+ * false.
  *
- * <p><b>recoveredAndRollback</b> - whether to rollback prepared transactions known to XA RM on
- * startup (after committing <b>known</b> transactions, i.e. restored from state).
+ * <p><b>transactionIdPrefix</b> - the prefix of the XA transaction ids of this sink; see {@link
+ * JDBCExactlyOnceOptionsBuilder#withTransactionIdPrefix(String)}. Not set by default.
  *
- * <p>NOTE that setting this parameter to true may:
- *
- * <ol>
- *   <li>interfere with other subtasks or applications (one subtask rolling back transactions
- *       prepared by the other one (and known to it))
- *   <li>block when using with some non-MVCC databases, if there are ended-not-prepared transactions
- * </ol>
+ * <p><b>recoveredAndRollback</b> - deprecated, has no effect; see {@link
+ * JDBCExactlyOnceOptionsBuilder#withRecoveredAndRollback(boolean)}.
  */
 @PublicEvolving
 public class JdbcExactlyOnceOptions implements Serializable {
@@ -58,18 +60,21 @@ public class JdbcExactlyOnceOptions implements Serializable {
     private final boolean allowOutOfOrderCommits;
     private final Integer timeoutSec;
     private final boolean transactionPerConnection;
+    @Nullable private final String transactionIdPrefix;
 
     private JdbcExactlyOnceOptions(
             boolean discoverAndRollbackOnRecovery,
             int maxCommitAttempts,
             boolean allowOutOfOrderCommits,
             Optional<Integer> timeoutSec,
-            boolean transactionPerConnection) {
+            boolean transactionPerConnection,
+            @Nullable String transactionIdPrefix) {
         this.discoverAndRollbackOnRecovery = discoverAndRollbackOnRecovery;
         this.maxCommitAttempts = maxCommitAttempts;
         this.allowOutOfOrderCommits = allowOutOfOrderCommits;
         this.timeoutSec = timeoutSec.orElse(null);
         this.transactionPerConnection = transactionPerConnection;
+        this.transactionIdPrefix = transactionIdPrefix;
         Preconditions.checkArgument(this.maxCommitAttempts > 0, "maxCommitAttempts should be > 0");
     }
 
@@ -77,6 +82,11 @@ public class JdbcExactlyOnceOptions implements Serializable {
         return builder().build();
     }
 
+    /**
+     * @deprecated Has no effect, see {@link
+     *     JDBCExactlyOnceOptionsBuilder#withRecoveredAndRollback}.
+     */
+    @Deprecated
     public boolean isDiscoverAndRollbackOnRecovery() {
         return discoverAndRollbackOnRecovery;
     }
@@ -97,6 +107,10 @@ public class JdbcExactlyOnceOptions implements Serializable {
         return transactionPerConnection;
     }
 
+    public Optional<String> getTransactionIdPrefix() {
+        return Optional.ofNullable(transactionIdPrefix);
+    }
+
     public static JDBCExactlyOnceOptionsBuilder builder() {
         return new JDBCExactlyOnceOptionsBuilder();
     }
@@ -109,12 +123,16 @@ public class JdbcExactlyOnceOptions implements Serializable {
         private boolean allowOutOfOrderCommits = DEFAULT_ALLOW_OUT_OF_ORDER_COMMITS;
         private Optional<Integer> timeoutSec = Optional.empty();
         private boolean transactionPerConnection = DEFAULT_TRANSACTION_PER_CONNECTION;
+        @Nullable private String transactionIdPrefix;
 
         /**
-         * Toggle discovery and rollback of prepared transactions upon recovery to prevent new
-         * transactions from being blocked by the older ones. Each subtask rollbacks its own
-         * transaction. This flag must be disabled when rescaling to prevent data loss.
+         * Was meant to toggle the rollback of prepared transactions on recovery.
+         *
+         * @deprecated Has no effect. A restarted writer always rolls back the prepared transactions
+         *     left behind that belong to it, and only warns if it can't list them; set {@link
+         *     #withTransactionIdPrefix(String)} to include those of earlier jobs.
          */
+        @Deprecated
         public JDBCExactlyOnceOptionsBuilder withRecoveredAndRollback(
                 boolean recoveredAndRollback) {
             this.recoveredAndRollback = recoveredAndRollback;
@@ -147,16 +165,10 @@ public class JdbcExactlyOnceOptions implements Serializable {
         }
 
         /**
-         * Set whether the same connection can be used for multiple XA transactions. A transaction
-         * is prepared each time a checkpoint is performed; it is committed once the checkpoint is
-         * confirmed. There can be multiple un-confirmed checkpoints and therefore multiple prepared
-         * transactions.
-         *
-         * <p>Some databases support this natively (e.g. Oracle); while others only allow a single
-         * XA transaction per connection (e.g. MySQL, PostgreSQL).
-         *
-         * <p>If enabled, each transaction uses a separate connection from a pool. The database
-         * limit of open connections might need to be adjusted.
+         * Set whether each XA transaction is started on a connection from a pool. The connection
+         * goes back to the pool once its transaction is prepared, as the committer commits the
+         * transaction on a connection of its own. The writer therefore uses one connection at a
+         * time either way.
          *
          * <p>Disabled by default.
          */
@@ -166,13 +178,39 @@ public class JdbcExactlyOnceOptions implements Serializable {
             return this;
         }
 
+        /**
+         * Set the prefix of the XA transaction ids of this sink, at most 43 bytes in UTF-8. Keep it
+         * the same across restarts of the job, and don't give it to another sink or job writing to
+         * the same database at the same time.
+         *
+         * <p>With a prefix a restarted writer also rolls back the prepared transactions that
+         * earlier jobs left behind under the prefix, for example after a restore from a savepoint
+         * or a retained checkpoint into a new job, or a restart at another parallelism. This needs
+         * the permission to list prepared transactions, such as XA_RECOVER_ADMIN on MySQL. Without
+         * a prefix, those of earlier jobs and of another parallelism keep their locks until they
+         * are rolled back by hand.
+         */
+        public JDBCExactlyOnceOptionsBuilder withTransactionIdPrefix(String transactionIdPrefix) {
+            Preconditions.checkArgument(
+                    !StringUtils.isNullOrWhitespaceOnly(transactionIdPrefix),
+                    "transactionIdPrefix must not be null or blank");
+            Preconditions.checkArgument(
+                    transactionIdPrefix.getBytes(StandardCharsets.UTF_8).length
+                            <= TransactionId.MAX_PREFIX_BYTES,
+                    "transactionIdPrefix must be at most %s bytes in UTF-8",
+                    TransactionId.MAX_PREFIX_BYTES);
+            this.transactionIdPrefix = transactionIdPrefix;
+            return this;
+        }
+
         public JdbcExactlyOnceOptions build() {
             return new JdbcExactlyOnceOptions(
                     recoveredAndRollback,
                     maxCommitAttempts,
                     allowOutOfOrderCommits,
                     timeoutSec,
-                    transactionPerConnection);
+                    transactionPerConnection,
+                    transactionIdPrefix);
         }
     }
 }

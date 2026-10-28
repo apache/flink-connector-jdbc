@@ -17,19 +17,29 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.sink.writer;
 
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitable;
+import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitableSerializer;
+import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitter;
+import org.apache.flink.connector.jdbc.core.datastream.sink.committer.TestingCommitRequest;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.SimpleXaConnectionProvider;
+import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.TransactionId;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import javax.transaction.xa.Xid;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.OptionalLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -57,6 +67,18 @@ class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
                 () -> getMetadata().buildXaDataSource(), getExactlyOnceOptions().getTimeoutSec());
     }
 
+    /** A failed test can leave a prepared transaction behind, which holds its locks. */
+    @AfterEach
+    void rollbackPreparedTransactions() throws Exception {
+        sinkWriter.close();
+        try (SimpleXaConnectionProvider xa = newXaConnectionProvider()) {
+            xa.open();
+            for (Xid xid : xa.recover()) {
+                xa.rollback(xid);
+            }
+        }
+    }
+
     @Test
     void testEmptyCheckpoint() throws Exception {
         checkPreCommitWithSnapshot(1L, false);
@@ -69,9 +91,16 @@ class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
             sinkWriter.write(book, writerContext);
         }
 
-        checkPreCommitWithSnapshot(1L, true);
+        JdbcCommitable committable = checkPreCommitWithSnapshot(1L, true);
+        sinkWriter.close();
 
-        assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection())).isEqualTo(BOOKS);
+        // the transaction waits for the committer
+        assertThat(recover()).contains(committable.getXid());
+
+        commit(committable);
+
+        assertThat(recover()).isEmpty();
+        assertThat(TEST_TABLE.selectAllTable(getMetadata())).isEqualTo(BOOKS);
     }
 
     @Test
@@ -85,29 +114,140 @@ class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
         for (BooksTable.BookEntry book : booksHalf1) {
             sinkWriter.write(book, writerContext);
         }
-        checkPreCommitWithSnapshot(2L, true);
-
-        assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection())).isEqualTo(booksHalf1);
+        JdbcCommitable committable2 = checkPreCommitWithSnapshot(2L, true);
 
         // add more books
         for (BooksTable.BookEntry book : booksHalf2) {
             sinkWriter.write(book, writerContext);
         }
-        checkPreCommitWithSnapshot(3L, true);
+        JdbcCommitable committable3 = checkPreCommitWithSnapshot(3L, true);
 
         // empty transaction
         checkPreCommitWithSnapshot(4L, false);
+        sinkWriter.close();
 
-        assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection())).isEqualTo(BOOKS);
+        // the transactions wait for the committer
+        assertThat(recover()).contains(committable2.getXid(), committable3.getXid());
+
+        commit(committable2);
+        commit(committable3);
+
+        assertThat(recover()).isEmpty();
+        assertThat(TEST_TABLE.selectAllTable(getMetadata())).isEqualTo(BOOKS);
     }
 
-    protected void checkPreCommitWithSnapshot(long checkpointId, boolean hasCommit)
+    /** Checkpoints can still come after the end of input, until the task finishes. */
+    @Test
+    void testCheckpointsAfterEndOfInput() throws Exception {
+        for (BooksTable.BookEntry book : BOOKS) {
+            sinkWriter.write(book, writerContext);
+        }
+        sinkWriter.flush(true);
+        assertThat(sinkWriter.prepareCommit()).hasSize(1);
+
+        sinkWriter.snapshotState(1L);
+        assertThat(sinkWriter.snapshotState(2L).get(0).getHanging()).isEmpty();
+    }
+
+    /**
+     * After a downscale a writer restores the states of several writers. The transactions they
+     * prepared before the restored checkpoint belong to the committer.
+     */
+    @Test
+    void testRestoreFromSeveralStates() throws Exception {
+        sinkWriter.close();
+        JobID jobId = new JobID();
+        List<JdbcCommitable> committables = new ArrayList<>();
+        List<JdbcWriterState> states = new ArrayList<>();
+        for (int subtask = 0; subtask < 2; subtask++) {
+            JdbcWriter<BooksTable.BookEntry> writer =
+                    newWriter(jobId, subtask, 2, OptionalLong.empty(), Collections.emptyList());
+            writer.write(BOOKS.get(subtask), writerContext);
+            writer.flush(false);
+            committables.addAll(writer.prepareCommit());
+            states.addAll(writer.snapshotState(1L));
+            writer.close();
+        }
+
+        sinkWriter = newWriter(jobId, 0, 1, OptionalLong.of(1L), states);
+        sinkWriter.close();
+
+        assertThat(recover())
+                .containsExactlyInAnyOrder(
+                        committables.get(0).getXid(), committables.get(1).getXid());
+        commit(committables.get(0));
+        commit(committables.get(1));
+        assertThat(TEST_TABLE.selectAllTable(getMetadata())).isEqualTo(BOOKS.subList(0, 2));
+    }
+
+    /** Before FLINK-41060 the writer kept its prepared transactions in its state. */
+    @Test
+    void testRestoreFromSeveralStatesWithPreparedTransactions() throws Exception {
+        sinkWriter.close();
+        JobID jobId = new JobID();
+        List<JdbcWriterState> states = new ArrayList<>();
+        for (int subtask = 0; subtask < 2; subtask++) {
+            JdbcWriter<BooksTable.BookEntry> writer =
+                    newWriter(jobId, subtask, 2, OptionalLong.empty(), Collections.emptyList());
+            writer.write(BOOKS.get(subtask), writerContext);
+            writer.flush(false);
+            Xid xid = writer.prepareCommit().iterator().next().getXid();
+            writer.close();
+            states.add(
+                    JdbcWriterState.of(
+                            Collections.singletonList(
+                                    TransactionId.restoreFromXid(
+                                            xid.getFormatId(),
+                                            xid.getGlobalTransactionId(),
+                                            xid.getBranchQualifier())),
+                            Collections.emptyList()));
+        }
+
+        sinkWriter = newWriter(jobId, 0, 1, OptionalLong.of(1L), states);
+        sinkWriter.close();
+
+        assertThat(recover()).isEmpty();
+        assertThat(TEST_TABLE.selectAllTable(getMetadata())).isEqualTo(BOOKS.subList(0, 2));
+    }
+
+    /** Commits the committable the way the committer gets it when it is not chained. */
+    private void commit(JdbcCommitable committable) throws Exception {
+        JdbcCommitableSerializer serializer = new JdbcCommitableSerializer();
+        TestingCommitRequest request =
+                new TestingCommitRequest(
+                        serializer.deserialize(
+                                serializer.getVersion(), serializer.serialize(committable)));
+        try (JdbcCommitter committer =
+                new JdbcCommitter(
+                        getDeliveryGuarantee(),
+                        newXaConnectionProvider(),
+                        getExactlyOnceOptions(),
+                        OptionalLong.empty())) {
+            committer.commit(Collections.singletonList(request));
+        }
+        assertThat(request.getFailure()).isNull();
+    }
+
+    private Collection<Xid> recover() throws Exception {
+        try (SimpleXaConnectionProvider xa = newXaConnectionProvider()) {
+            xa.open();
+            return xa.recover();
+        }
+    }
+
+    private SimpleXaConnectionProvider newXaConnectionProvider() {
+        return SimpleXaConnectionProvider.from(getMetadata().buildXaDataSource());
+    }
+
+    protected JdbcCommitable checkPreCommitWithSnapshot(long checkpointId, boolean hasCommit)
             throws Exception {
         sinkWriter.flush(false);
         Collection<JdbcCommitable> commitables = sinkWriter.prepareCommit();
+        JdbcCommitable commitable = null;
         if (hasCommit) {
             assertThat(commitables.size()).isEqualTo(1);
-            checkCommitable(commitables.iterator().next(), withBranch(checkpointId - 1));
+            commitable = commitables.iterator().next();
+            checkCommitable(commitable, withBranch(checkpointId - 1));
         } else {
             assertThat(commitables.size()).isEqualTo(0);
         }
@@ -118,5 +258,6 @@ class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
                 snapshot.get(0),
                 Collections.emptyList(),
                 Collections.singletonList(withBranch(checkpointId)));
+        return commitable;
     }
 }

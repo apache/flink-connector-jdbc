@@ -195,6 +195,8 @@ public class SimpleXaConnectionProvider implements XaConnectionProvider {
                                 rollback(xid);
                             } else {
                                 LOG.warn(formatErrorMessage("end (fail)", xid, err.errorCode));
+                                // a prepared transaction can't be ended, only rolled back
+                                rollbackIfKnown(xid);
                             }
                         }));
     }
@@ -220,6 +222,16 @@ public class SimpleXaConnectionProvider implements XaConnectionProvider {
                         xid,
                         () -> xaResource.rollback(xid),
                         this::buildRollbackErrorDesc));
+    }
+
+    private void rollbackIfKnown(Xid xid) {
+        try {
+            xaResource.rollback(xid);
+        } catch (XAException e) {
+            if (e.errorCode != XAException.XAER_NOTA) {
+                LOG.warn(formatErrorMessage("rollback", xid, e.errorCode));
+            }
+        }
     }
 
     private void forget(Xid xid) {

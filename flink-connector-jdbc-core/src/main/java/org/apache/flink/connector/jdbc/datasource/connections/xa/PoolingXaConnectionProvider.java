@@ -18,6 +18,7 @@
 package org.apache.flink.connector.jdbc.datasource.connections.xa;
 
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.EmptyTransactionXaException;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.TransientXaException;
 import org.apache.flink.util.function.ThrowingConsumer;
 
@@ -44,8 +45,10 @@ import static org.apache.flink.util.Preconditions.checkState;
 /**
  * A "pooling" implementation of {@link XaConnectionProvider}. Some database implement XA such that
  * one connection is limited to a single transaction. As a workaround, this implementation creates a
- * new XA resource after each xa_start call is made (and associates it with the xid to commit
- * later).
+ * new XA resource after each xa_start call is made (and associates it with the xid until the
+ * transaction is prepared). A prepared transaction is committed or rolled back on any idle XA
+ * resource, so the database must allow that from another connection (for MySQL, {@code
+ * xa_detach_on_prepare}).
  */
 @Internal
 public class PoolingXaConnectionProvider implements XaConnectionProvider {
@@ -109,6 +112,10 @@ public class PoolingXaConnectionProvider implements XaConnectionProvider {
         checkState(active == mappedToXids.get(xid));
         try {
             active.endAndPrepare(xid);
+            release(xid);
+        } catch (EmptyTransactionXaException e) {
+            release(xid);
+            throw e;
         } finally {
             active = null;
         }
@@ -171,6 +178,11 @@ public class PoolingXaConnectionProvider implements XaConnectionProvider {
     @Override
     public Connection reestablishConnection() throws SQLException, ClassNotFoundException {
         return active.reestablishConnection();
+    }
+
+    // the transaction no longer needs the facade once it is prepared
+    private void release(Xid xid) {
+        pooled.offer(mappedToXids.remove(xid));
     }
 
     // WARN: action MUST leave the facade in IDLE state (i.e. not start/end/prepare any tx)

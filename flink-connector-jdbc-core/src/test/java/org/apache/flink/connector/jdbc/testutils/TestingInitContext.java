@@ -31,15 +31,22 @@ public class TestingInitContext implements InitContext {
 
     private final JobInfo jobInfo;
     private final TaskInfo taskInfo;
+    private final OptionalLong restoredCheckpointId;
 
     public TestingInitContext(JobID jobId, String jobName, TaskInfo taskInfo) {
+        this(jobId, jobName, taskInfo, OptionalLong.empty());
+    }
+
+    public TestingInitContext(
+            JobID jobId, String jobName, TaskInfo taskInfo, OptionalLong restoredCheckpointId) {
         this.jobInfo = new JobInfoImpl(jobId, jobName);
         this.taskInfo = taskInfo;
+        this.restoredCheckpointId = restoredCheckpointId;
     }
 
     @Override
     public OptionalLong getRestoredCheckpointId() {
-        return OptionalLong.empty();
+        return restoredCheckpointId;
     }
 
     @Override
