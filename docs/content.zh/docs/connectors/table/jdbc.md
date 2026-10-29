@@ -319,6 +319,14 @@ ON myTopic.key = MyUserTable.id;
       <td>写入记录到数据库失败后的最大重试次数。</td>
     </tr>
     <tr>
+      <td><h5>sink.bulk-insert.enabled</h5></td>
+      <td>optional</td>
+      <td>no</td>
+      <td style="word-wrap: break-word;">false</td>
+      <td>Boolean</td>
+      <td>Whether to write each batch with the dialect's bulk insert statement instead of JDBC statement batching, e.g. PostgreSQL <code>INSERT ... SELECT * FROM UNNEST(...)</code>. Takes effect only when <code>sink.buffer-flush.max-rows</code> is greater than 1. The sink fails when it is created if the dialect does not support bulk insert. Currently supported by the PostgreSQL dialect only.</td>
+    </tr>
+    <tr>
       <td><h5>sink.parallelism</h5></td>
       <td>可选</td>
       <td style="word-wrap: break-word;">(none)</td>

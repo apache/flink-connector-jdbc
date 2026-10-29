@@ -69,6 +69,7 @@ import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SC
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SCAN_PARTITION_UPPER_BOUND;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SINK_BUFFER_FLUSH_INTERVAL;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SINK_BUFFER_FLUSH_MAX_ROWS;
+import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SINK_BULK_INSERT_ENABLED;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SINK_MAX_RETRIES;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.SINK_PARALLELISM;
 import static org.apache.flink.connector.jdbc.core.table.JdbcConnectorOptions.TABLE_NAME;
@@ -107,7 +108,8 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
                 getJdbcDmlOptions(
                         jdbcOptions,
                         context.getPhysicalRowDataType(),
-                        context.getPrimaryKeyIndexes()),
+                        context.getPrimaryKeyIndexes(),
+                        config.get(SINK_BULK_INSERT_ENABLED)),
                 context.getPhysicalRowDataType());
     }
 
@@ -189,7 +191,10 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
     }
 
     private JdbcDmlOptions getJdbcDmlOptions(
-            InternalJdbcConnectionOptions jdbcOptions, DataType dataType, int[] primaryKeyIndexes) {
+            InternalJdbcConnectionOptions jdbcOptions,
+            DataType dataType,
+            int[] primaryKeyIndexes,
+            boolean bulkInsertEnabled) {
 
         String[] keyFields =
                 Arrays.stream(primaryKeyIndexes)
@@ -201,6 +206,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
                 .withDialect(jdbcOptions.getDialect())
                 .withFieldNames(DataType.getFieldNames(dataType).toArray(new String[0]))
                 .withKeyFields(keyFields.length > 0 ? keyFields : null)
+                .withBulkInsertEnabled(bulkInsertEnabled)
                 .build();
     }
 
@@ -258,6 +264,7 @@ public class JdbcDynamicTableFactory implements DynamicTableSourceFactory, Dynam
         optionalOptions.add(SINK_BUFFER_FLUSH_MAX_ROWS);
         optionalOptions.add(SINK_BUFFER_FLUSH_INTERVAL);
         optionalOptions.add(SINK_MAX_RETRIES);
+        optionalOptions.add(SINK_BULK_INSERT_ENABLED);
         optionalOptions.add(SINK_PARALLELISM);
         optionalOptions.add(MAX_RETRY_TIMEOUT);
         optionalOptions.add(LookupOptions.CACHE_TYPE);
