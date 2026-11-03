@@ -1,0 +1,1 @@
+Method <org.apache.flink.connector.jdbc.clickhouse.database.dialect.ClickHouseDialectConverter.createClickHouseArrayConverter(org.apache.flink.table.types.logical.ArrayType)> calls method <org.apache.flink.table.types.logical.utils.LogicalTypeUtils.toInternalConversionClass(org.apache.flink.table.types.logical.LogicalType)> in (ClickHouseDialectConverter.java:173)
