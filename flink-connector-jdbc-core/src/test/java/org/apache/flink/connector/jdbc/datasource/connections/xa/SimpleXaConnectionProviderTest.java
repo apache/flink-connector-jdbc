@@ -45,7 +45,7 @@ public abstract class SimpleXaConnectionProviderTest implements DatabaseTest {
     private static final TransactionId TRANSACTION_BASE = TransactionId.empty();
 
     /** XA drivers return their own {@link Xid} type from recover(), so compare by value. */
-    private static final Comparator<Xid> SAME_XID =
+    private static final Comparator<Xid> XID_VALUE_COMPARATOR =
             Comparator.comparingInt(Xid::getFormatId)
                     .thenComparing(Xid::getGlobalTransactionId, Arrays::compare)
                     .thenComparing(Xid::getBranchQualifier, Arrays::compare);
@@ -163,9 +163,11 @@ public abstract class SimpleXaConnectionProviderTest implements DatabaseTest {
         try (SimpleXaConnectionProvider xa =
                 SimpleXaConnectionProvider.from(getMetadata().buildXaDataSource())) {
             xa.open();
-            assertThat(xa.recover()).usingElementComparator(SAME_XID).contains(xid);
+            assertThat(xa.recover()).usingElementComparator(XID_VALUE_COMPARATOR).contains(xid);
             xa.rollback(xid);
-            assertThat(xa.recover()).usingElementComparator(SAME_XID).doesNotContain(xid);
+            assertThat(xa.recover())
+                    .usingElementComparator(XID_VALUE_COMPARATOR)
+                    .doesNotContain(xid);
         }
 
         assertBooks(new ArrayList<>());
