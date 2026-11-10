@@ -16,7 +16,7 @@
 
   - Each pull request should address only one issue, not mix up code from multiple issues.
 
-  - Each commit in the pull request has a meaningful commit message (including the JIRA id)
+  - Each commit in the pull request has a meaningful commit message (including the JIRA ID)
 
   - Once all items of the checklist are addressed, remove the above text and this checklist, leaving only the filled out template below.
 

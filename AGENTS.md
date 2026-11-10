@@ -23,7 +23,7 @@ This file provides guidance for AI coding agents working with the Apache Flink J
 
 ## Prerequisites
 
-- Java 11, 17, or 21. The build compiles with `maven.compiler.source` 1.8 (nothing overrides `target.java.version` from the parent POM), so write Java 8-compatible syntax. PR CI runs on JDK 17 only (`.github/workflows/push_pr.yml`); the weekly build covers JDK 11, 17 and 21 on the `main` row and JDK 8 and 11 on the `v3.4` row (`.github/workflows/weekly.yml`).
+- Java 11, 17, or 21. The parent POM (`flink-connector-parent:2.0.0`) compiles with source 11 and target 17, so write Java 11-compatible syntax. On JDK 11 add `-Pjava11-target` to Maven commands (the shared CI workflow does this); otherwise compilation fails with an unsupported target release. PR CI runs on JDK 17 only (`.github/workflows/push_pr.yml`); the weekly build covers JDK 11, 17 and 21 on the `main` row and JDK 8 and 11 on the `v3.4` row (`.github/workflows/weekly.yml`).
 - Maven 3.8.6 (Maven wrapper `./mvnw` included; prefer it)
 - Git
 - Docker (database-module `*ITCase`s start their database through Testcontainers; core ITCases run on Derby without Docker)
@@ -47,9 +47,9 @@ This file provides guidance for AI coding agents working with the Apache Flink J
 - `*Test` classes are unit tests; `*ITCase` classes are integration tests that start a real database via Testcontainers (Docker required). `flink-connector-jdbc-core` also runs against in-memory Derby and H2, so its unit tests need no Docker.
 - Single unit test class: `./mvnw test -pl flink-connector-jdbc-core -Dtest=JdbcOutputFormatTest`
 - Single test method: `./mvnw test -pl flink-connector-jdbc-core -Dtest=JdbcOutputFormatTest#testX`
-- Single ITCase in a database module: `./mvnw test -pl flink-connector-jdbc-postgres -am -Dtest=PostgresDynamicTableSourceITCase`
+- Single ITCase in a database module: first `./mvnw install -pl flink-connector-jdbc-postgres -am -DskipTests` (database modules need the core test JAR), then `./mvnw test -pl flink-connector-jdbc-postgres -Dtest=PostgresDynamicTableSourceITCase`. Do not combine `-am` with `-Dtest`; the selector also applies to core, where the test does not exist.
 - ArchUnit rules live in `flink-connector-jdbc-architecture`; violation stores are frozen (see Testing Standards).
-- The standalone `flink-connector-jdbc-backward-compatibility` module is not part of the root reactor; CI builds it separately (`.github/workflows/backwards_compatibility.yml`) to check that current code reads savepoints written by older connector versions.
+- The standalone `flink-connector-jdbc-backward-compatibility` module is not part of the root reactor; CI builds it separately (`.github/workflows/backwards_compatibility.yml`) to run the current connector's tests against other Flink versions (`2.0-SNAPSHOT`, `2.1-SNAPSHOT`). It starts fresh jobs and does not restore savepoints written by older connector releases, so a green run is not state-migration validation.
 - CI for PRs and the weekly build is defined by `apache/flink-connector-shared-utils` (`.github/workflows/ci.yml@ci_utils`); its Maven command line, including the license check, is the reference when a local run differs from CI.
 
 ### Code Quality
@@ -77,7 +77,7 @@ The root `pom.xml` reactor contains:
 
 Not in the reactor:
 
-- `flink-connector-jdbc-backward-compatibility` — standalone module, built by its own CI workflow, that verifies savepoint/state compatibility with older connector versions.
+- `flink-connector-jdbc-backward-compatibility` — standalone module, built by its own CI workflow, that runs the connector's source/sink tests against other Flink versions (fresh jobs, no savepoint restore from older connector releases).
 
 ### Supporting directories
 
@@ -90,7 +90,7 @@ Not in the reactor:
 ### Key packages in `flink-connector-jdbc-core/src/main/java`
 
 - `org.apache.flink.connector.jdbc` — top-level user-facing option/builder types: `JdbcConnectionOptions`, `JdbcExecutionOptions`, `JdbcExactlyOnceOptions`, `JdbcStatementBuilder`.
-- `org.apache.flink.connector.jdbc.core.datastream.source` — FLIP-27 source. Mostly `@PublicEvolving`: `JdbcSource`, `JdbcSourceBuilder`, `config/ContinuousUnBoundingSettings`, and in `enumerator/` (+ `splitter/`) `JdbcSqlSplitEnumeratorBase`, `JdbcSourceEnumeratorState`, `SplitterEnumerator` and its implementations, `reader/extractor/ResultExtractor`, `split/JdbcSourceSplit` and `split/CheckpointedOffset`. `@Internal`: the enumerator, reader and split serializers/state, `JdbcSourceEnumerator`, `JdbcSourceReader`, `JdbcSourceSplitReader`. `JdbcSourceOptions` has no annotation. Check the annotation on the class before changing it.
+- `org.apache.flink.connector.jdbc.core.datastream.source` — FLIP-27 source. `@PublicEvolving`: `JdbcSource`, `JdbcSourceBuilder`, `config/ContinuousUnBoundingSettings`, `enumerator/JdbcSqlSplitEnumeratorBase`, `enumerator/JdbcSourceEnumeratorState`, `enumerator/splitter/{SplitterEnumerator, PreparedSplitterEnumerator, SlideTimingSplitterEnumerator}`, `reader/extractor/ResultExtractor`, `split/JdbcSourceSplit`, `split/CheckpointedOffset`. `@Internal`: `enumerator/SqlTemplateSplitEnumerator`, `splitter/JdbcSqlSplitterEnumerator`, `splitter/PreparedSplitterNumericParameters`. No annotation at all: `JdbcSourceOptions`, `JdbcSourceEnumerator`, `JdbcSourceReader`, `JdbcSourceSplitReader`, `JdbcRecordEmitter`, `RecordAndOffset`, the source/enumerator state serializers, `JdbcSourceSplitState`, `SqlSplitterEnumerator`, and the `RowResultExtractor` / `RowDataResultExtractor` implementations. Check the annotation on the class before changing it.
 - `org.apache.flink.connector.jdbc.core.datastream.sink` — Sink V2 sink. `@PublicEvolving`: `JdbcSink`, `JdbcSinkBuilder`. `writer/` and `committer/` are `@Internal`.
 - `org.apache.flink.connector.jdbc.core.table` — Table/SQL layer. `JdbcDynamicTableFactory` (identifier `jdbc`, registered in `META-INF/services/org.apache.flink.table.factories.Factory`), `JdbcConnectorOptions` (`@PublicEvolving`), and the `@Internal` `JdbcDynamicTableSource` / `JdbcDynamicTableSink`.
 - `org.apache.flink.connector.jdbc.core.database` — the pluggable-database SPI: `JdbcFactory` (`@PublicEvolving`), `dialect/` (`JdbcDialect`, `@PublicEvolving`; statement building, converters), and `catalog/` (`JdbcCatalog`, the catalog factory).
@@ -102,7 +102,7 @@ Not in the reactor:
 ## Architecture Boundaries
 
 1. **Source (FLIP-27).** `JdbcSourceEnumerator` runs on the coordinator thread and hands `JdbcSourceSplit`s to `JdbcSourceReader`; `JdbcSourceSplitReader` runs on the fetcher thread and owns the JDBC `Connection`/`ResultSet`. A JDBC connection is not thread-safe — access it only from the reader thread.
-2. **Sink (Sink V2).** `JdbcSink` builds on `JdbcOutputFormat`, which batches rows and flushes on a size/time trigger and on checkpoint. The at-least-once path uses a plain `JdbcConnectionProvider`; per-record failures surface on the task thread at flush time.
+2. **Sink (Sink V2).** `JdbcSink` builds on `JdbcOutputFormat`, which batches rows and flushes on a size/time trigger and on checkpoint. The at-least-once path uses a plain `JdbcConnectionProvider`; per-record failures surface on the task thread at flush time. This is the DataStream path only: the Table/SQL sink (`JdbcDynamicTableSink#getSinkRuntimeProvider`) builds a legacy `GenericJdbcSinkFunction` through `JdbcOutputFormatBuilder`, and Table lookups use their own lookup function, so changes to `JdbcSink` or `JdbcSinkBuilder` do not affect SQL sinks. Table scans do use the new DataStream source.
 3. **Exactly-once (XA).** The exactly-once sink uses distributed (XA) transactions via `connections/xa` (`XaConnectionProvider`, `PoolingXaConnectionProvider`) and `transactions/xa` (Xid generation, per-checkpoint transaction lifecycle). XA driver support varies by database; this is the most driver-sensitive path — re-verify it on any driver bump. Not every dialect supports it.
 4. **Dialect SPI.** A database plugs in through `JdbcFactory` (`acceptsURL` decides which JDBC URLs it claims; `createDialect` / `createDialect(compatibleMode)` builds the `JdbcDialect`), discovered via `META-INF/services/org.apache.flink.connector.jdbc.core.database.JdbcFactory`. The `JdbcDialect` owns quoting, LIMIT, upsert/UPSERT-or-MERGE statement construction, and the `JdbcDialectConverter` type mapping. Keep database-specific behaviour inside the dialect, not in core.
 5. **Table layer.** `JdbcDynamicTableSource` / `JdbcDynamicTableSink` wrap the DataStream connectors; all Table options live in `JdbcConnectorOptions`.
@@ -164,7 +164,7 @@ State is written by `SimpleVersionedSerializer` implementations. Current version
 
 - **Format Java files with Spotless after editing:** `./mvnw spotless:apply` (google-java-format, AOSP style). It is auto-skipped on JDK 21, so format on 11 or 17.
 - **Checkstyle:** `tools/maven/checkstyle.xml`. Fix the code rather than suppressing rules.
-- **Apache License 2.0 header** required on all new files (enforced by Apache Rat). Use an HTML comment for markdown files.
+- **Apache License 2.0 header** required on all new files (enforced by the repository's license check in CI). Use an HTML comment for markdown files.
 - **API stability annotations:** Every user-facing API class and method must have one. `@Public` (stable across minor releases), `@PublicEvolving` (may change in minor releases), `@Experimental` (may change at any time), `@Internal` (no guarantees; do not depend on).
 - **JDBC resources:** close `Connection`, `Statement`, and `ResultSet` deterministically (try-with-resources). A `Connection` is single-threaded; do not share it across threads.
 - **Logging:** parameterized SLF4J statements (`{}` placeholders), never string concatenation.
