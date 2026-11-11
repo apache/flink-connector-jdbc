@@ -26,19 +26,25 @@ import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommit
 import org.apache.flink.connector.jdbc.core.datastream.sink.committer.TestingCommitRequest;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.SimpleXaConnectionProvider;
+import org.apache.flink.connector.jdbc.datasource.connections.xa.XaConnectionProvider;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
+import org.apache.flink.util.FlinkRuntimeException;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import javax.transaction.xa.Xid;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Smoke tests for the {@link JdbcWriter} with ExactlyOnce semantics and the underlying classes. */
 class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
@@ -144,6 +150,47 @@ class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
 
         sinkWriter.snapshotState(1L);
         assertThat(sinkWriter.snapshotState(2L).get(0).getHanging()).isEmpty();
+    }
+
+    /** The task never gets a writer that failed to start, so it can't close it. */
+    @Test
+    void testCloseConnectionWhenStartFails() {
+        SimpleXaConnectionProvider delegate = newXaConnectionProvider();
+        XaConnectionProvider failingRecover =
+                (XaConnectionProvider)
+                        Proxy.newProxyInstance(
+                                getClass().getClassLoader(),
+                                new Class<?>[] {XaConnectionProvider.class},
+                                (proxy, method, args) -> {
+                                    if (method.getName().equals("recover")) {
+                                        throw new FlinkRuntimeException("XA_RECOVER_ADMIN missing");
+                                    }
+                                    try {
+                                        return method.invoke(delegate, args);
+                                    } catch (InvocationTargetException e) {
+                                        throw e.getCause();
+                                    }
+                                });
+
+        assertThatThrownBy(() -> newWriter(failingRecover))
+                .hasStackTraceContaining("XA_RECOVER_ADMIN missing");
+        assertThat(delegate.isOpen()).isFalse();
+    }
+
+    @Test
+    void testCloseConnectionWhenStatementDoesNotPrepare() throws Exception {
+        // the writer of init() has the same xid active
+        sinkWriter.close();
+        SimpleXaConnectionProvider connectionProvider = newXaConnectionProvider();
+
+        assertThatThrownBy(
+                        () ->
+                                newWriter(
+                                        connectionProvider,
+                                        "INSERT INTO NO_SUCH_TABLE (id) VALUES (?)"))
+                .isInstanceOf(IOException.class)
+                .hasMessage("unable to open JDBC writer");
+        assertThat(connectionProvider.isOpen()).isFalse();
     }
 
     /** Commits the committable the way the committer gets it when it is not chained. */

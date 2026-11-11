@@ -87,6 +87,7 @@ public class JdbcWriter<IN>
 
         checkNotNull(connectionProvider, "connectionProvider must be defined");
 
+        JdbcWriterState state = null;
         if (deliveryGuarantee == DeliveryGuarantee.EXACTLY_ONCE) {
             checkArgument(
                     executionOptions.getMaxRetries() == 0,
@@ -97,8 +98,7 @@ public class JdbcWriter<IN>
             checkNotNull(recoveredState, "recoveredState must be defined");
             checkState(recoveredState.size() <= 1, "more than one state to recover");
 
-            JdbcWriterState state =
-                    recoveredState.stream().findFirst().orElse(JdbcWriterState.empty());
+            state = recoveredState.stream().findFirst().orElse(JdbcWriterState.empty());
 
             TransactionId transactionId =
                     TransactionId.create(
@@ -111,9 +111,6 @@ public class JdbcWriter<IN>
                             exactlyOnceOptions,
                             transactionId,
                             ((XaConnectionProvider) connectionProvider));
-            this.jdbcTransaction.open(state);
-            this.jdbcTransaction.rollbackPreparedTxs(lastCheckpointId);
-            this.jdbcTransaction.createTx(lastCheckpointId);
         }
 
         checkNotNull(executionOptions, "executionOptions must be defined");
@@ -125,7 +122,24 @@ public class JdbcWriter<IN>
                         () ->
                                 JdbcBatchStatementExecutor.simple(
                                         queryStatement.query(), queryStatement::statement));
-        this.jdbcOutput.open(outputSerializer);
+        try {
+            if (jdbcTransaction != null) {
+                this.jdbcTransaction.open(state);
+                this.jdbcTransaction.rollbackPreparedTxs(lastCheckpointId);
+                this.jdbcTransaction.createTx(lastCheckpointId);
+            }
+            this.jdbcOutput.open(outputSerializer);
+        } catch (IOException | RuntimeException e) {
+            // the task has no writer to close, so release the XA connection here
+            if (jdbcTransaction != null) {
+                try {
+                    this.jdbcTransaction.close();
+                } catch (Exception closeException) {
+                    e.addSuppressed(closeException);
+                }
+            }
+            throw e;
+        }
     }
 
     @Override
