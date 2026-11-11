@@ -73,6 +73,16 @@ class TransactionIdTest {
     }
 
     @Test
+    void testGetJobIdReturnsACopy() {
+        JobID jobId = JobID.fromHexString("6b64d8a9a951e2e8767ae952ad951706");
+        TransactionId tid = TransactionId.create(jobId.getBytes(), 1, 2).withBranch(1L);
+
+        Arrays.fill(tid.getJobId(), (byte) 0);
+
+        assertThat(tid.getJobId()).isEqualTo(jobId.getBytes());
+    }
+
+    @Test
     void testEqualsAndHashcode() {
         TransactionId tid =
                 TransactionId.create(
