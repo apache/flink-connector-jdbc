@@ -18,7 +18,6 @@
 package org.apache.flink.connector.jdbc.datasource.transactions.xa;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriterState;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.XaConnectionProvider;
@@ -41,6 +40,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 /** Class that manages all relevant XA operations. */
 @Internal
@@ -51,7 +51,7 @@ public class XaTransaction implements Serializable, AutoCloseable {
     private final XaConnectionProvider xaConnectionProvider;
     private final JdbcExactlyOnceOptions exactlyOnceOptions;
 
-    // checkpoints and the corresponding transactions waiting for completion notification from JM
+    // prepared xids from the restored writer state, committed on open
     private transient List<TransactionId> preparedXids = new ArrayList<>();
     // hanging XIDs - used for cleanup
     // it's a list to support retries and scaling down
@@ -71,10 +71,6 @@ public class XaTransaction implements Serializable, AutoCloseable {
         this.baseTransaction = transactionId;
     }
 
-    public Xid getCurrentXid() {
-        return currentTid;
-    }
-
     public XaConnectionProvider getConnectionProvider() {
         return xaConnectionProvider;
     }
@@ -91,12 +87,10 @@ public class XaTransaction implements Serializable, AutoCloseable {
             commitTx();
             if (exactlyOnceOptions.isDiscoverAndRollbackOnRecovery()) {
                 // Pending transactions which are not included into the checkpoint might hold locks
-                // and
-                // should be rolled back. However, rolling back ALL transactions can cause data
-                // loss. So
-                // each subtask first commits transactions from its state and then rolls back
-                // discovered
-                // transactions if they belong to it.
+                // and should be rolled back. However, rolling back ALL transactions can cause data
+                // loss: the transactions of checkpoints before the restored one are committed by
+                // the committer, which restores them from its own state. Only transactions from the
+                // restored checkpoint on belong to this writer (FLINK-41101).
                 recoverAndRollback();
             }
         } catch (Exception e) {
@@ -155,12 +149,18 @@ public class XaTransaction implements Serializable, AutoCloseable {
         }
     }
 
-    public void prepareTx() throws IOException {
+    /**
+     * Ends and prepares the current transaction. The caller is responsible for committing it.
+     *
+     * @return the xid of the prepared transaction, empty if it had nothing to commit
+     */
+    public Optional<TransactionId> prepareTx() throws IOException {
         checkState();
         hangingXids.pollLast();
+        TransactionId prepared = null;
         try {
             xaConnectionProvider.endAndPrepare(currentTid);
-            preparedXids.add(currentTid);
+            prepared = currentTid;
         } catch (EmptyTransactionXaException e) {
             LOG.info(
                     "empty XA transaction (skip), xid: {}, checkpoint {}",
@@ -170,6 +170,7 @@ public class XaTransaction implements Serializable, AutoCloseable {
             ExceptionUtils.rethrowIOException(e);
         }
         currentTid = null;
+        return Optional.ofNullable(prepared);
     }
 
     public void commitTx() {
@@ -178,46 +179,12 @@ public class XaTransaction implements Serializable, AutoCloseable {
         preparedXids.addAll(commitXids(toCommit));
     }
 
-    public void commitTxUntil(long checkpointId) {
-        Tuple2<List<TransactionId>, List<TransactionId>> splittedXids =
-                split(preparedXids, checkpointId);
-
-        if (splittedXids.f0.isEmpty()) {
-            LOG.warn("nothing to commit up to checkpoint: {}", checkpointId);
-        } else {
-            preparedXids = splittedXids.f1;
-            preparedXids.addAll(commitXids(splittedXids.f0));
-        }
-    }
-
     public List<TransactionId> commitXids(List<TransactionId> xids) {
         return commit(
                         xids,
                         exactlyOnceOptions.isAllowOutOfOrderCommits(),
                         exactlyOnceOptions.getMaxCommitAttempts())
                 .getForRetry();
-    }
-
-    private Tuple2<List<TransactionId>, List<TransactionId>> split(
-            List<TransactionId> list, long checkpointId) {
-        return split(list, checkpointId, true);
-    }
-
-    private Tuple2<List<TransactionId>, List<TransactionId>> split(
-            List<TransactionId> list, long checkpointId, boolean checkpointIntoLo) {
-
-        List<TransactionId> lo = new ArrayList<>(list.size() / 2);
-        List<TransactionId> hi = new ArrayList<>(list.size() / 2);
-        list.forEach(
-                i -> {
-                    if (i.getCheckpointId() < checkpointId
-                            || (i.getCheckpointId() == checkpointId && checkpointIntoLo)) {
-                        lo.add(i);
-                    } else {
-                        hi.add(i);
-                    }
-                });
-        return new Tuple2<>(lo, hi);
     }
 
     private XaTransactionResult<TransactionId> commit(

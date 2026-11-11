@@ -80,6 +80,28 @@ public abstract class BaseJdbcSinkTest implements DerbyTestBase {
         assertResult(BOOKS);
     }
 
+    /** Without chaining the committer receives the committables serialized. */
+    @Test
+    public void testInsertWithoutChaining() throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setParallelism(1);
+        env.disableOperatorChaining();
+
+        assertResult(new ArrayList<>());
+
+        env.fromCollection(BOOKS)
+                .sinkTo(
+                        finishSink(
+                                new JdbcSinkBuilder<BooksTable.BookEntry>()
+                                        .withQueryStatement(
+                                                TEST_TABLE.getInsertIntoQuery(),
+                                                TEST_TABLE.getStatementBuilder())));
+        env.execute();
+
+        assertResult(BOOKS);
+    }
+
     @Test
     public void testInsertWithObjectReuse() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();

@@ -38,12 +38,11 @@ import org.apache.flink.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.transaction.xa.Xid;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
@@ -65,7 +64,6 @@ public class JdbcWriter<IN>
 
     private XaTransaction jdbcTransaction;
     private long lastCheckpointId;
-    private boolean pendingRecords;
     private boolean endOfInput;
 
     public JdbcWriter(
@@ -84,7 +82,6 @@ public class JdbcWriter<IN>
 
         checkNotNull(initContext, "initContext must be defined");
 
-        pendingRecords = false;
         this.lastCheckpointId =
                 initContext.getRestoredCheckpointId().orElse(InitContext.INITIAL_CHECKPOINT_ID - 1);
 
@@ -136,9 +133,6 @@ public class JdbcWriter<IN>
             jdbcTransaction.checkState();
         }
         this.jdbcOutput.writeRecord(element);
-        if (!this.pendingRecords) {
-            this.pendingRecords = true;
-        }
     }
 
     @Override
@@ -165,23 +159,19 @@ public class JdbcWriter<IN>
             return Collections.emptyList();
         }
 
-        Xid currentXid = jdbcTransaction.getCurrentXid();
-
         jdbcTransaction.checkState();
 
         flush();
-        jdbcTransaction.prepareTx();
+        Optional<TransactionId> preparedXid = jdbcTransaction.prepareTx();
 
-        // If no records, commit the empty transaction
-        if (!this.pendingRecords) {
-            jdbcTransaction.commitTxUntil(this.lastCheckpointId);
+        // If no records, there is nothing to commit
+        if (!preparedXid.isPresent()) {
             return Collections.emptyList();
         }
 
-        // otherwise, return a committable
-        this.pendingRecords = false;
-        final JdbcCommitable committable = JdbcCommitable.of(currentXid, jdbcTransaction);
-        LOG.debug("Committing {} committable.", committable);
+        // otherwise, the committer commits it once the checkpoint is complete
+        final JdbcCommitable committable = JdbcCommitable.of(preparedXid.get());
+        LOG.debug("Handing {} to the committer.", committable);
         return Collections.singletonList(committable);
     }
 
@@ -196,11 +186,6 @@ public class JdbcWriter<IN>
                 "Expected %s > %s",
                 checkpointId,
                 lastCheckpointId);
-
-        // If no records, commit the empty transaction
-        if (!this.pendingRecords) {
-            jdbcTransaction.commitTxUntil(this.lastCheckpointId);
-        }
 
         this.lastCheckpointId = checkpointId;
         // after the end of input the last transaction is prepared and no record follows, but
