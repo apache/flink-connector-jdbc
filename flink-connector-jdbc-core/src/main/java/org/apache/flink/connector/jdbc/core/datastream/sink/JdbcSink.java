@@ -93,7 +93,11 @@ public class JdbcSink<IN>
     @Internal
     public Committer<JdbcCommitable> createCommitter(CommitterInitContext committerInitContext)
             throws IOException {
-        return new JdbcCommitter(deliveryGuarantee, connectionProvider, exactlyOnceOptions);
+        return new JdbcCommitter(
+                deliveryGuarantee,
+                connectionProvider,
+                exactlyOnceOptions,
+                committerInitContext.getRestoredCheckpointId());
     }
 
     @Override
