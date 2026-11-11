@@ -47,7 +47,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -111,6 +111,31 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
      */
     @Test
     void testRecoveryAfterAFailedCheckpoint() throws Exception {
+        testRecoveryAfterFailedCheckpoints(2, 1, false);
+    }
+
+    /**
+     * The first checkpoint fails after the sink has prepared its first transaction. The restart has
+     * no state and starts the same xid again, so it must have been rolled back.
+     */
+    @Test
+    void testRecoveryAfterAFailedFirstCheckpoint() throws Exception {
+        testRecoveryAfterFailedCheckpoints(1, 1, false);
+    }
+
+    /**
+     * The second checkpoint expires, which is tolerated, and the third one expires too, which fails
+     * the job. The sink has prepared a transaction for each of them, and the restart from the first
+     * checkpoint must roll back both.
+     */
+    @Test
+    void testRecoveryAfterATolerableFailedCheckpoint() throws Exception {
+        testRecoveryAfterFailedCheckpoints(2, 2, true);
+    }
+
+    private void testRecoveryAfterFailedCheckpoints(
+            long firstFailingCheckpointId, int failingCheckpoints, boolean expire)
+            throws Exception {
         Configuration config = new Configuration();
         config.set(RestartStrategyOptions.RESTART_STRATEGY, "fixed-delay");
         config.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_ATTEMPTS, 1);
@@ -118,16 +143,25 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(config);
         env.setParallelism(1);
         env.enableCheckpointing(200L);
-        SharedReference<AtomicBoolean> failed = sharedObjects.add(new AtomicBoolean(false));
+        if (expire) {
+            env.getCheckpointConfig().setCheckpointTimeout(300L);
+            env.getCheckpointConfig().setTolerableCheckpointFailureNumber(failingCheckpoints - 1);
+        }
+        SharedReference<AtomicInteger> failed = sharedObjects.add(new AtomicInteger());
         DataGeneratorSource<BooksTable.BookEntry> books =
                 new DataGeneratorSource<>(
                         ExactlyOnceJdbcSinkTest::book,
                         RECOVERY_RECORDS,
-                        RateLimiterStrategy.perCheckpoint(10),
+                        // records keep coming while checkpoints expire
+                        expire
+                                ? RateLimiterStrategy.perSecond(40)
+                                : RateLimiterStrategy.perCheckpoint(10),
                         TypeInformation.of(BooksTable.BookEntry.class));
 
         env.fromSource(books, WatermarkStrategy.noWatermarks(), "books")
-                .map(new FailingSnapshotMapper(failed))
+                .map(
+                        new FailingSnapshotMapper(
+                                failed, firstFailingCheckpointId, failingCheckpoints, expire))
                 .sinkTo(
                         finishSink(
                                 new JdbcSinkBuilder<BooksTable.BookEntry>()
@@ -142,7 +176,12 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
                                                 })));
         env.execute();
 
-        assertThat(failed.get()).isTrue();
+        assertThat(failed.get().get()).isEqualTo(failingCheckpoints);
+        try (SimpleXaConnectionProvider xa =
+                SimpleXaConnectionProvider.from(getMetadata().buildXaDataSource())) {
+            xa.open();
+            assertThat(xa.recover()).isEmpty();
+        }
         List<Integer> written =
                 RECOVERY_TABLE.selectAllTable(getMetadata()).stream()
                         .map(row -> (Integer) row.getField(0))
@@ -159,17 +198,29 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
     }
 
     /**
-     * Fails the snapshot of the second checkpoint once. Operators of a chain snapshot from the tail
-     * to the head, so the sink has already taken its snapshot for that checkpoint.
+     * Fails the snapshots of the given number of checkpoints, or lets them expire. A chain takes
+     * its snapshots from the tail to the head, so the sink has already prepared its transaction for
+     * those checkpoints.
      */
     private static class FailingSnapshotMapper
             implements MapFunction<BooksTable.BookEntry, BooksTable.BookEntry>,
                     CheckpointedFunction {
 
-        private final SharedReference<AtomicBoolean> failed;
+        private final SharedReference<AtomicInteger> failed;
+        private final long firstFailingCheckpointId;
+        private final int failingCheckpoints;
+        private final boolean expire;
+        private boolean restored;
 
-        FailingSnapshotMapper(SharedReference<AtomicBoolean> failed) {
+        FailingSnapshotMapper(
+                SharedReference<AtomicInteger> failed,
+                long firstFailingCheckpointId,
+                int failingCheckpoints,
+                boolean expire) {
             this.failed = failed;
+            this.firstFailingCheckpointId = firstFailingCheckpointId;
+            this.failingCheckpoints = failingCheckpoints;
+            this.expire = expire;
         }
 
         @Override
@@ -178,13 +229,24 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
         }
 
         @Override
-        public void snapshotState(FunctionSnapshotContext context) {
-            if (context.getCheckpointId() >= 2 && failed.get().compareAndSet(false, true)) {
-                throw new RuntimeException("Planned exception.");
+        public void snapshotState(FunctionSnapshotContext context) throws Exception {
+            if (!restored
+                    && context.getCheckpointId() >= firstFailingCheckpointId
+                    && failed.get().get() < failingCheckpoints) {
+                failed.get().incrementAndGet();
+                if (expire) {
+                    // longer than the checkpoint timeout, short enough for the next barrier to
+                    // reach the sink before the job fails
+                    Thread.sleep(400L);
+                } else {
+                    throw new RuntimeException("Planned exception.");
+                }
             }
         }
 
         @Override
-        public void initializeState(FunctionInitializationContext context) {}
+        public void initializeState(FunctionInitializationContext context) {
+            restored = context.isRestored();
+        }
     }
 }

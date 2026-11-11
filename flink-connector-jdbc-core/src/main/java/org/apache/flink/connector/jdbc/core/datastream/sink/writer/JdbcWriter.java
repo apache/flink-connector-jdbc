@@ -112,6 +112,7 @@ public class JdbcWriter<IN>
                             transactionId,
                             ((XaConnectionProvider) connectionProvider));
             this.jdbcTransaction.open(state);
+            this.jdbcTransaction.rollbackPreparedTxs(lastCheckpointId);
             this.jdbcTransaction.createTx(lastCheckpointId);
         }
 
