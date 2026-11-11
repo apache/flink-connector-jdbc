@@ -25,6 +25,7 @@ import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.Transac
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.EmptyTransactionXaException;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.exceptions.TransientXaException;
 import org.apache.flink.util.ExceptionUtils;
+import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
@@ -35,6 +36,7 @@ import javax.transaction.xa.Xid;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
@@ -89,8 +91,9 @@ public class XaTransaction implements Serializable, AutoCloseable {
                 // Pending transactions which are not included into the checkpoint might hold locks
                 // and should be rolled back. However, rolling back ALL transactions can cause data
                 // loss: the transactions of checkpoints before the restored one are committed by
-                // the committer, which restores them from its own state. Only transactions from the
-                // restored checkpoint on belong to this writer (FLINK-41101).
+                // the committer, which restores them from its own state. rollbackPreparedTxs()
+                // rolls back this writer's own transactions. The lookup below never matches a
+                // driver Xid (FLINK-41101).
                 recoverAndRollback();
             }
         } catch (Exception e) {
@@ -133,6 +136,59 @@ public class XaTransaction implements Serializable, AutoCloseable {
         Preconditions.checkState(
                 !hangingXids.isEmpty() && hangingXids.peekLast().equals(currentTid),
                 "inconsistent internal state");
+    }
+
+    /**
+     * Rolls back the prepared transactions of this writer from the given checkpoint on. A failed
+     * attempt may have left them prepared, the restart replays their records, and the committer
+     * only commits transactions of earlier checkpoints. It runs whether or not {@code
+     * discoverAndRollbackOnRecovery} is set, and fails if it can't list them.
+     */
+    public void rollbackPreparedTxs(long checkpointId) {
+        Collection<Xid> recovered;
+        try {
+            recovered = xaConnectionProvider.recover();
+        } catch (Exception e) {
+            // a leftover would keep its locks for good, even after a transient failure, as restores
+            // from a later checkpoint start past it
+            throw new FlinkRuntimeException(
+                    String.format(
+                            "unable to list the prepared transactions to roll back those that a"
+                                    + " failed attempt prepared for checkpoint %d or later (on"
+                                    + " MySQL, grant XA_RECOVER_ADMIN)",
+                            checkpointId),
+                    e);
+        }
+        for (Xid xid : recovered) {
+            if (isOwnFromCheckpoint(xid, checkpointId)) {
+                LOG.info("rolling back transaction of a failed attempt, xid={}", xid);
+                xaConnectionProvider.rollback(xid);
+            }
+        }
+    }
+
+    /**
+     * A transaction id names the job, the subtask and the parallelism, but not the sink. Another
+     * exactly-once sink of the job at the same parallelism can't run, as it starts the same xids.
+     * At another parallelism its xids differ only in the parallelism, so that has to match too.
+     */
+    private boolean isOwnFromCheckpoint(Xid xid, long checkpointId) {
+        if (xid.getFormatId() != baseTransaction.getFormatId()
+                || !Arrays.equals(
+                        xid.getGlobalTransactionId(), baseTransaction.getGlobalTransactionId())) {
+            return false;
+        }
+        try {
+            TransactionId transactionId =
+                    TransactionId.createFromXid(
+                            xid.getFormatId(),
+                            xid.getGlobalTransactionId(),
+                            xid.getBranchQualifier());
+            return transactionId.getNumberOfSubtasks() == baseTransaction.getNumberOfSubtasks()
+                    && transactionId.getCheckpointId() >= checkpointId;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     /**
