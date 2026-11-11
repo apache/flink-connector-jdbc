@@ -448,12 +448,25 @@ JdbcExactlyOnceOptions.builder()
     .build();
 ```
 
-This will make Flink use a separate connection for every XA transaction. This may require adjusting connection limits.
-For PostgreSQL and MySQL, this can be done by increasing `max_connections`.
+This will make Flink start every XA transaction on a connection from a pool, and return the connection once its transaction is prepared, so each sink subtask writes on one connection at a time.
 
 Furthermore, XA needs to be enabled and/or configured in some databases.
-For PostgreSQL, you should set `max_prepared_transactions` to some value greater than zero.
-For MySQL v8+, you should grant `XA_RECOVER_ADMIN` to Flink DB user.
+For PostgreSQL, you should set `max_prepared_transactions` to at least twice the sink parallelism: every sink subtask keeps its transaction prepared until the checkpoint completes, and can prepare the next one before the previous one is committed. Each failed or concurrent checkpoint in between adds one more per sink subtask.
+For MySQL v8+, you should grant `XA_RECOVER_ADMIN` to Flink DB user. On Oracle, grant `SELECT` on `DBA_PENDING_TRANSACTIONS` and `EXECUTE` on `SYS.DBMS_XA`. The sink lists the prepared transactions at every start, and fails if it can't.
+
+The sink commits a prepared XA transaction once the checkpoint completes, on a different connection than the one that prepared it.
+For MySQL, this requires `xa_detach_on_prepare` to be `ON`, which is the default since MySQL 8.0.29.
+
+Records become visible once the checkpoint completes. A single committer subtask commits the transactions of all sink subtasks, one after another, which takes about one database round trip per sink subtask.
+A prepared transaction keeps its locks until it is committed, so a record that touches a row of the previous checkpoint waits until that commit.
+If several sink subtasks write the same rows, use `keyBy` on the row key. Otherwise they can block each other until the database's lock timeout fails the job.
+The same happens if a checkpoint takes longer than the lock timeout. PostgreSQL waits forever by default, so set `lock_timeout`.
+
+A restarted job rolls back the transactions that its failed attempt prepared for checkpoints that never completed.
+After a restart at another parallelism, the transactions of checkpoints after the restored one keep their locks until they are rolled back by hand. So do those that an earlier job left behind, for example when a savepoint is restored into a new job.
+On PostgreSQL, list them with `SELECT gid FROM pg_prepared_xacts` and roll them back with `ROLLBACK PREPARED '<gid>'`. On MySQL, use `XA RECOVER CONVERT XID` and `XA ROLLBACK`.
+The global transaction id starts with the job id (16 bytes) and the subtask index (4 bytes). The branch qualifier starts with the sink parallelism (4 bytes) and the id of the last checkpoint before the transaction started (8 bytes). PostgreSQL shows both in base64 in the gid, after the format id and separated by `_`, and MySQL shows them in hex.
+Only roll back those with the restored checkpoint id or a higher one: the committer commits the others after the restore, and skips any that are gone. Never roll back those with the job id of a job that runs and the parallelism of one of its exactly-once sinks.
 
 **ATTENTION:** The exactly-once sink requires `JdbcExecutionOptions.maxRetries` to be set to `0`.
 The default is `3`, so set it explicitly with `JdbcExecutionOptions.builder().withMaxRetries(0)`;
