@@ -44,6 +44,7 @@ public class JdbcCommitter implements Committer<JdbcCommitable> {
     private static final Logger LOG = LoggerFactory.getLogger(JdbcCommitter.class);
 
     private transient XaConnectionProvider xaConnectionProvider;
+    private transient boolean opened;
 
     private final DeliveryGuarantee deliveryGuarantee;
     private final int maxCommitAttempts;
@@ -58,11 +59,6 @@ public class JdbcCommitter implements Committer<JdbcCommitable> {
 
         if (DeliveryGuarantee.EXACTLY_ONCE == deliveryGuarantee) {
             this.xaConnectionProvider = (XaConnectionProvider) connectionProvider;
-            try {
-                this.xaConnectionProvider.open();
-            } catch (Exception e) {
-                ExceptionUtils.rethrowIOException(e);
-            }
             this.maxCommitAttempts = exactlyOnceOptions.getMaxCommitAttempts();
         } else {
             this.maxCommitAttempts = 0;
@@ -78,6 +74,20 @@ public class JdbcCommitter implements Committer<JdbcCommitable> {
 
         if (DeliveryGuarantee.EXACTLY_ONCE != this.deliveryGuarantee && !committables.isEmpty()) {
             throw new FlinkRuntimeException("Non XA sink with commitables");
+        }
+        if (!committables.isEmpty() && !opened) {
+            try {
+                xaConnectionProvider.open();
+            } catch (Exception e) {
+                // close() skips the provider, so release what open() got before it failed
+                try {
+                    xaConnectionProvider.close();
+                } catch (Exception closeException) {
+                    e.addSuppressed(closeException);
+                }
+                ExceptionUtils.rethrowIOException(e);
+            }
+            opened = true;
         }
 
         for (CommitRequest<JdbcCommitable> request : committables) {
@@ -111,7 +121,7 @@ public class JdbcCommitter implements Committer<JdbcCommitable> {
 
     @Override
     public void close() throws Exception {
-        if (this.xaConnectionProvider != null) {
+        if (opened) {
             this.xaConnectionProvider.close();
         }
     }

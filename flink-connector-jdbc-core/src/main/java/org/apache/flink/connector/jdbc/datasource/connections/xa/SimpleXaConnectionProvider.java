@@ -108,7 +108,9 @@ public class SimpleXaConnectionProvider implements XaConnectionProvider {
             connection = null;
         }
         try {
-            xaConnection.close(); // close likely a pooled AND the underlying connection
+            if (xaConnection != null) {
+                xaConnection.close(); // close likely a pooled AND the underlying connection
+            }
         } catch (SQLException e) {
             // Some databases (e.g. MySQL) rollback changes on normal client disconnect which
             // causes an exception if an XA transaction was prepared. Note that resources are
