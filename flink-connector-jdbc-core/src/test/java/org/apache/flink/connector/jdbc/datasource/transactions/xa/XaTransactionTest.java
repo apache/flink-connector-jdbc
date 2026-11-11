@@ -20,6 +20,7 @@ package org.apache.flink.connector.jdbc.datasource.transactions.xa;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriterState;
+import org.apache.flink.connector.jdbc.core.datastream.sink.writer.JdbcWriterStateSerializer;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.SimpleXaConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.XaConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.transactions.xa.domain.TransactionId;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.transaction.xa.Xid;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.PreparedStatement;
@@ -40,6 +42,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.apache.flink.util.StringUtils.hexStringToByte;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -47,6 +50,33 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public abstract class XaTransactionTest implements DatabaseTest {
 
     private static final BooksTable TEST_TABLE = new BooksTable("XaTransactionTable");
+
+    private static final JobID VERSION_2_JOB_ID =
+            JobID.fromHexString("6b64d8a9a951e2e8767ae952ad951706");
+
+    /**
+     * Version 2 of the writer state, from the writer of 4.1.0 (subtask 1 of 2 of job {@link
+     * #VERSION_2_JOB_ID}, restored at checkpoint 1000) after the commit of its transaction for
+     * checkpoint 1000 failed transiently: prepared [1000], hanging [1001].
+     */
+    private static final String VERSION_2_STATE =
+            "00000001446b64d8a9a951e2e8767ae952ad951706000000010000000200000000000003"
+                    + "e90000000000000000000000000000000000000000000000000000000000000000000000"
+                    + "0000000001446b64d8a9a951e2e8767ae952ad9517060000000100000002000000000000"
+                    + "03e800000001000000000000000000000000000000000000000000000000000000000000"
+                    + "0000";
+
+    /** As {@link #VERSION_2_STATE}, after the commits for 1000 and 1001: prepared [1000, 1001]. */
+    private static final String VERSION_2_STATE_TWO_PREPARED =
+            "00000001446b64d8a9a951e2e8767ae952ad951706000000010000000200000000000003"
+                    + "ea0000000000000000000000000000000000000000000000000000000000000000000000"
+                    + "0000000002446b64d8a9a951e2e8767ae952ad9517060000000100000002000000000000"
+                    + "03e800000002000000000000000000000000000000000000000000000000000000000000"
+                    + "0000446b64d8a9a951e2e8767ae952ad951706000000010000000200000000000003e900"
+                    + "000000000000000000000000000000000000000000000000000000000000000000000000"
+                    + "000000000000000000000000000000000000000000000000000000000000000000000000"
+                    + "000000000000000000000000000000000000000000000000000000000000000000000000"
+                    + "00000000";
 
     @Override
     public List<TableManaged> getManagedTables() {
@@ -155,6 +185,54 @@ public abstract class XaTransactionTest implements DatabaseTest {
 
         assertThat(isPrepared(hanging)).isFalse();
         assertThat(isPrepared(later)).isTrue();
+    }
+
+    /**
+     * The writer of 4.1 committed at the barrier and kept a transaction whose commit failed
+     * transiently in its state. A restored writer commits it.
+     */
+    @Test
+    void testOpenCommitsPreparedOfVersion2State() throws Exception {
+        JdbcWriterState state = version2State(VERSION_2_STATE);
+        TransactionId prepared = prepare(VERSION_2_JOB_ID.getBytes(), 1, 2, 1000, 1);
+        assertThat(state.getPrepared()).containsExactly(prepared);
+
+        try (XaTransaction ignored = newTransaction(new JobID().getBytes(), 1, 2, state)) {
+            assertThat(isPrepared(prepared)).isFalse();
+        }
+
+        assertThat(TEST_TABLE.selectAllTable(getMetadata())).hasSize(1);
+    }
+
+    @Test
+    void testOpenCommitsAllPreparedOfVersion2State() throws Exception {
+        JdbcWriterState state = version2State(VERSION_2_STATE_TWO_PREPARED);
+        TransactionId first = prepare(VERSION_2_JOB_ID.getBytes(), 1, 2, 1000, 1);
+        TransactionId second = prepare(VERSION_2_JOB_ID.getBytes(), 1, 2, 1001, 2);
+        assertThat(state.getPrepared()).containsExactly(first, second);
+
+        try (XaTransaction ignored = newTransaction(new JobID().getBytes(), 1, 2, state)) {
+            assertThat(isPrepared(first)).isFalse();
+            assertThat(isPrepared(second)).isFalse();
+        }
+
+        assertThat(TEST_TABLE.selectAllTable(getMetadata())).hasSize(2);
+    }
+
+    /**
+     * The writer of 4.1 may have committed the transaction on a retry before the job failed, so the
+     * database no longer knows it.
+     */
+    @Test
+    void testOpenIgnoresCommittedPreparedOfVersion2State() throws Exception {
+        try (XaTransaction ignored =
+                newTransaction(new JobID().getBytes(), 1, 2, version2State(VERSION_2_STATE))) {
+            assertThat(TEST_TABLE.selectAllTable(getMetadata())).isEmpty();
+        }
+    }
+
+    private static JdbcWriterState version2State(String hex) throws IOException {
+        return new JdbcWriterStateSerializer().deserialize(2, hexStringToByte(hex));
     }
 
     private static JdbcWriterState restoredState(TransactionId hanging) {
