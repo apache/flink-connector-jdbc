@@ -140,6 +140,36 @@ class JdbcCommitterTest implements DerbyTestBase {
         assertThat(request.getFailure()).isInstanceOf(TransientXaException.class);
     }
 
+    @Test
+    void testCloseConnectionOfFailedOpen() throws Exception {
+        OpenFailingXaConnectionProvider connectionProvider = new OpenFailingXaConnectionProvider();
+        TestingCommitRequest request = new TestingCommitRequest(JdbcCommitable.of(transactionId));
+
+        try (JdbcCommitter committer = newCommitter(connectionProvider)) {
+            assertThatThrownBy(() -> committer.commit(Collections.singletonList(request)))
+                    .hasMessageContaining("failed after connecting");
+        }
+
+        assertThat(connectionProvider.isOpen()).isFalse();
+    }
+
+    @Test
+    void testFailToConnect() throws Exception {
+        SimpleXaConnectionProvider connectionProvider =
+                SimpleXaConnectionProvider.from(
+                        () -> {
+                            throw new FlinkRuntimeException("database unreachable");
+                        },
+                        null);
+        TestingCommitRequest request = new TestingCommitRequest(JdbcCommitable.of(transactionId));
+
+        try (JdbcCommitter committer = newCommitter(connectionProvider)) {
+            assertThatThrownBy(() -> committer.commit(Collections.singletonList(request)))
+                    .hasMessageContaining("database unreachable")
+                    .satisfies(e -> assertThat(e.getSuppressed()).isEmpty());
+        }
+    }
+
     private void prepareTransaction() throws SQLException {
         try (SimpleXaConnectionProvider xa = newXaConnectionProvider()) {
             xa.open();
@@ -258,6 +288,17 @@ class JdbcCommitterTest implements DerbyTestBase {
         @Override
         public Connection reestablishConnection() {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    /** Connects, then fails to open, as a failing setTransactionTimeout does. */
+    private static class OpenFailingXaConnectionProvider
+            extends TransientlyFailingXaConnectionProvider {
+
+        @Override
+        public void open() {
+            super.open();
+            throw new FlinkRuntimeException("failed after connecting");
         }
     }
 }

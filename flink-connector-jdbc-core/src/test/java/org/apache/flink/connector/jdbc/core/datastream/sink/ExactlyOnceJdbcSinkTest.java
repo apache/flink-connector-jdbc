@@ -34,6 +34,7 @@ import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.util.RestartStrategyUtils;
 import org.apache.flink.testutils.junit.SharedObjectsExtension;
 import org.apache.flink.testutils.junit.SharedReference;
 
@@ -43,6 +44,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import javax.transaction.xa.Xid;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -74,6 +77,10 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
 
     private static final long RECOVERY_RECORDS = 100;
 
+    private static final BooksTable UPDATE_TABLE = new BooksTable("UpdateSinkTable");
+
+    private static final int UPDATES = 10_000;
+
     @RegisterExtension
     private final SharedObjectsExtension sharedObjects = SharedObjectsExtension.create();
 
@@ -89,6 +96,7 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
     public List<TableManaged> getManagedTables() {
         List<TableManaged> tables = new ArrayList<>(super.getManagedTables());
         tables.add(RECOVERY_TABLE);
+        tables.add(UPDATE_TABLE);
         return tables;
     }
 
@@ -191,6 +199,48 @@ class ExactlyOnceJdbcSinkTest extends BaseJdbcSinkTest {
                         IntStream.range(0, (int) RECOVERY_RECORDS)
                                 .boxed()
                                 .collect(Collectors.toList()));
+    }
+
+    /**
+     * Every record updates the same row, so after each checkpoint the writer needs the lock that
+     * the transaction prepared for that checkpoint holds until the committer commits it.
+     */
+    @Test
+    void testUpdateRowOfThePreviousCheckpoint() throws Exception {
+        BooksTable.BookEntry book = new BooksTable.BookEntry(0, "Book 0", "Writer", 0D, 0);
+        try (Connection connection = getMetadata().getConnection();
+                PreparedStatement ps =
+                        connection.prepareStatement(UPDATE_TABLE.getInsertIntoQuery())) {
+            UPDATE_TABLE.getStatementBuilder().accept(ps, book);
+            ps.execute();
+        }
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setParallelism(1);
+        env.enableCheckpointing(50L);
+
+        env.fromSequence(1, UPDATES)
+                .sinkTo(
+                        new JdbcSinkBuilder<Long>()
+                                .withQueryStatement(
+                                        "UPDATE UpdateSinkTable SET qty = ? WHERE id = 0",
+                                        (ps, qty) -> ps.setInt(1, qty.intValue()))
+                                .withExecutionOptions(
+                                        JdbcExecutionOptions.builder()
+                                                .withBatchSize(1)
+                                                .withMaxRetries(0)
+                                                .build())
+                                .buildExactlyOnce(
+                                        JdbcExactlyOnceOptions.defaults(),
+                                        getMetadata().getXaSourceSupplier()));
+        env.execute();
+
+        try (Connection connection = getMetadata().getConnection()) {
+            assertThat(UPDATE_TABLE.selectAllTable(connection))
+                    .containsExactly(
+                            new BooksTable.BookEntry(
+                                    book.id, book.title, book.author, book.price, UPDATES));
+        }
     }
 
     private static BooksTable.BookEntry book(Long id) {
