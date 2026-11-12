@@ -34,7 +34,6 @@ jobs:
 
     env:
       MVN_CONNECTION_OPTIONS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
-      FLINK_CACHE_DIR: "/tmp/cache/flink"
       MVN_BUILD_OUTPUT_FILE: "/tmp/mvn_build_output.out"
       MVN_VALIDATION_DIR: "/tmp/flink-validation-deployment"
 
@@ -54,28 +53,6 @@ jobs:
         with:
           maven-version: 3.8.6
 
-      - name: "Determine Flink binary url"
-        run: |
-          binary_url=""
-          if [[ "${{ matrix.flink }}" = *-SNAPSHOT ]]; then
-            binary_url=https://s3.amazonaws.com/flink-nightly/flink-${{ matrix.flink }}-bin-scala_2.12.tgz
-            cache_binary=false
-          else
-            binary_url=https://archive.apache.org/dist/flink/flink-${{ matrix.flink }}/flink-${{ matrix.flink }}-bin-scala_2.12.tgz
-            cache_binary=true
-          fi
-          echo "binary_url=$binary_url" >> ${GITHUB_ENV}
-
-      - name: "Print Flink binary url / caching"
-        run: echo "${{ env.binary_url }} / caching=${{ env.cache_binary }}"
-
-      - name: Create cache dirs
-        run: mkdir -p ${{ env.FLINK_CACHE_DIR }}
-
-      - name: Download Flink binary
-        working-directory: ${{ env.FLINK_CACHE_DIR }}
-        run: wget -q -c ${{ env.binary_url }} -O - | tar -xz
-
       - name: Install JDBC Libs
         run: |
           set -o pipefail
@@ -84,7 +61,6 @@ jobs:
             -DskipTests \
             -DaltDeploymentRepository=validation_repository::default::file:${{ env.MVN_VALIDATION_DIR }} \
             -Dscala-2.12 \
-            -DdistDir=${{ env.FLINK_CACHE_DIR }}/flink-${{ matrix.flink }} \
             ${{ env.MVN_CONNECTION_OPTIONS }} \
             -Dlog4j.configurationFile=file://$(pwd)/tools/ci/log4j.properties \
             | tee ${{ env.MVN_BUILD_OUTPUT_FILE }}
@@ -97,7 +73,6 @@ jobs:
           mvn clean test -U -B --no-transfer-progress -Dflink.version=${{ matrix.flink }} \
             -DaltDeploymentRepository=validation_repository::default::file:${{ env.MVN_VALIDATION_DIR }} \
             -Dscala-2.12 \
-            -DdistDir=${{ env.FLINK_CACHE_DIR }}/flink-${{ matrix.flink }} \
             ${{ env.MVN_CONNECTION_OPTIONS }} \
             -Dlog4j.configurationFile=file://$(pwd)/tools/ci/log4j.properties \
             | tee ${{ env.MVN_BUILD_OUTPUT_FILE }}
