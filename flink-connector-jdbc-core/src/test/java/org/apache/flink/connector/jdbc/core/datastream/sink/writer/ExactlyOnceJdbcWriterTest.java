@@ -21,17 +21,30 @@ import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitable;
+import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitableSerializer;
+import org.apache.flink.connector.jdbc.core.datastream.sink.committer.JdbcCommitter;
+import org.apache.flink.connector.jdbc.core.datastream.sink.committer.TestingCommitRequest;
 import org.apache.flink.connector.jdbc.datasource.connections.JdbcConnectionProvider;
 import org.apache.flink.connector.jdbc.datasource.connections.xa.SimpleXaConnectionProvider;
+import org.apache.flink.connector.jdbc.datasource.connections.xa.XaConnectionProvider;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
+import org.apache.flink.util.FlinkRuntimeException;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import javax.transaction.xa.Xid;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.OptionalLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Smoke tests for the {@link JdbcWriter} with ExactlyOnce semantics and the underlying classes. */
 class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
@@ -57,6 +70,18 @@ class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
                 () -> getMetadata().buildXaDataSource(), getExactlyOnceOptions().getTimeoutSec());
     }
 
+    /** A failed test can leave a prepared transaction behind, which holds its locks. */
+    @AfterEach
+    void rollbackPreparedTransactions() throws Exception {
+        sinkWriter.close();
+        try (SimpleXaConnectionProvider xa = newXaConnectionProvider()) {
+            xa.open();
+            for (Xid xid : xa.recover()) {
+                xa.rollback(xid);
+            }
+        }
+    }
+
     @Test
     void testEmptyCheckpoint() throws Exception {
         checkPreCommitWithSnapshot(1L, false);
@@ -69,9 +94,16 @@ class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
             sinkWriter.write(book, writerContext);
         }
 
-        checkPreCommitWithSnapshot(1L, true);
+        JdbcCommitable committable = checkPreCommitWithSnapshot(1L, true);
+        sinkWriter.close();
 
-        assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection())).isEqualTo(BOOKS);
+        // the transaction waits for the committer
+        assertThat(recover()).contains(committable.getXid());
+
+        commit(committable);
+
+        assertThat(recover()).isEmpty();
+        assertThat(TEST_TABLE.selectAllTable(getMetadata())).isEqualTo(BOOKS);
     }
 
     @Test
@@ -85,20 +117,26 @@ class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
         for (BooksTable.BookEntry book : booksHalf1) {
             sinkWriter.write(book, writerContext);
         }
-        checkPreCommitWithSnapshot(2L, true);
-
-        assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection())).isEqualTo(booksHalf1);
+        JdbcCommitable committable2 = checkPreCommitWithSnapshot(2L, true);
 
         // add more books
         for (BooksTable.BookEntry book : booksHalf2) {
             sinkWriter.write(book, writerContext);
         }
-        checkPreCommitWithSnapshot(3L, true);
+        JdbcCommitable committable3 = checkPreCommitWithSnapshot(3L, true);
 
         // empty transaction
         checkPreCommitWithSnapshot(4L, false);
+        sinkWriter.close();
 
-        assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection())).isEqualTo(BOOKS);
+        // the transactions wait for the committer
+        assertThat(recover()).contains(committable2.getXid(), committable3.getXid());
+
+        commit(committable2);
+        commit(committable3);
+
+        assertThat(recover()).isEmpty();
+        assertThat(TEST_TABLE.selectAllTable(getMetadata())).isEqualTo(BOOKS);
     }
 
     /** Checkpoints can still come after the end of input, until the task finishes. */
@@ -114,13 +152,85 @@ class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
         assertThat(sinkWriter.snapshotState(2L).get(0).getHanging()).isEmpty();
     }
 
-    protected void checkPreCommitWithSnapshot(long checkpointId, boolean hasCommit)
+    /** The task never gets a writer that failed to start, so it can't close it. */
+    @Test
+    void testCloseConnectionWhenStartFails() {
+        SimpleXaConnectionProvider delegate = newXaConnectionProvider();
+        XaConnectionProvider failingRecover =
+                (XaConnectionProvider)
+                        Proxy.newProxyInstance(
+                                getClass().getClassLoader(),
+                                new Class<?>[] {XaConnectionProvider.class},
+                                (proxy, method, args) -> {
+                                    if (method.getName().equals("recover")) {
+                                        throw new FlinkRuntimeException("XA_RECOVER_ADMIN missing");
+                                    }
+                                    try {
+                                        return method.invoke(delegate, args);
+                                    } catch (InvocationTargetException e) {
+                                        throw e.getCause();
+                                    }
+                                });
+
+        assertThatThrownBy(() -> newWriter(failingRecover))
+                .hasStackTraceContaining("XA_RECOVER_ADMIN missing");
+        assertThat(delegate.isOpen()).isFalse();
+    }
+
+    @Test
+    void testCloseConnectionWhenStatementDoesNotPrepare() throws Exception {
+        // the writer of init() has the same xid active
+        sinkWriter.close();
+        SimpleXaConnectionProvider connectionProvider = newXaConnectionProvider();
+
+        assertThatThrownBy(
+                        () ->
+                                newWriter(
+                                        connectionProvider,
+                                        "INSERT INTO NO_SUCH_TABLE (id) VALUES (?)"))
+                .isInstanceOf(IOException.class)
+                .hasMessage("unable to open JDBC writer");
+        assertThat(connectionProvider.isOpen()).isFalse();
+    }
+
+    /** Commits the committable the way the committer gets it when it is not chained. */
+    private void commit(JdbcCommitable committable) throws Exception {
+        JdbcCommitableSerializer serializer = new JdbcCommitableSerializer();
+        TestingCommitRequest request =
+                new TestingCommitRequest(
+                        serializer.deserialize(
+                                serializer.getVersion(), serializer.serialize(committable)));
+        try (JdbcCommitter committer =
+                new JdbcCommitter(
+                        getDeliveryGuarantee(),
+                        newXaConnectionProvider(),
+                        getExactlyOnceOptions(),
+                        OptionalLong.empty())) {
+            committer.commit(Collections.singletonList(request));
+        }
+        assertThat(request.getFailure()).isNull();
+    }
+
+    private Collection<Xid> recover() throws Exception {
+        try (SimpleXaConnectionProvider xa = newXaConnectionProvider()) {
+            xa.open();
+            return xa.recover();
+        }
+    }
+
+    private SimpleXaConnectionProvider newXaConnectionProvider() {
+        return SimpleXaConnectionProvider.from(getMetadata().buildXaDataSource());
+    }
+
+    protected JdbcCommitable checkPreCommitWithSnapshot(long checkpointId, boolean hasCommit)
             throws Exception {
         sinkWriter.flush(false);
         Collection<JdbcCommitable> commitables = sinkWriter.prepareCommit();
+        JdbcCommitable commitable = null;
         if (hasCommit) {
             assertThat(commitables.size()).isEqualTo(1);
-            checkCommitable(commitables.iterator().next(), withBranch(checkpointId - 1));
+            commitable = commitables.iterator().next();
+            checkCommitable(commitable, withBranch(checkpointId - 1));
         } else {
             assertThat(commitables.size()).isEqualTo(0);
         }
@@ -131,5 +241,6 @@ class ExactlyOnceJdbcWriterTest extends BaseJdbcWriterTest {
                 snapshot.get(0),
                 Collections.emptyList(),
                 Collections.singletonList(withBranch(checkpointId)));
+        return commitable;
     }
 }

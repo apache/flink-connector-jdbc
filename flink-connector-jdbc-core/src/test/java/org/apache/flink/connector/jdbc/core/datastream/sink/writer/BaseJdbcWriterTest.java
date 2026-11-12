@@ -41,6 +41,7 @@ import org.apache.flink.util.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -87,6 +88,16 @@ abstract class BaseJdbcWriterTest implements DerbyTestBase {
 
     @BeforeEach
     void init() throws Exception {
+        this.sinkWriter = newWriter(getConnectionProvider());
+    }
+
+    protected JdbcWriter<BooksTable.BookEntry> newWriter(JdbcConnectionProvider connectionProvider)
+            throws IOException {
+        return newWriter(connectionProvider, TEST_TABLE.getInsertIntoQuery());
+    }
+
+    protected JdbcWriter<BooksTable.BookEntry> newWriter(
+            JdbcConnectionProvider connectionProvider, String insertQuery) throws IOException {
         TaskInfo taskInfo = new TestingTaskInfo("test_task", 4, 1, 4, 0, "test_subTask", "id");
         InitContext sinkContext =
                 new TestingInitContext(JobID.fromHexString(JOBID), "test_jobName", taskInfo);
@@ -97,19 +108,17 @@ abstract class BaseJdbcWriterTest implements DerbyTestBase {
                                 TypeInformation.of(BooksTable.BookEntry.class), false));
 
         JdbcQueryStatement<BooksTable.BookEntry> queryStatement =
-                new SimpleJdbcQueryStatement<>(
-                        TEST_TABLE.getInsertIntoQuery(), TEST_TABLE.getStatementBuilder());
+                new SimpleJdbcQueryStatement<>(insertQuery, TEST_TABLE.getStatementBuilder());
 
-        this.sinkWriter =
-                new JdbcWriter<>(
-                        getConnectionProvider(),
-                        getExecutionOptions(),
-                        getExactlyOnceOptions(),
-                        queryStatement,
-                        outputSerializer,
-                        getDeliveryGuarantee(),
-                        Collections.emptyList(),
-                        sinkContext);
+        return new JdbcWriter<>(
+                connectionProvider,
+                getExecutionOptions(),
+                getExactlyOnceOptions(),
+                queryStatement,
+                outputSerializer,
+                getDeliveryGuarantee(),
+                Collections.emptyList(),
+                sinkContext);
     }
 
     @AfterEach
