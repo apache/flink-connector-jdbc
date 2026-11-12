@@ -179,6 +179,31 @@ class PostgresCatalogITCase extends PostgresCatalogTestBase {
     }
 
     @Test
+    void testArrayTypesInsert() throws Exception {
+        executeSQL(
+                PostgresCatalog.DEFAULT_DATABASE, String.format("TRUNCATE %s", TABLE_ARRAY_TYPE2));
+        tEnv.executeSql(
+                        String.format(
+                                "insert into `%s` select * from `%s`",
+                                TABLE_ARRAY_TYPE2, TABLE_ARRAY_TYPE))
+                .await();
+
+        List<Row> expected =
+                CollectionUtil.iteratorToList(
+                        tEnv.sqlQuery(String.format("select * from `%s`", TABLE_ARRAY_TYPE))
+                                .execute()
+                                .collect());
+        List<Row> results =
+                CollectionUtil.iteratorToList(
+                        tEnv.sqlQuery(String.format("select * from `%s`", TABLE_ARRAY_TYPE2))
+                                .execute()
+                                .collect());
+
+        // The source row contains NULL arrays (null_bytea_arr and null_text_arr) as well.
+        assertThat(results).isEqualTo(expected);
+    }
+
+    @Test
     void testSerialTypes() {
         List<Row> results =
                 CollectionUtil.iteratorToList(
