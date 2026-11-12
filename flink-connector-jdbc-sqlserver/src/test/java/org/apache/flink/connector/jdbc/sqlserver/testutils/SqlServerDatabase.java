@@ -35,7 +35,7 @@ import java.sql.Statement;
 public class SqlServerDatabase extends DatabaseExtension implements SqlServerImages {
 
     private static final MSSQLServerContainer<?> CONTAINER =
-            new SqlServerContainer(MSSQL_AZURE_SQL_EDGE).acceptLicense().withXa();
+            new SqlServerContainer(MSSQL_SERVER_2025).acceptLicense().withXa();
 
     private static SqlServerMetadata metadata;
 

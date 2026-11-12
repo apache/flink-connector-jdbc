@@ -21,7 +21,6 @@ import org.testcontainers.utility.DockerImageName;
 
 /** SqlServer docker images. */
 public interface SqlServerImages {
-    DockerImageName MSSQL_AZURE_SQL_EDGE =
-            DockerImageName.parse("mcr.microsoft.com/azure-sql-edge")
-                    .asCompatibleSubstituteFor("mcr.microsoft.com/mssql/server");
+    DockerImageName MSSQL_SERVER_2025 =
+            DockerImageName.parse("mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04");
 }

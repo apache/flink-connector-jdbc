@@ -33,6 +33,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +43,12 @@ public abstract class SimpleXaConnectionProviderTest implements DatabaseTest {
 
     private static final BooksTable TEST_TABLE = new BooksTable("XaTable");
     private static final TransactionId TRANSACTION_BASE = TransactionId.empty();
+
+    /** XA drivers return their own {@link Xid} type from recover(), so compare by value. */
+    private static final Comparator<Xid> XID_VALUE_COMPARATOR =
+            Comparator.comparingInt(Xid::getFormatId)
+                    .thenComparing(Xid::getGlobalTransactionId, Arrays::compare)
+                    .thenComparing(Xid::getBranchQualifier, Arrays::compare);
 
     @Override
     public List<TableManaged> getManagedTables() {
@@ -156,9 +163,11 @@ public abstract class SimpleXaConnectionProviderTest implements DatabaseTest {
         try (SimpleXaConnectionProvider xa =
                 SimpleXaConnectionProvider.from(getMetadata().buildXaDataSource())) {
             xa.open();
-            assertThat(xa.recover()).contains(xid);
+            assertThat(xa.recover()).usingElementComparator(XID_VALUE_COMPARATOR).contains(xid);
             xa.rollback(xid);
-            assertThat(xa.recover()).doesNotContain(xid);
+            assertThat(xa.recover())
+                    .usingElementComparator(XID_VALUE_COMPARATOR)
+                    .doesNotContain(xid);
         }
 
         assertBooks(new ArrayList<>());
