@@ -16,25 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.backward.compatibility;
+package org.apache.flink.connector.jdbc.postgres.datastream.sink;
 
 import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
 import org.apache.flink.connector.jdbc.JdbcExactlyOnceOptions;
 import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
 import org.apache.flink.connector.jdbc.core.datastream.sink.JdbcSink;
 import org.apache.flink.connector.jdbc.postgres.PostgresTestBase;
+import org.apache.flink.connector.jdbc.testutils.JdbcITCaseBase;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
-import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.util.RestartStrategyUtils;
-import org.apache.flink.test.junit5.MiniClusterExtension;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
+import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -43,8 +41,8 @@ import java.util.stream.Collectors;
 import static org.apache.flink.connector.jdbc.JdbcTestFixture.TEST_DATA;
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Test for backward compatibility. */
-public class DataStreamSinkTest implements PostgresTestBase {
+/** The {@link JdbcSink} ITCase for PostgreSQL, at-least-once and exactly-once. */
+class PostgresJdbcSinkITCase implements PostgresTestBase, JdbcITCaseBase {
 
     private static final BooksTable TEST_TABLE = new BooksTable("SinkTable");
 
@@ -61,21 +59,13 @@ public class DataStreamSinkTest implements PostgresTestBase {
         return Collections.singletonList(TEST_TABLE);
     }
 
-    @RegisterExtension
-    static final MiniClusterExtension MINI_CLUSTER =
-            new MiniClusterExtension(
-                    new MiniClusterResourceConfiguration.Builder()
-                            .setNumberTaskManagers(2)
-                            .setNumberSlotsPerTaskManager(2)
-                            .build());
-
     @Test
-    public void testAtLeastOnce() throws Exception {
+    void testAtLeastOnce() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         RestartStrategyUtils.configureNoRestartStrategy(env);
         env.setParallelism(1);
 
-        assertResult(new ArrayList<>());
+        assertResult(Collections.emptyList());
 
         env.fromCollection(BOOKS)
                 .sinkTo(
@@ -96,12 +86,12 @@ public class DataStreamSinkTest implements PostgresTestBase {
     }
 
     @Test
-    public void testExactlyOnce() throws Exception {
+    void testExactlyOnce() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         RestartStrategyUtils.configureNoRestartStrategy(env);
         env.setParallelism(1);
 
-        assertResult(new ArrayList<>());
+        assertResult(Collections.emptyList());
 
         env.fromCollection(BOOKS)
                 .sinkTo(
@@ -120,6 +110,8 @@ public class DataStreamSinkTest implements PostgresTestBase {
     }
 
     private void assertResult(List<BooksTable.BookEntry> expected) throws SQLException {
-        assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection())).isEqualTo(expected);
+        try (Connection connection = getMetadata().getConnection()) {
+            assertThat(TEST_TABLE.selectAllTable(connection)).isEqualTo(expected);
+        }
     }
 }
