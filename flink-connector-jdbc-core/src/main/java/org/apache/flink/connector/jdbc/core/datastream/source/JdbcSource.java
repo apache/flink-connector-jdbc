@@ -80,6 +80,13 @@ public class JdbcSource<OUT>
     private final ResultExtractor<OUT> resultExtractor;
     private final DeliveryGuarantee deliveryGuarantee;
 
+    /**
+     * The dataset name reported in the lineage vertex, or {@code null} to derive it from the SQL
+     * query. A Table source knows the configured table name, a DataStream source built from a query
+     * only has the query.
+     */
+    @Nullable private final String lineageTableName;
+
     @Deprecated
     JdbcSource(
             Configuration configuration,
@@ -106,6 +113,24 @@ public class JdbcSource<OUT>
             ResultExtractor<OUT> resultExtractor,
             TypeInformation<OUT> typeInformation,
             @Nullable DeliveryGuarantee deliveryGuarantee) {
+        this(
+                configuration,
+                connectionProvider,
+                splitterEnumerator,
+                resultExtractor,
+                typeInformation,
+                deliveryGuarantee,
+                null);
+    }
+
+    JdbcSource(
+            Configuration configuration,
+            JdbcConnectionProvider connectionProvider,
+            SplitterEnumerator splitterEnumerator,
+            ResultExtractor<OUT> resultExtractor,
+            TypeInformation<OUT> typeInformation,
+            @Nullable DeliveryGuarantee deliveryGuarantee,
+            @Nullable String lineageTableName) {
         this.configuration = Preconditions.checkNotNull(configuration);
         this.connectionProvider = Preconditions.checkNotNull(connectionProvider);
         this.splitterEnumerator = Preconditions.checkNotNull(splitterEnumerator);
@@ -113,6 +138,7 @@ public class JdbcSource<OUT>
         this.deliveryGuarantee =
                 Objects.isNull(deliveryGuarantee) ? DeliveryGuarantee.NONE : deliveryGuarantee;
         this.typeInformation = Preconditions.checkNotNull(typeInformation);
+        this.lineageTableName = lineageTableName;
     }
 
     @Override
@@ -230,6 +256,7 @@ public class JdbcSource<OUT>
                 && Objects.equals(splitterEnumerator, that.splitterEnumerator)
                 && Objects.equals(connectionProvider, that.connectionProvider)
                 && Objects.equals(resultExtractor, that.resultExtractor)
+                && Objects.equals(lineageTableName, that.lineageTableName)
                 && deliveryGuarantee == that.deliveryGuarantee;
     }
 
@@ -238,7 +265,9 @@ public class JdbcSource<OUT>
         DefaultTypeDatasetFacet defaultTypeDatasetFacet =
                 new DefaultTypeDatasetFacet(getTypeInformation());
         Optional<String> nameOpt =
-                LineageUtils.tableNameOf(splitterEnumerator.lineageQueries(), true);
+                lineageTableName == null
+                        ? LineageUtils.tableNameOf(splitterEnumerator.lineageQueries(), true)
+                        : Optional.of(lineageTableName);
         String namespace = LineageUtils.namespaceOf(connectionProvider);
         LineageDataset dataset =
                 LineageUtils.datasetOf(
