@@ -75,7 +75,7 @@ public abstract class TableBase<T> implements TableManaged {
         return Arrays.stream(this.fields);
     }
 
-    private Stream<String> getStreamFieldNames() {
+    protected Stream<String> getStreamFieldNames() {
         return getStreamFields().map(TableField::getName);
     }
 
@@ -208,7 +208,7 @@ public abstract class TableBase<T> implements TableManaged {
                 newName, fields, primaryKey, String.join(", ", params));
     }
 
-    private String getInsertIntoQuery(String... values) {
+    protected String getInsertIntoQuery(String... values) {
         return String.format(
                 "INSERT INTO %s (%s) VALUES %s",
                 name,
