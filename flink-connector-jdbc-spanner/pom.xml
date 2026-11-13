@@ -33,7 +33,7 @@ under the License.
     <packaging>jar</packaging>
 
     <properties>
-        <spanner.version>2.44.0</spanner.version>
+        <spanner.version>2.49.0</spanner.version>
     </properties>
 
     <dependencies>
