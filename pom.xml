@@ -58,7 +58,6 @@ under the License.
     <properties>
         <flink.version>2.1.3</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
-        <scala-library.version>2.12.7</scala-library.version>
         <jackson-bom.version>2.22.4</jackson-bom.version>
         <junit5.version>5.10.1</junit5.version>
         <assertj.version>3.27.7</assertj.version>
@@ -176,13 +175,6 @@ under the License.
     <dependencyManagement>
 
         <dependencies>
-            <!-- For dependency convergence -->
-            <dependency>
-                <groupId>org.scala-lang</groupId>
-                <artifactId>scala-library</artifactId>
-                <version>${scala-library.version}</version>
-            </dependency>
-
             <!-- Flink dependencies -->
 
             <dependency>
@@ -233,24 +225,6 @@ under the License.
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>1.3.9</version>
-            </dependency>
-
-            <dependency>
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>1.16.1</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcore</artifactId>
-                <version>4.4.14</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>4.5.13</version>
             </dependency>
 
             <dependency>
@@ -316,39 +290,21 @@ under the License.
                 <scope>test</scope>
             </dependency>
 
-            <!-- For dependency convergence -->
-            <dependency>
-                <groupId>com.esotericsoftware.kryo</groupId>
-                <artifactId>kryo</artifactId>
-                <version>2.24.0</version>
-            </dependency>
-
-            <!-- For dependency convergence -->
-            <dependency>
-                <groupId>org.objenesis</groupId>
-                <artifactId>objenesis</artifactId>
-                <version>2.1</version>
-            </dependency>
-
-            <!-- For dependency convergence -->
+            <!-- Flink ships 1.26.0, which marks commons-codec optional, but its tar writer needs it
+                 when Testcontainers copies files into the MySQL and Trino containers. 1.26.1 does not
+                 mark it optional. -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
                 <version>1.26.1</version>
             </dependency>
 
-            <!-- For dependency convergence -->
+            <!-- For dependency convergence: openlineage-sql-java and openlineage-java ask for
+                 different versions. 3.18.0 is the version Flink ships. -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>3.18.0</version>
-            </dependency>
-
-            <!-- For dependency convergence -->
-            <dependency>
-                <groupId>org.xerial.snappy</groupId>
-                <artifactId>snappy-java</artifactId>
-                <version>1.1.10.4</version>
             </dependency>
 
             <!-- Only reaches the tests and the provided Spanner driver. Keeps the tests off the
@@ -357,13 +313,6 @@ under the License.
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>33.8.0-jre</version>
-            </dependency>
-
-            <!-- For dependency convergence on crate-jdbc mismatch -->
-            <dependency>
-                <groupId>org.checkerframework</groupId>
-                <artifactId>checker-qual</artifactId>
-                <version>3.12.0</version>
             </dependency>
 
             <dependency>
