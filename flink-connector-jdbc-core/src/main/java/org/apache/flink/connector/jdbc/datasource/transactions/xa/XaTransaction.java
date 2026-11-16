@@ -85,7 +85,16 @@ public class XaTransaction implements Serializable, AutoCloseable {
         try {
             xaConnectionProvider.open();
             recoverState(state);
-            hangingXids = new LinkedList<>(failOrRollback(hangingXids).getForRetry());
+            XaTransactionResult<TransactionId> rolledBack = failOrRollback(hangingXids);
+            if (rolledBack.getTransientFailure().isPresent()) {
+                // at another parallelism nothing else rolls them back, and they keep their locks
+                throw new FlinkRuntimeException(
+                        String.format(
+                                "unable to roll back the transactions of a failed attempt: %s",
+                                rolledBack.getForRetry()),
+                        rolledBack.getTransientFailure().get());
+            }
+            hangingXids = new LinkedList<>();
             commitTx();
             if (exactlyOnceOptions.isDiscoverAndRollbackOnRecovery()) {
                 // Pending transactions which are not included into the checkpoint might hold locks
@@ -122,8 +131,22 @@ public class XaTransaction implements Serializable, AutoCloseable {
         preparedXids = null;
     }
 
+    /**
+     * Keeps only the hanging transactions of this job, which {@link #open} rolls back. Those of
+     * another job may belong to a job that still runs and is about to commit them, for example the
+     * job that took the savepoint this one restores.
+     */
     public void recoverState(JdbcWriterState state) {
-        hangingXids = new LinkedList<>(state.getHanging());
+        hangingXids = new LinkedList<>();
+        for (TransactionId hanging : state.getHanging()) {
+            if (Arrays.equals(hanging.getJobId(), baseTransaction.getJobId())) {
+                hangingXids.add(hanging);
+            } else {
+                LOG.info(
+                        "leaving the restored transaction of another job, xid={}",
+                        hanging.getXidValue());
+            }
+        }
         preparedXids = new ArrayList<>(state.getPrepared());
         LOG.info(
                 "initialized state: prepared xids: {}, hanging xids: {}",
