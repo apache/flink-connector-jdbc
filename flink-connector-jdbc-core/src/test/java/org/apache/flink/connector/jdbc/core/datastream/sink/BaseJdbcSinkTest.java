@@ -17,6 +17,7 @@
 
 package org.apache.flink.connector.jdbc.core.datastream.sink;
 
+import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.connector.jdbc.derby.DerbyTestBase;
 import org.apache.flink.connector.jdbc.testutils.TableManaged;
 import org.apache.flink.connector.jdbc.testutils.tables.templates.BooksTable;
@@ -80,6 +81,68 @@ public abstract class BaseJdbcSinkTest implements DerbyTestBase {
         assertResult(BOOKS);
     }
 
+    /** Without chaining the committer receives the committables serialized. */
+    @Test
+    public void testInsertWithoutChaining() throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setParallelism(1);
+        env.disableOperatorChaining();
+
+        assertResult(new ArrayList<>());
+
+        env.fromCollection(BOOKS)
+                .sinkTo(
+                        finishSink(
+                                new JdbcSinkBuilder<BooksTable.BookEntry>()
+                                        .withQueryStatement(
+                                                TEST_TABLE.getInsertIntoQuery(),
+                                                TEST_TABLE.getStatementBuilder())));
+        env.execute();
+
+        assertResult(BOOKS);
+    }
+
+    /** Several writers hand their committables to the committer. */
+    @Test
+    public void testInsertWithParallelism() throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setParallelism(3);
+
+        env.fromCollection(BOOKS)
+                .rebalance()
+                .sinkTo(
+                        finishSink(
+                                new JdbcSinkBuilder<BooksTable.BookEntry>()
+                                        .withQueryStatement(
+                                                TEST_TABLE.getInsertIntoQuery(),
+                                                TEST_TABLE.getStatementBuilder())));
+        env.execute();
+
+        assertResultInAnyOrder(BOOKS);
+    }
+
+    @Test
+    public void testInsertInBatchMode() throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        RestartStrategyUtils.configureNoRestartStrategy(env);
+        env.setRuntimeMode(RuntimeExecutionMode.BATCH);
+        env.setParallelism(3);
+
+        env.fromCollection(BOOKS)
+                .rebalance()
+                .sinkTo(
+                        finishSink(
+                                new JdbcSinkBuilder<BooksTable.BookEntry>()
+                                        .withQueryStatement(
+                                                TEST_TABLE.getInsertIntoQuery(),
+                                                TEST_TABLE.getStatementBuilder())));
+        env.execute();
+
+        assertResultInAnyOrder(BOOKS);
+    }
+
     @Test
     public void testInsertWithObjectReuse() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -124,6 +187,11 @@ public abstract class BaseJdbcSinkTest implements DerbyTestBase {
 
     private void assertResult(List<BooksTable.BookEntry> expected) throws SQLException {
         assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection())).isEqualTo(expected);
+    }
+
+    private void assertResultInAnyOrder(List<BooksTable.BookEntry> expected) throws SQLException {
+        assertThat(TEST_TABLE.selectAllTable(getMetadata().getConnection()))
+                .containsExactlyInAnyOrderElementsOf(expected);
     }
 
     /** */
