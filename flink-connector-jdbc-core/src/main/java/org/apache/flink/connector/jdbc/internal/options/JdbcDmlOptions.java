@@ -36,6 +36,7 @@ public class JdbcDmlOptions extends JdbcTypedQueryOptions {
     @Nullable private final String[] keyFields;
     private final String tableName;
     private final JdbcDialect dialect;
+    private final boolean bulkInsertEnabled;
 
     public static JdbcDmlOptionsBuilder builder() {
         return new JdbcDmlOptionsBuilder();
@@ -46,12 +47,14 @@ public class JdbcDmlOptions extends JdbcTypedQueryOptions {
             JdbcDialect dialect,
             String[] fieldNames,
             int[] fieldTypes,
-            String[] keyFields) {
+            String[] keyFields,
+            boolean bulkInsertEnabled) {
         super(fieldTypes);
         this.tableName = Preconditions.checkNotNull(tableName, "table is empty");
         this.dialect = Preconditions.checkNotNull(dialect, "dialect is empty");
         this.fieldNames = Preconditions.checkNotNull(fieldNames, "field names is empty");
         this.keyFields = keyFields;
+        this.bulkInsertEnabled = bulkInsertEnabled;
     }
 
     public String getTableName() {
@@ -70,6 +73,15 @@ public class JdbcDmlOptions extends JdbcTypedQueryOptions {
         return Optional.ofNullable(keyFields);
     }
 
+    /**
+     * Whether the Table/SQL sink writes batches with the dialect's bulk insert statement. Requires
+     * the dialect to implement {@link
+     * org.apache.flink.connector.jdbc.core.database.dialect.JdbcBulkInsertDialect}.
+     */
+    public boolean isBulkInsertEnabled() {
+        return bulkInsertEnabled;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -81,13 +93,14 @@ public class JdbcDmlOptions extends JdbcTypedQueryOptions {
         JdbcDmlOptions that = (JdbcDmlOptions) o;
         return Arrays.equals(fieldNames, that.fieldNames)
                 && Arrays.equals(keyFields, that.keyFields)
+                && bulkInsertEnabled == that.bulkInsertEnabled
                 && Objects.equals(tableName, that.tableName)
                 && Objects.equals(dialect.dialectName(), that.dialect.dialectName());
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(tableName, dialect.dialectName());
+        int result = Objects.hash(tableName, dialect.dialectName(), bulkInsertEnabled);
         result = 31 * result + Arrays.hashCode(fieldNames);
         result = 31 * result + Arrays.hashCode(keyFields);
         return result;
@@ -100,6 +113,7 @@ public class JdbcDmlOptions extends JdbcTypedQueryOptions {
         private String[] fieldNames;
         private String[] keyFields;
         private JdbcDialect dialect;
+        private boolean bulkInsertEnabled;
 
         @Override
         protected JdbcDmlOptionsBuilder self() {
@@ -136,8 +150,14 @@ public class JdbcDmlOptions extends JdbcTypedQueryOptions {
             return self();
         }
 
+        public JdbcDmlOptionsBuilder withBulkInsertEnabled(boolean bulkInsertEnabled) {
+            this.bulkInsertEnabled = bulkInsertEnabled;
+            return self();
+        }
+
         public JdbcDmlOptions build() {
-            return new JdbcDmlOptions(tableName, dialect, fieldNames, fieldTypes, keyFields);
+            return new JdbcDmlOptions(
+                    tableName, dialect, fieldNames, fieldTypes, keyFields, bulkInsertEnabled);
         }
 
         static String[] concat(String first, String... next) {
