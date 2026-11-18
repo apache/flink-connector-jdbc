@@ -19,6 +19,7 @@
 package org.apache.flink.connector.jdbc.core.table.source;
 
 import org.apache.flink.connector.jdbc.internal.options.InternalJdbcConnectionOptions;
+import org.apache.flink.streaming.api.lineage.LineageVertex;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.connector.source.lookup.LookupOptions;
 import org.apache.flink.table.data.RowData;
@@ -29,6 +30,7 @@ import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.util.Collector;
 
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -127,6 +129,33 @@ class JdbcRowDataLookupFunctionTest extends JdbcLookupTestBase {
                         .stream().map(RowData::toString).sorted().collect(Collectors.toList());
         Collections.sort(testSpec.expected);
         assertThat(result).isEqualTo(testSpec.expected);
+    }
+
+    /**
+     * {@code TableLineageUtils} takes the lineage vertex of a lookup function at plan time, before
+     * the function is opened. The dataset must already carry the configured table name then.
+     */
+    @Test
+    void testLineageDatasetNameIsKnownAtPlanTime() {
+        assertLineageDatasetName(buildRowDataLookupFunction(false, LOOKUP_TABLE), LOOKUP_TABLE);
+    }
+
+    /**
+     * The reported dataset name is the configured table name, not a name that the lineage SQL
+     * parser recovers from the generated query: it misreads a table name that a database requires
+     * quoting for, for example a name containing a hyphen.
+     */
+    @Test
+    void testLineageDatasetNameIsNotParsedFromTheQuery() {
+        String tableName = "lookup-table";
+        assertLineageDatasetName(buildRowDataLookupFunction(false, tableName), tableName);
+    }
+
+    private static void assertLineageDatasetName(
+            JdbcRowDataLookupFunction lookupFunction, String tableName) {
+        LineageVertex lineageVertex = lookupFunction.getLineageVertex();
+        assertThat(lineageVertex.datasets()).hasSize(1);
+        assertThat(lineageVertex.datasets().get(0).name()).isEqualTo(tableName);
     }
 
     private static class TestSpec {
@@ -228,11 +257,16 @@ class JdbcRowDataLookupFunctionTest extends JdbcLookupTestBase {
     }
 
     private JdbcRowDataLookupFunction buildRowDataLookupFunction(boolean withFailure) {
+        return buildRowDataLookupFunction(withFailure, LOOKUP_TABLE);
+    }
+
+    private JdbcRowDataLookupFunction buildRowDataLookupFunction(
+            boolean withFailure, String tableName) {
         InternalJdbcConnectionOptions jdbcOptions =
                 InternalJdbcConnectionOptions.builder()
                         .setDriverName(getMetadata().getDriverClass())
                         .setDBUrl(getMetadata().getJdbcUrl())
-                        .setTableName(LOOKUP_TABLE)
+                        .setTableName(tableName)
                         .build();
 
         RowType rowType =
