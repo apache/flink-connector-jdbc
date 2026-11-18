@@ -69,6 +69,7 @@ class PostgresCatalogTest extends PostgresCatalogTestBase {
                 .isEqualTo(
                         Arrays.asList(
                                 "public.array_table",
+                                "public.array_table2",
                                 "public.json_table",
                                 "public.jsonb_table",
                                 "public.primitive_table",
