@@ -71,18 +71,19 @@ JDBC 连接器不是二进制发行版的一部分，请查阅[这里]({{< ref "
 
 在连接到具体数据库时，也需要对应的驱动依赖，目前支持的驱动如下：
 
-| Driver     | Group Id                   | Artifact Id                 | JAR                                                                                                                         |
-|:-----------|:---------------------------|:----------------------------|:----------------------------------------------------------------------------------------------------------------------------|
-| MySQL      | `mysql`                    | `mysql-connector-java`      | [下载](https://repo.maven.apache.org/maven2/mysql/mysql-connector-java/)                                                      |
-| Oracle     | `com.oracle.database.jdbc` | `ojdbc8`                    | [下载](https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8)                                                    | 
-| PostgreSQL | `org.postgresql`           | `postgresql`                | [下载](https://jdbc.postgresql.org/download/)                                                                                 |
-| Derby      | `org.apache.derby`         | `derby`                     | [下载](http://db.apache.org/derby/derby_downloads.html)                                                                       |
-| SQL Server | `com.microsoft.sqlserver`  | `mssql-jdbc`                | [下载](https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-ver16) |
-| CrateDB    | `io.crate`                 | `crate-jdbc`                | [下载](https://repo1.maven.org/maven2/io/crate/crate-jdbc/)                                                                   |
-| Db2        | `com.ibm.db2.jcc`          | `db2jcc`                    | [下载](https://www.ibm.com/support/pages/download-db2-fix-packs-version-db2-linux-unix-and-windows)                           |
-| Trino      | `io.trino`                 | `trino-jdbc`                | [下载](https://repo1.maven.org/maven2/io/trino/trino-jdbc/)                                                                   |
-| OceanBase  | `com.oceanbase`            | `oceanbase-client`          | [下载](https://repo1.maven.org/maven2/com/oceanbase/oceanbase-client/)                                                        |
-| Spanner    | `com.google.cloud`         | `google-cloud-spanner-jdbc` (classifier `single-jar-with-dependencies`) | [下载](https://repo1.maven.org/maven2/com/google/cloud/google-cloud-spanner-jdbc/) |
+| Driver     | Group Id                   | Artifact Id                                                             | JAR                                                                                                                                                      |
+|:-----------|:---------------------------|:------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| MySQL      | `mysql`                    | `mysql-connector-java`                                                  | [下载](https://repo.maven.apache.org/maven2/mysql/mysql-connector-java/)                                                                                   |
+| Oracle     | `com.oracle.database.jdbc` | `ojdbc8`                                                                | [下载](https://mvnrepository.com/artifact/com.oracle.database.jdbc/ojdbc8)                                                                                 | 
+| PostgreSQL | `org.postgresql`           | `postgresql`                                                            | [下载](https://jdbc.postgresql.org/download/)                                                                                                              |
+| Derby      | `org.apache.derby`         | `derby`                                                                 | [下载](http://db.apache.org/derby/derby_downloads.html)                                                                                                    |
+| SQL Server | `com.microsoft.sqlserver`  | `mssql-jdbc`                                                            | [下载](https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-ver16)                              |
+| CrateDB    | `io.crate`                 | `crate-jdbc`                                                            | [下载](https://repo1.maven.org/maven2/io/crate/crate-jdbc/)                                                                                                |
+| Db2        | `com.ibm.db2.jcc`          | `db2jcc`                                                                | [下载](https://www.ibm.com/support/pages/download-db2-fix-packs-version-db2-linux-unix-and-windows)                                                        |
+| Trino      | `io.trino`                 | `trino-jdbc`                                                            | [下载](https://repo1.maven.org/maven2/io/trino/trino-jdbc/)                                                                                                |
+| OceanBase  | `com.oceanbase`            | `oceanbase-client`                                                      | [下载](https://repo1.maven.org/maven2/com/oceanbase/oceanbase-client/)                                                                                     |
+| Spanner    | `com.google.cloud`         | `google-cloud-spanner-jdbc` (classifier `single-jar-with-dependencies`) | [下载](https://repo1.maven.org/maven2/com/google/cloud/google-cloud-spanner-jdbc/)                                                                         |
+| ClickHouse | `com.clickhoue`            | `clickhouse-jdbc`                                                       | [下载](https://repo1.maven.org/maven2/com/clickhouse/clickhouse-jdbc/)                                                                                     |
 
 当前，JDBC 连接器和驱动不在 Flink 二进制发布包中，请参阅[这里]({{< ref "docs/dev/configuration/overview" >}})了解在集群上执行时如何连接它们。
 
@@ -466,6 +467,10 @@ lookup cache 的主要目的是用于提高时态表关联 JDBC 连接器的性�
             <td>INSERT OR UPDATE INTO .. (..) VALUES (..)</td>
         </tr>
         <tr>
+            <td>ClickHouse</td>
+            <td>先按 key 查询 SELECT，然后 INSERT 或 ALTER TABLE .. UPDATE（mutation）。<i>表引擎应来自 ReplacingMergeTree() 系列</i></td>
+        </tr>
+        <tr>
             <td>CrateDB</td>
             <td>INSERT .. ON CONFLICT .. DO UPDATE SET ..</td>
         </tr>
@@ -812,6 +817,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td><code>TINYINT</code></td>
       <td></td>
       <td></td>
+      <td><code>Int8</code></td>
       <td><code>TINYINT</code></td>
     </tr>
     <tr>
@@ -835,6 +841,9 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <code>TINYINT UNSIGNED</code></td>
       <td></td>
       <td></td>
+      <td>
+        <code>Int16</code><br>
+        <code>UInt8</code></td>
       <td><code>SMALLINT</code></td>
     </tr>
     <tr>
@@ -858,6 +867,9 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <code>SMALLINT UNSIGNED</code></td>
       <td></td>
       <td></td>
+      <td>
+        <code>Int32</code><br>
+        <code>UInt16</code></td>
       <td><code>INT</code></td>
     </tr>
     <tr>
@@ -878,7 +890,10 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <code>BIGINT</code><br>
         <code>INT UNSIGNED</code></td>
       <td></td>
-      <td>INT64</td>
+      <td><code>INT64</code></td>
+      <td>
+        <code>Int64</code><br>
+        <code>UInt32</code></td>
       <td><code>BIGINT</code></td>
     </tr>
    <tr>
@@ -892,6 +907,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td><code>BIGINT UNSIGNED</code></td>
       <td></td>
       <td></td>
+      <td><code>UInt64</code></td>
       <td><code>DECIMAL(20, 0)</code></td>
     </tr>
     <tr>
@@ -911,6 +927,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td>
         <code>BINARY_FLOAT</code></td>
       <td><code>FLOAT32</code></td>
+      <td><code>Float32</code></td>
       <td><code>FLOAT</code></td>
     </tr>
     <tr>
@@ -930,6 +947,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td><code>DOUBLE</code></td>
       <td><code>BINARY_DOUBLE</code></td>
       <td><code>FLOAT64</code></td>
+      <td><code>Float64</code></td>
       <td><code>DOUBLE</code></td>
     </tr>
     <tr>
@@ -959,6 +977,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <code>FLOAT(s)</code><br>
         <code>NUMBER(p, s)</code></td>
       <td><code>NUMERIC</code></td>
+      <td><code>Decimal(p, s)</code></td>
       <td><code>DECIMAL(p, s)</code></td>
     </tr>
     <tr>
@@ -976,6 +995,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <code>TINYINT(1)</code></td>
       <td></td>
       <td><code>BOOL</code></td>
+      <td><code>Bool</code></td>
       <td><code>BOOLEAN</code></td>
     </tr>
     <tr>
@@ -989,6 +1009,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td><code>DATE</code></td>
       <td><code>DATE</code></td>
       <td><code>DATE</code></td>
+      <td><code>Date</code></td>
       <td><code>DATE</code></td>
     </tr>
     <tr>
@@ -1001,7 +1022,8 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td><code>TIME_WITHOUT_TIME_ZONE</code></td>
       <td><code>TIME [(p)]</code></td>
       <td><code>DATE</code></td>
-      <td><code></code></td>
+      <td></td>
+      <td><code>Time</code> / <code>Time64(p)</code> (仅当设置 enable_time_time64_type = 1 时启用)</td>
       <td><code>TIME [(p)] [WITHOUT TIMEZONE]</code></td>
     </tr>
     <tr>
@@ -1021,6 +1043,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td><code>DATETIME [(p)]</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
       <td></td>
+      <td><code>DateTime</code> / <code>DateTime64(p)</code></td>
       <td><code>TIMESTAMP [(p)] [WITHOUT TIMEZONE]</code></td>
     </tr>
     <tr>
@@ -1034,6 +1057,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td><code>TIMESTAMP [(p)]</code></td>
       <td><code>TIMESTAMP [(p)] [WITH TIMEZONE]</code></td>
       <td><code>TIMESTAMP</code></td>
+      <td></td>
       <td><code>TIMESTAMP [(p)] [WITH TIMEZONE]</code></td>
     </tr>
     <tr>
@@ -1085,6 +1109,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <code>VARCHAR2(n)</code><br>
         <code>CLOB</code></td>
       <td><code>STRING(n)</code></td>
+      <td><code>String</code> / <code>FixedString(N)</code></td>
       <td><code>STRING</code></td>
     </tr>
     <tr>
@@ -1111,6 +1136,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
         <code>RAW(s)</code><br>
         <code>BLOB</code></td>
       <td><code>BYTES(n)</code></td>
+      <td><code>String</code></td>
       <td><code>BYTES</code></td>
     </tr>
     <tr>
@@ -1137,6 +1163,7 @@ Flink 支持连接到多个使用方言（dialect）的数据库，如 MySQL、O
       <td></td>
       <td></td>
       <td><code>ARRAY</code></td>
+      <td><code>Array</code></td>
       <td><code>ARRAY</code></td>
     </tr>
     </tbody>
