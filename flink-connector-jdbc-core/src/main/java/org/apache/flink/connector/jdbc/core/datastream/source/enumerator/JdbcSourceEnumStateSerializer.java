@@ -39,7 +39,8 @@ import static org.apache.flink.util.Preconditions.checkArgument;
 public class JdbcSourceEnumStateSerializer
         implements SimpleVersionedSerializer<JdbcSourceEnumeratorState>, Serializable {
 
-    private static final int CURRENT_VERSION = 0;
+    private static final int CURRENT_VERSION = 1;
+    private static final int LEGACY_VERSION_NO_SNAPSHOT = 0;
 
     private final JdbcSourceSplitSerializer splitSerializer;
 
@@ -92,14 +93,14 @@ public class JdbcSourceEnumStateSerializer
     public JdbcSourceEnumeratorState deserialize(int version, byte[] serialized)
             throws IOException {
 
-        if (version != CURRENT_VERSION) {
+        if (version != CURRENT_VERSION && version != LEGACY_VERSION_NO_SNAPSHOT) {
             throw new IOException("Unknown version: " + version);
         }
         try (ByteArrayInputStream bais = new ByteArrayInputStream(serialized);
                 DataInputStream in = new DataInputStream(bais)) {
-            List<JdbcSourceSplit> completedSplits = deserializeSourceSplits(in);
-            List<JdbcSourceSplit> pendingSplits = deserializeSourceSplits(in);
-            List<JdbcSourceSplit> remainingSplits = deserializeSourceSplits(in);
+            List<JdbcSourceSplit> completedSplits = deserializeSourceSplits(version, in);
+            List<JdbcSourceSplit> pendingSplits = deserializeSourceSplits(version, in);
+            List<JdbcSourceSplit> remainingSplits = deserializeSourceSplits(version, in);
             int bytesLen = in.readInt();
             byte[] bytes = new byte[bytesLen];
             in.read(bytes);
@@ -113,11 +114,12 @@ public class JdbcSourceEnumStateSerializer
         }
     }
 
-    private List<JdbcSourceSplit> deserializeSourceSplits(DataInputStream in) throws Exception {
+    private List<JdbcSourceSplit> deserializeSourceSplits(int version, DataInputStream in)
+            throws Exception {
         int size = in.readInt();
         List<JdbcSourceSplit> jdbcSourceSplits = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            jdbcSourceSplits.add(splitSerializer.deserializeJdbcSourceSplit(in));
+            jdbcSourceSplits.add(splitSerializer.deserializeJdbcSourceSplit(version, in));
         }
         return jdbcSourceSplits;
     }
